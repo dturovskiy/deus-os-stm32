@@ -373,3 +373,16 @@ Native USB is planned to eventually consolidate normal console/control/update tr
 
 Phase 3 governance debt is closed.
 <!-- END STM32_OS_PHASE3_TIME_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_TIME_API_HW_REGRESSION -->
+### Time API hardware regression — 2026-09-10
+
+- Image size: 1000 bytes
+- Image SHA-256: E672398FACBB3BA83E8F05DF4D7165ACFC1849D34BF3589EA81E114ED2DC72E9
+- Flash + verify + reset: PASS
+- UART boot banner: PASS
+- FAULTREC=0x20000004 observed and matched the address resolved from ELF
+- PC13 SysTick heartbeat: **physically confirmed after this image was flashed**
+- Phase 3 time API remains hardware accepted
+- Next implementation boundary: **USART1 RX / bidirectional command console**
+<!-- END STM32_OS_TIME_API_HW_REGRESSION -->

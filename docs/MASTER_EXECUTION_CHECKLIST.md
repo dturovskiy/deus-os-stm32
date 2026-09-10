@@ -24,10 +24,10 @@ Current accepted hardware baseline:
 Current implementation slice:
 
 - UART diagnostic console
-- first target: polling TX only
-- boot/status text output
-- hexadecimal diagnostic output
-- later integration with fault_record
+- TX polling path is hardware accepted
+- next target: USART1 RX on PA10
+- bidirectional command console / shell transport
+- preserve deterministic fault capture, LED panic, and UART TX diagnostics
 
 Acceptance for the current slice requires:
 
@@ -81,11 +81,12 @@ Acceptance for the current slice requires:
 - [x] diagnostic output path through panic LED + SWD fault_record capture
 
 ### Phase 5 — UART diagnostic console
-- [ ] select UART peripheral and pins
-- [ ] minimal polling TX
-- [ ] kernel log primitive
+- [x] select UART peripheral and pins
+- [x] minimal polling TX
+- [x] kernel log primitive
 - [x] boot banner
 - [ ] hexadecimal register dump
+- [ ] RX path + bidirectional command console
 - [ ] later: IRQ/DMA TX if justified
 
 ### Phase 6 — I2C and SSD1306 kernel console
@@ -219,3 +220,16 @@ Target progression:
 
 Constraint: STM32F103C8 is a USB Device target here, not a general USB Host platform. Keyboard/mouse emulation is possible as USB HID device behavior; directly hosting commodity USB peripherals is outside the baseline architecture.
 <!-- END STM32_OS_USB_STRATEGY -->
+
+<!-- BEGIN STM32_OS_TIME_API_HW_REGRESSION -->
+### Time API hardware regression — 2026-09-10
+
+- Image size: 1000 bytes
+- Image SHA-256: E672398FACBB3BA83E8F05DF4D7165ACFC1849D34BF3589EA81E114ED2DC72E9
+- Flash + verify + reset: PASS
+- UART boot banner: PASS
+- FAULTREC=0x20000004 observed and matched the address resolved from ELF
+- PC13 SysTick heartbeat: **physically confirmed after this image was flashed**
+- Phase 3 time API remains hardware accepted
+- Next implementation boundary: **USART1 RX / bidirectional command console**
+<!-- END STM32_OS_TIME_API_HW_REGRESSION -->

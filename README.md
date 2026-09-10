@@ -30,11 +30,15 @@ Built locally:
 - [x] `.bss` initialization
 - [x] `kernel_main()`
 - [x] ELF/BIN image generation
-- [ ] First flash of our kernel
-- [ ] GPIO status LED
-- [ ] Clock configuration
-- [ ] SysTick
-- [ ] Fault diagnostics
+- [x] First flash of our kernel
+- [x] GPIO status LED
+- [x] Clock configuration
+- [x] SysTick
+- [x] Fault diagnostics
+- [x] USART1/PA9 polling TX diagnostic console
+- [x] Stable 1 ms kernel time API with wraparound-safe comparisons
+- [ ] USART1 RX / bidirectional command console
+- [ ] Native USB Device / CDC console
 - [ ] I2C driver
 - [ ] SSD1306 kernel console
 - [ ] Task scheduler
