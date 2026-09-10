@@ -24,11 +24,12 @@ Current accepted hardware baseline:
 Current implementation slice:
 
 - USART1 bidirectional diagnostic console is hardware accepted
-- `ping` -> `PONG` transport regression is hardware accepted
-- `uptime` -> live kernel milliseconds is hardware accepted
-- `health` -> live SysTick + PC13 output-latch state is hardware accepted
-- automated console regression now verifies SysTick progress and PC13 toggling without routine manual LED checks
-- next target: expose fault diagnostics through a read-only console command
+- `ping`, `uptime`, and `health` regressions are hardware accepted
+- `fault` read-only diagnostics are hardware accepted
+- `fault` exposes `fault_record`, CFSR, HFSR, and SHCSR in hexadecimal
+- automated console regression verifies SysTick progress and PC13 output-latch toggling
+- Phase 5 diagnostic-console objectives are satisfied at polling-console scope
+- next target: Phase 6 minimal I2C master bring-up for SSD1306
 
 Acceptance for the current slice requires:
 
@@ -86,10 +87,11 @@ Acceptance for the current slice requires:
 - [x] minimal polling TX
 - [x] kernel log primitive
 - [x] boot banner
-- [ ] hexadecimal register dump
+- [x] hexadecimal register dump (`fault`: fault_record + CFSR/HFSR/SHCSR)
 - [x] RX path + bidirectional command console
 - [x] `uptime` command reports live kernel milliseconds
 - [x] `health` command reports live tick + PC13 output-latch state
+- [x] `fault` read-only fault diagnostics command
 - [ ] later: IRQ/DMA TX if justified
 
 ### Phase 6 — I2C and SSD1306 kernel console
@@ -295,3 +297,29 @@ Constraint: STM32F103C8 is a USB Device target here, not a general USB Host plat
 - Physical LED confirmation remains reserved for changes that affect GPIOC/PC13, clock, SysTick, startup/fault paths, or power-related behavior
 - Next implementation boundary: **read-only fault diagnostics console command**
 <!-- END STM32_OS_HEALTH_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_FAULT_CONSOLE_ACCEPTANCE -->
+### Read-only `fault` console acceptance — 2026-09-10
+
+- Firmware image size: `1564 bytes`
+- Firmware SHA-256: `185899CE66C3B8683088284939BED267C9E473EFC9317386913595EE15271072`
+- Command: `fault`
+- Operation: read-only diagnostics
+- Dynamic `fault_record` address: `0x2000001C`, matched against ELF
+- Clean-boot `fault_record`: all reported capture fields zero
+- Clean-boot CFSR: `0x00000000`
+- Clean-boot HFSR: `0x00000000`
+- SHCSR: `0x00070000`; MemManage, BusFault, and UsageFault handlers enabled
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Existing `ping` regression: PASS
+- Existing `uptime` regression: PASS
+- Existing `health` regression: PASS
+- Automated health samples: `8`
+- Total observed SysTick progression: `2598 ms`
+- Observed PC13 output-latch states: `0` and `1`
+- Observed PC13 state transitions: `5`
+- Hexadecimal register dump requirement: satisfied by `fault` via CFSR/HFSR/SHCSR output
+- No routine manual LED confirmation required for this console-only slice
+- Next implementation boundary: **Phase 6 minimal I2C master bring-up for SSD1306**
+<!-- END STM32_OS_FAULT_CONSOLE_ACCEPTANCE -->

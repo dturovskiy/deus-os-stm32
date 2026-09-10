@@ -292,6 +292,39 @@ static int text_equals(const char *a, const char *b)
     return (*a == '\0') && (*b == '\0');
 }
 
+static void console_write_fault(void)
+{
+    uart_write("FAULTREC=");
+    uart_write_hex32((uint32_t)&fault_record);
+    uart_write("\r\n");
+
+    uart_write("MAGIC=");
+    uart_write_hex32(fault_record.magic);
+    uart_write(" EXC=");
+    uart_write_hex32(fault_record.exception_number);
+    uart_write("\r\n");
+
+    uart_write("SP=");
+    uart_write_hex32(fault_record.stacked_sp);
+    uart_write(" VALID=");
+    uart_write_hex32(fault_record.stack_valid);
+    uart_write("\r\n");
+
+    uart_write("PC=");
+    uart_write_hex32(fault_record.pc);
+    uart_write(" LR=");
+    uart_write_hex32(fault_record.lr);
+    uart_write("\r\n");
+
+    uart_write("CFSR=");
+    uart_write_hex32(SCB_CFSR);
+    uart_write(" HFSR=");
+    uart_write_hex32(SCB_HFSR);
+    uart_write(" SHCSR=");
+    uart_write_hex32(SCB_SHCSR);
+    uart_write("\r\n");
+}
+
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
@@ -313,6 +346,10 @@ static void console_execute(void)
         uart_write(" PC13=");
         uart_write_hex32((GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
         uart_write("\r\n");
+    }
+    else if (text_equals(uart_command, "fault") != 0)
+    {
+        console_write_fault();
     }
     else
     {

@@ -40,6 +40,7 @@ Built locally:
 - [x] USART1 RX / bidirectional command console
 - [x] `uptime` kernel introspection command
 - [x] `health` automated SysTick/PC13 regression command
+- [x] `fault` read-only fault diagnostics / SCB register dump command
 - [ ] Native USB Device / CDC console
 - [ ] I2C driver
 - [ ] SSD1306 kernel console
