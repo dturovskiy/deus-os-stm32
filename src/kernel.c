@@ -299,6 +299,12 @@ static void console_execute(void)
     {
         uart_write_line("PONG");
     }
+    else if (text_equals(uart_command, "uptime") != 0)
+    {
+        uart_write("UPTIME_MS=");
+        uart_write_hex32(kernel_time_now());
+        uart_write("\r\n");
+    }
     else
     {
         uart_write_line("ERR");

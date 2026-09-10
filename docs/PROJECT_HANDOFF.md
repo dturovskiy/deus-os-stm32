@@ -404,3 +404,22 @@ Phase 3 governance debt is closed.
 - PC13 SysTick heartbeat after this image: **physically confirmed even**
 - Next implementation boundary: **extend the command set with kernel introspection commands**
 <!-- END STM32_OS_UART_RX_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_UPTIME_ACCEPTANCE -->
+### Console `uptime` acceptance — 2026-09-10
+
+- Firmware image size: `1216 bytes`
+- Firmware SHA-256: `67C08D182D7CF152BD01F449420C9C5445F0D40F3A49D43B6E1A82BBBFCCC988`
+- Command: `uptime`
+- Response format: `UPTIME_MS=0xXXXXXXXX`
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Dynamic `fault_record` verification against ELF: PASS at `0x2000001C`
+- Existing `ping` -> `PONG` regression: PASS
+- First uptime sample: `1936 ms`
+- Second uptime sample: `2938 ms`
+- Measured delta: `1002 ms`
+- SysTick/time API live progression: PASS
+- PC13 regression policy: for console-only changes, automated SysTick/UART health evidence is sufficient; physical LED confirmation is only required when GPIOC/PC13, clock, SysTick, startup/fault paths, or power-related behavior changes
+- Next implementation boundary: **add further kernel introspection commands**
+<!-- END STM32_OS_UPTIME_ACCEPTANCE -->
