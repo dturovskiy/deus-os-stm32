@@ -73,6 +73,12 @@
 
 #define I2C_SR1_SB        (1u << 0)
 #define I2C_SR1_ADDR      (1u << 1)
+#define I2C_SR1_BTF       (1u << 2)
+#define I2C_SR1_TXE       (1u << 7)
+
+#define SSD1306_ADDRESS      0x3Cu
+#define SSD1306_CONTROL_CMD  0x00u
+#define SSD1306_CMD_NOP      0xE3u
 #define I2C_SR1_BERR      (1u << 8)
 #define I2C_SR1_ARLO      (1u << 9)
 #define I2C_SR1_AF        (1u << 10)
@@ -423,6 +429,152 @@ static int i2c1_probe(uint8_t address)
     }
 }
 
+static int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length)
+{
+    uint32_t spins;
+    uint32_t sr1;
+    uint32_t index;
+
+    if ((data == (const uint8_t *)0) || (length == 0u))
+    {
+        return 0;
+    }
+
+    if (i2c1_wait_bus_free() == 0)
+    {
+        return 0;
+    }
+
+    I2C1_SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF);
+    I2C1_CR1 |= I2C_CR1_START;
+
+    spins = I2C_SPIN_LIMIT;
+
+    while ((I2C1_SR1 & I2C_SR1_SB) == 0u)
+    {
+        if (spins == 0u)
+        {
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return 0;
+        }
+
+        --spins;
+    }
+
+    I2C1_DR = ((uint32_t)address << 1);
+
+    spins = I2C_SPIN_LIMIT;
+
+    for (;;)
+    {
+        sr1 = I2C1_SR1;
+
+        if ((sr1 & I2C_SR1_ADDR) != 0u)
+        {
+            (void)I2C1_SR1;
+            (void)I2C1_SR2;
+            break;
+        }
+
+        if ((sr1 & (I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO)) != 0u)
+        {
+            I2C1_SR1 &= ~(I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO);
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return 0;
+        }
+
+        if (spins == 0u)
+        {
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return 0;
+        }
+
+        --spins;
+    }
+
+    for (index = 0u; index < length; ++index)
+    {
+        spins = I2C_SPIN_LIMIT;
+
+        for (;;)
+        {
+            sr1 = I2C1_SR1;
+
+            if ((sr1 & I2C_SR1_TXE) != 0u)
+            {
+                break;
+            }
+
+            if ((sr1 & (I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO)) != 0u)
+            {
+                I2C1_SR1 &= ~(I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO);
+                I2C1_CR1 |= I2C_CR1_STOP;
+                return 0;
+            }
+
+            if (spins == 0u)
+            {
+                I2C1_CR1 |= I2C_CR1_STOP;
+                return 0;
+            }
+
+            --spins;
+        }
+
+        I2C1_DR = data[index];
+    }
+
+    spins = I2C_SPIN_LIMIT;
+
+    for (;;)
+    {
+        sr1 = I2C1_SR1;
+
+        if ((sr1 & I2C_SR1_BTF) != 0u)
+        {
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return 1;
+        }
+
+        if ((sr1 & (I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO)) != 0u)
+        {
+            I2C1_SR1 &= ~(I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO);
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return 0;
+        }
+
+        if (spins == 0u)
+        {
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return 0;
+        }
+
+        --spins;
+    }
+}
+
+static int ssd1306_command(uint8_t command)
+{
+    uint8_t payload[2];
+
+    payload[0] = SSD1306_CONTROL_CMD;
+    payload[1] = command;
+
+    return i2c1_write(SSD1306_ADDRESS, payload, 2u);
+}
+
+static void console_oled_ping(void)
+{
+    if (ssd1306_command(SSD1306_CMD_NOP) != 0)
+    {
+        uart_write_line("OLED_CMD_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_CMD_ERR");
+    }
+}
+
 static void console_i2c_scan(void)
 {
     uint32_t address;
@@ -516,6 +668,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "i2cscan") != 0)
     {
         console_i2c_scan();
+    }
+    else if (text_equals(uart_command, "oledping") != 0)
+    {
+        console_oled_ping();
     }
     else
     {

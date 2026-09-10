@@ -494,3 +494,29 @@ Phase 3 governance debt is closed.
 - SSD1306 candidate 7-bit address: `0x3C`
 - Next implementation boundary: **first SSD1306 command transaction to address `0x3C`**
 <!-- END STM32_OS_I2C1_SCAN_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_SSD1306_NOP_ACCEPTANCE -->
+### First SSD1306 command transaction acceptance — 2026-09-10
+
+- Device: connected SSD1306 candidate at 7-bit address `0x3C`
+- Board wiring names: `B6=SCL`, `B7=SDA`
+- Bus: `I2C1`, `100 kHz`
+- Console command: `oledping`
+- I2C payload: command control byte `0x00`, then SSD1306 NOP command `0xE3`
+- Expected console response: `OLED_CMD_OK`
+- Firmware image size: `2252 bytes`
+- Firmware SHA-256: `AA5F092F9C25E6ED07B2F23DEAFF40AF358F07F89B8544EB1BAE2D47605CC9E6`
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Dynamic `fault_record` verification against ELF: PASS at `0x2000001C`
+- `ping` regression: PASS
+- `uptime` regression: PASS
+- `fault` regression: PASS
+- `health` / automated PC13 regression: PASS
+- I2C scan before transaction: PASS, device present at `0x3C`
+- SSD1306 NOP write: PASS, `oledping` returned `OLED_CMD_OK`
+- I2C scan after transaction: PASS, device remained present at `0x3C`
+- No visible OLED change was expected because `0xE3` is a no-operation command
+- Full SSD1306 initialization/display rendering remains pending
+- Next implementation boundary: **SSD1306 initialization sequence and first visible display output**
+<!-- END STM32_OS_SSD1306_NOP_ACCEPTANCE -->

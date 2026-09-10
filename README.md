@@ -43,6 +43,7 @@ Built locally:
 - [x] `fault` read-only fault diagnostics / SCB register dump command
 - [ ] Native USB Device / CDC console
 - [x] I2C1 master + hardware bus scan (B6/B7, 100 kHz, SSD1306 at 0x3C)
+- [x] SSD1306 command transport at 0x3C (`oledping` / NOP transaction)
 - [ ] SSD1306 kernel console
 - [ ] Task scheduler
 - [ ] PendSV context switching
