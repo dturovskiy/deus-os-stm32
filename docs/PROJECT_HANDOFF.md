@@ -471,3 +471,26 @@ Phase 3 governance debt is closed.
 - No routine manual LED confirmation required for this console-only slice
 - Next implementation boundary: **Phase 6 minimal I2C master bring-up for SSD1306**
 <!-- END STM32_OS_FAULT_CONSOLE_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_I2C1_SCAN_ACCEPTANCE -->
+### Phase 6 I2C1 hardware scan acceptance — 2026-09-10
+
+- Peripheral: `I2C1`
+- Board wiring names: `B6=SCL`, `B7=SDA`
+- Bus speed: `100 kHz`
+- Console command: `i2cscan`
+- Scan range: `0x08..0x77`
+- Firmware image size: `1972 bytes`
+- Firmware SHA-256: `B8F894631076F34EA259E36C0A6744D4FAA6A3B69657F58CEFED72893D25945B`
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Dynamic `fault_record` verification against ELF: PASS at `0x2000001C`
+- `ping` regression: PASS
+- `uptime` regression: PASS
+- `fault` regression: PASS
+- `health` / automated PC13 regression: PASS
+- I2C1 bus transaction: PASS
+- Devices discovered: `1`
+- SSD1306 candidate 7-bit address: `0x3C`
+- Next implementation boundary: **first SSD1306 command transaction to address `0x3C`**
+<!-- END STM32_OS_I2C1_SCAN_ACCEPTANCE -->

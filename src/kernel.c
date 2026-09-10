@@ -12,6 +12,8 @@
 #define RCC_CR          REG32(0x40021000u)
 #define RCC_CFGR        REG32(0x40021004u)
 #define RCC_APB2ENR     REG32(0x40021018u)
+#define RCC_APB1RSTR     REG32(0x40021010u)
+#define RCC_APB1ENR      REG32(0x4002101Cu)
 
 #define RCC_HSEON       (1u << 16)
 #define RCC_HSERDY      (1u << 17)
@@ -33,6 +35,7 @@
 
 /* GPIOA / GPIOC */
 #define GPIOA_CRH       REG32(0x40010804u)
+#define GPIOB_CRL       REG32(0x40010C00u)
 
 #define GPIOC_CRH       REG32(0x40011004u)
 #define GPIOC_ODR       REG32(0x4001100Cu)
@@ -52,6 +55,33 @@
 #define USART_CR1_RE    (1u << 2)
 #define USART_CR1_TE    (1u << 3)
 #define USART_CR1_UE    (1u << 13)
+#define I2C1_CR1         REG32(0x40005400u)
+#define I2C1_CR2         REG32(0x40005404u)
+#define I2C1_DR          REG32(0x40005410u)
+#define I2C1_SR1         REG32(0x40005414u)
+#define I2C1_SR2         REG32(0x40005418u)
+#define I2C1_CCR         REG32(0x4000541Cu)
+#define I2C1_TRISE       REG32(0x40005420u)
+
+#define RCC_APB2ENR_IOPBEN   (1u << 3)
+#define RCC_APB1ENR_I2C1EN   (1u << 21)
+#define RCC_APB1RSTR_I2C1RST (1u << 21)
+
+#define I2C_CR1_PE        (1u << 0)
+#define I2C_CR1_START     (1u << 8)
+#define I2C_CR1_STOP      (1u << 9)
+
+#define I2C_SR1_SB        (1u << 0)
+#define I2C_SR1_ADDR      (1u << 1)
+#define I2C_SR1_BERR      (1u << 8)
+#define I2C_SR1_ARLO      (1u << 9)
+#define I2C_SR1_AF        (1u << 10)
+#define I2C_SR2_BUSY      (1u << 1)
+
+#define I2C1_PCLK_MHZ     36u
+#define I2C1_CCR_100KHZ   180u
+#define I2C1_TRISE_100KHZ 37u
+#define I2C_SPIN_LIMIT    100000u
 
 /*
  * PCLK2 = 72 MHz.
@@ -292,6 +322,138 @@ static int text_equals(const char *a, const char *b)
     return (*a == '\0') && (*b == '\0');
 }
 
+static void i2c1_init(void)
+{
+    RCC_APB2ENR |= RCC_APB2ENR_IOPBEN;
+    RCC_APB1ENR |= RCC_APB1ENR_I2C1EN;
+
+    GPIOB_CRL &= ~((0xFu << 24) | (0xFu << 28));
+    GPIOB_CRL |=  ((0xFu << 24) | (0xFu << 28));
+
+    RCC_APB1RSTR |= RCC_APB1RSTR_I2C1RST;
+    RCC_APB1RSTR &= ~RCC_APB1RSTR_I2C1RST;
+
+    I2C1_CR1 = 0u;
+    I2C1_CR2 = I2C1_PCLK_MHZ;
+    I2C1_CCR = I2C1_CCR_100KHZ;
+    I2C1_TRISE = I2C1_TRISE_100KHZ;
+    I2C1_CR1 = I2C_CR1_PE;
+}
+
+static int i2c1_wait_bus_free(void)
+{
+    uint32_t spins = I2C_SPIN_LIMIT;
+
+    while ((I2C1_SR2 & I2C_SR2_BUSY) != 0u)
+    {
+        if (spins == 0u)
+        {
+            return 0;
+        }
+
+        --spins;
+    }
+
+    return 1;
+}
+
+static int i2c1_probe(uint8_t address)
+{
+    uint32_t spins;
+    uint32_t sr1;
+
+    if (i2c1_wait_bus_free() == 0)
+    {
+        return -1;
+    }
+
+    I2C1_SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF);
+    I2C1_CR1 |= I2C_CR1_START;
+
+    spins = I2C_SPIN_LIMIT;
+
+    while ((I2C1_SR1 & I2C_SR1_SB) == 0u)
+    {
+        if (spins == 0u)
+        {
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return -1;
+        }
+
+        --spins;
+    }
+
+    I2C1_DR = ((uint32_t)address << 1);
+
+    spins = I2C_SPIN_LIMIT;
+
+    for (;;)
+    {
+        sr1 = I2C1_SR1;
+
+        if ((sr1 & I2C_SR1_ADDR) != 0u)
+        {
+            (void)I2C1_SR1;
+            (void)I2C1_SR2;
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return 1;
+        }
+
+        if ((sr1 & I2C_SR1_AF) != 0u)
+        {
+            I2C1_SR1 &= ~I2C_SR1_AF;
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return 0;
+        }
+
+        if ((sr1 & (I2C_SR1_BERR | I2C_SR1_ARLO)) != 0u)
+        {
+            I2C1_SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO);
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return -1;
+        }
+
+        if (spins == 0u)
+        {
+            I2C1_CR1 |= I2C_CR1_STOP;
+            return -1;
+        }
+
+        --spins;
+    }
+}
+
+static void console_i2c_scan(void)
+{
+    uint32_t address;
+    uint32_t count = 0u;
+
+    uart_write_line("I2C_SCAN");
+
+    for (address = 0x08u; address <= 0x77u; ++address)
+    {
+        int result = i2c1_probe((uint8_t)address);
+
+        if (result < 0)
+        {
+            uart_write_line("I2C_BUS_ERR");
+            return;
+        }
+
+        if (result != 0)
+        {
+            uart_write("ADDR=");
+            uart_write_hex32(address);
+            uart_write("\r\n");
+            ++count;
+        }
+    }
+
+    uart_write("COUNT=");
+    uart_write_hex32(count);
+    uart_write("\r\n");
+}
+
 static void console_write_fault(void)
 {
     uart_write("FAULTREC=");
@@ -350,6 +512,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "fault") != 0)
     {
         console_write_fault();
+    }
+    else if (text_equals(uart_command, "i2cscan") != 0)
+    {
+        console_i2c_scan();
     }
     else
     {
@@ -521,6 +687,7 @@ void kernel_main(void)
 
     gpio_init();
     uart_init();
+    i2c1_init();
     faults_init();
     systick_init(core_clock_hz);
 

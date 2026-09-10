@@ -23,13 +23,15 @@ Current accepted hardware baseline:
 
 Current implementation slice:
 
-- USART1 bidirectional diagnostic console is hardware accepted
-- `ping`, `uptime`, and `health` regressions are hardware accepted
-- `fault` read-only diagnostics are hardware accepted
-- `fault` exposes `fault_record`, CFSR, HFSR, and SHCSR in hexadecimal
-- automated console regression verifies SysTick progress and PC13 output-latch toggling
-- Phase 5 diagnostic-console objectives are satisfied at polling-console scope
-- next target: Phase 6 minimal I2C master bring-up for SSD1306
+- Phase 5 polling diagnostic console is hardware accepted
+- I2C1 master bring-up is hardware accepted
+- board pins: B6=SCL and B7=SDA
+- bus speed: 100 kHz standard mode
+- `i2cscan` is hardware accepted
+- one device ACKed at 7-bit address `0x3C`
+- the detected device is the connected SSD1306 candidate
+- all console, fault, SysTick, and PC13 regressions passed with the I2C image
+- next target: send the first SSD1306 command transaction to address `0x3C`
 
 Acceptance for the current slice requires:
 
@@ -323,3 +325,26 @@ Constraint: STM32F103C8 is a USB Device target here, not a general USB Host plat
 - No routine manual LED confirmation required for this console-only slice
 - Next implementation boundary: **Phase 6 minimal I2C master bring-up for SSD1306**
 <!-- END STM32_OS_FAULT_CONSOLE_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_I2C1_SCAN_ACCEPTANCE -->
+### Phase 6 I2C1 hardware scan acceptance — 2026-09-10
+
+- Peripheral: `I2C1`
+- Board wiring names: `B6=SCL`, `B7=SDA`
+- Bus speed: `100 kHz`
+- Console command: `i2cscan`
+- Scan range: `0x08..0x77`
+- Firmware image size: `1972 bytes`
+- Firmware SHA-256: `B8F894631076F34EA259E36C0A6744D4FAA6A3B69657F58CEFED72893D25945B`
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Dynamic `fault_record` verification against ELF: PASS at `0x2000001C`
+- `ping` regression: PASS
+- `uptime` regression: PASS
+- `fault` regression: PASS
+- `health` / automated PC13 regression: PASS
+- I2C1 bus transaction: PASS
+- Devices discovered: `1`
+- SSD1306 candidate 7-bit address: `0x3C`
+- Next implementation boundary: **first SSD1306 command transaction to address `0x3C`**
+<!-- END STM32_OS_I2C1_SCAN_ACCEPTANCE -->
