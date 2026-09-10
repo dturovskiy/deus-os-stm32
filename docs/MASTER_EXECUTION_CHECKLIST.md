@@ -24,11 +24,11 @@ Current accepted hardware baseline:
 Current implementation slice:
 
 - USART1 bidirectional diagnostic console is hardware accepted
-- PA9 TX + PA10 RX at 115200 8N1
 - `ping` -> `PONG` transport regression is hardware accepted
-- `uptime` -> `UPTIME_MS=0xXXXXXXXX` is hardware accepted
-- next target: add more kernel introspection commands without weakening the low-level debug path
-- automated UART health checks are the normal regression signal for console-only changes
+- `uptime` -> live kernel milliseconds is hardware accepted
+- `health` -> live SysTick + PC13 output-latch state is hardware accepted
+- automated console regression now verifies SysTick progress and PC13 toggling without routine manual LED checks
+- next target: expose fault diagnostics through a read-only console command
 
 Acceptance for the current slice requires:
 
@@ -89,6 +89,7 @@ Acceptance for the current slice requires:
 - [ ] hexadecimal register dump
 - [x] RX path + bidirectional command console
 - [x] `uptime` command reports live kernel milliseconds
+- [x] `health` command reports live tick + PC13 output-latch state
 - [ ] later: IRQ/DMA TX if justified
 
 ### Phase 6 — I2C and SSD1306 kernel console
@@ -272,3 +273,25 @@ Constraint: STM32F103C8 is a USB Device target here, not a general USB Host plat
 - PC13 regression policy: for console-only changes, automated SysTick/UART health evidence is sufficient; physical LED confirmation is only required when GPIOC/PC13, clock, SysTick, startup/fault paths, or power-related behavior changes
 - Next implementation boundary: **add further kernel introspection commands**
 <!-- END STM32_OS_UPTIME_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_HEALTH_ACCEPTANCE -->
+### Console `health` acceptance — 2026-09-10
+
+- Firmware image size: `1292 bytes`
+- Firmware SHA-256: `5BA9FED465FD9F7988B3156CA612EFB88021B1071C6137ABF1D7D1B82042C203`
+- Command: `health`
+- Response format: `HEALTH TICK=0xXXXXXXXX PC13=0x00000000|0x00000001`
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Dynamic `fault_record` verification against ELF: PASS at `0x2000001C`
+- Existing `ping` -> `PONG` regression: PASS
+- Existing `uptime` regression: PASS
+- Automated health samples: `10`
+- Total observed SysTick progression: `3399 ms`
+- Observed PC13 output-latch states: `0` and `1`
+- Observed PC13 state transitions: `7`
+- Automated SysTick/PC13 regression: PASS
+- For console-only changes, this automated health evidence replaces routine manual LED confirmation
+- Physical LED confirmation remains reserved for changes that affect GPIOC/PC13, clock, SysTick, startup/fault paths, or power-related behavior
+- Next implementation boundary: **read-only fault diagnostics console command**
+<!-- END STM32_OS_HEALTH_ACCEPTANCE -->

@@ -35,6 +35,7 @@
 #define GPIOA_CRH       REG32(0x40010804u)
 
 #define GPIOC_CRH       REG32(0x40011004u)
+#define GPIOC_ODR       REG32(0x4001100Cu)
 #define GPIOC_BSRR      REG32(0x40011010u)
 
 #define GPIO_PIN_13     (1u << 13)
@@ -303,6 +304,14 @@ static void console_execute(void)
     {
         uart_write("UPTIME_MS=");
         uart_write_hex32(kernel_time_now());
+        uart_write("\r\n");
+    }
+    else if (text_equals(uart_command, "health") != 0)
+    {
+        uart_write("HEALTH TICK=");
+        uart_write_hex32(kernel_time_now());
+        uart_write(" PC13=");
+        uart_write_hex32((GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
         uart_write("\r\n");
     }
     else

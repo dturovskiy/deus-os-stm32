@@ -39,6 +39,7 @@ Built locally:
 - [x] Stable 1 ms kernel time API with wraparound-safe comparisons
 - [x] USART1 RX / bidirectional command console
 - [x] `uptime` kernel introspection command
+- [x] `health` automated SysTick/PC13 regression command
 - [ ] Native USB Device / CDC console
 - [ ] I2C driver
 - [ ] SSD1306 kernel console
