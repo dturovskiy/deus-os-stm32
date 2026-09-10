@@ -23,11 +23,11 @@ Current accepted hardware baseline:
 
 Current implementation slice:
 
-- UART diagnostic console
-- TX polling path is hardware accepted
-- next target: USART1 RX on PA10
-- bidirectional command console / shell transport
-- preserve deterministic fault capture, LED panic, and UART TX diagnostics
+- USART1 bidirectional diagnostic console is hardware accepted
+- PA9 TX + PA10 RX at 115200 8N1
+- first command protocol proven: `ping` -> `PONG`
+- next target: extend the command set with useful kernel introspection
+- preserve deterministic fault capture, LED panic, and low-level UART path
 
 Acceptance for the current slice requires:
 
@@ -86,7 +86,7 @@ Acceptance for the current slice requires:
 - [x] kernel log primitive
 - [x] boot banner
 - [ ] hexadecimal register dump
-- [ ] RX path + bidirectional command console
+- [x] RX path + bidirectional command console
 - [ ] later: IRQ/DMA TX if justified
 
 ### Phase 6 — I2C and SSD1306 kernel console
@@ -233,3 +233,21 @@ Constraint: STM32F103C8 is a USB Device target here, not a general USB Host plat
 - Phase 3 time API remains hardware accepted
 - Next implementation boundary: **USART1 RX / bidirectional command console**
 <!-- END STM32_OS_TIME_API_HW_REGRESSION -->
+
+<!-- BEGIN STM32_OS_UART_RX_ACCEPTANCE -->
+### USART1 RX / bidirectional console acceptance — 2026-09-10
+
+- Firmware image size: `1140 bytes`
+- Firmware SHA-256: `13715B1E206AAD6A8F2EE82E96584623954905C7CAB03611E87514E1D37BE954`
+- USART1 TX: `PA9`
+- USART1 RX: `PA10`
+- Serial format: `115200 8N1`
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Host command: `ping`
+- MCU response: `PONG`
+- Full host -> PA10 RX -> parser -> PA9 TX -> host path: PASS
+- `fault_record` observed at `0x2000001C`; tooling must continue resolving its address dynamically
+- PC13 SysTick heartbeat after this image: **physically confirmed even**
+- Next implementation boundary: **extend the command set with kernel introspection commands**
+<!-- END STM32_OS_UART_RX_ACCEPTANCE -->

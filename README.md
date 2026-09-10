@@ -37,7 +37,7 @@ Built locally:
 - [x] Fault diagnostics
 - [x] USART1/PA9 polling TX diagnostic console
 - [x] Stable 1 ms kernel time API with wraparound-safe comparisons
-- [ ] USART1 RX / bidirectional command console
+- [x] USART1 RX / bidirectional command console
 - [ ] Native USB Device / CDC console
 - [ ] I2C driver
 - [ ] SSD1306 kernel console

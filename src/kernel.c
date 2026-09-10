@@ -46,7 +46,9 @@
 #define USART1_BRR      REG32(0x40013808u)
 #define USART1_CR1      REG32(0x4001380Cu)
 
+#define USART_SR_RXNE   (1u << 5)
 #define USART_SR_TXE    (1u << 7)
+#define USART_CR1_RE    (1u << 2)
 #define USART_CR1_TE    (1u << 3)
 #define USART_CR1_UE    (1u << 13)
 
@@ -183,11 +185,19 @@ static void uart_init(void)
      */
     RCC_APB2ENR |= RCC_IOPAEN | RCC_USART1EN;
 
-    GPIOA_CRH &= ~(0xFu << 4);
-    GPIOA_CRH |=  (0xBu << 4);
+    /*
+     * PA10 / USART1_RX:
+     * MODE10 = 00 -> input
+     * CNF10  = 01 -> floating input
+     * nibble = 0b0100 = 0x4
+     *
+     * HW-193 TXD is connected to PA10 for the bidirectional console.
+     */
+    GPIOA_CRH &= ~((0xFu << 4) | (0xFu << 8));
+    GPIOA_CRH |=  ((0xBu << 4) | (0x4u << 8));
 
     USART1_BRR = USART1_BRR_115200;
-    USART1_CR1 = USART_CR1_TE | USART_CR1_UE;
+    USART1_CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
 }
 
 static void uart_putc(char c)
@@ -197,6 +207,17 @@ static void uart_putc(char c)
     }
 
     USART1_DR = (uint32_t)(uint8_t)c;
+}
+
+static int uart_try_getc(char *c)
+{
+    if ((USART1_SR & USART_SR_RXNE) == 0u)
+    {
+        return 0;
+    }
+
+    *c = (char)(uint8_t)USART1_DR;
+    return 1;
 }
 
 static void uart_write(const char *text)
@@ -247,6 +268,82 @@ static void uart_boot_banner(uint32_t core_clock_hz)
     uart_write("FAULTREC=");
     uart_write_hex32((uint32_t)&fault_record);
     uart_write("\r\n");
+}
+
+#define UART_COMMAND_CAPACITY 16u
+
+static char uart_command[UART_COMMAND_CAPACITY];
+static uint32_t uart_command_length;
+
+static int text_equals(const char *a, const char *b)
+{
+    while ((*a != '\0') && (*b != '\0'))
+    {
+        if (*a != *b)
+        {
+            return 0;
+        }
+
+        ++a;
+        ++b;
+    }
+
+    return (*a == '\0') && (*b == '\0');
+}
+
+static void console_execute(void)
+{
+    uart_command[uart_command_length] = '\0';
+
+    if (text_equals(uart_command, "ping") != 0)
+    {
+        uart_write_line("PONG");
+    }
+    else
+    {
+        uart_write_line("ERR");
+    }
+
+    uart_command_length = 0u;
+}
+
+static void console_poll(void)
+{
+    char c;
+
+    while (uart_try_getc(&c) != 0)
+    {
+        if ((c == '\r') || (c == '\n'))
+        {
+            if (uart_command_length != 0u)
+            {
+                console_execute();
+            }
+
+            continue;
+        }
+
+        if ((c == '\b') || ((uint8_t)c == 0x7Fu))
+        {
+            if (uart_command_length != 0u)
+            {
+                --uart_command_length;
+            }
+
+            continue;
+        }
+
+        if (uart_command_length < (UART_COMMAND_CAPACITY - 1u))
+        {
+            uart_command[uart_command_length] = c;
+            ++uart_command_length;
+        }
+        else
+        {
+            uart_command_length = 0u;
+            uart_write_line("ERR");
+        }
+    }
 }
 
 static void faults_init(void)
@@ -377,8 +474,13 @@ void kernel_main(void)
 
     uart_boot_banner(core_clock_hz);
 
+    /*
+     * Poll RX continuously for this first RX milestone.
+     * A later USART1 RX interrupt/ring-buffer slice can restore WFI idle
+     * without risking UART overrun at 115200 baud.
+     */
     for (;;)
     {
-        __asm volatile ("wfi");
+        console_poll();
     }
 }

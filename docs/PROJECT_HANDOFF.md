@@ -386,3 +386,21 @@ Phase 3 governance debt is closed.
 - Phase 3 time API remains hardware accepted
 - Next implementation boundary: **USART1 RX / bidirectional command console**
 <!-- END STM32_OS_TIME_API_HW_REGRESSION -->
+
+<!-- BEGIN STM32_OS_UART_RX_ACCEPTANCE -->
+### USART1 RX / bidirectional console acceptance — 2026-09-10
+
+- Firmware image size: `1140 bytes`
+- Firmware SHA-256: `13715B1E206AAD6A8F2EE82E96584623954905C7CAB03611E87514E1D37BE954`
+- USART1 TX: `PA9`
+- USART1 RX: `PA10`
+- Serial format: `115200 8N1`
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Host command: `ping`
+- MCU response: `PONG`
+- Full host -> PA10 RX -> parser -> PA9 TX -> host path: PASS
+- `fault_record` observed at `0x2000001C`; tooling must continue resolving its address dynamically
+- PC13 SysTick heartbeat after this image: **physically confirmed even**
+- Next implementation boundary: **extend the command set with kernel introspection commands**
+<!-- END STM32_OS_UART_RX_ACCEPTANCE -->
