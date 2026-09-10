@@ -78,7 +78,13 @@
 
 #define SSD1306_ADDRESS      0x3Cu
 #define SSD1306_CONTROL_CMD  0x00u
+#define SSD1306_CONTROL_DATA 0x40u
 #define SSD1306_CMD_NOP      0xE3u
+
+#define SSD1306_WIDTH        128u
+#define SSD1306_HEIGHT       64u
+#define SSD1306_PAGES        (SSD1306_HEIGHT / 8u)
+#define SSD1306_PATTERN_DATA 16u
 #define I2C_SR1_BERR      (1u << 8)
 #define I2C_SR1_ARLO      (1u << 9)
 #define I2C_SR1_AF        (1u << 10)
@@ -563,6 +569,113 @@ static int ssd1306_command(uint8_t command)
     return i2c1_write(SSD1306_ADDRESS, payload, 2u);
 }
 
+static int ssd1306_initialize_for_test(void)
+{
+    static const uint8_t init_packet[] =
+    {
+        SSD1306_CONTROL_CMD,
+
+        0xAEu,       /* display off */
+        0xD5u, 0x80u,/* display clock divide / oscillator */
+        0xA8u, 0x3Fu,/* multiplex ratio 1/64 */
+        0xD3u, 0x00u,/* display offset */
+        0x40u,       /* display start line = 0 */
+        0x8Du, 0x14u,/* charge pump on */
+        0x20u, 0x00u,/* horizontal addressing mode */
+        0xA1u,       /* segment remap */
+        0xC8u,       /* COM output scan direction remapped */
+        0xDAu, 0x12u,/* COM pins for 128x64 panel */
+        0x81u, 0xCFu,/* contrast */
+        0xD9u, 0xF1u,/* pre-charge period */
+        0xDBu, 0x40u,/* VCOMH deselect level */
+        0xA4u,       /* display follows RAM */
+        0xA6u        /* normal display */
+    };
+
+    return i2c1_write(
+        SSD1306_ADDRESS,
+        init_packet,
+        (uint32_t)sizeof(init_packet)
+    );
+}
+
+static int ssd1306_set_full_window(void)
+{
+    static const uint8_t window_packet[] =
+    {
+        SSD1306_CONTROL_CMD,
+        0x21u, 0x00u, 0x7Fu, /* columns 0..127 */
+        0x22u, 0x00u, 0x07u  /* pages 0..7 */
+    };
+
+    return i2c1_write(
+        SSD1306_ADDRESS,
+        window_packet,
+        (uint32_t)sizeof(window_packet)
+    );
+}
+
+static int ssd1306_fill_checkerboard(void)
+{
+    static const uint8_t pattern_packet[] =
+    {
+        SSD1306_CONTROL_DATA,
+        0xAAu, 0x55u, 0xAAu, 0x55u,
+        0xAAu, 0x55u, 0xAAu, 0x55u,
+        0xAAu, 0x55u, 0xAAu, 0x55u,
+        0xAAu, 0x55u, 0xAAu, 0x55u
+    };
+
+    uint32_t bytes_remaining = SSD1306_WIDTH * SSD1306_PAGES;
+
+    while (bytes_remaining != 0u)
+    {
+        if (i2c1_write(
+                SSD1306_ADDRESS,
+                pattern_packet,
+                (uint32_t)sizeof(pattern_packet)) == 0)
+        {
+            return 0;
+        }
+
+        bytes_remaining -= SSD1306_PATTERN_DATA;
+    }
+
+    return 1;
+}
+
+static int ssd1306_show_test_pattern(void)
+{
+    if (ssd1306_initialize_for_test() == 0)
+    {
+        return 0;
+    }
+
+    if (ssd1306_set_full_window() == 0)
+    {
+        return 0;
+    }
+
+    if (ssd1306_fill_checkerboard() == 0)
+    {
+        return 0;
+    }
+
+    return ssd1306_command(0xAFu);
+}
+
+static void console_oled_test(void)
+{
+    if (ssd1306_show_test_pattern() != 0)
+    {
+        uart_write_line("OLED_TEST_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_TEST_ERR");
+    }
+}
+
 static void console_oled_ping(void)
 {
     if (ssd1306_command(SSD1306_CMD_NOP) != 0)
@@ -672,6 +785,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "oledping") != 0)
     {
         console_oled_ping();
+    }
+    else if (text_equals(uart_command, "oledtest") != 0)
+    {
+        console_oled_test();
     }
     else
     {

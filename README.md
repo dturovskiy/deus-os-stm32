@@ -44,6 +44,7 @@ Built locally:
 - [ ] Native USB Device / CDC console
 - [x] I2C1 master + hardware bus scan (B6/B7, 100 kHz, SSD1306 at 0x3C)
 - [x] SSD1306 command transport at 0x3C (`oledping` / NOP transaction)
+- [x] SSD1306 initialization + first visible 128x64 checkerboard output (`oledtest`)
 - [ ] SSD1306 kernel console
 - [ ] Task scheduler
 - [ ] PendSV context switching

@@ -520,3 +520,33 @@ Phase 3 governance debt is closed.
 - Full SSD1306 initialization/display rendering remains pending
 - Next implementation boundary: **SSD1306 initialization sequence and first visible display output**
 <!-- END STM32_OS_SSD1306_NOP_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_SSD1306_VISIBLE_ACCEPTANCE -->
+### First visible SSD1306 output acceptance — 2026-09-10
+
+- Device: SSD1306-compatible 128x64 OLED at 7-bit address `0x3C`
+- Board wiring names: `B6=SCL`, `B7=SDA`
+- Bus: `I2C1`, `100 kHz`
+- Console command: `oledtest`
+- Initialization sequence: hardware accepted
+- Addressing mode: horizontal
+- Display window: columns `0..127`, pages `0..7`
+- Display RAM payload: `1024 bytes`
+- Test pattern: alternating `0xAA` / `0x55` checkerboard
+- Firmware image size: `2444 bytes`
+- Firmware SHA-256: `46D97925518CD8924278D6A27709E2BEF96AB89E2C49E98E01E88BA40625A5D7`
+- Flash + verify + reset: PASS at 4000 KHz SWD
+- Boot banner capture over COM3: PASS
+- Dynamic `fault_record` verification against ELF: PASS at `0x2000001C`
+- `ping` / `uptime` / `fault` regressions: PASS
+- `health` / automated PC13 regression: PASS
+- I2C scan before display transaction: PASS, OLED at `0x3C`
+- `oledping`: PASS, `OLED_CMD_OK`
+- `oledtest`: PASS, `OLED_TEST_OK`
+- I2C scan after display transaction: PASS, OLED still at `0x3C`
+- Kernel remained responsive after the 1024-byte display write: PASS
+- Physical display output: PASS; user entered `YES` after visually confirming checkerboard output
+- This proves real visible OLED output, not only I2C ACK/protocol behavior
+- Full framebuffer-backed kernel console and text rendering remain pending
+- Next implementation boundary: **framebuffer-backed drawing primitives and minimal text rendering**
+<!-- END STM32_OS_SSD1306_VISIBLE_ACCEPTANCE -->
