@@ -1,0 +1,375 @@
+# STM32 OS — Project Handoff
+
+Updated: 2026-09-10
+
+## Project identity
+
+```text
+Project root: D:\Projects\STM32\OS
+Tools root:   D:\Projects\STM32\Tools
+Downloads:    C:\Users\DETU\Downloads\
+```
+
+## Hardware
+
+Target board is a Blue Pill-style STM32 board.
+
+Programmer evidence:
+
+- ST-LINK V2
+- firmware V2J48S7
+- SWD connection works at 4000 kHz
+- target voltage observed around 3.15-3.16 V
+
+Target evidence from STM32CubeProgrammer:
+
+- Device ID: 0x410
+- Revision ID: Rev X
+- Device: STM32F101/F102/F103 Medium-density
+- NVM size: 64 KBytes
+- CPU: Cortex-M3
+
+Known wiring:
+
+```text
+STM32  <-> ST-LINK
+GND        GND
+DCLK       SWCLK
+DIO        SWDIO
+3.3V       3.3V
+```
+
+Do not simultaneously power the Blue Pill from its micro-USB while 3.3 V power is being supplied from this ST-LINK wiring.
+
+Available future display:
+
+- SSD1306-class OLED
+- 128x64
+- 4-pin I2C-style module: GND, VCC, SCK/SCL, SDA
+
+Possible future networking hardware:
+
+- ESP-01 / ESP8266
+
+## Host/tooling
+
+Host:
+
+- Windows 10 Home
+- AMD64 host architecture
+- PowerShell 7
+
+ARM toolchain:
+
+```text
+D:\Projects\STM32\Tools\arm-gnu-toolchain-15.3.rel1-mingw-w64-x86_64-arm-none-eabi\bin
+```
+
+Observed versions:
+
+- arm-none-eabi-gcc 15.3.1
+- GNU assembler 2.45.1.20260126
+- GNU ld 2.45.1.20260126
+- GDB 16.3.90.20250906-git
+
+STM32CubeProgrammer CLI:
+
+```text
+D:\Projects\STM32\Tools\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe
+```
+
+Observed STM32CubeProgrammer version:
+
+- v2.23.0
+
+Important operational fact:
+
+- fully close STM32CubeProgrammer GUI before using CLI, because the GUI can hold the ST-LINK device and cause `DEV_CONNECT_ERR`
+
+OpenOCD is not installed/required yet. Add it when instruction-level interactive debugging becomes useful.
+
+VS Code is optional; the workflow can be driven entirely from PowerShell plus generated scripts/logs.
+
+## Project layout
+
+```text
+D:\Projects\STM32\OS\
+├── build\
+├── docs\
+├── include\
+├── linker\
+│   └── stm32f103c8.ld
+├── scripts\
+└── src\
+    ├── startup.s
+    └── kernel.c
+```
+
+## Accepted milestones
+
+### Toolchain
+Accepted.
+
+A Cortex-M3/Thumb object was successfully compiled and disassembled.
+
+### Target discovery
+Accepted.
+
+ST-LINK connected to the target and STM32CubeProgrammer reported Device ID 0x410, Cortex-M3, 64 KiB NVM.
+
+### Original Flash backup
+Accepted.
+
+A full 64 KiB original Flash backup was captured before replacing the previous firmware.
+
+### Custom boot image
+Accepted.
+
+The initial custom image had:
+
+```text
+Initial MSP  = 0x20005000
+Reset vector = 0x08000041
+```
+
+Custom Reset_Handler initializes `.data`, clears `.bss`, and enters `kernel_main()`.
+
+### First hardware execution
+Accepted.
+
+Custom kernel image was:
+
+- flashed successfully
+- verified successfully
+- reset successfully
+- physically proven by blinking the Blue Pill PC13 LED
+
+The accepted PC13 image was 208 bytes.
+
+## Current source state
+
+Current production source contains:
+
+- custom Reset_Handler and core vector table
+- 72 MHz clock setup from 8 MHz HSE using PLL x9
+- SysTick at 1 kHz
+- global `kernel_ticks`
+- WFI idle loop
+- NMI handler
+- HardFault handler
+- MemManage handler
+- BusFault handler
+- UsageFault handler
+- assembly MSP/PSP selection using EXC_RETURN
+- C `fault_capture()`
+- persistent `fault_record` in SRAM
+- capture of stacked r0-r3, r12, lr, pc, xPSR
+- capture of ICSR, VTOR, SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR, AFSR
+- deterministic panic LED pattern
+
+Current production image evidence:
+
+```text
+Image size:       624 bytes
+Initial MSP:      0x20005000
+Reset vector:     0x08000041
+fault_record:     0x20000000
+SHA-256:          F3E4FB67EC8C160BA0EE03EE7A47C6D03694773652498CBB576D8D192BD1BE26
+```
+
+Production kernel is currently flashed and PC13 is physically confirmed to blink evenly from the SysTick path.
+
+## Accepted Clock/SysTick hardware milestone
+
+Accepted on 2026-09-10.
+
+Validated build evidence:
+
+- text: 320 bytes
+- data: 0 bytes
+- bss: 12 bytes
+- Initial MSP: 0x20005000
+- Reset vector: 0x08000041
+- SysTick vector: 0x08000081
+- `Reset_Handler`, `SysTick_Handler`, `kernel_main`, and `kernel_ticks` present
+- `WFI` present in linked code
+- image SHA-256: 578C1A734685DA36E50AE7BC3F9F470769FCC4709AEC69B3CFD64737F42310AA
+
+Hardware acceptance evidence:
+
+- image flashed successfully through STM32CubeProgrammer CLI
+- download verified successfully
+- MCU software reset completed
+- PC13 continued blinking physically after the SysTick image was flashed
+
+This proves the current kernel reaches `kernel_main()`, switches to the intended clock configuration, enables SysTick interrupts, repeatedly executes the SysTick handler, and returns to the `WFI` idle loop between interrupts.
+
+## Accepted fault-diagnostics hardware milestone
+
+Accepted on 2026-09-10.
+
+Production fault-diagnostics image:
+
+```text
+Image size:   624 bytes
+SHA-256:      F3E4FB67EC8C160BA0EE03EE7A47C6D03694773652498CBB576D8D192BD1BE26
+fault_record: 0x20000000
+```
+
+Controlled UsageFault test evidence:
+
+```text
+fault_record.magic      = 0xFA17FA17
+exception_number        = 6
+EXC_RETURN              = 0xFFFFFFF9
+stacked_sp              = 0x20004FE0
+stack_valid             = 1
+stacked pc              = 0x0800025C
+CFSR                    = 0x00010000
+ICSR.VECTACTIVE         = 6
+```
+
+The stacked PC matched the intentionally executed `UDF #0` instruction at `0x0800025C`.
+
+Physical acceptance:
+
+- panic LED repeated six short blinks followed by a pause
+- fault_record was read successfully over SWD HOTPLUG without reset
+- normal 624-byte production image was restored afterward
+- production image verified successfully
+- PC13 returned to normal even SysTick-driven blinking
+
+## Exact next boundary
+
+Next implementation slice: UART diagnostic console.
+
+First target:
+
+1. use USART1
+2. use PA9 as TX
+3. configure GPIO/USART registers directly
+4. polling transmit only
+5. emit a small kernel boot banner
+6. add hexadecimal output primitive
+7. preserve normal SysTick/PC13 behavior
+8. validate source/build before flashing
+9. perform physical UART-output proof only when a suitable USB-UART receiver is available
+
+Do not add interrupt-driven UART, DMA, printf, libc, OLED, scheduler, or ESP8266 in this slice.
+
+## Current non-goals
+
+Do not implement yet:
+
+- scheduler
+- PendSV context switching
+- OLED driver
+- ESP8266 networking
+- dynamic heap
+- filesystem
+- HAL
+- Arduino
+- FreeRTOS
+
+## Script/output convention
+
+ChatGPT-generated user-run artifacts:
+
+```text
+/mnt/data/<artifact>
+```
+
+User downloads them to:
+
+```text
+C:\Users\DETU\Downloads\
+```
+
+PowerShell invocation shape:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File "C:\Users\DETU\Downloads\<script>.ps1"
+```
+
+Scripts should:
+
+- use PowerShell 7
+- use strict/error-stop behavior
+- use exact known paths
+- fail closed on unexpected source state where relevant
+- avoid hidden package installation
+- avoid Git mutation unless explicitly requested
+- avoid flashing unless the script is explicitly a flash script
+- write useful diagnostic logs to Downloads
+- distinguish build validation from hardware acceptance
+
+## New-chat startup rule
+
+A new chat should first read:
+
+1. docs/MASTER_EXECUTION_CHECKLIST.md
+2. docs/IMPLEMENTATION_PLAN.md
+3. docs/PROJECT_HANDOFF.md
+
+Then continue from the exact next boundary above without restarting already accepted setup steps.
+
+<!-- BEGIN STM32_OS_UART_HW_ACCEPTANCE -->
+## Current hardware state — UART accepted
+
+As of 2026-09-10, the first diagnostic UART slice is hardware-proven.
+
+- USART1_TX = PA9
+- 115200 8N1
+- polling TX
+- direct-register implementation
+- boot banner and 32-bit hexadecimal output helper
+- accepted image: D:\Projects\STM32\OS\build\os.bin
+- size: 960 bytes
+- SHA-256: $ExpectedHash
+- STM32CubeProgrammer download/verify/reset: PASS
+- UART capture on COM3: PASS
+- observed output:
+  - STM32 OS
+  - BOOT OK
+  - SYSCLK=0x044AA200
+  - TICK_HZ=0x000003E8
+  - FAULTREC=0x20000000
+- evidence: $EvidencePath
+
+The HW-193 adapter is now a proven low-level diagnostic path. Future native micro-USB / USB-device support remains a separate implementation slice; ST-LINK remains the recovery/debug programmer until such a path is implemented.
+
+### Exact next boundary
+
+Close remaining Phase 3 time API / wraparound-safe comparison items before advancing to the next architecture feature.
+<!-- END STM32_OS_UART_HW_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_DEV_LOOP -->
+## Current development loop
+
+The project now has an automated hardware validation loop:
+
+source -> build -> ELF/bin validation -> ST-LINK flash -> verify -> reset -> UART capture -> PASS/FAIL -> evidence log
+
+Current UART is TX-only from STM32 to host. A later RX/command-console slice will extend this to a fully bidirectional automated test loop.
+
+Native USB is planned to eventually consolidate normal console/control/update traffic onto the board's micro-USB connector.
+<!-- END STM32_OS_DEV_LOOP -->
+
+<!-- BEGIN STM32_OS_PHASE3_TIME_ACCEPTANCE -->
+### Phase 3 time API acceptance — 2026-09-10
+
+- Status: **hardware accepted**
+- Stable monotonic API: kernel_time_now()
+- Deadline comparison: kernel_time_reached(now, deadline)
+- Elapsed comparison: kernel_time_elapsed(start, duration)
+- Wraparound semantics validated across normal and 32-bit rollover cases.
+- Hardware regression: PASS
+- UART regression: PASS
+- PC13/SysTick behavior preserved
+- Accepted image: D:\Projects\STM32\OS\build\os.bin
+- Image SHA-256: $ExpectedTimeApiHash
+- ault_record address is resolved from ELF rather than treated as a permanent ABI address.
+- Evidence: $EvidencePath
+
+Phase 3 governance debt is closed.
+<!-- END STM32_OS_PHASE3_TIME_ACCEPTANCE -->

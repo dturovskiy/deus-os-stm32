@@ -1,0 +1,16 @@
+# Build products
+build/
+
+# Local logs / captures
+*.log
+*.zip
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Tool scratch files
+*.tmp
+*.bak
