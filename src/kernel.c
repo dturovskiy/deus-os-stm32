@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include "kernel/time.h"
 #include "drivers/ssd1306.h"
+#include "gfx/mono_fb.h"
+#include "gfx/font5x7.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 
@@ -78,8 +80,6 @@
 #define I2C_SR1_TXE       (1u << 7)
 
 
-#define OLED_FONT_WIDTH            5u
-#define OLED_FONT_HEIGHT           7u
 #define OLED_FONT_SCALE            2u
 #define OLED_GLYPH_ADVANCE         12u
 #define I2C_SR1_BERR      (1u << 8)
@@ -158,7 +158,8 @@ typedef struct
 volatile uint32_t kernel_ticks;
 volatile fault_record_t fault_record;
 
-static uint8_t oled_framebuffer[SSD1306_WIDTH * SSD1306_PAGES];
+static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
+static mono_fb_t oled_surface;
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -558,158 +559,34 @@ int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length)
     }
 }
 
-static void oled_fb_clear(void)
-{
-    uint32_t i;
-
-    for (i = 0u; i < SSD1306_FRAMEBUFFER_BYTES; ++i)
-    {
-        oled_framebuffer[i] = 0u;
-    }
-}
-
-static void oled_fb_set_pixel(uint32_t x, uint32_t y, int on)
-{
-    uint32_t index;
-    uint8_t mask;
-
-    if ((x >= SSD1306_WIDTH) || (y >= SSD1306_HEIGHT))
-    {
-        return;
-    }
-
-    index = (y / 8u) * SSD1306_WIDTH + x;
-    mask = (uint8_t)(1u << (y & 7u));
-
-    if (on != 0)
-    {
-        oled_framebuffer[index] |= mask;
-    }
-    else
-    {
-        oled_framebuffer[index] &= (uint8_t)~mask;
-    }
-}
-
-static void oled_fb_hline(uint32_t x, uint32_t y, uint32_t width)
-{
-    uint32_t i;
-
-    for (i = 0u; i < width; ++i)
-    {
-        oled_fb_set_pixel(x + i, y, 1);
-    }
-}
-
-static void oled_fb_vline(uint32_t x, uint32_t y, uint32_t height)
-{
-    uint32_t i;
-
-    for (i = 0u; i < height; ++i)
-    {
-        oled_fb_set_pixel(x, y + i, 1);
-    }
-}
-
-static void oled_fb_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-{
-    if ((width == 0u) || (height == 0u))
-    {
-        return;
-    }
-
-    oled_fb_hline(x, y, width);
-    oled_fb_hline(x, y + height - 1u, width);
-    oled_fb_vline(x, y, height);
-    oled_fb_vline(x + width - 1u, y, height);
-}
 
 
 
-/*
- * 5x7 column font.
- * Indices 0..9 are '0'..'9', 10..35 are 'A'..'Z', 36 is space.
- * Bit 0 is the top pixel of a glyph column.
- */
-static const uint8_t oled_font5x7[37][OLED_FONT_WIDTH] =
-{
-    {0x3Eu,0x51u,0x49u,0x45u,0x3Eu}, /* 0 */
-    {0x00u,0x42u,0x7Fu,0x40u,0x00u}, /* 1 */
-    {0x42u,0x61u,0x51u,0x49u,0x46u}, /* 2 */
-    {0x21u,0x41u,0x45u,0x4Bu,0x31u}, /* 3 */
-    {0x18u,0x14u,0x12u,0x7Fu,0x10u}, /* 4 */
-    {0x27u,0x45u,0x45u,0x45u,0x39u}, /* 5 */
-    {0x3Cu,0x4Au,0x49u,0x49u,0x30u}, /* 6 */
-    {0x01u,0x71u,0x09u,0x05u,0x03u}, /* 7 */
-    {0x36u,0x49u,0x49u,0x49u,0x36u}, /* 8 */
-    {0x06u,0x49u,0x49u,0x29u,0x1Eu}, /* 9 */
 
-    {0x7Eu,0x11u,0x11u,0x11u,0x7Eu}, /* A */
-    {0x7Fu,0x49u,0x49u,0x49u,0x36u}, /* B */
-    {0x3Eu,0x41u,0x41u,0x41u,0x22u}, /* C */
-    {0x7Fu,0x41u,0x41u,0x22u,0x1Cu}, /* D */
-    {0x7Fu,0x49u,0x49u,0x49u,0x41u}, /* E */
-    {0x7Fu,0x09u,0x09u,0x09u,0x01u}, /* F */
-    {0x3Eu,0x41u,0x49u,0x49u,0x7Au}, /* G */
-    {0x7Fu,0x08u,0x08u,0x08u,0x7Fu}, /* H */
-    {0x00u,0x41u,0x7Fu,0x41u,0x00u}, /* I */
-    {0x20u,0x40u,0x41u,0x3Fu,0x01u}, /* J */
-    {0x7Fu,0x08u,0x14u,0x22u,0x41u}, /* K */
-    {0x7Fu,0x40u,0x40u,0x40u,0x40u}, /* L */
-    {0x7Fu,0x02u,0x0Cu,0x02u,0x7Fu}, /* M */
-    {0x7Fu,0x04u,0x08u,0x10u,0x7Fu}, /* N */
-    {0x3Eu,0x41u,0x41u,0x41u,0x3Eu}, /* O */
-    {0x7Fu,0x09u,0x09u,0x09u,0x06u}, /* P */
-    {0x3Eu,0x41u,0x51u,0x21u,0x5Eu}, /* Q */
-    {0x7Fu,0x09u,0x19u,0x29u,0x46u}, /* R */
-    {0x46u,0x49u,0x49u,0x49u,0x31u}, /* S */
-    {0x01u,0x01u,0x7Fu,0x01u,0x01u}, /* T */
-    {0x3Fu,0x40u,0x40u,0x40u,0x3Fu}, /* U */
-    {0x1Fu,0x20u,0x40u,0x20u,0x1Fu}, /* V */
-    {0x3Fu,0x40u,0x38u,0x40u,0x3Fu}, /* W */
-    {0x63u,0x14u,0x08u,0x14u,0x63u}, /* X */
-    {0x07u,0x08u,0x70u,0x08u,0x07u}, /* Y */
-    {0x61u,0x51u,0x49u,0x45u,0x43u}, /* Z */
 
-    {0x00u,0x00u,0x00u,0x00u,0x00u}  /* space */
-};
-
-static const uint8_t *oled_font5x7_get(char c)
-{
-    if ((c >= '0') && (c <= '9'))
-    {
-        return oled_font5x7[(uint32_t)(c - '0')];
-    }
-
-    if ((c >= 'A') && (c <= 'Z'))
-    {
-        return oled_font5x7[10u + (uint32_t)(c - 'A')];
-    }
-
-    return oled_font5x7[36u];
-}
 
 static void oled_fb_draw_char_2x(uint32_t x, uint32_t y, char c)
 {
-    const uint8_t *glyph = oled_font5x7_get(c);
+    const mono_font_metrics_t *metrics = font5x7_metrics();
+    const uint8_t *glyph = font5x7_glyph(c);
     uint32_t column;
     uint32_t row;
 
-    for (column = 0u; column < OLED_FONT_WIDTH; ++column)
+    for (column = 0u; column < metrics->glyph_width; ++column)
     {
         uint8_t bits = glyph[column];
 
-        for (row = 0u; row < OLED_FONT_HEIGHT; ++row)
+        for (row = 0u; row < metrics->glyph_height; ++row)
         {
             if ((bits & (uint8_t)(1u << row)) != 0u)
             {
-                uint32_t px = x + column * OLED_FONT_SCALE;
-                uint32_t py = y + row * OLED_FONT_SCALE;
+                int32_t px = (int32_t)(x + column * OLED_FONT_SCALE);
+                int32_t py = (int32_t)(y + row * OLED_FONT_SCALE);
 
-                oled_fb_set_pixel(px,      py,      1);
-                oled_fb_set_pixel(px + 1u, py,      1);
-                oled_fb_set_pixel(px,      py + 1u, 1);
-                oled_fb_set_pixel(px + 1u, py + 1u, 1);
+                mono_fb_set_pixel(&oled_surface, px,      py,      1);
+                mono_fb_set_pixel(&oled_surface, px + 1, py,      1);
+                mono_fb_set_pixel(&oled_surface, px,      py + 1, 1);
+                mono_fb_set_pixel(&oled_surface, px + 1, py + 1, 1);
             }
         }
     }
@@ -732,8 +609,14 @@ static int ssd1306_show_text_demo(void)
         return 0;
     }
 
-    oled_fb_clear();
-    oled_fb_rect(0u, 3u, SSD1306_WIDTH, SSD1306_HEIGHT - 3u);
+    mono_fb_clear(&oled_surface);
+    mono_fb_rect(
+        &oled_surface,
+        0,
+        3,
+        (int32_t)SSD1306_WIDTH,
+        (int32_t)SSD1306_HEIGHT - 3,
+        1);
     oled_fb_draw_text_2x(17u, 25u, "DEUS OS");
 
     if (ssd1306_present_full(oled_framebuffer) == 0)
@@ -1058,6 +941,11 @@ void kernel_main(void)
     gpio_init();
     uart_init();
     i2c1_init();
+    mono_fb_init(
+        &oled_surface,
+        oled_framebuffer,
+        SSD1306_WIDTH,
+        SSD1306_HEIGHT);
     faults_init();
     systick_init(core_clock_hz);
 
