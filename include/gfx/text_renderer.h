@@ -11,4 +11,11 @@ void text_renderer_draw_cell(
     int32_t y,
     char c);
 
+/*
+ * Diagnostic equivalence test for the aligned fast path.
+ * Returns nonzero only when fast-path output is byte-for-byte identical to
+ * the generic reference path across the built-in clipping/overwrite cases.
+ */
+int text_renderer_fast_path_self_test(void);
+
 #endif

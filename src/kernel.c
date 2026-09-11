@@ -720,6 +720,14 @@ static int ssd1306_show_generic_renderer_test(void)
 
 static void console_oled_render(void)
 {
+    if (text_renderer_fast_path_self_test() == 0)
+    {
+        uart_write_line("OLED_RENDER_EQ_ERR");
+        return;
+    }
+
+    uart_write_line("OLED_RENDER_EQ_OK");
+
     if (ssd1306_show_generic_renderer_test() != 0)
     {
         uart_write_line("OLED_RENDER_OK");
