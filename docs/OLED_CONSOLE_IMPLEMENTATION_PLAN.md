@@ -1,275 +1,195 @@
 # OLED Console Implementation Plan
 
-Status: **PLANNED / execution gate closed until documentation is accepted**
+Status: ACTIVE PLAN / REBASED ON NATIVE 128x32 HARDWARE
 
-This plan converts the accepted framebuffer/text proof into a maintainable kernel console without introducing unnecessary framework complexity.
+## Completed prerequisites
 
-Every slice follows:
+- SSD1306 I2C address `0x3C` proven.
+- SSD1306 driver extracted.
+- monochrome framebuffer extracted.
+- font5x7 extracted.
+- native panel geometry proven as `128x32`.
+- native framebuffer proven as `512 bytes`.
+- controller profile proven:
+  - `A8=0x1F`
+  - `DA=0x02`
+  - `D3=0`
+  - start line `0`
+  - `A1/C8`
+  - pages `0..3`
+- clean 1x `DEUS OS` and full frame physically accepted.
 
-```text
-source
--> build
--> static validation
--> flash
--> boot/UART regression
--> OLED command
--> physical visual acceptance
--> commit
-```
+The old 128x64 renderer experiment is rejected.
 
-No slice is committed before physical acceptance when the slice changes rendered output.
+## Slice 3A — commit corrected native hardware baseline
 
-## Slice 0 — Restore accepted baseline
+Scope:
 
-Purpose:
-
-Remove the failed experimental `oledconsole` implementation from the working tree and MCU before architecture work begins.
-
-Actions:
-
-1. restore `src/kernel.c` to the accepted Git baseline;
-2. build the accepted framebuffer/text firmware;
-3. verify ELF symbols dynamically;
-4. flash/verify/reset;
-5. wait for `BOOT OK`;
-6. run `oledtext`;
-7. require `OLED_TEXT_OK`;
-8. physically confirm accepted `DEUS OS` + calibrated frame.
-
-Expected Git result:
-
-- no source commit;
-- working tree clean after restoration;
-- HEAD remains the documentation head.
-
-This slice exists because the current failed console experiment was flashed and must not be silently treated as a production baseline.
-
-## Slice 1 — Extract SSD1306 driver without behavioral change
-
-Target:
-
-```text
-src/drivers/ssd1306.c
-include/drivers/ssd1306.h
-```
-
-Move only:
-
-- I2C-facing SSD1306 command/data logic;
-- initialization sequence;
-- panel profile;
-- full-window/present logic.
-
-Do not change:
-
-- init bytes;
-- `D3=0x00`;
-- `A1/C8`;
-- address `0x3C`;
-- frame geometry;
-- text rendering behavior.
+- keep native `128x32`;
+- keep 512-byte framebuffer;
+- keep 1x 5x7 demo;
+- update canonical documentation;
+- remove every temporary calibration command.
 
 Acceptance:
 
-- build with `-Werror`;
-- UART regressions pass;
+- build with `-Wall -Wextra -Werror`;
+- framebuffer symbol exactly 512 bytes;
+- BOOT OK;
+- `ping -> PONG`;
+- I2C scan reports only `0x3C`;
+- `oledping -> OLED_CMD_OK`;
+- `oledtest -> OLED_TEST_OK`;
 - `oledtext -> OLED_TEXT_OK`;
-- physical output is identical to accepted baseline.
+- physical thin `DEUS OS`;
+- full clean border;
+- no alternating missing rows.
 
-Commit only after identical visual output.
+Commit only after physical PASS.
 
-## Slice 2 — Extract monochrome framebuffer and font
+## Slice 3B — text renderer, generic path first
 
-Target:
-
-```text
-src/gfx/mono_fb.c
-include/gfx/mono_fb.h
-src/gfx/font5x7.c
-include/gfx/font5x7.h
-```
-
-Move existing proven behavior first.
-
-Add:
-
-- clipping;
-- dirty-page mask storage;
-- dirty marking by drawing primitives.
-
-Presentation still uses full 1024-byte flush.
-
-Acceptance:
-
-- existing `oledtext` visual output remains identical;
-- frame remains `x=0..127, y=3..63`;
-- framebuffer remains 1024 bytes;
-- no buffer overrun;
-- fault record address is resolved from ELF rather than assumed.
-
-## Slice 3 — Introduce text renderer
-
-Target:
+Create:
 
 ```text
 src/gfx/text_renderer.c
 include/gfx/text_renderer.h
 ```
 
-Implement one opaque 6x8 cell renderer.
+Implement only the correct generic opaque cell renderer first.
 
 Requirements:
 
-- 5x7 glyph;
-- transparent behavior is not the default;
-- stale pixels are removed;
-- clip rectangle is mandatory;
-- generic arbitrary-Y path exists;
-- page-aligned fast path exists;
-- fast path preserves bits outside clip.
+- cell size 6x8;
+- clip rectangle;
+- writes both foreground and background pixels;
+- no page-aligned optimization yet;
+- no retained console state.
 
-Focused hardware test:
+Hardware test:
 
-- render known glyph sequence in a page-aligned row;
-- overwrite it with different glyphs;
-- verify no ghost pixels;
-- verify bottom-frame preservation when testing row 7 region.
+- render known strings at y=8,16,24;
+- overwrite a cell with a different glyph and verify no ghost pixels;
+- verify bottom frame y=31 survives the row at y=24.
 
-Do not introduce console state yet.
+Do not add a fast path in the same acceptance step.
 
-## Slice 4 — Introduce retained console, no scroll
+## Slice 3C — page-aligned fast path
 
-Target:
+Only after the generic renderer is physically accepted:
+
+- add byte-oriented fast path for aligned 6x8 cells;
+- compare generated framebuffer bytes against generic rendering;
+- verify identical physical output.
+
+The fast path is an optimization, not an architectural dependency.
+
+## Slice 4 — retained 21x3 console without scrolling
+
+Add:
 
 ```text
 src/kernel/oled_console.c
 include/kernel/oled_console.h
 ```
 
+State:
+
+```c
+char cells[3][21];
+```
+
 Implement:
 
-- `21x7` cells;
-- cursor;
+- init;
 - clear;
 - putc;
 - write;
 - write_line;
+- cursor;
 - newline;
-- automatic wrap;
+- wrap;
 - render.
 
-Console viewport is computed from:
-
-- hardware/graphics interior;
-- page alignment;
-- font metrics.
-
-Do not hard-code a table of seven Y coordinates.
-
-Temporary acceptance command:
+Temporary command:
 
 ```text
 oledconsole
 ```
 
-Expected display:
+Physical acceptance:
 
-- calibrated frame unchanged;
-- seven clean rows;
-- first/last row readable;
-- no overlap with frame;
-- no malformed vertical layout;
-- one explicit present after rendering.
+- exactly three clean rows;
+- 21-column geometry;
+- no text on the frame;
+- bottom border remains intact.
 
-## Slice 5 — Circular scroll
+## Slice 5 — circular scroll
 
-Implement scrolling only after Slice 4 is physically accepted.
+Add logical row rotation:
 
-Model:
-
-- circular seven-row character buffer;
-- O(1) `first_row` advance;
-- clear reused logical last row;
-- render from retained text state.
-
-Acceptance command writes more than seven lines.
-
-Expected:
-
-- oldest line disappears;
-- all remaining rows move semantically;
-- new line appears at bottom;
-- frame remains unchanged;
-- no framebuffer memcpy is used as the authoritative scroll model.
-
-## Slice 6 — Dirty-page presentation optimization
-
-Only after console semantics are accepted.
-
-Implement:
-
-- `dirty_pages` consumption in SSD1306 present path;
-- page-window transfer for changed pages;
-- full-present fallback.
-
-Acceptance compares full and dirty presentation results.
-
-Required proof:
-
-- same visible output;
-- frame preserved;
-- no stale glyph cells;
-- full-present path remains available for diagnostics.
-
-## Slice 7 — Kernel log integration
-
-After the console itself is stable:
-
-- add a small kernel log sink;
-- UART remains one sink;
-- OLED may become an optional second sink;
-- output policy must not block fault-critical paths unexpectedly.
-
-Do not tightly couple fault capture to I2C/OLED availability.
-
-## Deferred work
-
-Explicitly deferred until required:
-
-- multiple font sizes;
-- UTF-8;
-- proportional fonts;
-- multiple display backends;
-- widgets;
-- hardware scrolling;
-- animation;
-- double buffering;
-- DMA I2C;
-- LVGL-style object trees.
-
-## Commit policy
-
-Suggested commits are slice-oriented, for example:
-
-```text
-refactor: isolate SSD1306 display driver
-refactor: isolate monochrome framebuffer and font
-feat: add opaque monochrome text renderer
-feat: add retained OLED console
-feat: add OLED console scrolling
-perf: add dirty-page SSD1306 presentation
+```c
+first_row = (uint8_t)((first_row + 1u) % 3u);
 ```
 
-Exact messages may change, but unrelated slices must not be combined into one large commit.
+Test by writing more than three lines.
+
+Expected screen after five sequential numbered lines:
+
+```text
+3
+4
+5
+```
+
+according to the chosen line content and wrapping rules.
+
+No hardware scrolling.
+
+## Slice 6 — dirty-page present optimization
+
+Framebuffer page count is four.
+
+Dirty mask uses bits 0..3.
+
+Requirements:
+
+- full-frame fallback remains available;
+- failed I2C transfer must not falsely clear dirty state;
+- partial update must preserve controller addressing assumptions;
+- compare every optimized result with the known-good full 512-byte flush.
+
+## Slice 7 — kernel log integration
+
+Add an optional OLED sink after console semantics are stable.
+
+UART remains the primary diagnostic path.
+
+Fault handlers must never depend on OLED availability.
+
+## Deferred
+
+- UTF-8;
+- proportional fonts;
+- widgets;
+- hardware scroll;
+- animation;
+- DMA I2C;
+- generic display-backend vtables;
+- 128x64 support for hardware not currently installed.
 
 ## Stop conditions
 
-Stop the current slice and do not commit when any of the following occurs:
+Stop immediately if a slice unexpectedly changes:
 
-- frame geometry changes unexpectedly;
-- `D3`, `A1/C8`, or address changes without explicit plan;
-- text overlaps the frame;
-- a layer accesses responsibilities belonging to another layer;
-- build requires suppressing warnings;
-- visual output differs from the slice acceptance target;
-- source and flashed firmware become ambiguous.
+- I2C address;
+- `A8=0x1F`;
+- `DA=0x02`;
+- `D3=0`;
+- start line 0;
+- `A1/C8`;
+- page count 4;
+- framebuffer size 512;
+- native 128x32 frame geometry.
+
+Do not suppress warnings to make a slice pass.

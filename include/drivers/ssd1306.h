@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define SSD1306_WIDTH             128u
-#define SSD1306_HEIGHT            64u
+#define SSD1306_HEIGHT            32u
 #define SSD1306_PAGES             (SSD1306_HEIGHT / 8u)
 #define SSD1306_FRAMEBUFFER_BYTES (SSD1306_WIDTH * SSD1306_PAGES)
 

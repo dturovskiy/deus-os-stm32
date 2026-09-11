@@ -80,8 +80,7 @@
 #define I2C_SR1_TXE       (1u << 7)
 
 
-#define OLED_FONT_SCALE            2u
-#define OLED_GLYPH_ADVANCE         12u
+#define OLED_GLYPH_ADVANCE         6u
 #define I2C_SR1_BERR      (1u << 8)
 #define I2C_SR1_ARLO      (1u << 9)
 #define I2C_SR1_AF        (1u << 10)
@@ -565,7 +564,7 @@ int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length)
 
 
 
-static void oled_fb_draw_char_2x(uint32_t x, uint32_t y, char c)
+static void oled_fb_draw_char_1x(uint32_t x, uint32_t y, char c)
 {
     const mono_font_metrics_t *metrics = font5x7_metrics();
     const uint8_t *glyph = font5x7_glyph(c);
@@ -578,25 +577,23 @@ static void oled_fb_draw_char_2x(uint32_t x, uint32_t y, char c)
 
         for (row = 0u; row < metrics->glyph_height; ++row)
         {
-            if ((bits & (uint8_t)(1u << row)) != 0u)
-            {
-                int32_t px = (int32_t)(x + column * OLED_FONT_SCALE);
-                int32_t py = (int32_t)(y + row * OLED_FONT_SCALE);
+            int value =
+                (bits & (uint8_t)(1u << row)) != 0u;
 
-                mono_fb_set_pixel(&oled_surface, px,      py,      1);
-                mono_fb_set_pixel(&oled_surface, px + 1, py,      1);
-                mono_fb_set_pixel(&oled_surface, px,      py + 1, 1);
-                mono_fb_set_pixel(&oled_surface, px + 1, py + 1, 1);
-            }
+            mono_fb_set_pixel(
+                &oled_surface,
+                (int32_t)(x + column),
+                (int32_t)(y + row),
+                value);
         }
     }
 }
 
-static void oled_fb_draw_text_2x(uint32_t x, uint32_t y, const char *text)
+static void oled_fb_draw_text_1x(uint32_t x, uint32_t y, const char *text)
 {
     while ((*text != '\0') && (x < SSD1306_WIDTH))
     {
-        oled_fb_draw_char_2x(x, y, *text);
+        oled_fb_draw_char_1x(x, y, *text);
         x += OLED_GLYPH_ADVANCE;
         ++text;
     }
@@ -613,11 +610,11 @@ static int ssd1306_show_text_demo(void)
     mono_fb_rect(
         &oled_surface,
         0,
-        3,
+        0,
         (int32_t)SSD1306_WIDTH,
-        (int32_t)SSD1306_HEIGHT - 3,
+        (int32_t)SSD1306_HEIGHT,
         1);
-    oled_fb_draw_text_2x(17u, 25u, "DEUS OS");
+    oled_fb_draw_text_1x(43u, 12u, "DEUS OS");
 
     if (ssd1306_present_full(oled_framebuffer) == 0)
     {

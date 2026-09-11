@@ -1,184 +1,174 @@
 # OLED Console Acceptance Plan
 
-Status: **PLANNED**
+Status: CANONICAL / NATIVE 128x32
 
-This document defines the evidence required before OLED console code is accepted.
+## 1. Global hardware invariants
 
-## 1. Global regression invariants
-
-Every OLED-console slice must preserve:
+Every OLED-related production slice must preserve:
 
 ```text
-I2C address = 0x3C
-D3          = 0x00
-start line  = 0x40
-orientation = A1/C8
-frame       = x=0..127, y=3..63
+address      = 0x3C
+resolution   = 128x32
+framebuffer  = 512 bytes
+pages        = 4
+A8           = 0x1F
+DA           = 0x02
+D3           = 0x00
+start line   = 0
+segment map  = A1
+COM scan     = C8
+window       = columns 0..127, pages 0..3
 ```
 
-After every flash/reset:
+The previous 128x64 configuration is explicitly rejected.
 
-```text
-BOOT OK
-```
-
-must be observed before OLED testing.
-
-When using the accepted baseline path:
-
-```text
-oledtext -> OLED_TEXT_OK
-```
-
-remains the primary display regression anchor.
-
-## 2. Build acceptance
+## 2. Build gate
 
 Required:
 
 - `-Wall -Wextra -Werror`;
-- no warning suppression added to hide new defects;
 - `git diff --check`;
-- initial MSP remains valid;
-- binary/ELF produced successfully;
-- `oled_framebuffer` remains exactly 1024 bytes;
-- `fault_record` is resolved dynamically from ELF and compared with boot output.
+- valid initial MSP;
+- exactly one `oled_framebuffer` symbol;
+- `oled_framebuffer` size exactly `512`;
+- resolve `fault_record` dynamically from ELF;
+- no hardcoded RAM addresses in acceptance tooling.
 
-No tool may hard-code the historical `fault_record` address after BSS layout changes.
+## 3. Boot/UART gate
 
-## 3. Architecture acceptance
+After every flash:
 
-Before commit, inspect the source boundaries.
+- `BOOT OK`;
+- boot `FAULTREC` address matches the current ELF;
+- `ping -> PONG`.
 
-Required:
-
-- `oled_console` contains no I2C register access;
-- `oled_console` contains no SSD1306 page/window commands;
-- `text_renderer` contains no UART command handling;
-- `mono_fb` contains no panel init bytes;
-- `ssd1306` contains no font table;
-- normal `putc/write` paths do not call display present;
-- no heap allocation;
-- no function-pointer abstraction introduced without a second real backend.
-
-## 4. Text-renderer acceptance
-
-Opaque overwrite test:
-
-1. draw a glyph with many set pixels;
-2. render a different sparse glyph into the same cell;
-3. present;
-4. confirm no pixels from the old glyph remain.
-
-Clip test:
-
-1. render a cell adjacent to the bottom frame;
-2. confirm `y=63` frame remains intact.
-
-Alignment test:
-
-1. render page-aligned text;
-2. confirm glyphs are regular and readable;
-3. compare with generic-path rendering where safe.
-
-## 5. Console no-scroll acceptance
-
-Temporary command:
-
-```text
-oledconsole
-```
-
-Required semantic content:
-
-```text
-7 rows
-21-column capacity
-wrap/newline behavior exercised
-```
-
-Required physical result:
-
-- all four frame sides visible;
-- seven text rows readable;
-- no vertical corruption;
-- no text at `y=0..7`;
-- last glyph row occupies at most `y=56..62`;
-- bottom frame at `y=63` remains visible;
-- left/right frame remains visible;
-- no stale pixels from prior screen.
-
-Protocol result:
-
-```text
-OLED_CONSOLE_OK
-```
-
-is necessary but not sufficient; physical acceptance is mandatory.
-
-## 6. Scroll acceptance
-
-Write at least nine distinguishable logical lines into a seven-row console.
-
-Required final screen:
-
-- exactly seven logical rows shown;
-- first two original rows no longer visible;
-- row order preserved;
-- newest line visible at bottom;
-- cursor state remains valid;
-- frame unchanged.
-
-The model must use circular text rows rather than destructive framebuffer scrolling as the source of truth.
-
-## 7. Dirty-page acceptance
-
-Before optimization, record full-present visual output.
-
-After dirty-page implementation:
-
-- clear;
-- render known console;
-- present;
-- modify one row;
-- present again.
+## 4. I2C/OLED gate
 
 Required:
 
-- visible result matches full-present path;
-- only intended pages are marked dirty before transfer;
-- dirty state is cleared only after successful transfer;
-- failure leaves enough state for retry;
-- full-present fallback still works.
+- I2C scan sees `ADDR=0x0000003C`;
+- count remains one for the current bench setup;
+- `oledping -> OLED_CMD_OK`.
 
-## 8. Fault/regression safety
+After reset/flash, explicitly issue the OLED rendering command before judging
+physical output.
 
-Fault diagnostics must remain operational.
+## 5. Native baseline regression
 
-OLED failure must not prevent UART diagnostics.
+`oledtext` must return:
 
-No fault handler may depend on successful I2C display transfer for correctness.
+```text
+OLED_TEXT_OK
+```
 
-## 9. Git acceptance
+Physical result:
 
-For each slice:
+- full frame at `x=0..127`, `y=0..31`;
+- centered 1-pixel-thick `DEUS OS`;
+- no doubled vertical pixels;
+- no alternating missing rows.
 
-- only intended files are modified/staged;
-- hardware test evidence exists;
-- working source matches flashed image at acceptance;
-- commit happens only after physical PASS;
-- push happens only after the accepted commit is reviewed.
+## 6. Generic text renderer acceptance
 
-## 10. Rejection examples
+Before any fast path is introduced:
 
-Reject the slice if:
+- use opaque 6x8 cells;
+- render aligned rows at y `8`, `16`, `24`;
+- verify blank spacer column overwrites stale pixels;
+- verify blank spacer row overwrites stale pixels only inside clip;
+- overwrite one glyph with another and confirm no ghost pixels;
+- verify bottom frame at `y=31` survives row origin `y=24`.
 
-- UART says success but OLED text is malformed;
-- text rendering is visually correct only after unexplained reset sequences;
-- frame is partially erased;
-- console code contains magic SSD1306 page constants;
-- row coordinates are manually enumerated;
-- each character causes its own I2C flush;
-- scroll is implemented by treating framebuffer pixels as the only text state;
-- optimization changes public semantics;
-- a workaround contradicts the hardware profile without new calibration evidence.
+Clip rectangle:
+
+```text
+x=1, y=1, width=126, height=30
+```
+
+## 7. Fast-path acceptance
+
+The page-aligned fast path must not be accepted merely because it looks good.
+
+Required:
+
+- same input string/cell sequence;
+- generic renderer framebuffer snapshot;
+- optimized renderer framebuffer snapshot;
+- byte-for-byte equality for the affected framebuffer;
+- identical physical display.
+
+## 8. Console no-scroll acceptance
+
+Canonical framed capacity:
+
+```text
+21 columns x 3 rows
+```
+
+Expected text origins:
+
+```text
+row 0 -> y=8
+row 1 -> y=16
+row 2 -> y=24
+```
+
+Must verify:
+
+- three readable rows;
+- no text corruption;
+- no frame corruption;
+- wrap at column 21;
+- newline semantics;
+- opaque overwrite behavior.
+
+UART protocol success is necessary but not sufficient. Physical inspection is
+mandatory.
+
+## 9. Scroll acceptance
+
+Write at least five logical lines into the 3-row console.
+
+Verify:
+
+- newest three logical lines remain;
+- row order is correct;
+- no framebuffer ghosting;
+- no hardware scroll mode is used;
+- border remains intact.
+
+## 10. Dirty-page acceptance
+
+Dirty-page mask uses bits 0..3 only.
+
+Required:
+
+- correct page marking;
+- no false clearing after failed transfer;
+- successful partial present matches full-frame output;
+- full-frame fallback remains functional.
+
+## 11. Safety regression
+
+UART must remain responsive after OLED operations.
+
+Fault diagnostics must remain available even if OLED/I2C fails.
+
+## 12. Git gate
+
+For every rendering behavior change:
+
+```text
+source
+ -> build
+ -> validate
+ -> flash
+ -> verify
+ -> reset
+ -> UART
+ -> physical visual PASS
+ -> commit
+ -> push
+```
+
+Never commit an OLED rendering change before physical acceptance.

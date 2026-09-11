@@ -35,14 +35,14 @@ int ssd1306_init(void)
 
         0xAEu,       /* display off */
         0xD5u, 0x80u,/* display clock divide / oscillator */
-        0xA8u, 0x3Fu,/* multiplex ratio 1/64 */
+        0xA8u, 0x1Fu,/* multiplex ratio 1/32 */
         0xD3u, 0x00u,/* display offset */
         0x40u,       /* display start line = 0 */
         0x8Du, 0x14u,/* charge pump on */
         0x20u, 0x00u,/* horizontal addressing mode */
         0xA1u,       /* segment remap */
         0xC8u,       /* COM output scan direction remapped */
-        0xDAu, 0x12u,/* COM pins for 128x64 panel */
+        0xDAu, 0x02u,/* sequential COM pins for 128x32 panel */
         0x81u, 0xCFu,/* contrast */
         0xD9u, 0xF1u,/* pre-charge period */
         0xDBu, 0x40u,/* VCOMH deselect level */
@@ -63,7 +63,7 @@ static int ssd1306_set_full_window(void)
     {
         SSD1306_CONTROL_CMD,
         0x21u, 0x00u, 0x7Fu, /* columns 0..127 */
-        0x22u, 0x00u, 0x07u  /* pages 0..7 */
+        0x22u, 0x00u, 0x03u  /* pages 0..3 */
     };
 
     return i2c1_write(

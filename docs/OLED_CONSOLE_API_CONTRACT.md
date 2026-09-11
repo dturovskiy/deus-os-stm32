@@ -1,26 +1,8 @@
 # OLED Console API Contract
 
-Status: **PLANNED**
+Status: PLANNED / NATIVE 128x32
 
-This file defines the intended C boundaries before implementation.
-
-The exact names may receive minor mechanical adjustments during implementation, but responsibility boundaries and ownership rules are normative.
-
-## 1. General rules
-
-All APIs are:
-
-- heap-free;
-- deterministic;
-- usable without libc allocation;
-- explicit about ownership;
-- free of hidden I2C transfer in graphics/text functions.
-
-Return values should use small integer success/failure conventions consistent with the existing codebase.
-
-## 2. `gfx/mono_fb.h`
-
-Planned types:
+## 1. `mono_fb`
 
 ```c
 typedef struct
@@ -40,7 +22,7 @@ typedef struct
 } mono_rect_t;
 ```
 
-Planned operations:
+Required operations:
 
 ```c
 void mono_fb_init(
@@ -79,18 +61,21 @@ void mono_fb_rect(
     int32_t height,
     int value);
 
-void mono_fb_mark_all_dirty(mono_fb_t *fb);
 uint8_t mono_fb_dirty_pages(const mono_fb_t *fb);
+void mono_fb_mark_all_dirty(mono_fb_t *fb);
 void mono_fb_clear_dirty(mono_fb_t *fb, uint8_t mask);
 ```
 
-All drawing operations clip safely to the framebuffer.
+For the installed OLED:
 
-Out-of-range coordinates must not write outside storage.
+```text
+width = 128
+height = 32
+storage = 512 bytes
+dirty-page bits = 0..3
+```
 
-## 3. `gfx/font5x7.h`
-
-Planned immutable metrics:
+## 2. `font5x7`
 
 ```c
 typedef struct
@@ -102,20 +87,25 @@ typedef struct
 } mono_font_metrics_t;
 ```
 
-Planned accessors:
+Required API:
 
 ```c
 const mono_font_metrics_t *font5x7_metrics(void);
 const uint8_t *font5x7_glyph(char c);
 ```
 
-The glyph representation remains column-oriented and optimized for 5x7 monochrome use.
+Current metrics:
 
-Unsupported characters map deterministically to a defined fallback glyph.
+```text
+glyph_width  = 5
+glyph_height = 7
+advance_x    = 6
+advance_y    = 8
+```
 
-## 4. `gfx/text_renderer.h`
+## 3. `text_renderer`
 
-Planned operation:
+Required public entry point:
 
 ```c
 void text_renderer_draw_cell(
@@ -128,31 +118,35 @@ void text_renderer_draw_cell(
 
 Contract:
 
-- draws one opaque 6x8 logical cell using the 5x7 font;
-- clips every write to `clip`;
-- never modifies pixels outside `clip`;
-- clears stale glyph pixels inside the cell;
-- may select an optimized aligned path internally;
-- does not update cursor state;
-- does not perform display transfer.
+- cell is opaque;
+- generic arbitrary-Y path must be correct first;
+- page-aligned fast path is optional optimization;
+- fast path must be framebuffer-equivalent to generic output;
+- clipping must apply to both on and off pixels;
+- writes outside the clip rectangle are forbidden.
 
-A later generic font parameter may be introduced only when a second font is actually needed.
-
-## 5. `kernel/oled_console.h`
-
-Planned dimensions for the first implementation:
+Canonical framed console clip:
 
 ```text
-columns = 21
-rows    = 7
+x=1, y=1, width=126, height=30
 ```
 
-Planned type:
+Canonical cell origins:
+
+```text
+x = 1 + column * 6
+y = 8 + row * 8
+```
+
+For row 2, glyph pixels may touch `y=30`, but `y=31` belongs to the bottom
+frame and must not be overwritten.
+
+## 4. `oled_console`
 
 ```c
 typedef struct
 {
-    char cells[7][21];
+    char cells[3][21];
     uint8_t first_row;
     uint8_t cursor_x;
     uint8_t cursor_y;
@@ -160,42 +154,39 @@ typedef struct
 } oled_console_t;
 ```
 
-Planned API:
+Required API:
 
 ```c
 void oled_console_init(oled_console_t *console);
 void oled_console_clear(oled_console_t *console);
-
-void oled_console_putc(
-    oled_console_t *console,
-    char c);
-
-void oled_console_write(
-    oled_console_t *console,
-    const char *text);
-
-void oled_console_write_line(
-    oled_console_t *console,
-    const char *text);
+void oled_console_putc(oled_console_t *console, char c);
+void oled_console_write(oled_console_t *console, const char *text);
+void oled_console_write_line(oled_console_t *console, const char *text);
 
 void oled_console_render(
     const oled_console_t *console,
     mono_fb_t *fb,
-    mono_rect_t viewport);
+    mono_rect_t clip);
 ```
 
-Newline behavior:
+Baseline character behavior:
 
-- `\r` returns to column zero or is ignored according to one documented policy;
-- `\n` advances one row;
-- reaching column 21 automatically wraps;
-- advancing beyond row 6 performs circular scroll.
+- printable ASCII;
+- `\n`;
+- `\r`;
+- automatic wrap.
 
-The console does not flush the display.
+Deferred:
 
-## 6. `drivers/ssd1306.h`
+- tab;
+- backspace editing;
+- ANSI;
+- UTF-8;
+- proportional fonts.
 
-Planned panel profile:
+## 5. `ssd1306`
+
+Native panel profile:
 
 ```c
 typedef struct
@@ -205,64 +196,58 @@ typedef struct
     uint8_t com_scan_direction;
     uint8_t display_offset;
     uint8_t start_line;
+    uint8_t multiplex;
+    uint8_t com_pins;
     mono_rect_t visible_rect;
 } ssd1306_panel_profile_t;
 ```
 
-The current accepted profile encodes:
+Canonical installed values:
 
 ```text
-address       = 0x3C
-segment remap = A1
-COM scan      = C8
-D3            = 0x00
-start line    = 0x40
-visible rect  = x=0..127, y=3..63
+i2c_address       = 0x3C
+segment_remap     = A1
+com_scan_direction= C8
+display_offset    = 0
+start_line        = 0
+multiplex         = 0x1F
+com_pins          = 0x02
+visible_rect      = x0,y0,w128,h32
 ```
 
-Planned operations:
+Required presentation API:
 
 ```c
-int ssd1306_init(
-    const ssd1306_panel_profile_t *profile);
-
-int ssd1306_present_full(
-    const mono_fb_t *fb);
-
-int ssd1306_present(
-    mono_fb_t *fb);
+int ssd1306_init(void);
+int ssd1306_present_full(const uint8_t *framebuffer);
+int ssd1306_present(const mono_fb_t *fb);
 ```
 
-Initial `ssd1306_present()` may delegate to full presentation.
+Initial `ssd1306_present()` may delegate to the full 512-byte transfer.
 
-Later it may consume `dirty_pages` and transfer only dirty pages.
+## 6. Ownership and side effects
 
-This optimization must not change callers.
+`font5x7`:
+- immutable data only;
+- no hardware access.
 
-## 7. Ownership
+`mono_fb`:
+- RAM only;
+- no hardware access.
 
-Framebuffer storage is statically allocated by the system.
+`text_renderer`:
+- modifies framebuffer only;
+- no flush.
 
-`mono_fb_t` references that storage.
+`oled_console`:
+- modifies semantic state;
+- renders only when explicitly requested;
+- no I2C.
 
-`oled_console_t` owns only character state and cursor metadata.
+`ssd1306`:
+- owns OLED controller/I2C presentation;
+- must not own semantic text state.
 
-Font data is immutable static data.
-
-The SSD1306 driver does not own the framebuffer.
-
-No API returns heap-owned memory.
-
-## 8. Side-effect matrix
-
-```text
-function family            modifies RAM   modifies OLED/I2C
------------------------------------------------------------
-oled_console_*             yes            no
-text_renderer_*            yes            no
-mono_fb_*                  yes            no
-ssd1306_init               driver state   yes
-ssd1306_present*           dirty state    yes
-```
-
-This separation is a mandatory acceptance criterion.
+`kernel.c`:
+- orchestrates modules;
+- command handlers may request explicit present.
