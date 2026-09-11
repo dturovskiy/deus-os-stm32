@@ -407,3 +407,27 @@ Constraint: STM32F103C8 is a USB Device target here, not a general USB Host plat
 - Full framebuffer-backed kernel console and text rendering remain pending
 - Next implementation boundary: **framebuffer-backed drawing primitives and minimal text rendering**
 <!-- END STM32_OS_SSD1306_VISIBLE_ACCEPTANCE -->
+<!-- OLED_SSD1306_HARDWARE_PROFILE_CANONICAL -->
+## Accepted OLED hardware profile
+
+The SSD1306 framebuffer/text slice is hardware accepted at commit
+`e7587d2ce2f636889cd03e6b1a13d08ce42021ea`.
+
+Canonical display profile:
+
+- I2C address: `0x3C`
+- resolution: `128x64`
+- framebuffer: `1024 bytes`
+- orientation: `A1/C8`
+- `D3=0x00`
+- start line: `0x40`
+- calibrated visible viewport: `x=0..127`, `y=3..63`
+- safe UI interior: `x=1..126`, `y=4..62`
+- accepted demo text: `DEUS OS`
+- after flash/reset, run `oledtext` and require `OLED_TEXT_OK` before visual judgment
+
+Full rationale, calibration evidence, replacement-panel procedure, and future-driver rules:
+
+`docs/OLED_SSD1306_HARDWARE_PROFILE.md`
+
+Do not change OLED orientation, D3 compensation, framebuffer packing, or visible Y bounds in later phases without explicit hardware revalidation.
