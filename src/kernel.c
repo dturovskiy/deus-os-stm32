@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "kernel/time.h"
+#include "drivers/ssd1306.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 
@@ -76,17 +77,7 @@
 #define I2C_SR1_BTF       (1u << 2)
 #define I2C_SR1_TXE       (1u << 7)
 
-#define SSD1306_ADDRESS      0x3Cu
-#define SSD1306_CONTROL_CMD  0x00u
-#define SSD1306_CONTROL_DATA 0x40u
-#define SSD1306_CMD_NOP      0xE3u
 
-#define SSD1306_WIDTH        128u
-#define SSD1306_HEIGHT       64u
-#define SSD1306_PAGES        (SSD1306_HEIGHT / 8u)
-#define SSD1306_PATTERN_DATA 16u
-#define SSD1306_FRAMEBUFFER_BYTES (SSD1306_WIDTH * SSD1306_PAGES)
-#define SSD1306_FLUSH_CHUNK_DATA  16u
 #define OLED_FONT_WIDTH            5u
 #define OLED_FONT_HEIGHT           7u
 #define OLED_FONT_SCALE            2u
@@ -443,7 +434,7 @@ static int i2c1_probe(uint8_t address)
     }
 }
 
-static int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length)
+int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length)
 {
     uint32_t spins;
     uint32_t sr1;
@@ -565,91 +556,6 @@ static int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length)
 
         --spins;
     }
-}
-
-static int ssd1306_command(uint8_t command)
-{
-    uint8_t payload[2];
-
-    payload[0] = SSD1306_CONTROL_CMD;
-    payload[1] = command;
-
-    return i2c1_write(SSD1306_ADDRESS, payload, 2u);
-}
-
-static int ssd1306_initialize_for_test(void)
-{
-    static const uint8_t init_packet[] =
-    {
-        SSD1306_CONTROL_CMD,
-
-        0xAEu,       /* display off */
-        0xD5u, 0x80u,/* display clock divide / oscillator */
-        0xA8u, 0x3Fu,/* multiplex ratio 1/64 */
-        0xD3u, 0x00u,/* display offset */
-        0x40u,       /* display start line = 0 */
-        0x8Du, 0x14u,/* charge pump on */
-        0x20u, 0x00u,/* horizontal addressing mode */
-        0xA1u,       /* segment remap */
-        0xC8u,       /* COM output scan direction remapped */
-        0xDAu, 0x12u,/* COM pins for 128x64 panel */
-        0x81u, 0xCFu,/* contrast */
-        0xD9u, 0xF1u,/* pre-charge period */
-        0xDBu, 0x40u,/* VCOMH deselect level */
-        0xA4u,       /* display follows RAM */
-        0xA6u        /* normal display */
-    };
-
-    return i2c1_write(
-        SSD1306_ADDRESS,
-        init_packet,
-        (uint32_t)sizeof(init_packet)
-    );
-}
-
-static int ssd1306_set_full_window(void)
-{
-    static const uint8_t window_packet[] =
-    {
-        SSD1306_CONTROL_CMD,
-        0x21u, 0x00u, 0x7Fu, /* columns 0..127 */
-        0x22u, 0x00u, 0x07u  /* pages 0..7 */
-    };
-
-    return i2c1_write(
-        SSD1306_ADDRESS,
-        window_packet,
-        (uint32_t)sizeof(window_packet)
-    );
-}
-
-static int ssd1306_fill_checkerboard(void)
-{
-    static const uint8_t pattern_packet[] =
-    {
-        SSD1306_CONTROL_DATA,
-        0xAAu, 0x55u, 0xAAu, 0x55u,
-        0xAAu, 0x55u, 0xAAu, 0x55u,
-        0xAAu, 0x55u, 0xAAu, 0x55u,
-        0xAAu, 0x55u, 0xAAu, 0x55u
-    };
-
-    uint32_t bytes_remaining = SSD1306_WIDTH * SSD1306_PAGES;
-
-    while (bytes_remaining != 0u)
-    {
-        if (i2c1_write(
-                SSD1306_ADDRESS,
-                pattern_packet,
-                (uint32_t)sizeof(pattern_packet)) == 0)
-        {
-            return 0;
-        }
-
-        bytes_remaining -= SSD1306_PATTERN_DATA;
-    }
-
-    return 1;
 }
 
 static void oled_fb_clear(void)
@@ -819,43 +725,9 @@ static void oled_fb_draw_text_2x(uint32_t x, uint32_t y, const char *text)
     }
 }
 
-static int ssd1306_flush_framebuffer(void)
-{
-    uint8_t packet[1u + SSD1306_FLUSH_CHUNK_DATA];
-    uint32_t offset;
-    uint32_t i;
-
-    if (ssd1306_set_full_window() == 0)
-    {
-        return 0;
-    }
-
-    packet[0] = SSD1306_CONTROL_DATA;
-
-    for (offset = 0u;
-         offset < SSD1306_FRAMEBUFFER_BYTES;
-         offset += SSD1306_FLUSH_CHUNK_DATA)
-    {
-        for (i = 0u; i < SSD1306_FLUSH_CHUNK_DATA; ++i)
-        {
-            packet[1u + i] = oled_framebuffer[offset + i];
-        }
-
-        if (i2c1_write(
-                SSD1306_ADDRESS,
-                packet,
-                (uint32_t)sizeof(packet)) == 0)
-        {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
 static int ssd1306_show_text_demo(void)
 {
-    if (ssd1306_initialize_for_test() == 0)
+    if (ssd1306_init() == 0)
     {
         return 0;
     }
@@ -864,12 +736,12 @@ static int ssd1306_show_text_demo(void)
     oled_fb_rect(0u, 3u, SSD1306_WIDTH, SSD1306_HEIGHT - 3u);
     oled_fb_draw_text_2x(17u, 25u, "DEUS OS");
 
-    if (ssd1306_flush_framebuffer() == 0)
+    if (ssd1306_present_full(oled_framebuffer) == 0)
     {
         return 0;
     }
 
-    return ssd1306_command(0xAFu);
+    return ssd1306_display_on();
 }
 
 static void console_oled_text(void)
@@ -884,29 +756,9 @@ static void console_oled_text(void)
     }
 }
 
-static int ssd1306_show_test_pattern(void)
-{
-    if (ssd1306_initialize_for_test() == 0)
-    {
-        return 0;
-    }
-
-    if (ssd1306_set_full_window() == 0)
-    {
-        return 0;
-    }
-
-    if (ssd1306_fill_checkerboard() == 0)
-    {
-        return 0;
-    }
-
-    return ssd1306_command(0xAFu);
-}
-
 static void console_oled_test(void)
 {
-    if (ssd1306_show_test_pattern() != 0)
+    if (ssd1306_show_checkerboard() != 0)
     {
         uart_write_line("OLED_TEST_OK");
     }
@@ -918,7 +770,7 @@ static void console_oled_test(void)
 
 static void console_oled_ping(void)
 {
-    if (ssd1306_command(SSD1306_CMD_NOP) != 0)
+    if (ssd1306_ping() != 0)
     {
         uart_write_line("OLED_CMD_OK");
     }
