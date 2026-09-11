@@ -758,13 +758,13 @@ static void oled_ui_fill_console_proof(void)
         &oled_console_state,
         "ROW3 BOTTOM");
 
+    /*
+     * Leave the cursor in the pending-next-line state.
+     * Do not inject hidden text: Slice 5 makes that state scrollable.
+     */
     oled_console_putc(
         &oled_console_state,
         '\n');
-
-    oled_console_write(
-        &oled_console_state,
-        "HIDDEN");
 }
 
 static int ssd1306_show_ui_layout(
@@ -816,6 +816,95 @@ static int ssd1306_show_console_test(void)
 {
     return ssd1306_show_ui_layout(
         oled_ui_layout_default());
+}
+
+static void oled_ui_fill_scroll_proof(void)
+{
+    oled_console_clear(&oled_console_state);
+
+    oled_console_write_line(
+        &oled_console_state,
+        "SCROLL ONE");
+
+    oled_console_write_line(
+        &oled_console_state,
+        "SCROLL TWO");
+
+    oled_console_write_line(
+        &oled_console_state,
+        "SCROLL THREE");
+
+    oled_console_write_line(
+        &oled_console_state,
+        "SCROLL FOUR");
+}
+
+static int ssd1306_show_scroll_test(void)
+{
+    const oled_ui_layout_t *layout;
+    oled_status_bar_t status;
+
+    layout = oled_ui_layout_default();
+
+    if (
+        (layout == (const oled_ui_layout_t *)0) ||
+        (oled_ui_layout_validate(layout) == 0)
+    ) {
+        return 0;
+    }
+
+    if (ssd1306_init() == 0)
+    {
+        return 0;
+    }
+
+    mono_fb_clear(&oled_surface);
+
+    oled_status_bar_init(&status);
+    oled_status_bar_set_time(
+        &status,
+        0u,
+        0u);
+
+    oled_status_bar_render(
+        &status,
+        &oled_surface,
+        layout->status_rect);
+
+    oled_ui_fill_scroll_proof();
+
+    oled_console_render(
+        &oled_console_state,
+        &oled_surface,
+        layout->console_rect);
+
+    if (ssd1306_present_full(oled_framebuffer) == 0)
+    {
+        return 0;
+    }
+
+    return ssd1306_display_on();
+}
+
+static void console_oled_scroll(void)
+{
+    if (oled_console_scroll_self_test() == 0)
+    {
+        uart_write_line("OLED_SCROLL_STATE_ERR");
+        uart_write_line("OLED_SCROLL_ERR");
+        return;
+    }
+
+    uart_write_line("OLED_SCROLL_STATE_OK");
+
+    if (ssd1306_show_scroll_test() != 0)
+    {
+        uart_write_line("OLED_SCROLL_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_SCROLL_ERR");
+    }
 }
 
 static void console_oled_console(void)
@@ -1009,6 +1098,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "oledconsole") != 0)
     {
         console_oled_console();
+    }
+    else if (text_equals(uart_command, "oledscroll") != 0)
+    {
+        console_oled_scroll();
     }
     else if (text_equals(uart_command, "oledstatus") != 0)
     {

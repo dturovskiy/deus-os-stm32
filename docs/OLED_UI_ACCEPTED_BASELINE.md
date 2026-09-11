@@ -32,6 +32,32 @@ The status bar is a fixed 128x9 framed region.
 - Current accepted proof value is `00:00`.
 - Status digits/colon use the compact `3x5` font.
 
+### Reserved notification field
+
+The currently unused center of the frozen status bar is reserved for future
+notifications without changing status-bar geometry:
+
+```text
+left indicators : x=2..18
+left guard      : x=19
+notification    : x=20..107, y=2..6
+right guard     : x=108
+clock           : x=109..125
+right inset     : x=126
+frame side      : x=127
+```
+
+`x=20..107` is a semantic reservation only. Slice 5 does not render notifications.
+
+On the monochrome panel, notification severity may later be represented without
+changing geometry:
+
+- normal notice: white glyphs on black;
+- emphasized/urgent notice: inverse field, white fill with black glyphs.
+
+The exact notification policy, text/icon format, lifetime, queueing, and priority
+rules are deferred to a dedicated notification subsystem slice.
+
 The status bar bitmap is protected by an exact reference self-test:
 `OLED_STATUS_REFERENCE_OK`.
 
@@ -155,3 +181,51 @@ must not silently change its geometry.
 
 UI styling is closed. Continue with the console/system roadmap, beginning with the
 next non-UI behavior slice (retained circular scrolling / `first_row` behavior).
+## Slice 5 circular retained console scroll — ACCEPTED 2026-09-11
+
+Circular retained scrolling is now hardware accepted.
+
+Behavior:
+
+- scrolling is implemented by rotating `first_row`;
+- the old logical top physical row is cleared and reused as the new bottom row;
+- framebuffer `memmove` is not used as the scrolling mechanism;
+- SSD1306 hardware scrolling is not used;
+- the retained console remains 21x3 and 67 bytes;
+- the frozen UI geometry, status bar, fonts, and renderer geometry remain unchanged;
+- the reserved notification field remains `x=20..107, y=2..6` and is still visually empty.
+
+The physical Slice 5 proof displayed exactly:
+
+```text
+SCROLL TWO
+SCROLL THREE
+SCROLL FOUR
+```
+
+Protocol regression passed:
+
+```text
+OLED_SCROLL_STATE_OK
+OLED_SCROLL_OK
+OLED_UI_LAYOUT_OK
+OLED_STATUS_REFERENCE_OK
+OLED_STATUS_OK
+OLED_CONSOLE_OK
+OLED_RENDER_EQ_OK
+OLED_RENDER_OK
+```
+
+Accepted Slice 5 firmware fingerprint:
+
+```text
+Image size    : 8188 bytes
+SHA-256       : C9ACF7A77A76C3B70A2EE323A6AE6BF16837DFD40BC2F38F28A83F4DB3CD8463
+.text         : 8188 bytes
+.data         : 0 bytes
+.bss          : 716 bytes
+framebuffer   : 512 bytes
+console state : 67 bytes
+```
+
+Next active OLED slice: dirty-page present optimization.

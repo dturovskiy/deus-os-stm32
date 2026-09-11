@@ -22,6 +22,59 @@ static void oled_console_mark_row(
     console->dirty_rows |= (uint8_t)(1u << row);
 }
 
+static void oled_console_clear_physical_row(
+    oled_console_t *console,
+    uint32_t physical_row)
+{
+    uint32_t column;
+
+    if (
+        (console == (oled_console_t *)0) ||
+        (physical_row >= OLED_CONSOLE_ROWS)
+    ) {
+        return;
+    }
+
+    for (column = 0u; column < OLED_CONSOLE_COLUMNS; ++column)
+    {
+        console->cells[physical_row][column] = ' ';
+    }
+}
+
+static void oled_console_scroll_one(
+    oled_console_t *console)
+{
+    uint32_t new_bottom_row;
+
+    if (console == (oled_console_t *)0)
+    {
+        return;
+    }
+
+    console->first_row =
+        (uint8_t)(
+            ((uint32_t)console->first_row + 1u) %
+            OLED_CONSOLE_ROWS);
+
+    new_bottom_row =
+        (
+            (uint32_t)console->first_row +
+            (OLED_CONSOLE_ROWS - 1u)
+        ) %
+        OLED_CONSOLE_ROWS;
+
+    oled_console_clear_physical_row(
+        console,
+        new_bottom_row);
+
+    /*
+     * Logical row positions all changed after first_row rotation.
+     * Mark the whole retained viewport dirty.
+     */
+    console->dirty_rows =
+        oled_console_all_rows_mask();
+}
+
 static int oled_console_prepare_printable(
     oled_console_t *console)
 {
@@ -30,23 +83,42 @@ static int oled_console_prepare_printable(
         return 0;
     }
 
+    /*
+     * cursor_y == OLED_CONSOLE_ROWS is the pending-next-line state.
+     * Delay the actual rotation until content arrives so write_line()
+     * leaves the newest three completed logical lines visible.
+     */
     if (console->cursor_y >= OLED_CONSOLE_ROWS)
     {
-        return 0;
+        oled_console_scroll_one(console);
+        console->cursor_y =
+            (uint8_t)(OLED_CONSOLE_ROWS - 1u);
+        console->cursor_x = 0u;
     }
 
     /*
      * cursor_x == OLED_CONSOLE_COLUMNS is the pending-wrap state.
-     * Wrapping happens only when another printable character arrives.
-     * This prevents an exact-width line followed by LF from skipping a row.
+     * Exact-width rows do not advance until another printable arrives.
      */
     if (console->cursor_x >= OLED_CONSOLE_COLUMNS)
     {
         console->cursor_x = 0u;
-        ++console->cursor_y;
+
+        if (
+            ((uint32_t)console->cursor_y + 1u) <
+            OLED_CONSOLE_ROWS
+        ) {
+            ++console->cursor_y;
+        }
+        else
+        {
+            oled_console_scroll_one(console);
+            console->cursor_y =
+                (uint8_t)(OLED_CONSOLE_ROWS - 1u);
+        }
     }
 
-    return console->cursor_y < OLED_CONSOLE_ROWS;
+    return 1;
 }
 
 void oled_console_init(oled_console_t *console)
@@ -80,7 +152,7 @@ void oled_console_clear(oled_console_t *console)
 
 void oled_console_putc(oled_console_t *console, char c)
 {
-    uint32_t row;
+    uint32_t physical_row;
 
     if (console == (oled_console_t *)0)
     {
@@ -101,6 +173,17 @@ void oled_console_putc(oled_console_t *console, char c)
         {
             ++console->cursor_y;
         }
+        else
+        {
+            /*
+             * A newline in the pending-next-line state represents a real
+             * blank logical line. Rotate once, clear the new bottom row,
+             * and keep the cursor pending after that blank line.
+             */
+            oled_console_scroll_one(console);
+            console->cursor_y =
+                (uint8_t)OLED_CONSOLE_ROWS;
+        }
 
         return;
     }
@@ -115,9 +198,18 @@ void oled_console_putc(oled_console_t *console, char c)
         return;
     }
 
-    row = console->cursor_y;
-    console->cells[row][console->cursor_x] = c;
-    oled_console_mark_row(console, row);
+    physical_row =
+        (
+            (uint32_t)console->first_row +
+            (uint32_t)console->cursor_y
+        ) %
+        OLED_CONSOLE_ROWS;
+
+    console->cells[physical_row][console->cursor_x] = c;
+    oled_console_mark_row(
+        console,
+        (uint32_t)console->cursor_y);
+
     ++console->cursor_x;
 }
 
@@ -145,6 +237,87 @@ void oled_console_write_line(
 {
     oled_console_write(console, text);
     oled_console_putc(console, '\n');
+}
+
+int oled_console_scroll_self_test(void)
+{
+    oled_console_t test;
+    uint32_t row0;
+    uint32_t row1;
+    uint32_t row2;
+
+    oled_console_init(&test);
+
+    oled_console_write_line(&test, "ONE");
+    oled_console_write_line(&test, "TWO");
+    oled_console_write_line(&test, "THREE");
+    oled_console_write_line(&test, "FOUR");
+
+    if (
+        (test.first_row != 1u) ||
+        (test.cursor_x != 0u) ||
+        (test.cursor_y != OLED_CONSOLE_ROWS)
+    ) {
+        return 0;
+    }
+
+    row0 =
+        ((uint32_t)test.first_row + 0u) %
+        OLED_CONSOLE_ROWS;
+    row1 =
+        ((uint32_t)test.first_row + 1u) %
+        OLED_CONSOLE_ROWS;
+    row2 =
+        ((uint32_t)test.first_row + 2u) %
+        OLED_CONSOLE_ROWS;
+
+    if (
+        (test.cells[row0][0] != 'T') ||
+        (test.cells[row0][1] != 'W') ||
+        (test.cells[row0][2] != 'O') ||
+        (test.cells[row1][0] != 'T') ||
+        (test.cells[row1][1] != 'H') ||
+        (test.cells[row1][2] != 'R') ||
+        (test.cells[row2][0] != 'F') ||
+        (test.cells[row2][1] != 'O') ||
+        (test.cells[row2][2] != 'U') ||
+        (test.cells[row2][3] != 'R')
+    ) {
+        return 0;
+    }
+
+    /*
+     * One more printable character must rotate again and reuse the old
+     * physical top row as a cleared new logical bottom row.
+     */
+    oled_console_putc(&test, 'X');
+
+    if (
+        (test.first_row != 2u) ||
+        (test.cursor_y != (OLED_CONSOLE_ROWS - 1u)) ||
+        (test.cursor_x != 1u)
+    ) {
+        return 0;
+    }
+
+    row0 =
+        ((uint32_t)test.first_row + 0u) %
+        OLED_CONSOLE_ROWS;
+    row1 =
+        ((uint32_t)test.first_row + 1u) %
+        OLED_CONSOLE_ROWS;
+    row2 =
+        ((uint32_t)test.first_row + 2u) %
+        OLED_CONSOLE_ROWS;
+
+    return
+        (test.cells[row0][0] == 'T') &&
+        (test.cells[row0][1] == 'H') &&
+        (test.cells[row1][0] == 'F') &&
+        (test.cells[row1][1] == 'O') &&
+        (test.cells[row2][0] == 'X') &&
+        (test.cells[row2][1] == ' ') &&
+        (test.dirty_rows == oled_console_all_rows_mask());
 }
 
 void oled_console_render(

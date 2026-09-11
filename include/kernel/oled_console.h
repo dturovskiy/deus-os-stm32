@@ -22,6 +22,8 @@ void oled_console_putc(oled_console_t *console, char c);
 void oled_console_write(oled_console_t *console, const char *text);
 void oled_console_write_line(oled_console_t *console, const char *text);
 
+int oled_console_scroll_self_test(void);
+
 void oled_console_render(
     const oled_console_t *console,
     mono_fb_t *fb,

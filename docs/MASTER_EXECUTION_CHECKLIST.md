@@ -261,4 +261,20 @@ Deferred, not blocking the current roadmap:
 - [ ] UI persistence — deferred.
 - [ ] Uptime/RTC clock behavior — deferred.
 
-**Next active slice:** retained circular console scrolling / `first_row` behavior.
+- [x] Center status-bar field reserved for notifications:
+  `x=20..107, y=2..6`, with guard columns `x=19` and `x=108`.
+- [ ] Notification rendering/queue semantics — deferred to dedicated subsystem.
+
+### Slice 5 — circular retained console scroll
+
+- [x] Rotate retained rows through `first_row`.
+- [x] Reuse/clear the old physical top row as the new bottom row.
+- [x] Preserve pending-wrap / pending-next-line semantics.
+- [x] No framebuffer `memmove` as the scrolling mechanism.
+- [x] No SSD1306 hardware scroll.
+- [x] `OLED_SCROLL_STATE_OK`.
+- [x] `OLED_SCROLL_OK`.
+- [x] Physical proof accepted: `SCROLL TWO / SCROLL THREE / SCROLL FOUR`.
+- [x] Frozen UI implementation remains unchanged.
+
+**Next active slice:** dirty-page present optimization.
