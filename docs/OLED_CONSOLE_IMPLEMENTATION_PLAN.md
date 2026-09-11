@@ -76,19 +76,45 @@ SHA256 = C67AEBA137F645F5BECAEB6410382D44257E1B09EA3BE459BD83AC718F3A09AC
 
 ## Slice 4B — status-bar component
 
-Next UI feature before kernel-log integration.
+Detailed plan:
 
-Goals:
+```text
+docs/OLED_STATUS_BAR_PLAN.md
+```
 
-- make status bar a sibling component to the console;
-- keep console semantics unchanged;
-- own only `x=1..126, y=1..4`;
-- preserve separator at `y=5`;
-- keep `y=6` clear;
-- use a compact representation appropriate for the 4-pixel-high content area.
+Fixed decisions:
 
-Before implementation, select the status content and rendering strategy.
-Do not enlarge the status region by stealing console pixels.
+- status content remains `x=1..126, y=1..4`;
+- separator remains `y=5`;
+- `y=6` remains blank;
+- console remains `21x3` at row origins `y=7,15,23`;
+- left field is COMM status, initially UART/serial, not fake network;
+- right field is `HH:MM`;
+- initial time source is uptime;
+- future RTC uses the same `HH:MM` geometry;
+- micro-font is `3x4`;
+- status component does not flush the OLED.
+
+Implementation is split into two hardware-visible checkpoints:
+
+### Slice 4B.1 — static status proof
+
+- add `font3x4`;
+- add `oled_status_bar`;
+- render COMM icon + fixed `12:34`;
+- add `oledstatus -> OLED_STATUS_OK`;
+- prove pixel isolation to `x=1..126,y=1..4`;
+- physical acceptance before integration.
+
+### Slice 4B.2 — uptime integration
+
+- derive `HH:MM` from existing uptime;
+- expose UART/serial COMM state;
+- dirty only when displayed minute or COMM state changes;
+- integrate with the accepted framed console;
+- preserve every Slice 4 console regression.
+
+Do not begin 4B.2 until 4B.1 is physically accepted.
 
 ## Slice 5 — circular scroll
 

@@ -151,6 +151,12 @@ Verify:
 
 ## 10. Status-bar acceptance
 
+Detailed acceptance plan:
+
+```text
+docs/OLED_STATUS_BAR_PLAN.md
+```
+
 The status bar is a separate UI component.
 
 Reserved region:
@@ -158,14 +164,45 @@ Reserved region:
 ```text
 content   x=1..126, y=1..4
 separator x=1..126, y=5
+gap       y=6
 ```
 
-It must not:
+### 10.1 Slice 4B.1 static proof
 
-- write to `y=6`;
+Required:
+
+- `font3x4` supports digits `0..9` and `:`;
+- COMM icon renders inside a 4x4 left slot;
+- fixed `12:34` renders in the right time field;
+- `oledstatus -> OLED_STATUS_OK`;
+- no pixel outside `x=1..126,y=1..4` changes;
+- frame `y=0` survives;
+- separator `y=5` survives;
+- gap `y=6` remains blank;
+- console pixels remain unchanged;
+- physical output is readable.
+
+### 10.2 Slice 4B.2 integration
+
+Required:
+
+- right field displays uptime as `HH:MM`;
+- display range saturates at `99:59`;
+- UART/serial COMM state is real, not a fabricated network state;
+- status becomes dirty only when displayed minute or COMM state changes;
+- no 1 Hz OLED-flush requirement;
+- `oledconsole -> OLED_CONSOLE_OK`;
+- `OLED_RENDER_EQ_OK` remains intact;
+- accepted console geometry remains unchanged.
+
+The status component must not:
+
+- perform I2C;
+- present/flush the display;
+- know SSD1306 page layout;
 - modify console semantic state;
-- change console viewport;
-- depend on SSD1306 page alignment at the UI API boundary.
+- draw separator `y=5`;
+- write to `y=0`, `y=5`, or `y=6`.
 
 ## 11. Dirty-page acceptance
 

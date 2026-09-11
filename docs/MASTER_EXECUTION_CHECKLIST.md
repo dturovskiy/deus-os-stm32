@@ -61,6 +61,7 @@ Read together:
 - `docs/OLED_CONSOLE_API_CONTRACT.md`
 - `docs/OLED_CONSOLE_IMPLEMENTATION_PLAN.md`
 - `docs/OLED_CONSOLE_ACCEPTANCE_PLAN.md`
+- `docs/OLED_STATUS_BAR_PLAN.md`
 
 Canonical framed UI geometry:
 
@@ -93,6 +94,18 @@ Console UI is not aligned to SSD1306 pages.
 - [x] Slice 3C: framebuffer-equivalent aligned fast path.
 - [x] Slice 4: retained 21x3 console without scrolling + accepted UI layout.
 - [ ] Slice 4B: status-bar component/content.
+  - [x] 4B.0: architecture/implementation/acceptance plan defined.
+  - [ ] 4B.1: add immutable 3x4 digit/colon micro-font.
+  - [ ] 4B.1: add isolated `oled_status_bar` component.
+  - [ ] 4B.1: render real COMM/UART icon + fixed `12:34`.
+  - [ ] 4B.1: add `oledstatus -> OLED_STATUS_OK`.
+  - [ ] 4B.1: prove pixel isolation to `x=1..126,y=1..4`.
+  - [ ] 4B.1: physical acceptance and checkpoint commit/push.
+  - [ ] 4B.2: derive `HH:MM` from uptime.
+  - [ ] 4B.2: update only when displayed minute/COMM state changes.
+  - [ ] 4B.2: integrate status with accepted `oledconsole` layout.
+  - [ ] 4B.2: preserve `OLED_RENDER_EQ_OK` and `OLED_CONSOLE_OK`.
+  - [ ] 4B.2: physical acceptance and checkpoint commit/push.
 - [ ] Slice 5: circular 3-row scroll.
 - [ ] Slice 6: dirty-page presentation optimization.
 - [ ] Slice 7: optional kernel-log integration.
