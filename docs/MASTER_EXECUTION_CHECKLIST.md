@@ -431,3 +431,56 @@ Full rationale, calibration evidence, replacement-panel procedure, and future-dr
 `docs/OLED_SSD1306_HARDWARE_PROFILE.md`
 
 Do not change OLED orientation, D3 compensation, framebuffer packing, or visible Y bounds in later phases without explicit hardware revalidation.
+<!-- OLED_CONSOLE_ARCHITECTURE_PLAN_CANONICAL -->
+## OLED kernel console architecture gate
+
+Status: **PLANNED / NOT STARTED**
+
+The failed experimental scale-1 `oledconsole` rendering is **not accepted** and must not be committed.
+
+Before further implementation, use the following canonical package:
+
+- architecture: `docs/OLED_CONSOLE_ARCHITECTURE.md`
+- API contract: `docs/OLED_CONSOLE_API_CONTRACT.md`
+- implementation plan: `docs/OLED_CONSOLE_IMPLEMENTATION_PLAN.md`
+- acceptance plan: `docs/OLED_CONSOLE_ACCEPTANCE_PLAN.md`
+- panel hardware facts: `docs/OLED_SSD1306_HARDWARE_PROFILE.md`
+
+Chosen design:
+
+```text
+retained 21x7 text model
+-> opaque text renderer
+-> 1024-byte monochrome framebuffer
+-> SSD1306 present boundary
+-> I2C
+```
+
+Mandatory design rules:
+
+- no heap;
+- no page knowledge in `oled_console`;
+- no I2C transfer from `putc()` or `write()`;
+- page alignment is an internal renderer optimization;
+- console row coordinates are derived from viewport/font metrics, not manually enumerated;
+- text cells are opaque;
+- framebuffer drawing tracks dirty pages;
+- initial acceptance may retain full 1024-byte flush;
+- scroll uses a circular character-row model;
+- panel quirks remain in the panel profile;
+- no new display abstraction/function-pointer layer until a second real backend requires it.
+
+Execution order:
+
+```text
+0 restore accepted baseline and reflash it
+1 isolate SSD1306 driver with no visual change
+2 isolate mono framebuffer + font
+3 add opaque text renderer + aligned fast path
+4 add retained 21x7 console without scroll
+5 add circular scroll
+6 optimize dirty-page presentation
+7 integrate optional kernel log sink
+```
+
+Every rendering slice requires physical OLED acceptance before commit.

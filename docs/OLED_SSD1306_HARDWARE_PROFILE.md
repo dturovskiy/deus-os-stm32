@@ -333,3 +333,56 @@ post-flash visual  = only after oledtext / OLED_TEXT_OK
 ```
 
 If future code violates one of these invariants, the change must explicitly explain why and must be hardware revalidated.
+<!-- OLED_CONSOLE_LAYOUT_ADDENDUM -->
+## Console layout addendum
+
+The hardware-calibrated graphics interior remains:
+
+```text
+x = 1..126
+y = 4..62
+```
+
+This rectangle is a legal graphics area. It must **not** be interpreted as a requirement that text rows begin at arbitrary Y coordinates.
+
+The production text console uses its own layout policy derived from the graphics viewport and font metrics.
+
+For the initial 5x7 font:
+
+```text
+glyph width     = 5
+glyph height    = 7
+horizontal step = 6
+vertical step   = 8
+```
+
+The console aligns its first text row to the next 8-pixel framebuffer boundary:
+
+```text
+align_up(4, 8) = 8
+```
+
+Rows are then computed from the vertical step.
+
+The initial seven glyph rows therefore occupy ranges equivalent to:
+
+```text
+row 0: y=8..14
+...
+row 6: y=56..62
+```
+
+These ranges are **derived layout output**, not a table to hard-code into console logic.
+
+The bottom frame remains at `y=63` and shares SSD1306 page 7 with the last console row. Renderers must preserve the frame bit through clipping/masking.
+
+Architecture ownership:
+
+- panel profile owns physical/controller facts;
+- graphics layer owns pixels and clipping;
+- text renderer owns glyph rasterization and aligned optimization;
+- console owns characters, cursor, wrap, newline, and scroll.
+
+The previously documented `safe interior` remains valid for graphics. The console deliberately uses a page-aligned subset for efficient text.
+
+Any future console implementation that directly embeds SSD1306 page numbers or manually enumerates row Y coordinates violates the production architecture.
