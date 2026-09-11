@@ -85,6 +85,12 @@
 #define SSD1306_HEIGHT       64u
 #define SSD1306_PAGES        (SSD1306_HEIGHT / 8u)
 #define SSD1306_PATTERN_DATA 16u
+#define SSD1306_FRAMEBUFFER_BYTES (SSD1306_WIDTH * SSD1306_PAGES)
+#define SSD1306_FLUSH_CHUNK_DATA  16u
+#define OLED_FONT_WIDTH            5u
+#define OLED_FONT_HEIGHT           7u
+#define OLED_FONT_SCALE            2u
+#define OLED_GLYPH_ADVANCE         12u
 #define I2C_SR1_BERR      (1u << 8)
 #define I2C_SR1_ARLO      (1u << 9)
 #define I2C_SR1_AF        (1u << 10)
@@ -160,6 +166,8 @@ typedef struct
 
 volatile uint32_t kernel_ticks;
 volatile fault_record_t fault_record;
+
+static uint8_t oled_framebuffer[SSD1306_WIDTH * SSD1306_PAGES];
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -644,6 +652,238 @@ static int ssd1306_fill_checkerboard(void)
     return 1;
 }
 
+static void oled_fb_clear(void)
+{
+    uint32_t i;
+
+    for (i = 0u; i < SSD1306_FRAMEBUFFER_BYTES; ++i)
+    {
+        oled_framebuffer[i] = 0u;
+    }
+}
+
+static void oled_fb_set_pixel(uint32_t x, uint32_t y, int on)
+{
+    uint32_t index;
+    uint8_t mask;
+
+    if ((x >= SSD1306_WIDTH) || (y >= SSD1306_HEIGHT))
+    {
+        return;
+    }
+
+    index = (y / 8u) * SSD1306_WIDTH + x;
+    mask = (uint8_t)(1u << (y & 7u));
+
+    if (on != 0)
+    {
+        oled_framebuffer[index] |= mask;
+    }
+    else
+    {
+        oled_framebuffer[index] &= (uint8_t)~mask;
+    }
+}
+
+static void oled_fb_hline(uint32_t x, uint32_t y, uint32_t width)
+{
+    uint32_t i;
+
+    for (i = 0u; i < width; ++i)
+    {
+        oled_fb_set_pixel(x + i, y, 1);
+    }
+}
+
+static void oled_fb_vline(uint32_t x, uint32_t y, uint32_t height)
+{
+    uint32_t i;
+
+    for (i = 0u; i < height; ++i)
+    {
+        oled_fb_set_pixel(x, y + i, 1);
+    }
+}
+
+static void oled_fb_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+{
+    if ((width == 0u) || (height == 0u))
+    {
+        return;
+    }
+
+    oled_fb_hline(x, y, width);
+    oled_fb_hline(x, y + height - 1u, width);
+    oled_fb_vline(x, y, height);
+    oled_fb_vline(x + width - 1u, y, height);
+}
+
+
+
+/*
+ * 5x7 column font.
+ * Indices 0..9 are '0'..'9', 10..35 are 'A'..'Z', 36 is space.
+ * Bit 0 is the top pixel of a glyph column.
+ */
+static const uint8_t oled_font5x7[37][OLED_FONT_WIDTH] =
+{
+    {0x3Eu,0x51u,0x49u,0x45u,0x3Eu}, /* 0 */
+    {0x00u,0x42u,0x7Fu,0x40u,0x00u}, /* 1 */
+    {0x42u,0x61u,0x51u,0x49u,0x46u}, /* 2 */
+    {0x21u,0x41u,0x45u,0x4Bu,0x31u}, /* 3 */
+    {0x18u,0x14u,0x12u,0x7Fu,0x10u}, /* 4 */
+    {0x27u,0x45u,0x45u,0x45u,0x39u}, /* 5 */
+    {0x3Cu,0x4Au,0x49u,0x49u,0x30u}, /* 6 */
+    {0x01u,0x71u,0x09u,0x05u,0x03u}, /* 7 */
+    {0x36u,0x49u,0x49u,0x49u,0x36u}, /* 8 */
+    {0x06u,0x49u,0x49u,0x29u,0x1Eu}, /* 9 */
+
+    {0x7Eu,0x11u,0x11u,0x11u,0x7Eu}, /* A */
+    {0x7Fu,0x49u,0x49u,0x49u,0x36u}, /* B */
+    {0x3Eu,0x41u,0x41u,0x41u,0x22u}, /* C */
+    {0x7Fu,0x41u,0x41u,0x22u,0x1Cu}, /* D */
+    {0x7Fu,0x49u,0x49u,0x49u,0x41u}, /* E */
+    {0x7Fu,0x09u,0x09u,0x09u,0x01u}, /* F */
+    {0x3Eu,0x41u,0x49u,0x49u,0x7Au}, /* G */
+    {0x7Fu,0x08u,0x08u,0x08u,0x7Fu}, /* H */
+    {0x00u,0x41u,0x7Fu,0x41u,0x00u}, /* I */
+    {0x20u,0x40u,0x41u,0x3Fu,0x01u}, /* J */
+    {0x7Fu,0x08u,0x14u,0x22u,0x41u}, /* K */
+    {0x7Fu,0x40u,0x40u,0x40u,0x40u}, /* L */
+    {0x7Fu,0x02u,0x0Cu,0x02u,0x7Fu}, /* M */
+    {0x7Fu,0x04u,0x08u,0x10u,0x7Fu}, /* N */
+    {0x3Eu,0x41u,0x41u,0x41u,0x3Eu}, /* O */
+    {0x7Fu,0x09u,0x09u,0x09u,0x06u}, /* P */
+    {0x3Eu,0x41u,0x51u,0x21u,0x5Eu}, /* Q */
+    {0x7Fu,0x09u,0x19u,0x29u,0x46u}, /* R */
+    {0x46u,0x49u,0x49u,0x49u,0x31u}, /* S */
+    {0x01u,0x01u,0x7Fu,0x01u,0x01u}, /* T */
+    {0x3Fu,0x40u,0x40u,0x40u,0x3Fu}, /* U */
+    {0x1Fu,0x20u,0x40u,0x20u,0x1Fu}, /* V */
+    {0x3Fu,0x40u,0x38u,0x40u,0x3Fu}, /* W */
+    {0x63u,0x14u,0x08u,0x14u,0x63u}, /* X */
+    {0x07u,0x08u,0x70u,0x08u,0x07u}, /* Y */
+    {0x61u,0x51u,0x49u,0x45u,0x43u}, /* Z */
+
+    {0x00u,0x00u,0x00u,0x00u,0x00u}  /* space */
+};
+
+static const uint8_t *oled_font5x7_get(char c)
+{
+    if ((c >= '0') && (c <= '9'))
+    {
+        return oled_font5x7[(uint32_t)(c - '0')];
+    }
+
+    if ((c >= 'A') && (c <= 'Z'))
+    {
+        return oled_font5x7[10u + (uint32_t)(c - 'A')];
+    }
+
+    return oled_font5x7[36u];
+}
+
+static void oled_fb_draw_char_2x(uint32_t x, uint32_t y, char c)
+{
+    const uint8_t *glyph = oled_font5x7_get(c);
+    uint32_t column;
+    uint32_t row;
+
+    for (column = 0u; column < OLED_FONT_WIDTH; ++column)
+    {
+        uint8_t bits = glyph[column];
+
+        for (row = 0u; row < OLED_FONT_HEIGHT; ++row)
+        {
+            if ((bits & (uint8_t)(1u << row)) != 0u)
+            {
+                uint32_t px = x + column * OLED_FONT_SCALE;
+                uint32_t py = y + row * OLED_FONT_SCALE;
+
+                oled_fb_set_pixel(px,      py,      1);
+                oled_fb_set_pixel(px + 1u, py,      1);
+                oled_fb_set_pixel(px,      py + 1u, 1);
+                oled_fb_set_pixel(px + 1u, py + 1u, 1);
+            }
+        }
+    }
+}
+
+static void oled_fb_draw_text_2x(uint32_t x, uint32_t y, const char *text)
+{
+    while ((*text != '\0') && (x < SSD1306_WIDTH))
+    {
+        oled_fb_draw_char_2x(x, y, *text);
+        x += OLED_GLYPH_ADVANCE;
+        ++text;
+    }
+}
+
+static int ssd1306_flush_framebuffer(void)
+{
+    uint8_t packet[1u + SSD1306_FLUSH_CHUNK_DATA];
+    uint32_t offset;
+    uint32_t i;
+
+    if (ssd1306_set_full_window() == 0)
+    {
+        return 0;
+    }
+
+    packet[0] = SSD1306_CONTROL_DATA;
+
+    for (offset = 0u;
+         offset < SSD1306_FRAMEBUFFER_BYTES;
+         offset += SSD1306_FLUSH_CHUNK_DATA)
+    {
+        for (i = 0u; i < SSD1306_FLUSH_CHUNK_DATA; ++i)
+        {
+            packet[1u + i] = oled_framebuffer[offset + i];
+        }
+
+        if (i2c1_write(
+                SSD1306_ADDRESS,
+                packet,
+                (uint32_t)sizeof(packet)) == 0)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int ssd1306_show_text_demo(void)
+{
+    if (ssd1306_initialize_for_test() == 0)
+    {
+        return 0;
+    }
+
+    oled_fb_clear();
+    oled_fb_rect(0u, 3u, SSD1306_WIDTH, SSD1306_HEIGHT - 3u);
+    oled_fb_draw_text_2x(17u, 25u, "DEUS OS");
+
+    if (ssd1306_flush_framebuffer() == 0)
+    {
+        return 0;
+    }
+
+    return ssd1306_command(0xAFu);
+}
+
+static void console_oled_text(void)
+{
+    if (ssd1306_show_text_demo() != 0)
+    {
+        uart_write_line("OLED_TEXT_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_TEXT_ERR");
+    }
+}
+
 static int ssd1306_show_test_pattern(void)
 {
     if (ssd1306_initialize_for_test() == 0)
@@ -790,6 +1030,11 @@ static void console_execute(void)
     {
         console_oled_test();
     }
+    else if (text_equals(uart_command, "oledtext") != 0)
+    {
+        console_oled_text();
+    }
+
     else
     {
         uart_write_line("ERR");
