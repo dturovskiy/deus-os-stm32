@@ -1,3 +1,9 @@
+> [!IMPORTANT]
+> **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
+> The authoritative hardware-accepted geometry and firmware fingerprint are in
+> [`OLED_UI_ACCEPTED_BASELINE.md`](OLED_UI_ACCEPTED_BASELINE.md).
+> Any configurable-layout, preset, custom-layout, persistence, or alternate-geometry
+> material below is deferred planning and must not override the accepted baseline.
 # OLED Console Acceptance Plan
 
 Status: CANONICAL / NATIVE 128x32

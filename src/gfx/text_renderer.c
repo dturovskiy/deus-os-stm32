@@ -67,6 +67,42 @@ static void text_renderer_draw_cell_generic(
     }
 }
 
+void text_renderer_draw_glyph_cell(
+    mono_fb_t *fb,
+    mono_rect_t clip,
+    int32_t x,
+    int32_t y,
+    const uint8_t *glyph,
+    const mono_font_metrics_t *metrics)
+{
+    if (
+        (fb == (mono_fb_t *)0) ||
+        (fb->data == (uint8_t *)0) ||
+        (glyph == (const uint8_t *)0) ||
+        (metrics == (const mono_font_metrics_t *)0) ||
+        (metrics->glyph_width == 0u) ||
+        (metrics->glyph_height == 0u) ||
+        (metrics->advance_x == 0u) ||
+        (metrics->advance_y == 0u) ||
+        (clip.width <= 0) ||
+        (clip.height <= 0)
+    ) {
+        return;
+    }
+
+    /*
+     * Custom font path intentionally uses the generic renderer.
+     * The proven aligned 5x7 fast path remains unchanged.
+     */
+    text_renderer_draw_cell_generic(
+        fb,
+        clip,
+        x,
+        y,
+        glyph,
+        metrics);
+}
+
 static int text_renderer_can_use_aligned_fast_path(
     const mono_fb_t *fb,
     int32_t y,

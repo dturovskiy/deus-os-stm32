@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "kernel/oled_console.h"
-#include "gfx/font5x7.h"
+#include "gfx/font5x6.h"
 #include "gfx/text_renderer.h"
 
 static uint8_t oled_console_all_rows_mask(void)
@@ -168,19 +168,37 @@ void oled_console_render(
         return;
     }
 
-    metrics = font5x7_metrics();
+    metrics = font5x6_metrics();
 
     if (
         (metrics == (const mono_font_metrics_t *)0) ||
+        (metrics->glyph_width == 0u) ||
+        (metrics->glyph_height == 0u) ||
         (metrics->advance_x == 0u) ||
-        (metrics->advance_y == 0u) ||
-        (metrics->glyph_height == 0u)
+        (metrics->advance_y == 0u)
     ) {
         return;
     }
 
-    available_columns =
-        (uint32_t)clip.width / (uint32_t)metrics->advance_x;
+    /*
+     * Horizontal contract:
+     * 5-pixel glyph + 1-pixel spacer.
+     * x=1,w=126 keeps all 21 columns.
+     */
+    if ((uint32_t)clip.width < (uint32_t)metrics->glyph_width)
+    {
+        available_columns = 0u;
+    }
+    else
+    {
+        available_columns =
+            1u +
+            (
+                ((uint32_t)clip.width -
+                 (uint32_t)metrics->glyph_width) /
+                (uint32_t)metrics->advance_x
+            );
+    }
 
     if (available_columns > OLED_CONSOLE_COLUMNS)
     {
@@ -188,17 +206,21 @@ void oled_console_render(
     }
 
     /*
-     * The caller owns UI composition and supplies the console viewport.
+     * Frozen final vertical contract:
      *
-     * A row fits when its 7-pixel glyph fits. The 8th cell pixel is the
-     * inter-row spacer. The final row is allowed to have that spacer clipped
-     * by the viewport, which leaves the caller-owned bottom margin intact.
+     * status bar   y=0..8
+     * blank gap    y=9
+     * console clip y=10..31
      *
-     * Canonical console clip:
-     *   x=1, y=7, width=126, height=23
+     * Compact cell = 6-pixel glyph + 1-pixel spacer:
      *
-     * With 5x7 / 6x8 metrics this derives three row origins:
-     *   y=7, 15, 23
+     * row 0 glyph  y=10..15
+     * gap          y=16
+     * row 1 glyph  y=17..22
+     * gap          y=23
+     * row 2 glyph  y=24..29
+     * gap          y=30
+     * bottom blank y=31
      */
     if ((uint32_t)clip.height < (uint32_t)metrics->glyph_height)
     {
@@ -239,12 +261,17 @@ void oled_console_render(
                     row *
                     (uint32_t)metrics->advance_y);
 
-            text_renderer_draw_cell(
+            const uint8_t *glyph =
+                font5x6_glyph(
+                    console->cells[logical_row][column]);
+
+            text_renderer_draw_glyph_cell(
                 fb,
                 clip,
                 x,
                 y,
-                console->cells[logical_row][column]);
+                glyph,
+                metrics);
         }
     }
 }

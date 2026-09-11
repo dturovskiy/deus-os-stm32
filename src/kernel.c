@@ -5,6 +5,8 @@
 #include "gfx/font5x7.h"
 #include "gfx/text_renderer.h"
 #include "kernel/oled_console.h"
+#include "kernel/oled_status_bar.h"
+#include "kernel/oled_ui_layout.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 
@@ -740,57 +742,14 @@ static void console_oled_render(void)
     }
 }
 
-static int ssd1306_show_console_test(void)
+static void oled_ui_fill_console_proof(void)
 {
-    static const mono_rect_t clip =
-    {
-        1,
-        7,
-        126,
-        23
-    };
-
-    if (ssd1306_init() == 0)
-    {
-        return 0;
-    }
-
-    mono_fb_clear(&oled_surface);
-    mono_fb_rect(
-        &oled_surface,
-        0,
-        0,
-        (int32_t)SSD1306_WIDTH,
-        (int32_t)SSD1306_HEIGHT,
-        1);
-
-    /*
-     * Status-bar reservation:
-     * content area y=1..4, separator y=5.
-     * y=6 is a one-pixel visual gap before console row 1 at y=7.
-     * The status content itself is a later component.
-     */
-    mono_fb_hline(
-        &oled_surface,
-        1,
-        5,
-        126,
-        1);
-
     oled_console_clear(&oled_console_state);
 
-    /*
-     * Exactly 21 characters. The next printable character must trigger
-     * automatic wrap to the second logical row.
-     */
     oled_console_write(
         &oled_console_state,
         "ABCDEFGHIJKLMNOPQRSTU");
 
-    /*
-     * Exercise the public write_line API: write row 2 and advance exactly
-     * once to row 3.
-     */
     oled_console_write_line(
         &oled_console_state,
         "ROW2 OPAQUE");
@@ -799,19 +758,51 @@ static int ssd1306_show_console_test(void)
         &oled_console_state,
         "ROW3 BOTTOM");
 
-    /*
-     * Slice 4 has intentionally no scrolling.
-     * Anything after leaving the third row must be ignored.
-     */
-    oled_console_putc(&oled_console_state, '\n');
+    oled_console_putc(
+        &oled_console_state,
+        '\n');
+
     oled_console_write(
         &oled_console_state,
         "HIDDEN");
+}
+
+static int ssd1306_show_ui_layout(
+    const oled_ui_layout_t *layout)
+{
+    oled_status_bar_t status;
+
+    if (
+        (layout == (const oled_ui_layout_t *)0) ||
+        (oled_ui_layout_validate(layout) == 0)
+    ) {
+        return 0;
+    }
+
+    if (ssd1306_init() == 0)
+    {
+        return 0;
+    }
+
+    mono_fb_clear(&oled_surface);
+
+    oled_status_bar_init(&status);
+    oled_status_bar_set_time(
+        &status,
+        0u,
+        0u);
+
+    oled_status_bar_render(
+        &status,
+        &oled_surface,
+        layout->status_rect);
+
+    oled_ui_fill_console_proof();
 
     oled_console_render(
         &oled_console_state,
         &oled_surface,
-        clip);
+        layout->console_rect);
 
     if (ssd1306_present_full(oled_framebuffer) == 0)
     {
@@ -819,6 +810,12 @@ static int ssd1306_show_console_test(void)
     }
 
     return ssd1306_display_on();
+}
+
+static int ssd1306_show_console_test(void)
+{
+    return ssd1306_show_ui_layout(
+        oled_ui_layout_default());
 }
 
 static void console_oled_console(void)
@@ -832,6 +829,48 @@ static void console_oled_console(void)
         uart_write_line("OLED_CONSOLE_ERR");
     }
 }
+
+static int ssd1306_show_status_test(void)
+{
+    return ssd1306_show_ui_layout(
+        oled_ui_layout_default());
+}
+
+static void console_oled_status(void)
+{
+    if (oled_ui_layout_self_test() == 0)
+    {
+        uart_write_line("OLED_UI_LAYOUT_ERR");
+        uart_write_line("OLED_STATUS_ERR");
+        return;
+    }
+
+    uart_write_line("OLED_UI_LAYOUT_OK");
+
+    if (oled_status_bar_self_test() == 0)
+    {
+        uart_write_line("OLED_STATUS_REFERENCE_ERR");
+        uart_write_line("OLED_STATUS_ERR");
+        return;
+    }
+
+    uart_write_line("OLED_STATUS_REFERENCE_OK");
+
+    if (ssd1306_show_status_test() != 0)
+    {
+        uart_write_line("OLED_STATUS_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_STATUS_ERR");
+    }
+}
+
+
+
+
+
+
 
 static void console_oled_test(void)
 {
@@ -970,6 +1009,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "oledconsole") != 0)
     {
         console_oled_console();
+    }
+    else if (text_equals(uart_command, "oledstatus") != 0)
+    {
+        console_oled_status();
     }
 
     else

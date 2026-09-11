@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "gfx/mono_fb.h"
+#include "gfx/font5x7.h"
 
 void text_renderer_draw_cell(
     mono_fb_t *fb,
@@ -10,6 +11,14 @@ void text_renderer_draw_cell(
     int32_t x,
     int32_t y,
     char c);
+
+void text_renderer_draw_glyph_cell(
+    mono_fb_t *fb,
+    mono_rect_t clip,
+    int32_t x,
+    int32_t y,
+    const uint8_t *glyph,
+    const mono_font_metrics_t *metrics);
 
 /*
  * Diagnostic equivalence test for the aligned fast path.

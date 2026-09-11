@@ -1,3 +1,9 @@
+> [!IMPORTANT]
+> **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
+> The authoritative hardware-accepted geometry and firmware fingerprint are in
+> [`OLED_UI_ACCEPTED_BASELINE.md`](OLED_UI_ACCEPTED_BASELINE.md).
+> Any configurable-layout, preset, custom-layout, persistence, or alternate-geometry
+> material below is deferred planning and must not override the accepted baseline.
 # Master Execution Checklist
 
 This file is the canonical execution gate for the STM32 OS project.
@@ -228,3 +234,31 @@ USB CDC later
 
 No keyboard or mouse needs to be physically connected to the STM32 for normal
 configuration.
+
+## OLED UI freeze checkpoint — ACCEPTED 2026-09-11
+
+This checkpoint supersedes earlier open OLED UI-layout planning entries.
+
+- [x] Native 128x32 panel profile accepted.
+- [x] Retained semantic console accepted.
+- [x] Status bar exact reference accepted.
+- [x] One-pixel clock right inset accepted.
+- [x] One-pixel blank row below status bar accepted.
+- [x] Three console rows accepted with one-pixel inter-row gaps.
+- [x] Console remains 21x3 using compact `5x6` glyphs / `6x7` cells.
+- [x] No side/bottom frame below the status bar.
+- [x] Exact accepted binary reproduced before commit:
+  `7396 bytes`,
+  `4DDA68DA96215F6FC2960007B37AB5F8808BA9284EC8A726AEFFFC4B97FCF9C4`.
+- [x] Full UART/OLED regression passed.
+- [x] Physical OLED appearance accepted.
+- [x] UI styling frozen.
+
+Deferred, not blocking the current roadmap:
+
+- [ ] Runtime/custom layout editing — deferred.
+- [ ] PC configurator/import — deferred.
+- [ ] UI persistence — deferred.
+- [ ] Uptime/RTC clock behavior — deferred.
+
+**Next active slice:** retained circular console scrolling / `first_row` behavior.
