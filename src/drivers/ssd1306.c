@@ -102,6 +102,30 @@ static int ssd1306_fill_checkerboard(void)
     return 1;
 }
 
+static int ssd1306_set_page_window(uint32_t page)
+{
+    uint8_t window_packet[7];
+
+    if (page >= SSD1306_PAGES)
+    {
+        return 0;
+    }
+
+    window_packet[0] = SSD1306_CONTROL_CMD;
+    window_packet[1] = 0x21u;
+    window_packet[2] = 0x00u;
+    window_packet[3] = 0x7Fu;
+    window_packet[4] = 0x22u;
+    window_packet[5] = (uint8_t)page;
+    window_packet[6] = (uint8_t)page;
+
+    return i2c1_write(
+        SSD1306_ADDRESS,
+        window_packet,
+        (uint32_t)sizeof(window_packet)
+    );
+}
+
 int ssd1306_present_full(const uint8_t *framebuffer)
 {
     uint8_t packet[1u + SSD1306_FLUSH_CHUNK_DATA];
@@ -136,6 +160,88 @@ int ssd1306_present_full(const uint8_t *framebuffer)
         {
             return 0;
         }
+    }
+
+    return 1;
+}
+
+int ssd1306_present(mono_fb_t *fb)
+{
+    uint8_t packet[1u + SSD1306_FLUSH_CHUNK_DATA];
+    uint8_t dirty;
+    uint8_t valid_mask;
+    uint8_t page_mask;
+    uint32_t page;
+    uint32_t base;
+    uint32_t offset;
+    uint32_t i;
+
+    if (
+        (fb == (mono_fb_t *)0) ||
+        (fb->data == (uint8_t *)0) ||
+        (fb->width != SSD1306_WIDTH) ||
+        (fb->height != SSD1306_HEIGHT)
+    ) {
+        return 0;
+    }
+
+    dirty = mono_fb_dirty_pages(fb);
+    valid_mask =
+        (uint8_t)((1u << SSD1306_PAGES) - 1u);
+
+    if ((dirty & (uint8_t)~valid_mask) != 0u)
+    {
+        return 0;
+    }
+
+    if (dirty == 0u)
+    {
+        return 1;
+    }
+
+    packet[0] = SSD1306_CONTROL_DATA;
+
+    for (page = 0u; page < SSD1306_PAGES; ++page)
+    {
+        page_mask = (uint8_t)(1u << page);
+
+        if ((dirty & page_mask) == 0u)
+        {
+            continue;
+        }
+
+        if (ssd1306_set_page_window(page) == 0)
+        {
+            return 0;
+        }
+
+        base = page * SSD1306_WIDTH;
+
+        for (offset = 0u;
+             offset < SSD1306_WIDTH;
+             offset += SSD1306_FLUSH_CHUNK_DATA)
+        {
+            for (i = 0u; i < SSD1306_FLUSH_CHUNK_DATA; ++i)
+            {
+                packet[1u + i] =
+                    fb->data[base + offset + i];
+            }
+
+            if (i2c1_write(
+                    SSD1306_ADDRESS,
+                    packet,
+                    (uint32_t)sizeof(packet)) == 0)
+            {
+                return 0;
+            }
+        }
+
+        /*
+         * Clear only a page that was completely transferred.
+         * On failure, the failed page and every later page remain dirty
+         * and are therefore retryable.
+         */
+        mono_fb_clear_dirty(fb, page_mask);
     }
 
     return 1;

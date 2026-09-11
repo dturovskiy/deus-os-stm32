@@ -229,3 +229,63 @@ console state : 67 bytes
 ```
 
 Next active OLED slice: dirty-page present optimization.
+## Slice 6 dirty-page SSD1306 present — ACCEPTED 2026-09-11
+
+Dirty-page presentation is hardware accepted.
+
+Driver behavior:
+
+- `ssd1306_present(mono_fb_t *fb)` reads the framebuffer dirty-page mask;
+- a clean framebuffer (`dirty_pages == 0`) is a successful no-op;
+- each dirty SSD1306 page is addressed and transmitted independently;
+- a page dirty bit is cleared only after that page transfers successfully;
+- on transfer failure, the failed page and every later dirty page remain retryable;
+- the existing `ssd1306_present_full()` path remains available for diagnostics/full refresh;
+- framebuffer size remains 512 bytes;
+- retained console state remains 67 bytes;
+- frozen UI geometry/status bar/fonts/rendering remain unchanged.
+
+The hardware proof deliberately filled all framebuffer RAM bytes with `0xFF` while
+marking only page 2 dirty. The OLED physically showed only:
+
+```text
+y=0..15  : black
+y=16..23 : solid white
+y=24..31 : black
+```
+
+Therefore clean RAM pages were not transmitted.
+
+Protocol regression passed:
+
+```text
+OLED_DIRTY_MASK_OK
+OLED_DIRTY_CLEAR_OK
+OLED_DIRTY_IDLE_OK
+OLED_DIRTY_OK
+OLED_SCROLL_STATE_OK
+OLED_SCROLL_OK
+OLED_UI_LAYOUT_OK
+OLED_STATUS_REFERENCE_OK
+OLED_STATUS_OK
+OLED_CONSOLE_OK
+OLED_RENDER_EQ_OK
+OLED_RENDER_OK
+OLED_TEXT_OK
+PONG
+```
+
+Accepted Slice 6 firmware fingerprint:
+
+```text
+Image size    : 8668 bytes
+SHA-256       : 0286E5A9604A9773A416258E287D8E5DCC03067F23FE8F25DFEAAEA5F46861F3
+.text         : 8668 bytes
+.data         : 0 bytes
+.bss          : 716 bytes
+framebuffer   : 512 bytes
+console state : 67 bytes
+fault_record  : 0x20000270
+```
+
+Next active OLED slice: integrate dirty-page present into the normal UI update path.

@@ -277,4 +277,19 @@ Deferred, not blocking the current roadmap:
 - [x] Physical proof accepted: `SCROLL TWO / SCROLL THREE / SCROLL FOUR`.
 - [x] Frozen UI implementation remains unchanged.
 
-**Next active slice:** dirty-page present optimization.
+### Slice 6 — dirty-page SSD1306 present
+
+- [x] Add `ssd1306_present(mono_fb_t *fb)`.
+- [x] Send only pages selected by `mono_fb_dirty_pages()`.
+- [x] Treat zero dirty pages as a successful no-op.
+- [x] Clear each dirty bit only after that page transfers successfully.
+- [x] Preserve failed/later pages for retry.
+- [x] Keep `ssd1306_present_full()` for full-refresh/diagnostic use.
+- [x] Physical proof accepted: only `y=16..23` became white while clean RAM pages also contained `0xFF`.
+- [x] `OLED_DIRTY_MASK_OK`.
+- [x] `OLED_DIRTY_CLEAR_OK`.
+- [x] `OLED_DIRTY_IDLE_OK`.
+- [x] `OLED_DIRTY_OK`.
+- [x] Frozen UI implementation remains unchanged.
+
+**Next active slice:** integrate dirty-page present into the normal UI update path.

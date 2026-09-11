@@ -907,6 +907,105 @@ static void console_oled_scroll(void)
     }
 }
 
+static int ssd1306_show_dirty_present_test(void)
+{
+    uint32_t i;
+
+    if (ssd1306_init() == 0)
+    {
+        return 0;
+    }
+
+    /*
+     * Establish a known all-black controller image using the new API.
+     * mono_fb_clear() must mark all four pages dirty, and a successful
+     * present must clear the mask.
+     */
+    mono_fb_clear(&oled_surface);
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0x0Fu)
+    {
+        return 0;
+    }
+
+    if (ssd1306_present(&oled_surface) == 0)
+    {
+        return 0;
+    }
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    {
+        return 0;
+    }
+
+    /*
+     * Deliberately make every backing-RAM page white WITHOUT marking any
+     * page dirty. Then mark only physical page 2 dirty. A correct dirty
+     * presenter sends only page 2: the OLED ends with one white 8-pixel
+     * band at y=16..23 while pages 0, 1 and 3 remain black.
+     */
+    for (i = 0u; i < SSD1306_FRAMEBUFFER_BYTES; ++i)
+    {
+        oled_framebuffer[i] = 0xFFu;
+    }
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    {
+        return 0;
+    }
+
+    mono_fb_set_pixel(
+        &oled_surface,
+        0,
+        16,
+        1);
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0x04u)
+    {
+        return 0;
+    }
+
+    if (ssd1306_present(&oled_surface) == 0)
+    {
+        return 0;
+    }
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    {
+        return 0;
+    }
+
+    /*
+     * Zero-dirty present must be a successful no-op.
+     */
+    if (ssd1306_present(&oled_surface) == 0)
+    {
+        return 0;
+    }
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    {
+        return 0;
+    }
+
+    return ssd1306_display_on();
+}
+
+static void console_oled_dirty(void)
+{
+    if (ssd1306_show_dirty_present_test() != 0)
+    {
+        uart_write_line("OLED_DIRTY_MASK_OK");
+        uart_write_line("OLED_DIRTY_CLEAR_OK");
+        uart_write_line("OLED_DIRTY_IDLE_OK");
+        uart_write_line("OLED_DIRTY_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_DIRTY_ERR");
+    }
+}
+
 static void console_oled_console(void)
 {
     if (ssd1306_show_console_test() != 0)
@@ -1102,6 +1201,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "oledscroll") != 0)
     {
         console_oled_scroll();
+    }
+    else if (text_equals(uart_command, "oleddirty") != 0)
+    {
+        console_oled_dirty();
     }
     else if (text_equals(uart_command, "oledstatus") != 0)
     {
