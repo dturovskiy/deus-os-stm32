@@ -3,6 +3,7 @@
 #include "drivers/ssd1306.h"
 #include "gfx/mono_fb.h"
 #include "gfx/font5x7.h"
+#include "gfx/text_renderer.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 
@@ -636,6 +637,99 @@ static void console_oled_text(void)
     }
 }
 
+static void oled_renderer_write(
+    mono_rect_t clip,
+    int32_t x,
+    int32_t y,
+    const char *text)
+{
+    while (*text != '\0')
+    {
+        text_renderer_draw_cell(
+            &oled_surface,
+            clip,
+            x,
+            y,
+            *text);
+
+        x += 6;
+        ++text;
+    }
+}
+
+static int ssd1306_show_generic_renderer_test(void)
+{
+    static const mono_rect_t clip =
+    {
+        1,
+        1,
+        126,
+        30
+    };
+
+    if (ssd1306_init() == 0)
+    {
+        return 0;
+    }
+
+    mono_fb_clear(&oled_surface);
+    mono_fb_rect(
+        &oled_surface,
+        0,
+        0,
+        (int32_t)SSD1306_WIDTH,
+        (int32_t)SSD1306_HEIGHT,
+        1);
+
+    /*
+     * All rows go through the same generic per-pixel path.
+     * There is deliberately no page-aligned renderer optimization.
+     */
+    oled_renderer_write(clip, 8, 8, "GENERIC");
+    oled_renderer_write(clip, 8, 16, "OPAQUE");
+    oled_renderer_write(clip, 8, 24, "EDGE");
+
+    /*
+     * Opaque overwrite test.
+     * The final cell must contain only I. Any remaining M pixels indicate
+     * that background/spacer pixels were not deterministically overwritten.
+     */
+    text_renderer_draw_cell(&oled_surface, clip, 80, 16, 'M');
+    text_renderer_draw_cell(&oled_surface, clip, 80, 16, 'I');
+
+    /*
+     * Right-edge clip test.
+     * R occupies x=122..126. Its spacer column would be x=127, which belongs
+     * to the frame and is outside the clip rectangle.
+     */
+    text_renderer_draw_cell(&oled_surface, clip, 122, 8, 'R');
+
+    /*
+     * Bottom-edge clip test.
+     * EDGE glyph pixels occupy y=24..30. Cell spacer row y=31 belongs to the
+     * frame and is outside the clip rectangle.
+     */
+
+    if (ssd1306_present_full(oled_framebuffer) == 0)
+    {
+        return 0;
+    }
+
+    return ssd1306_display_on();
+}
+
+static void console_oled_render(void)
+{
+    if (ssd1306_show_generic_renderer_test() != 0)
+    {
+        uart_write_line("OLED_RENDER_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_RENDER_ERR");
+    }
+}
+
 static void console_oled_test(void)
 {
     if (ssd1306_show_checkerboard() != 0)
@@ -765,6 +859,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "oledtext") != 0)
     {
         console_oled_text();
+    }
+    else if (text_equals(uart_command, "oledrender") != 0)
+    {
+        console_oled_render();
     }
 
     else
