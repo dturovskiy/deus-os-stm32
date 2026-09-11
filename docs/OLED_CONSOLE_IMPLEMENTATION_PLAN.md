@@ -74,47 +74,66 @@ size   = 5680 bytes
 SHA256 = C67AEBA137F645F5BECAEB6410382D44257E1B09EA3BE459BD83AC718F3A09AC
 ```
 
-## Slice 4B — status-bar component
+## Slice 4B — configurable UI layout + status bar
 
-Detailed plan:
+Detailed plans:
 
 ```text
+docs/OLED_UI_LAYOUT_PLAN.md
 docs/OLED_STATUS_BAR_PLAN.md
 ```
 
-Fixed decisions:
+The first hardcoded 4B.1 status experiment passed protocol/isolation checks but
+its full outer frame is visually rejected. It remains uncommitted.
 
-- status content remains `x=1..126, y=1..4`;
-- separator remains `y=5`;
-- `y=6` remains blank;
-- console remains `21x3` at row origins `y=7,15,23`;
-- left field is COMM status, initially UART/serial, not fake network;
-- right field is `HH:MM`;
-- initial time source is uptime;
-- future RTC uses the same `HH:MM` geometry;
-- micro-font is `3x4`;
-- status component does not flush the OLED.
+The new sequence is:
 
-Implementation is split into two hardware-visible checkpoints:
+### Slice 4B.1 — layout engine + presets + static status proof
 
-### Slice 4B.1 — static status proof
+- add `oled_ui_layout`;
+- add validated `minimal`, `boxed`, and `compact` presets;
+- move global rectangles/borders/separator out of ad-hoc command code;
+- keep 21x3 console semantics;
+- use glyph-based horizontal fit so trailing spacer clipping does not discard
+  the final glyph;
+- keep 3x4 font + real COMM/UART icon + fixed `12:34`;
+- add preset switching through the command layer;
+- physically compare at least `minimal` and `boxed`;
+- no persistence;
+- no uptime integration.
 
-- add `font3x4`;
-- add `oled_status_bar`;
-- render COMM icon + fixed `12:34`;
-- add `oledstatus -> OLED_STATUS_OK`;
-- prove pixel isolation to `x=1..126,y=1..4`;
-- physical acceptance before integration.
+### Slice 4B.2 — custom runtime editing
 
-### Slice 4B.2 — uptime integration
+- `ui show`;
+- `ui set ...`;
+- transactional validation;
+- RAM-only custom layout;
+- invalid candidate must leave active layout unchanged.
 
-- derive `HH:MM` from existing uptime;
-- expose UART/serial COMM state;
-- dirty only when displayed minute or COMM state changes;
-- integrate with the accepted framed console;
-- preserve every Slice 4 console regression.
+### Slice 4B.3 — uptime integration
 
-Do not begin 4B.2 until 4B.1 is physically accepted.
+- derive `HH:MM` from uptime;
+- COMM reflects real UART state;
+- status dirty only when displayed minute/COMM state changes.
+
+### Slice 4B.4 — desktop import/configurator protocol
+
+- exact 128x32 preview workflow;
+- PC-side layout interchange format;
+- PC-side bitmap conversion for icons/assets;
+- send config through UART first;
+- later USB CDC reuses the same target API.
+
+### Slice 4B.5 — optional persistence
+
+Only after runtime behavior is stable:
+
+- versioned Flash config;
+- validation on load;
+- integrity check;
+- fallback preset.
+
+Do not commit a visual preset until physical acceptance.
 
 ## Slice 5 — circular scroll
 

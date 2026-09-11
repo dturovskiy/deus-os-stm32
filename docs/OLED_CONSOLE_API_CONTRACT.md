@@ -261,3 +261,43 @@ UI composition:
 - owns frame/status/console viewport placement;
 - currently orchestrated in `kernel.c`;
 - may later move to a dedicated UI module.
+
+## 8. Planned UI layout/config API
+
+The next UI slice introduces a validated layout object conceptually equivalent
+to:
+
+```c
+typedef struct
+{
+    mono_rect_t status_rect;
+    mono_rect_t console_rect;
+    int8_t separator_y;
+    uint8_t border_flags;
+    uint8_t status_enabled;
+    uint8_t separator_enabled;
+} oled_ui_layout_t;
+```
+
+Planned operations:
+
+```c
+const oled_ui_layout_t *oled_ui_layout_preset(...);
+int oled_ui_layout_validate(const oled_ui_layout_t *layout);
+int oled_ui_layout_apply(const oled_ui_layout_t *candidate);
+const oled_ui_layout_t *oled_ui_layout_current(void);
+```
+
+Exact names may be refined during implementation.
+
+Contract:
+
+- validation before activation;
+- invalid candidate leaves current layout unchanged;
+- no heap;
+- no I2C;
+- no SSD1306 page semantics;
+- console and status render only inside caller-provided clips;
+- runtime command transport is independent from UART/USB.
+
+See `docs/OLED_UI_LAYOUT_PLAN.md`.

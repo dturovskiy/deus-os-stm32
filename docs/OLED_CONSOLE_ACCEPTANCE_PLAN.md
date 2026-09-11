@@ -149,60 +149,80 @@ Verify:
 - status region remains untouched;
 - separator and outer frame remain intact.
 
-## 10. Status-bar acceptance
+## 10. Configurable UI/status acceptance
 
-Detailed acceptance plan:
+Detailed plans:
 
 ```text
+docs/OLED_UI_LAYOUT_PLAN.md
 docs/OLED_STATUS_BAR_PLAN.md
 ```
 
-The status bar is a separate UI component.
+The first hardcoded 4B.1 experiment is protocol-valid but visually rejected and
+must not be committed as the production layout.
 
-Reserved region:
+### 10.1 Layout-engine acceptance
+
+Required:
+
+- built-in `minimal`, `boxed`, `compact` layouts validate;
+- invalid layouts are rejected atomically;
+- layout module has no I2C/SSD1306 page knowledge;
+- semantic console remains 21x3 unless separately approved;
+- status and console receive clips from the layout layer;
+- frame/separator choices are layout data, not semantic-module constants.
+
+### 10.2 Preset physical acceptance
+
+At minimum compare:
 
 ```text
-content   x=1..126, y=1..4
-separator x=1..126, y=5
-gap       y=6
+minimal
+boxed
 ```
 
-### 10.1 Slice 4B.1 static proof
+Verify physically:
+
+- status readability;
+- console readability;
+- no accidental clipping;
+- no stale pixels after preset switch;
+- expected border behavior;
+- existing rendering regressions remain green.
+
+Protocol success alone is not sufficient.
+
+### 10.3 Custom runtime acceptance
 
 Required:
 
-- `font3x4` supports digits `0..9` and `:`;
-- COMM icon renders inside a 4x4 left slot;
-- fixed `12:34` renders in the right time field;
-- `oledstatus -> OLED_STATUS_OK`;
-- no pixel outside `x=1..126,y=1..4` changes;
-- frame `y=0` survives;
-- separator `y=5` survives;
-- gap `y=6` remains blank;
-- console pixels remain unchanged;
-- physical output is readable.
+- `ui show`;
+- `ui set ...`;
+- valid custom one-pixel changes apply;
+- invalid changes leave active layout unchanged;
+- no heap;
+- RAM-only configuration initially.
 
-### 10.2 Slice 4B.2 integration
+### 10.4 Status acceptance
 
 Required:
 
-- right field displays uptime as `HH:MM`;
-- display range saturates at `99:59`;
-- UART/serial COMM state is real, not a fabricated network state;
-- status becomes dirty only when displayed minute or COMM state changes;
-- no 1 Hz OLED-flush requirement;
-- `oledconsole -> OLED_CONSOLE_OK`;
-- `OLED_RENDER_EQ_OK` remains intact;
-- accepted console geometry remains unchanged.
+- 3x4 digits/colon;
+- real COMM/UART icon;
+- `OLED_STATUS_ISOLATION_OK`;
+- `OLED_STATUS_OK`;
+- status writes only inside its layout-provided clip;
+- status component does not draw global separator/borders;
+- no I2C/present inside status component.
 
-The status component must not:
+### 10.5 Transport acceptance
 
-- perform I2C;
-- present/flush the display;
-- know SSD1306 page layout;
-- modify console semantic state;
-- draw separator `y=5`;
-- write to `y=0`, `y=5`, or `y=6`.
+UI configuration commands must call a transport-independent target API.
+
+UART is the current transport.
+
+Future USB CDC must reuse the same command/config semantics rather than
+creating a second UI control path.
 
 ## 11. Dirty-page acceptance
 

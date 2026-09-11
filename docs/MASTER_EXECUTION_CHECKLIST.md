@@ -62,6 +62,10 @@ Read together:
 - `docs/OLED_CONSOLE_IMPLEMENTATION_PLAN.md`
 - `docs/OLED_CONSOLE_ACCEPTANCE_PLAN.md`
 - `docs/OLED_STATUS_BAR_PLAN.md`
+- `docs/OLED_UI_LAYOUT_PLAN.md`
+
+The accepted Slice 4 framed geometry is now a compatibility/reference preset,
+not a permanently hardcoded production appearance.
 
 Canonical framed UI geometry:
 
@@ -92,20 +96,28 @@ Console UI is not aligned to SSD1306 pages.
 - [x] Slice 3A: native 128x32 source + canonical documentation.
 - [x] Slice 3B: generic opaque text renderer.
 - [x] Slice 3C: framebuffer-equivalent aligned fast path.
-- [x] Slice 4: retained 21x3 console without scrolling + accepted UI layout.
-- [ ] Slice 4B: status-bar component/content.
-  - [x] 4B.0: architecture/implementation/acceptance plan defined.
-  - [ ] 4B.1: add immutable 3x4 digit/colon micro-font.
-  - [ ] 4B.1: add isolated `oled_status_bar` component.
-  - [ ] 4B.1: render real COMM/UART icon + fixed `12:34`.
-  - [ ] 4B.1: add `oledstatus -> OLED_STATUS_OK`.
-  - [ ] 4B.1: prove pixel isolation to `x=1..126,y=1..4`.
-  - [ ] 4B.1: physical acceptance and checkpoint commit/push.
-  - [ ] 4B.2: derive `HH:MM` from uptime.
-  - [ ] 4B.2: update only when displayed minute/COMM state changes.
-  - [ ] 4B.2: integrate status with accepted `oledconsole` layout.
-  - [ ] 4B.2: preserve `OLED_RENDER_EQ_OK` and `OLED_CONSOLE_OK`.
-  - [ ] 4B.2: physical acceptance and checkpoint commit/push.
+- [x] Slice 4: retained 21x3 console without scrolling + accepted reference UI.
+- [ ] Slice 4B: configurable UI layout + status bar.
+  - [x] 4B.0: initial status architecture/acceptance plan.
+  - [x] 4B.0a: static status prototype protocol/isolation proof.
+  - [x] 4B.0b: visually reject hardcoded full-frame composition; do not commit it.
+  - [x] 4B.0c: define configurable layout/preset/customization plan.
+  - [ ] 4B.1: add validated `oled_ui_layout` module.
+  - [ ] 4B.1: add `minimal`, `boxed`, `compact` presets.
+  - [ ] 4B.1: move borders/separator/regions into layout data.
+  - [ ] 4B.1: keep 21x3 console with glyph-based horizontal fit.
+  - [ ] 4B.1: retain 3x4 status font + COMM/UART + static `12:34`.
+  - [ ] 4B.1: add runtime preset selection.
+  - [ ] 4B.1: physically compare at least minimal vs boxed.
+  - [ ] 4B.1: accept one or more presets, then commit/push.
+  - [ ] 4B.2: add `ui show` and validated RAM-only `ui set`.
+  - [ ] 4B.2: prove atomic rejection of invalid custom layouts.
+  - [ ] 4B.3: integrate uptime `HH:MM`.
+  - [ ] 4B.3: update only on displayed minute/COMM changes.
+  - [ ] 4B.4: define PC interchange/converter/configurator protocol.
+  - [ ] 4B.4: send layout through UART first.
+  - [ ] 4B.4: later reuse the same API through USB CDC.
+  - [ ] 4B.5: optional versioned Flash persistence after runtime semantics stabilize.
 - [ ] Slice 5: circular 3-row scroll.
 - [ ] Slice 6: dirty-page presentation optimization.
 - [ ] Slice 7: optional kernel-log integration.
@@ -184,3 +196,35 @@ oledconsole -> OLED_CONSOLE_OK
 Its address is build-dependent. Tooling must resolve it from the current ELF.
 
 OLED must never be the only fault-reporting sink.
+
+## OLED UI customization workflow
+
+Visual layouts should be designed at exact `128x32` resolution with a
+one-pixel grid.
+
+Recommended workflow:
+
+```text
+Aseprite / LibreSprite / Piskel / equivalent
+ -> 128x32 mockup
+ -> select geometry/assets
+ -> encode as preset/custom config
+ -> target validation
+ -> hardware preview
+ -> physical accept/reject
+```
+
+The STM32 does not decode PNG/SVG/Figma files directly.
+
+PC tooling converts layouts/assets into target configuration or packed 1-bit
+bitmaps.
+
+Runtime configuration is transport-independent:
+
+```text
+UART now
+USB CDC later
+```
+
+No keyboard or mouse needs to be physically connected to the STM32 for normal
+configuration.

@@ -22,6 +22,10 @@ The design must remain:
 kernel / commands / future klog
             |
             v
+       oled_ui_layout
+ presets / custom geometry / borders
+            |
+            v
       UI composition
  status bar + console viewport
             |
@@ -265,3 +269,32 @@ Content is not implemented in Slice 4.
 A future status-bar component may use a micro-font/icons appropriate for the
 four-pixel-high content region, but it must not distort console geometry or
 couple the console to SSD1306 pages.
+
+## 11. Planned configurable UI layout layer
+
+Global appearance is moving out of ad-hoc `kernel.c` coordinates.
+
+The planned `oled_ui_layout` layer owns:
+
+- status rectangle;
+- console rectangle;
+- separator position;
+- optional outer-border flags;
+- built-in presets;
+- validated custom runtime geometry.
+
+Semantic components receive clips from this layer.
+
+They must not infer or duplicate global screen geometry.
+
+Runtime UI commands must target a transport-independent config API so the same
+commands can be carried by UART today and USB CDC later.
+
+External design files are converted on the PC. The STM32 does not decode PNG,
+SVG, or editor project files.
+
+Canonical design plan:
+
+```text
+docs/OLED_UI_LAYOUT_PLAN.md
+```
