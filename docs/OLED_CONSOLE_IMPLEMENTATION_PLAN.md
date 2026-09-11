@@ -1,97 +1,29 @@
 # OLED Console Implementation Plan
 
-Status: ACTIVE PLAN / REBASED ON NATIVE 128x32 HARDWARE
+Status: ACTIVE PLAN / NATIVE 128x32
 
-## Completed prerequisites
+## Completed and accepted
 
-- SSD1306 I2C address `0x3C` proven.
-- SSD1306 driver extracted.
-- monochrome framebuffer extracted.
-- font5x7 extracted.
-- native panel geometry proven as `128x32`.
-- native framebuffer proven as `512 bytes`.
-- controller profile proven:
-  - `A8=0x1F`
-  - `DA=0x02`
-  - `D3=0`
-  - start line `0`
-  - `A1/C8`
-  - pages `0..3`
-- clean 1x `DEUS OS` and full frame physically accepted.
+- SSD1306 address `0x3C`.
+- native panel geometry `128x32`.
+- framebuffer `512 bytes`.
+- SSD1306 driver extraction.
+- monochrome framebuffer extraction.
+- font5x7 extraction.
+- Slice 3A: native 128x32 production baseline.
+- Slice 3B: generic opaque text renderer.
+- Slice 3C: byte-equivalent aligned fast path.
+- Slice 4: retained 21x3 console without scrolling.
+- Slice 4 accepted UI geometry:
+  - status content `y=1..4`
+  - separator `y=5`
+  - gap `y=6`
+  - console rows `y=7,15,23`
+  - bottom gap `y=30`
 
 The old 128x64 renderer experiment is rejected.
 
-## Slice 3A — commit corrected native hardware baseline
-
-Scope:
-
-- keep native `128x32`;
-- keep 512-byte framebuffer;
-- keep 1x 5x7 demo;
-- update canonical documentation;
-- remove every temporary calibration command.
-
-Acceptance:
-
-- build with `-Wall -Wextra -Werror`;
-- framebuffer symbol exactly 512 bytes;
-- BOOT OK;
-- `ping -> PONG`;
-- I2C scan reports only `0x3C`;
-- `oledping -> OLED_CMD_OK`;
-- `oledtest -> OLED_TEST_OK`;
-- `oledtext -> OLED_TEXT_OK`;
-- physical thin `DEUS OS`;
-- full clean border;
-- no alternating missing rows.
-
-Commit only after physical PASS.
-
-## Slice 3B — text renderer, generic path first
-
-Create:
-
-```text
-src/gfx/text_renderer.c
-include/gfx/text_renderer.h
-```
-
-Implement only the correct generic opaque cell renderer first.
-
-Requirements:
-
-- cell size 6x8;
-- clip rectangle;
-- writes both foreground and background pixels;
-- no page-aligned optimization yet;
-- no retained console state.
-
-Hardware test:
-
-- render known strings at y=8,16,24;
-- overwrite a cell with a different glyph and verify no ghost pixels;
-- verify bottom frame y=31 survives the row at y=24.
-
-Do not add a fast path in the same acceptance step.
-
-## Slice 3C — page-aligned fast path
-
-Only after the generic renderer is physically accepted:
-
-- add byte-oriented fast path for aligned 6x8 cells;
-- compare generated framebuffer bytes against generic rendering;
-- verify identical physical output.
-
-The fast path is an optimization, not an architectural dependency.
-
-## Slice 4 — retained 21x3 console without scrolling
-
-Add:
-
-```text
-src/kernel/oled_console.c
-include/kernel/oled_console.h
-```
+## Slice 4 accepted evidence
 
 State:
 
@@ -99,7 +31,7 @@ State:
 char cells[3][21];
 ```
 
-Implement:
+Accepted behavior:
 
 - init;
 - clear;
@@ -107,22 +39,56 @@ Implement:
 - write;
 - write_line;
 - cursor;
-- newline;
-- wrap;
-- render.
+- CR/LF;
+- automatic wrap;
+- no-scroll overflow ignored;
+- render through `text_renderer`;
+- no SSD1306/I2C/page knowledge inside `oled_console`.
 
-Temporary command:
+Temporary/diagnostic command:
 
 ```text
 oledconsole
 ```
 
-Physical acceptance:
+Accepted physical layout:
 
-- exactly three clean rows;
-- 21-column geometry;
-- no text on the frame;
-- bottom border remains intact.
+```text
+frame y=0
+status y=1..4
+separator y=5
+gap y=6
+row0 y=7..13
+gap y=14
+row1 y=15..21
+gap y=22
+row2 y=23..29
+gap y=30
+frame y=31
+```
+
+Accepted image:
+
+```text
+size   = 5680 bytes
+SHA256 = C67AEBA137F645F5BECAEB6410382D44257E1B09EA3BE459BD83AC718F3A09AC
+```
+
+## Slice 4B — status-bar component
+
+Next UI feature before kernel-log integration.
+
+Goals:
+
+- make status bar a sibling component to the console;
+- keep console semantics unchanged;
+- own only `x=1..126, y=1..4`;
+- preserve separator at `y=5`;
+- keep `y=6` clear;
+- use a compact representation appropriate for the 4-pixel-high content area.
+
+Before implementation, select the status content and rendering strategy.
+Do not enlarge the status region by stealing console pixels.
 
 ## Slice 5 — circular scroll
 
@@ -134,44 +100,37 @@ first_row = (uint8_t)((first_row + 1u) % 3u);
 
 Test by writing more than three lines.
 
-Expected screen after five sequential numbered lines:
+Expected behavior:
 
-```text
-3
-4
-5
-```
-
-according to the chosen line content and wrapping rules.
-
-No hardware scrolling.
+- newest three logical lines remain;
+- no framebuffer `memmove` as primary scroll mechanism;
+- no SSD1306 hardware scroll;
+- status bar and separator remain untouched.
 
 ## Slice 6 — dirty-page present optimization
 
 Framebuffer page count is four.
-
-Dirty mask uses bits 0..3.
+Dirty mask uses bits `0..3`.
 
 Requirements:
 
 - full-frame fallback remains available;
 - failed I2C transfer must not falsely clear dirty state;
 - partial update must preserve controller addressing assumptions;
-- compare every optimized result with the known-good full 512-byte flush.
+- compare optimized output with known-good full 512-byte flush.
 
 ## Slice 7 — kernel log integration
 
 Add an optional OLED sink after console semantics are stable.
 
 UART remains the primary diagnostic path.
-
 Fault handlers must never depend on OLED availability.
 
 ## Deferred
 
 - UTF-8;
 - proportional fonts;
-- widgets;
+- rich widgets;
 - hardware scroll;
 - animation;
 - DMA I2C;
@@ -190,6 +149,7 @@ Stop immediately if a slice unexpectedly changes:
 - `A1/C8`;
 - page count 4;
 - framebuffer size 512;
-- native 128x32 frame geometry.
+- native 128x32 frame geometry;
+- accepted separator/console layout without an explicit UI-layout slice.
 
 Do not suppress warnings to make a slice pass.

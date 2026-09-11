@@ -39,7 +39,7 @@ Required:
 After every flash:
 
 - `BOOT OK`;
-- boot `FAULTREC` address matches the current ELF;
+- boot `FAULTREC` address matches current ELF;
 - `ping -> PONG`.
 
 ## 4. I2C/OLED gate
@@ -50,80 +50,91 @@ Required:
 - count remains one for the current bench setup;
 - `oledping -> OLED_CMD_OK`.
 
-After reset/flash, explicitly issue the OLED rendering command before judging
-physical output.
+After reset/flash, explicitly issue the intended OLED rendering command before
+judging physical output.
 
 ## 5. Native baseline regression
 
-`oledtext` must return:
-
-```text
-OLED_TEXT_OK
-```
+`oledtext -> OLED_TEXT_OK`.
 
 Physical result:
 
-- full frame at `x=0..127`, `y=0..31`;
-- centered 1-pixel-thick `DEUS OS`;
-- no doubled vertical pixels;
+- full frame `x=0..127`, `y=0..31`;
+- clean 1-pixel text;
 - no alternating missing rows.
 
-## 6. Generic text renderer acceptance
+## 6. Generic renderer regression
 
-Before any fast path is introduced:
+`oledrender` must preserve:
 
-- use opaque 6x8 cells;
-- render aligned rows at y `8`, `16`, `24`;
-- verify blank spacer column overwrites stale pixels;
-- verify blank spacer row overwrites stale pixels only inside clip;
-- overwrite one glyph with another and confirm no ghost pixels;
-- verify bottom frame at `y=31` survives row origin `y=24`.
+- opaque 6x8 cells;
+- arbitrary-Y generic path;
+- clean overwrite without ghost pixels;
+- clipping;
+- complete frame.
 
-Clip rectangle:
-
-```text
-x=1, y=1, width=126, height=30
-```
-
-## 7. Fast-path acceptance
-
-The page-aligned fast path must not be accepted merely because it looks good.
+## 7. Fast-path regression
 
 Required:
 
-- same input string/cell sequence;
-- generic renderer framebuffer snapshot;
-- optimized renderer framebuffer snapshot;
-- byte-for-byte equality for the affected framebuffer;
-- identical physical display.
+```text
+OLED_RENDER_EQ_OK
+OLED_RENDER_OK
+```
 
-## 8. Console no-scroll acceptance
+The aligned fast path must remain byte-for-byte equivalent to generic output
+for the built-in target self-test.
 
-Canonical framed capacity:
+## 8. Slice 4 retained-console acceptance
+
+Capacity:
 
 ```text
 21 columns x 3 rows
 ```
 
-Expected text origins:
+Retained state:
 
 ```text
-row 0 -> y=8
-row 1 -> y=16
-row 2 -> y=24
+67 bytes
+```
+
+Accepted screen composition:
+
+```text
+frame y=0
+status content y=1..4
+separator y=5
+blank gap y=6
+row 0 glyph y=7..13
+inter-row gap y=14
+row 1 glyph y=15..21
+inter-row gap y=22
+row 2 glyph y=23..29
+bottom gap y=30
+frame y=31
+```
+
+Canonical console viewport:
+
+```text
+x=1, y=7, width=126, height=23
 ```
 
 Must verify:
 
-- three readable rows;
-- no text corruption;
+- `oledconsole -> OLED_CONSOLE_OK`;
+- exactly three readable rows;
+- 21-column first-row capacity;
+- wrap behavior;
+- CR/LF behavior;
+- overflow past row 3 does not appear;
 - no frame corruption;
-- wrap at column 21;
-- newline semantics;
-- opaque overwrite behavior.
+- separator intact;
+- one blank row between separator and first console row;
+- one blank row between last console row and bottom frame.
 
-UART protocol success is necessary but not sufficient. Physical inspection is
-mandatory.
+UART success is necessary but not sufficient. Physical inspection is mandatory.
 
 ## 9. Scroll acceptance
 
@@ -134,12 +145,31 @@ Verify:
 - newest three logical lines remain;
 - row order is correct;
 - no framebuffer ghosting;
-- no hardware scroll mode is used;
-- border remains intact.
+- no hardware scroll mode;
+- status region remains untouched;
+- separator and outer frame remain intact.
 
-## 10. Dirty-page acceptance
+## 10. Status-bar acceptance
 
-Dirty-page mask uses bits 0..3 only.
+The status bar is a separate UI component.
+
+Reserved region:
+
+```text
+content   x=1..126, y=1..4
+separator x=1..126, y=5
+```
+
+It must not:
+
+- write to `y=6`;
+- modify console semantic state;
+- change console viewport;
+- depend on SSD1306 page alignment at the UI API boundary.
+
+## 11. Dirty-page acceptance
+
+Dirty-page mask uses bits `0..3` only.
 
 Required:
 
@@ -148,15 +178,14 @@ Required:
 - successful partial present matches full-frame output;
 - full-frame fallback remains functional.
 
-## 11. Safety regression
+## 12. Safety regression
 
 UART must remain responsive after OLED operations.
-
 Fault diagnostics must remain available even if OLED/I2C fails.
 
-## 12. Git gate
+## 13. Git gate
 
-For every rendering behavior change:
+For every hardware-visible change:
 
 ```text
 source
@@ -171,4 +200,4 @@ source
  -> push
 ```
 
-Never commit an OLED rendering change before physical acceptance.
+Never commit an OLED rendering/layout change before physical acceptance.

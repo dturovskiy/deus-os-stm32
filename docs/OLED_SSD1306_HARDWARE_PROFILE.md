@@ -106,7 +106,7 @@ Therefore:
 
 The driver must transfer exactly four pages for a full-frame present.
 
-## 5. Text geometry
+## 5. Accepted framed UI geometry
 
 Current font metrics:
 
@@ -114,70 +114,81 @@ Current font metrics:
 - cell advance: `6 x 8`
 - normal production rendering: 1 logical pixel per display pixel
 
-For a framed console:
+The accepted UI layout uses every vertical region intentionally:
 
-- safe interior: `x=1..126`, `y=1..30`
-- first page-aligned text row:
-  - `align_up(1, 8) = 8`
-- cell Y origins:
-  - `8`
-  - `16`
-  - `24`
-- glyph pixels:
-  - row 0: `y=8..14`
-  - row 1: `y=16..22`
-  - row 2: `y=24..30`
-- bottom frame remains at `y=31`
-- columns:
-  - `126 / 6 = 21`
-- framed console capacity:
-  - `21 x 3`
+```text
+y=0      top frame
+y=1..4   reserved status-bar content
+y=5      status-bar separator
+y=6      one-pixel gap
+y=7..13  console row 0 glyph
+y=14     one-pixel inter-row gap
+y=15..21 console row 1 glyph
+y=22     one-pixel inter-row gap
+y=23..29 console row 2 glyph
+y=30     one-pixel bottom gap
+y=31     bottom frame
+```
 
-The third text row shares page 3 with the bottom border. Opaque cell rendering
-must clip the spacer row at `y=31` so the border bit is preserved.
+Horizontal geometry:
 
-A borderless full-screen text mode could use four 8-pixel rows, but that is not
-the current framed-console contract.
+- frame: `x=0..127`
+- console/status usable width: `x=1..126`
+- text advance: `6`
+- console capacity: `21 x 3`
+
+Canonical console viewport:
+
+```text
+x=1, y=7, width=126, height=23
+```
+
+The console module receives this viewport from its caller and derives row
+origins from the viewport and font metrics. It does not know SSD1306 page
+geometry.
+
+Status-bar content is reserved but not implemented yet. The accepted separator
+is at `y=5`.
 
 ## 6. Reset and presentation behavior
 
 MCU reset does not guarantee an OLED power-cycle.
 
 After flash/reset, explicitly execute the intended OLED command before judging
-the panel. For the current production regression anchor:
+the panel.
+
+Regression anchors:
 
 ```text
-oledtext
-```
-
-Expected UART response:
-
-```text
-OLED_TEXT_OK
+oledtext    -> OLED_TEXT_OK
+oledrender  -> OLED_RENDER_EQ_OK + OLED_RENDER_OK
+oledconsole -> OLED_CONSOLE_OK
 ```
 
 Then inspect the physical display.
 
 ## 7. Accepted production evidence
 
-Accepted native 128x32 production candidate:
+Native 128x32 baseline:
 
 - image size: `3412 bytes`
 - image SHA-256:
   `0758C49D3EA10447C684987D74481C8B6D7F7002F7CF79B6E804D18A9399F4F0`
 - framebuffer size: `512 bytes`
-- example build framebuffer symbol address: `0x2000002C`
-- example build `fault_record` address: `0x2000022C`
+
+Accepted retained-console Slice 4 image:
+
+- image size: `5680 bytes`
+- image SHA-256:
+  `C67AEBA137F645F5BECAEB6410382D44257E1B09EA3BE459BD83AC718F3A09AC`
+- framebuffer: `512 bytes`
+- retained console state: `67 bytes`
+- console capacity: `21 x 3`
+- separator: `y=5`
+- console row glyph origins: `y=7,15,23`
 
 Symbol addresses are build-dependent and must always be resolved dynamically.
-Do not hardcode either address in tooling.
-
-Physical result accepted:
-
-- clean full 128x32 frame;
-- centered `DEUS OS`;
-- 1-pixel-thick font;
-- no alternating missing rows.
+Do not hardcode framebuffer, console-state, or `fault_record` addresses.
 
 ## 8. Replacement panel rule
 

@@ -4,6 +4,7 @@
 #include "gfx/mono_fb.h"
 #include "gfx/font5x7.h"
 #include "gfx/text_renderer.h"
+#include "kernel/oled_console.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 
@@ -160,6 +161,7 @@ volatile fault_record_t fault_record;
 
 static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
+static oled_console_t oled_console_state;
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -738,6 +740,99 @@ static void console_oled_render(void)
     }
 }
 
+static int ssd1306_show_console_test(void)
+{
+    static const mono_rect_t clip =
+    {
+        1,
+        7,
+        126,
+        23
+    };
+
+    if (ssd1306_init() == 0)
+    {
+        return 0;
+    }
+
+    mono_fb_clear(&oled_surface);
+    mono_fb_rect(
+        &oled_surface,
+        0,
+        0,
+        (int32_t)SSD1306_WIDTH,
+        (int32_t)SSD1306_HEIGHT,
+        1);
+
+    /*
+     * Status-bar reservation:
+     * content area y=1..4, separator y=5.
+     * y=6 is a one-pixel visual gap before console row 1 at y=7.
+     * The status content itself is a later component.
+     */
+    mono_fb_hline(
+        &oled_surface,
+        1,
+        5,
+        126,
+        1);
+
+    oled_console_clear(&oled_console_state);
+
+    /*
+     * Exactly 21 characters. The next printable character must trigger
+     * automatic wrap to the second logical row.
+     */
+    oled_console_write(
+        &oled_console_state,
+        "ABCDEFGHIJKLMNOPQRSTU");
+
+    /*
+     * Exercise the public write_line API: write row 2 and advance exactly
+     * once to row 3.
+     */
+    oled_console_write_line(
+        &oled_console_state,
+        "ROW2 OPAQUE");
+
+    oled_console_write(
+        &oled_console_state,
+        "ROW3 BOTTOM");
+
+    /*
+     * Slice 4 has intentionally no scrolling.
+     * Anything after leaving the third row must be ignored.
+     */
+    oled_console_putc(&oled_console_state, '\n');
+    oled_console_write(
+        &oled_console_state,
+        "HIDDEN");
+
+    oled_console_render(
+        &oled_console_state,
+        &oled_surface,
+        clip);
+
+    if (ssd1306_present_full(oled_framebuffer) == 0)
+    {
+        return 0;
+    }
+
+    return ssd1306_display_on();
+}
+
+static void console_oled_console(void)
+{
+    if (ssd1306_show_console_test() != 0)
+    {
+        uart_write_line("OLED_CONSOLE_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_CONSOLE_ERR");
+    }
+}
+
 static void console_oled_test(void)
 {
     if (ssd1306_show_checkerboard() != 0)
@@ -871,6 +966,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "oledrender") != 0)
     {
         console_oled_render();
+    }
+    else if (text_equals(uart_command, "oledconsole") != 0)
+    {
+        console_oled_console();
     }
 
     else
@@ -1049,6 +1148,7 @@ void kernel_main(void)
         oled_framebuffer,
         SSD1306_WIDTH,
         SSD1306_HEIGHT);
+    oled_console_init(&oled_console_state);
     faults_init();
     systick_init(core_clock_hz);
 

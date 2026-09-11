@@ -1,6 +1,6 @@
 # OLED Console Architecture
 
-Status: PLANNED / BASELINE GEOMETRY CORRECTED TO NATIVE 128x32
+Status: ACTIVE / RETAINED 21x3 CONSOLE HARDWARE-ACCEPTED
 
 ## 1. Goal
 
@@ -22,14 +22,18 @@ The design must remain:
 kernel / commands / future klog
             |
             v
+      UI composition
+ status bar + console viewport
+            |
+            v
       oled_console
  retained 21 x 3 char state
- cursor / wrap / newline / ring scroll
+ cursor / wrap / newline / future ring scroll
             |
             v
       text_renderer
  5x7 font / opaque 6x8 cells
- generic path + page-aligned fast path
+ generic path + equivalent aligned fast path
             |
             v
          mono_fb
@@ -60,7 +64,8 @@ Owns only:
 - full-frame/dirty-page presentation;
 - controller power/display commands.
 
-It must not own fonts, text layout, console state, or semantic scrolling.
+It must not own fonts, text layout, console state, status-bar state, or semantic
+scrolling.
 
 ### `gfx/mono_fb`
 
@@ -86,14 +91,14 @@ Current metrics:
 
 Owns opaque glyph/cell rasterization.
 
-Requirements:
+Accepted behavior:
 
 - coordinate-based public API;
 - generic arbitrary-Y path;
-- page-aligned fast path only when equivalent;
+- page-aligned fast path only when byte-for-byte equivalent;
 - clipping;
 - stale-pixel overwrite;
-- border preservation when a cell shares a controller page with UI geometry.
+- preservation of caller-owned pixels outside the clip rectangle.
 
 ### `kernel/oled_console`
 
@@ -117,16 +122,25 @@ It owns:
 - newline;
 - carriage return;
 - row clearing;
-- circular scroll;
+- future circular scroll;
 - rendering semantic cells through `text_renderer`.
 
-It must know nothing about SSD1306 pages.
+It must know nothing about SSD1306 pages, I2C, or status-bar content.
 
-### `kernel.c`
+### UI composition / `kernel.c` for the current slice
 
-Owns orchestration and UART command dispatch only.
+Current orchestration owns:
 
-## 4. Geometry
+- outer frame;
+- status-bar reservation;
+- status separator;
+- console viewport;
+- explicit present.
+
+Status-bar content must become its own component before it grows beyond the
+current reserved geometry.
+
+## 4. Accepted geometry
 
 Hardware-visible display:
 
@@ -135,31 +149,35 @@ x = 0..127
 y = 0..31
 ```
 
-Framed graphics interior:
+Accepted framed layout:
 
 ```text
-x = 1..126
-y = 1..30
+y=0      top frame
+y=1..4   reserved status-bar content
+y=5      status-bar separator
+y=6      gap
+y=7..13  console row 0
+y=14     gap
+y=15..21 console row 1
+y=22     gap
+y=23..29 console row 2
+y=30     bottom gap
+y=31     bottom frame
 ```
 
-Page-aligned text layout is derived, not hardcoded as a table:
+Canonical console viewport:
 
 ```text
-text_x = 1
-text_y = align_up(1, 8) = 8
-columns = 126 / 6 = 21
-rows = 3
+x=1
+y=7
+width=126
+height=23
+columns=21
+rows=3
 ```
 
-Cell origins:
-
-```text
-row 0 -> y=8
-row 1 -> y=16
-row 2 -> y=24
-```
-
-The last glyph occupies `y=24..30`; the bottom frame is `y=31`.
+The console calculates available rows from `clip + font metrics`; it does not
+align UI rows to SSD1306 pages.
 
 ## 5. Rendering rule
 
@@ -173,51 +191,50 @@ Rendering a character must overwrite:
 
 This prevents ghost pixels after character replacement.
 
-For the bottom row, the clip rectangle excludes `y=31`, so the frame must
-survive the cell update.
+The final row's spacer falls outside the console clip, leaving caller-owned
+`y=30` untouched.
 
 ## 6. Scrolling
 
-Do not use SSD1306 hardware scrolling for the kernel console.
+Slice 4 intentionally has no scrolling. Writes after the third row are ignored.
 
-Use retained semantic rows with a circular first-row index:
+Slice 5 will use retained semantic rows with a circular first-row index:
 
 ```c
 first_row = (uint8_t)((first_row + 1u) % 3u);
 ```
 
-Clear the reused logical last row and mark affected rows dirty.
-
+Do not use SSD1306 hardware scrolling.
 Do not `memmove` the framebuffer as the primary scroll mechanism.
 
 ## 7. Presentation
 
-`console_write()` and `console_putc()` must not flush the display.
+`oled_console_write()` and `oled_console_putc()` do not flush the display.
 
 Flow:
 
 ```text
 update semantic state
         ->
-render dirty semantic rows into mono_fb
+render semantic rows into mono_fb
         ->
 explicit present
 ```
 
-Initial implementation may keep the hardware-proven full-frame 512-byte flush.
+The hardware-proven full-frame 512-byte flush remains the baseline.
 Dirty-page transfer optimization is a later slice behind the same API.
 
 ## 8. Memory model
 
-Approximate persistent display state:
+Accepted persistent display state:
 
 - framebuffer: `512 bytes`
 - console cells: `63 bytes`
-- console metadata: a few bytes
-- framebuffer metadata: a few bytes
+- console metadata: `4 bytes`
+- total `oled_console_t`: `67 bytes`
+- framebuffer metadata: separate small object
 
-Expected persistent cost is roughly `600 bytes`, not the old ~1.2 KiB
-128x64 design.
+This is comfortably below the old 128x64 design.
 
 ## 9. Design constraints
 
@@ -228,12 +245,23 @@ Expected persistent cost is roughly `600 bytes`, not the old ~1.2 KiB
 - no hardcoded 128x64 assumptions;
 - no hardware scroll in the baseline console;
 - no flush inside character-write functions;
+- no SSD1306 page knowledge inside the console;
 - no critical fault reporting dependency on OLED;
 - physical acceptance before every rendering-related commit.
 
-## 10. Rejected historical assumption
+## 10. Status bar boundary
 
-The previous 128x64 console plan (`21 x 7`, 1024-byte framebuffer,
-`y=3..63`) is invalid for the installed hardware and must not be reused.
+The status bar is a sibling UI region, not part of console semantics.
 
-The native 128x32 profile is now the architectural baseline.
+Reserved geometry:
+
+```text
+content:   x=1..126, y=1..4
+separator: x=1..126, y=5
+```
+
+Content is not implemented in Slice 4.
+
+A future status-bar component may use a micro-font/icons appropriate for the
+four-pixel-high content region, but it must not distort console geometry or
+couple the console to SSD1306 pages.

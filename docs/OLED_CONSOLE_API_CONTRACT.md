@@ -1,6 +1,6 @@
 # OLED Console API Contract
 
-Status: PLANNED / NATIVE 128x32
+Status: ACTIVE / NATIVE 128x32 / SLICE 4 ACCEPTED
 
 ## 1. `mono_fb`
 
@@ -87,13 +87,6 @@ typedef struct
 } mono_font_metrics_t;
 ```
 
-Required API:
-
-```c
-const mono_font_metrics_t *font5x7_metrics(void);
-const uint8_t *font5x7_glyph(char c);
-```
-
 Current metrics:
 
 ```text
@@ -105,7 +98,7 @@ advance_y    = 8
 
 ## 3. `text_renderer`
 
-Required public entry point:
+Public entry point:
 
 ```c
 void text_renderer_draw_cell(
@@ -116,37 +109,30 @@ void text_renderer_draw_cell(
     char c);
 ```
 
-Contract:
+Accepted contract:
 
 - cell is opaque;
-- generic arbitrary-Y path must be correct first;
-- page-aligned fast path is optional optimization;
-- fast path must be framebuffer-equivalent to generic output;
-- clipping must apply to both on and off pixels;
+- arbitrary-Y generic path is authoritative;
+- aligned fast path may be used only when eligible;
+- fast output is byte-for-byte equivalent to generic output;
+- clipping applies to foreground and background writes;
 - writes outside the clip rectangle are forbidden.
 
-Canonical framed console clip:
+The fast-path diagnostic remains available:
 
-```text
-x=1, y=1, width=126, height=30
+```c
+int text_renderer_fast_path_self_test(void);
 ```
-
-Canonical cell origins:
-
-```text
-x = 1 + column * 6
-y = 8 + row * 8
-```
-
-For row 2, glyph pixels may touch `y=30`, but `y=31` belongs to the bottom
-frame and must not be overwritten.
 
 ## 4. `oled_console`
 
 ```c
+#define OLED_CONSOLE_COLUMNS 21u
+#define OLED_CONSOLE_ROWS     3u
+
 typedef struct
 {
-    char cells[3][21];
+    char cells[OLED_CONSOLE_ROWS][OLED_CONSOLE_COLUMNS];
     uint8_t first_row;
     uint8_t cursor_x;
     uint8_t cursor_y;
@@ -154,7 +140,13 @@ typedef struct
 } oled_console_t;
 ```
 
-Required API:
+Accepted size on the current ABI/build:
+
+```text
+67 bytes
+```
+
+Public API:
 
 ```c
 void oled_console_init(oled_console_t *console);
@@ -169,53 +161,68 @@ void oled_console_render(
     mono_rect_t clip);
 ```
 
-Baseline character behavior:
+Current character behavior:
 
 - printable ASCII;
 - `\n`;
 - `\r`;
-- automatic wrap.
+- automatic wrap;
+- no scrolling yet;
+- writes beyond the third row are ignored.
 
 Deferred:
 
+- scrolling;
 - tab;
 - backspace editing;
 - ANSI;
 - UTF-8;
 - proportional fonts.
 
-## 5. `ssd1306`
+## 5. UI composition contract
 
-Native panel profile:
+The console does not own the whole screen.
 
-```c
-typedef struct
-{
-    uint8_t i2c_address;
-    uint8_t segment_remap;
-    uint8_t com_scan_direction;
-    uint8_t display_offset;
-    uint8_t start_line;
-    uint8_t multiplex;
-    uint8_t com_pins;
-    mono_rect_t visible_rect;
-} ssd1306_panel_profile_t;
+Accepted caller-owned layout:
+
+```text
+outer frame:       x=0..127, y=0..31
+status content:    x=1..126, y=1..4
+status separator:  x=1..126, y=5
+gap:               y=6
+console viewport:  x=1, y=7, width=126, height=23
+bottom gap:        y=30
 ```
+
+For the current font metrics the viewport derives:
+
+```text
+column x = 1 + column * 6
+row y    = 7 + row * 8
+rows     = y=7,15,23
+capacity = 21 x 3
+```
+
+The console must not know or reproduce status-bar geometry internally. It only
+consumes the viewport passed by the caller.
+
+## 6. `ssd1306`
 
 Canonical installed values:
 
 ```text
-i2c_address       = 0x3C
-segment_remap     = A1
-com_scan_direction= C8
-display_offset    = 0
-start_line        = 0
-multiplex         = 0x1F
-com_pins          = 0x02
-visible_rect      = x0,y0,w128,h32
+i2c_address        = 0x3C
+resolution         = 128x32
+multiplex          = 0x1F
+com_pins           = 0x02
+display_offset     = 0
+start_line         = 0
+segment_remap      = A1
+com_scan_direction = C8
+visible_rect       = x0,y0,w128,h32
 ```
 
-Required presentation API:
+Presentation API:
 
 ```c
 int ssd1306_init(void);
@@ -225,7 +232,7 @@ int ssd1306_present(const mono_fb_t *fb);
 
 Initial `ssd1306_present()` may delegate to the full 512-byte transfer.
 
-## 6. Ownership and side effects
+## 7. Ownership and side effects
 
 `font5x7`:
 - immutable data only;
@@ -242,12 +249,15 @@ Initial `ssd1306_present()` may delegate to the full 512-byte transfer.
 `oled_console`:
 - modifies semantic state;
 - renders only when explicitly requested;
-- no I2C.
+- no I2C;
+- no SSD1306 page semantics;
+- no status-bar ownership.
 
 `ssd1306`:
 - owns OLED controller/I2C presentation;
 - must not own semantic text state.
 
-`kernel.c`:
-- orchestrates modules;
-- command handlers may request explicit present.
+UI composition:
+- owns frame/status/console viewport placement;
+- currently orchestrated in `kernel.c`;
+- may later move to a dedicated UI module.
