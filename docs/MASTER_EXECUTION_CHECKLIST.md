@@ -1,4 +1,59 @@
 > [!IMPORTANT]
+
+<!-- BEGIN STM32_OS_SLICE9A_ACCEPTED_STATE -->
+## Current accepted execution state — 2026-09-12
+
+This section is authoritative for the current execution boundary and supersedes stale unchecked rows in older planning sections below.
+
+### Accepted runtime/UI baseline
+
+- [x] Frozen native 128x32 OLED geometry remains unchanged.
+- [x] Slice 7 dirty-page UI integration accepted.
+- [x] Slice 8 boot/runtime UI lifecycle accepted.
+- [x] Boot banner emits `OLED_RUNTIME_UI_OK`.
+- [x] Full UART/OLED regression passed.
+- [x] Physical OLED appearance/output accepted.
+- [x] Slice 8 accepted binary:
+  `10148 bytes`,
+  SHA-256 `FC8AC07A35A0FA83F4F2F8A06EBCC5C8E603C7B843DDE30E827FD7FD815E5321`.
+
+### Slice 9A — scheduler foundation — ACCEPTED
+
+- [x] Static task-control-block model added.
+- [x] `SCHEDULER_TASK_COUNT = 2`.
+- [x] Two statically allocated 512-byte task stacks.
+- [x] Cortex-M initial task frame construction implemented.
+- [x] Stack alignment and task-frame invariants self-tested.
+- [x] `schedtest -> SCHED_FOUNDATION_OK`.
+- [x] Candidate build/link validation passed.
+- [x] Flash identity verified:
+  `10752 bytes`,
+  SHA-256 `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`.
+- [x] Full hardware protocol regression passed after final UART reconnection.
+- [x] Frozen OLED regression passed.
+- [x] Physical OLED output confirmed.
+- [x] No SVC/PendSV vector ownership change in this slice.
+- [x] No PSP activation/context switch in this slice.
+- [x] No SysTick scheduling/preemption in this slice.
+- [x] No OLED geometry/styling changes.
+
+### Slice 9A acceptance change set
+
+Immediately before the acceptance commit, the exact source delta is:
+
+```text
+ M src/kernel.c
+?? include/kernel/scheduler.h
+?? src/kernel/scheduler.c
+```
+
+### Next active slice
+
+**Slice 9B: cooperative scheduler activation.**
+
+Use the accepted static TCB/stack/synthetic-frame foundation to execute real cooperative tasks. Keep PendSV switching and SysTick preemption as later independently validated gates.
+<!-- END STM32_OS_SLICE9A_ACCEPTED_STATE -->
+
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
 > The authoritative hardware-accepted geometry and firmware fingerprint are in
 > [`OLED_UI_ACCEPTED_BASELINE.md`](OLED_UI_ACCEPTED_BASELINE.md).
@@ -292,7 +347,7 @@ Deferred, not blocking the current roadmap:
 - [x] `OLED_DIRTY_OK`.
 - [x] Frozen UI implementation remains unchanged.
 
-**Next active slice:** integrate dirty-page present into the normal UI update path.
+**Historical note:** the dirty-page runtime-integration boundary was completed before Slice 8; see the current accepted execution state above.
 ## Slice 7 — dirty-page UI integration — ACCEPTED
 
 Status: **accepted**

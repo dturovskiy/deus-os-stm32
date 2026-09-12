@@ -1,5 +1,41 @@
 # STM32 OS
 
+<!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_12 -->
+## Accepted project state — 2026-09-12
+
+The current hardware-accepted baseline is:
+
+- STM32F103C8T6 / Cortex-M3, 64 KiB Flash, 20 KiB SRAM.
+- 72 MHz HSE/PLL clock and 1 kHz SysTick.
+- fault capture for HardFault, MemManage, BusFault, and UsageFault.
+- bidirectional USART1 console at 115200 8N1:
+  - A9 = TX
+  - A10 = RX
+  - `ping -> PONG`
+  - `health`, `fault`, `i2cscan`, OLED regression commands.
+- native 128x32 SSD1306-compatible OLED at I2C address `0x3C`:
+  - B6 = SCL
+  - B7 = SDA
+  - 512-byte framebuffer
+  - frozen accepted status bar + retained 21x3 console
+  - dirty-page presentation integrated into the runtime UI lifecycle.
+- Slice 8 runtime UI boot lifecycle accepted:
+  - binary `10148 bytes`
+  - SHA-256 `FC8AC07A35A0FA83F4F2F8A06EBCC5C8E603C7B843DDE30E827FD7FD815E5321`.
+- Slice 9A scheduler foundation accepted:
+  - two static TCBs
+  - two 512-byte static task stacks
+  - synthetic Cortex-M initial frames
+  - foundation self-test `SCHED_FOUNDATION_OK`
+  - no PSP activation, no context switch, no PendSV scheduling, no preemption yet
+  - binary `10752 bytes`
+  - SHA-256 `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`.
+- Full post-reconnect hardware protocol regression passed on 2026-09-12.
+- Physical OLED output was confirmed after the final accepted run.
+
+Next scheduler boundary: activate cooperative task execution using the accepted static TCB/stack/frame foundation. PendSV/preemption remain later gates.
+<!-- END STM32_OS_ACCEPTED_STATE_2026_09_12 -->
+
 A small bare-metal operating system for the STM32F103 Cortex-M3.
 
 The project is built from scratch to study low-level ARM programming,
@@ -35,7 +71,7 @@ Built locally:
 - [x] Clock configuration
 - [x] SysTick
 - [x] Fault diagnostics
-- [x] USART1/PA9 polling TX diagnostic console
+- [x] USART1 A9/A10 bidirectional polling command/diagnostic console
 - [x] Stable 1 ms kernel time API with wraparound-safe comparisons
 - [x] USART1 RX / bidirectional command console
 - [x] `uptime` kernel introspection command
@@ -44,9 +80,9 @@ Built locally:
 - [ ] Native USB Device / CDC console
 - [x] I2C1 master + hardware bus scan (B6/B7, 100 kHz, SSD1306 at 0x3C)
 - [x] SSD1306 command transport at 0x3C (`oledping` / NOP transaction)
-- [x] SSD1306 initialization + first visible 128x64 checkerboard output (`oledtest`)
-- [ ] SSD1306 kernel console
-- [ ] Task scheduler
+- [x] Native 128x32 SSD1306 runtime UI with frozen status bar + retained 21x3 console
+- [x] SSD1306 retained kernel/status console
+- [x] Scheduler foundation: static TCBs/stacks + synthetic initial task frames (no switching yet)
 - [ ] PendSV context switching
 - [ ] IPC primitives
 - [ ] ESP8266 networking
@@ -87,7 +123,7 @@ The project now has an automated hardware validation loop:
 
 source -> build -> ELF/bin validation -> ST-LINK flash -> verify -> reset -> UART capture -> PASS/FAIL -> evidence log
 
-Current UART is TX-only from STM32 to host. A later RX/command-console slice will extend this to a fully bidirectional automated test loop.
+Current USART1 is bidirectional at 115200 8N1 and is part of the automated hardware acceptance loop.
 
 Native USB is planned to eventually consolidate normal console/control/update traffic onto the board's micro-USB connector.
 <!-- END STM32_OS_DEV_LOOP -->

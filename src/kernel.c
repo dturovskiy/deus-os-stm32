@@ -7,6 +7,7 @@
 #include "kernel/oled_console.h"
 #include "kernel/oled_status_bar.h"
 #include "kernel/oled_ui_layout.h"
+#include "kernel/scheduler.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 
@@ -1393,6 +1394,17 @@ static void console_write_fault(void)
     uart_write("\r\n");
 }
 
+static void console_scheduler_test(void)
+{
+    if (scheduler_self_test() != 0)
+    {
+        uart_write_line("SCHED_FOUNDATION_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_FOUNDATION_ERR");
+    }
+}
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
@@ -1414,6 +1426,10 @@ static void console_execute(void)
         uart_write(" PC13=");
         uart_write_hex32((GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
         uart_write("\r\n");
+    }
+    else if (text_equals(uart_command, "schedtest") != 0)
+    {
+        console_scheduler_test();
     }
     else if (text_equals(uart_command, "fault") != 0)
     {

@@ -1,5 +1,39 @@
 # Roadmap
 
+<!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_12 -->
+## Current roadmap checkpoint — 2026-09-12
+
+Earlier unchecked Phase 0-2 rows are historical planning debt; the hardware baseline has already advanced beyond them.
+
+Accepted through this checkpoint:
+
+- [x] Boot / custom startup / linker / hardware execution.
+- [x] Clock, GPIO, SysTick, monotonic time.
+- [x] Fault diagnostics.
+- [x] Bidirectional USART1 command console.
+- [x] I2C1 master and SSD1306 at `0x3C`.
+- [x] Native 128x32 OLED framebuffer/text/status/retained-console stack.
+- [x] Circular retained-console scrolling.
+- [x] Dirty-page presentation and runtime UI integration.
+- [x] Runtime boot UI lifecycle.
+- [x] Scheduler foundation:
+  - static TCBs
+  - separate static task stacks
+  - synthetic Cortex-M initial task frames
+  - deterministic foundation self-test.
+
+Scheduler work still open:
+
+- [ ] cooperative task execution / scheduler activation
+- [ ] PSP ownership for running tasks
+- [ ] PendSV context switching
+- [ ] SysTick preemption
+- [ ] `sleep()`
+- [ ] priorities
+
+Next active boundary: **cooperative scheduler activation (Slice 9B)**.
+<!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_12 -->
+
 ## Phase 0 - Boot baseline
 
 - [x] ARM GNU toolchain
@@ -31,8 +65,8 @@
 
 ## Phase 3 - Scheduler
 
-- [ ] Task control block
-- [ ] Separate task stacks
+- [x] Task control block foundation
+- [x] Separate static task stacks + synthetic initial frames
 - [ ] Cooperative scheduling
 - [ ] PendSV context switch
 - [ ] Preemptive scheduling

@@ -1,6 +1,115 @@
 # STM32 OS — Project Handoff
 
-Updated: 2026-09-10
+<!-- BEGIN STM32_OS_CURRENT_HANDOFF_2026_09_12 -->
+## Current authoritative handoff — 2026-09-12
+
+This section supersedes older “current state”, “exact next boundary”, TX-only UART, 128x64 OLED, and scheduler-non-goal text that remains below as historical milestone evidence.
+
+### Repository / Slice 9A acceptance parent
+
+```text
+Root:                    D:\Projects\STM32\OS
+Branch:                  main
+Pre-acceptance parent:   4217865403d9725707f4c17e572317caf7fe733f
+origin/main at docs gate: 4217865403d9725707f4c17e572317caf7fe733f
+```
+
+Slice 9A source change set immediately before the acceptance commit:
+
+```text
+ M src/kernel.c
+?? include/kernel/scheduler.h
+?? src/kernel/scheduler.c
+```
+
+### Current hardware
+
+- STM32F103C8T6 / Cortex-M3, 64 KiB Flash, 20 KiB SRAM.
+- ST-LINK V2, SWD 4000 KHz.
+- HW-193 / CH340 on COM3, 115200 8N1.
+- UART:
+  - A9 -> HW-193 RXD
+  - HW-193 TXD -> A10
+  - G -> GND.
+- OLED:
+  - native 128x32 SSD1306-compatible
+  - I2C `0x3C`
+  - B6 = SCL
+  - B7 = SDA
+  - 3.3 = VCC
+  - G = GND.
+
+### Frozen OLED baseline
+
+The accepted OLED styling/geometry remains frozen and authoritative in `docs/OLED_UI_ACCEPTED_BASELINE.md`.
+
+Key current geometry:
+
+- status bar `128x9`, y `0..8`
+- blank y `9`
+- console clip x `1`, y `10`, w `126`, h `22`
+- retained semantic console `21x3`
+- font `5x6`, cell `6x7`
+- no side/bottom frame below status
+- notification field x `20..107`, y `2..6` reserved/not rendered.
+
+### Accepted runtime state
+
+Slice 8 boot/runtime UI lifecycle is accepted:
+
+- binary `10148 bytes`
+- SHA-256 `FC8AC07A35A0FA83F4F2F8A06EBCC5C8E603C7B843DDE30E827FD7FD815E5321`
+- boot UI and UART/OLED regression accepted.
+
+Slice 9A scheduler foundation is accepted:
+
+- candidate binary `10752 bytes`
+- SHA-256 `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`
+- two TCBs
+- two 512-byte static task stacks
+- synthetic initial Cortex-M frames
+- `schedtest -> SCHED_FOUNDATION_OK`
+- no actual context switch / PSP activation / PendSV scheduling / preemption yet.
+
+Final 2026-09-12 post-reconnect acceptance:
+
+- exact target flash identity PASS
+- boot PASS
+- `ping -> PONG`
+- `health` PASS
+- I2C address `0x3C` PASS
+- all OLED render/status/console/scroll/dirty/UI-update regressions PASS
+- `schedtest -> SCHED_FOUNDATION_OK`
+- `uiruntime -> OLED_RUNTIME_UI_OK`
+- final reset PASS
+- physical OLED output confirmed.
+
+### Exact next boundary
+
+**Slice 9B — cooperative scheduler activation.**
+
+Use the accepted TCB/static-stack/synthetic-frame foundation to execute real cooperative tasks. Do not introduce SysTick preemption yet. PendSV context switching remains the next independent scheduler mechanism after cooperative execution is proven.
+
+### Acceptance lifecycle
+
+```text
+source
+ -> build
+ -> validate
+ -> flash
+ -> verify
+ -> reset
+ -> UART regression
+ -> physical visual acceptance when hardware-visible
+ -> docs/evidence
+ -> acceptance commit
+ -> push
+```
+
+Documentation sync, acceptance commit, and push are separate gates.
+<!-- END STM32_OS_CURRENT_HANDOFF_2026_09_12 -->
+
+Updated: 2026-09-12
 
 ## Project identity
 
@@ -325,7 +434,7 @@ As of 2026-09-10, the first diagnostic UART slice is hardware-proven.
 - boot banner and 32-bit hexadecimal output helper
 - accepted image: D:\Projects\STM32\OS\build\os.bin
 - size: 960 bytes
-- SHA-256: $ExpectedHash
+- SHA-256: historical value not preserved in this handoff
 - STM32CubeProgrammer download/verify/reset: PASS
 - UART capture on COM3: PASS
 - observed output:
@@ -334,7 +443,7 @@ As of 2026-09-10, the first diagnostic UART slice is hardware-proven.
   - SYSCLK=0x044AA200
   - TICK_HZ=0x000003E8
   - FAULTREC=0x20000000
-- evidence: $EvidencePath
+- evidence: historical local evidence path not preserved in this handoff
 
 The HW-193 adapter is now a proven low-level diagnostic path. Future native micro-USB / USB-device support remains a separate implementation slice; ST-LINK remains the recovery/debug programmer until such a path is implemented.
 
@@ -367,9 +476,9 @@ Native USB is planned to eventually consolidate normal console/control/update tr
 - UART regression: PASS
 - PC13/SysTick behavior preserved
 - Accepted image: D:\Projects\STM32\OS\build\os.bin
-- Image SHA-256: $ExpectedTimeApiHash
-- ault_record address is resolved from ELF rather than treated as a permanent ABI address.
-- Evidence: $EvidencePath
+- Image SHA-256: E672398FACBB3BA83E8F05DF4D7165ACFC1849D34BF3589EA81E114ED2DC72E9
+- fault_record address is resolved from ELF rather than treated as a permanent ABI address.
+- Evidence: historical local evidence path not preserved in this handoff
 
 Phase 3 governance debt is closed.
 <!-- END STM32_OS_PHASE3_TIME_ACCEPTANCE -->

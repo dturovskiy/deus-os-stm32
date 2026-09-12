@@ -1,5 +1,71 @@
 # STM32 OS — Implementation Plan
 
+<!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_12 -->
+## Accepted implementation checkpoint — 2026-09-12
+
+The runtime baseline now includes a hardware-accepted native 128x32 OLED UI lifecycle and the first scheduler foundation slice.
+
+### Scheduler state
+
+Accepted Slice 9A provides:
+
+- a static two-entry TCB pool
+- two 512-byte aligned static task stacks
+- saved-SP / stack-range / state metadata
+- synthetic Cortex-M initial frames compatible with later exception-style restore
+- xPSR Thumb-state initialization
+- deterministic `scheduler_self_test()`
+- UART acceptance command `schedtest -> SCHED_FOUNDATION_OK`.
+
+Slice 9A intentionally does not perform a context switch and does not make PSP, SVC, PendSV, or SysTick the scheduler owner.
+
+### Revised scheduler sequence
+
+Stage A1 — **accepted**:
+
+- static TCB data model
+- static task stacks
+- synthetic initial task frames
+- invariants/self-test.
+
+Stage A2 — next:
+
+- cooperative scheduler activation
+- run real task entry functions from prepared task contexts
+- establish explicit task/PSP ownership rules
+- retain deterministic manual/cooperative switching only.
+
+Stage B:
+
+- PendSV context-switch mechanism
+- assembly save/restore of callee-saved registers
+- prove round-trip context integrity before preemption.
+
+Stage C:
+
+- SysTick-driven preemption
+- fixed-priority scheduling
+- idle task.
+
+Stage D:
+
+- sleep queues
+- timers
+- IPC
+- synchronization.
+
+### Current accepted image
+
+- candidate binary: `10752 bytes`
+- SHA-256: `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`
+- scheduler static stacks: `1024 bytes`
+- TCB storage: `40 bytes`
+- `_ebss=0x200006F8`
+- remaining SRAM headroom: `18696 bytes`.
+
+The frozen OLED geometry is not part of the scheduler work and must remain unchanged.
+<!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_12 -->
+
 ## Objective
 
 Build a small, understandable, fast bare-metal operating system for STM32F103-class Cortex-M3 hardware while learning ARM/Thumb assembly, exception mechanics, scheduling, memory layout, drivers, and low-level performance.
