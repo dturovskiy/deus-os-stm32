@@ -320,8 +320,7 @@ int oled_console_scroll_self_test(void)
         (test.dirty_rows == oled_console_all_rows_mask());
 }
 
-void oled_console_render(
-    const oled_console_t *console,
+void oled_console_render(oled_console_t *console,
     mono_fb_t *fb,
     mono_rect_t clip)
 {
@@ -330,9 +329,11 @@ void oled_console_render(
     uint32_t available_rows;
     uint32_t row;
     uint32_t column;
+    uint8_t dirty_rows;
+    uint8_t rendered_rows = 0u;
 
     if (
-        (console == (const oled_console_t *)0) ||
+        (console == (oled_console_t *)0) ||
         (fb == (mono_fb_t *)0) ||
         (fb->data == (uint8_t *)0) ||
         (clip.width <= 0) ||
@@ -415,9 +416,27 @@ void oled_console_render(
         available_rows = OLED_CONSOLE_ROWS;
     }
 
+    dirty_rows = console->dirty_rows;
+
+    if (
+        (dirty_rows == 0u) ||
+        (available_columns == 0u) ||
+        (available_rows == 0u)
+    ) {
+        return;
+    }
+
     for (row = 0u; row < available_rows; ++row)
     {
-        uint32_t logical_row =
+        uint8_t row_mask = (uint8_t)(1u << row);
+        uint32_t physical_row;
+
+        if ((dirty_rows & row_mask) == 0u)
+        {
+            continue;
+        }
+
+        physical_row =
             (console->first_row + row) % OLED_CONSOLE_ROWS;
 
         for (column = 0u; column < available_columns; ++column)
@@ -436,7 +455,7 @@ void oled_console_render(
 
             const uint8_t *glyph =
                 font5x6_glyph(
-                    console->cells[logical_row][column]);
+                    console->cells[physical_row][column]);
 
             text_renderer_draw_glyph_cell(
                 fb,
@@ -446,5 +465,14 @@ void oled_console_render(
                 glyph,
                 metrics);
         }
+
+        rendered_rows |= row_mask;
     }
+
+    /*
+     * Consume only logical rows that were actually rendered.
+     * Dirty rows outside the visible clip remain pending.
+     */
+    console->dirty_rows &=
+        (uint8_t)~rendered_rows;
 }

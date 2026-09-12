@@ -804,7 +804,7 @@ static int ssd1306_show_ui_layout(
         &oled_surface,
         layout->console_rect);
 
-    if (ssd1306_present_full(oled_framebuffer) == 0)
+    if (ssd1306_present(&oled_surface) == 0)
     {
         return 0;
     }
@@ -878,7 +878,7 @@ static int ssd1306_show_scroll_test(void)
         &oled_surface,
         layout->console_rect);
 
-    if (ssd1306_present_full(oled_framebuffer) == 0)
+    if (ssd1306_present(&oled_surface) == 0)
     {
         return 0;
     }
@@ -1003,6 +1003,171 @@ static void console_oled_dirty(void)
     else
     {
         uart_write_line("OLED_DIRTY_ERR");
+    }
+}
+
+static void console_oled_ui_update(void)
+{
+    const oled_ui_layout_t *layout;
+    oled_status_bar_t status;
+    uint8_t row_mask;
+    int proof_ok = 0;
+
+    layout = oled_ui_layout_default();
+
+    if (
+        (layout == (const oled_ui_layout_t *)0) ||
+        (oled_ui_layout_validate(layout) == 0)
+    ) {
+        uart_write_line("OLED_UI_LAYOUT_PATH_ERR");
+        return;
+    }
+
+    if (ssd1306_init() == 0)
+    {
+        uart_write_line("OLED_UI_INIT_ERR");
+        return;
+    }
+
+    mono_fb_clear(&oled_surface);
+
+    oled_status_bar_init(&status);
+    oled_status_bar_set_time(
+        &status,
+        0u,
+        0u);
+
+    oled_status_bar_render(
+        &status,
+        &oled_surface,
+        layout->status_rect);
+
+    oled_console_clear(&oled_console_state);
+
+    oled_console_write_line(
+        &oled_console_state,
+        "UI PATH ONE");
+
+    oled_console_write_line(
+        &oled_console_state,
+        "UI PATH TWO");
+
+    oled_console_write(
+        &oled_console_state,
+        "UI PATH THREE");
+
+    oled_console_render(
+        &oled_console_state,
+        &oled_surface,
+        layout->console_rect);
+
+    if (oled_console_state.dirty_rows != 0u)
+    {
+        uart_write_line("OLED_UI_BASE_CONSOLE_DIRTY_ERR");
+        goto display_on;
+    }
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0x0Fu)
+    {
+        uart_write("OLED_UI_BASE_MASK=");
+        uart_write_hex32(
+            (uint32_t)mono_fb_dirty_pages(&oled_surface));
+        uart_write_line("");
+        uart_write_line("OLED_UI_BASE_MASK_ERR");
+        goto display_on;
+    }
+
+    if (ssd1306_present(&oled_surface) == 0)
+    {
+        uart_write_line("OLED_UI_BASE_PRESENT_ERR");
+        goto display_on;
+    }
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    {
+        uart_write_line("OLED_UI_BASE_CLEAR_ERR");
+        goto display_on;
+    }
+
+    oled_console_state.cursor_x = 0u;
+    oled_console_state.cursor_y = 1u;
+
+    oled_console_write(
+        &oled_console_state,
+        "DIRTY PAGE2 UPDATE   ");
+
+    if (oled_console_state.dirty_rows != 0x02u)
+    {
+        uart_write("OLED_UI_CONSOLE_MASK=");
+        uart_write_hex32(
+            (uint32_t)oled_console_state.dirty_rows);
+        uart_write_line("");
+        uart_write_line("OLED_UI_CONSOLE_MASK_ERR");
+        goto display_on;
+    }
+
+    oled_console_render(
+        &oled_console_state,
+        &oled_surface,
+        layout->console_rect);
+
+    if (oled_console_state.dirty_rows != 0u)
+    {
+        uart_write_line("OLED_UI_CONSOLE_CONSUME_ERR");
+        goto display_on;
+    }
+
+    uart_write_line("OLED_UI_CONSOLE_DIRTY_OK");
+
+    row_mask = mono_fb_dirty_pages(&oled_surface);
+
+    uart_write("OLED_UI_ROW_MASK=");
+    uart_write_hex32((uint32_t)row_mask);
+    uart_write_line("");
+
+    /*
+     * Present the actual dirty set before validating it. Even if a future
+     * regression widens the mask, the panel is still restored and left on.
+     */
+    if (ssd1306_present(&oled_surface) == 0)
+    {
+        uart_write_line("OLED_UI_ROW_PRESENT_ERR");
+        goto display_on;
+    }
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    {
+        uart_write_line("OLED_UI_ROW_CLEAR_ERR");
+        goto display_on;
+    }
+
+    uart_write_line("OLED_UI_DIRTY_PRESENT_OK");
+
+    if (row_mask != 0x04u)
+    {
+        uart_write_line("OLED_UI_DIRTY_RENDER_ERR");
+        goto display_on;
+    }
+
+    uart_write_line("OLED_UI_DIRTY_RENDER_OK");
+    proof_ok = 1;
+
+display_on:
+    if (ssd1306_display_on() == 0)
+    {
+        uart_write_line("OLED_UI_DISPLAY_ON_ERR");
+        return;
+    }
+
+    uart_write_line("OLED_UI_DISPLAY_ON_OK");
+
+    if (proof_ok != 0)
+    {
+        uart_write_line("OLED_UI_UPDATE_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_UI_UPDATE_ERR");
     }
 }
 
@@ -1205,6 +1370,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "oleddirty") != 0)
     {
         console_oled_dirty();
+    }
+    else if (text_equals(uart_command, "oleduiupdate") != 0)
+    {
+        console_oled_ui_update();
     }
     else if (text_equals(uart_command, "oledstatus") != 0)
     {

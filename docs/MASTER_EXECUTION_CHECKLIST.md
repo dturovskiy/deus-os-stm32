@@ -293,3 +293,26 @@ Deferred, not blocking the current roadmap:
 - [x] Frozen UI implementation remains unchanged.
 
 **Next active slice:** integrate dirty-page present into the normal UI update path.
+## Slice 7 — dirty-page UI integration — ACCEPTED
+
+Status: **accepted**
+
+Acceptance criteria completed:
+
+- [x] Shared status/console UI path uses `ssd1306_present()`.
+- [x] Scroll UI path uses `ssd1306_present()`.
+- [x] Retained console dirty rows are consumed after rasterization.
+- [x] Clean logical console rows are skipped during incremental render.
+- [x] Row-1-only update produces framebuffer dirty mask `0x04`.
+- [x] Dirty-page present clears the page mask after successful transfer.
+- [x] Frozen status-bar/layout implementation remains unchanged.
+- [x] Full UART regression suite passes.
+- [x] Flash/verify/reset passes at SWD 4000 KHz.
+- [x] Physical OLED result accepted.
+
+Accepted firmware fingerprint:
+
+- binary size: 9828 bytes
+- SHA-256: `4015795457F6844EFA768F97E7C59C8170015F147199874B61B524A1289AA5E8`
+
+Next boundary: move dirty-page presentation from acceptance/demo commands into the normal runtime UI lifecycle without reopening frozen geometry.

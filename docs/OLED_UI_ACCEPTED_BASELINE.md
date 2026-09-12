@@ -289,3 +289,46 @@ fault_record  : 0x20000270
 ```
 
 Next active OLED slice: integrate dirty-page present into the normal UI update path.
+## Accepted Slice 7: dirty-page UI integration
+
+Accepted physical and protocol result:
+
+- UI geometry remains frozen and byte-identical to the accepted baseline.
+- Normal status/console UI presentation uses `ssd1306_present(&oled_surface)`.
+- Scroll presentation also uses the dirty-page presenter.
+- `oled_console_render()` renders only logical rows whose `dirty_rows` bit is set.
+- Rendering consumes only rows that were actually rasterized.
+- A logical row-1 update at the frozen `y=17..22` geometry dirties exactly SSD1306 page 2 (`0x04`).
+- `ssd1306_present()` clears the presented page dirty bit after successful transfer.
+- Diagnostic/acceptance commands remain development-only UART tests; they are not the normal boot sequence.
+
+Accepted proof command `oleduiupdate`:
+
+```text
+OLED_UI_CONSOLE_DIRTY_OK
+OLED_UI_ROW_MASK=0x00000004
+OLED_UI_DIRTY_PRESENT_OK
+OLED_UI_DIRTY_RENDER_OK
+OLED_UI_DISPLAY_ON_OK
+OLED_UI_UPDATE_OK
+```
+
+Accepted image:
+
+- text: 9828 bytes
+- data: 0 bytes
+- bss: 716 bytes
+- binary: 9828 bytes
+- SHA-256: `4015795457F6844EFA768F97E7C59C8170015F147199874B61B524A1289AA5E8`
+- framebuffer: 512 bytes
+- retained console state: 67 bytes
+- `fault_record`: `0x20000270`
+- initial MSP: `0x20005000`
+
+The final accepted physical proof keeps the frozen status bar and shows:
+
+```text
+UI PATH ONE
+DIRTY PAGE2 UPDATE
+UI PATH THREE
+```
