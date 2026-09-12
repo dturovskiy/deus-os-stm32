@@ -1405,6 +1405,19 @@ static void console_scheduler_test(void)
         uart_write_line("SCHED_FOUNDATION_ERR");
     }
 }
+
+static void console_scheduler_cooperative_test(void)
+{
+    if (scheduler_cooperative_self_test() != 0)
+    {
+        uart_write_line("SCHED_COOP_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_COOP_ERR");
+    }
+}
+
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
@@ -1430,6 +1443,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "schedtest") != 0)
     {
         console_scheduler_test();
+    }
+    else if (text_equals(uart_command, "schedcoop") != 0)
+    {
+        console_scheduler_cooperative_test();
     }
     else if (text_equals(uart_command, "fault") != 0)
     {

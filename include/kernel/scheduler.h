@@ -11,16 +11,17 @@ typedef void (*scheduler_task_entry_t)(void *argument);
 typedef enum
 {
     SCHEDULER_TASK_UNUSED = 0,
-    SCHEDULER_TASK_READY = 1
+    SCHEDULER_TASK_READY = 1,
+    SCHEDULER_TASK_DONE = 2
 } scheduler_task_state_t;
 
 typedef struct
 {
-    uint32_t *saved_sp;
+    uint32_t * volatile saved_sp;
     uint32_t *stack_low;
     uint32_t *stack_high;
     uint32_t stack_words;
-    scheduler_task_state_t state;
+    volatile scheduler_task_state_t state;
 } scheduler_task_t;
 
 void scheduler_init(void);
@@ -32,6 +33,12 @@ int scheduler_task_prepare(
 
 const scheduler_task_t *scheduler_task_get(uint32_t index);
 
+int scheduler_start(void);
+
+void scheduler_yield(void);
+
 int scheduler_self_test(void);
+
+int scheduler_cooperative_self_test(void);
 
 #endif

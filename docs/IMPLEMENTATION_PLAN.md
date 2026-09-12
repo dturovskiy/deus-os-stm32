@@ -3,21 +3,36 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_12 -->
 ## Accepted implementation checkpoint — 2026-09-12
 
-The runtime baseline now includes a hardware-accepted native 128x32 OLED UI lifecycle and the first scheduler foundation slice.
+The runtime baseline now includes the hardware-accepted native 128x32 OLED UI lifecycle, scheduler foundation, and cooperative scheduler activation.
 
 ### Scheduler state
 
-Accepted Slice 9A provides:
+Accepted Slice 9A established:
 
 - a static two-entry TCB pool
 - two 512-byte aligned static task stacks
 - saved-SP / stack-range / state metadata
-- synthetic Cortex-M initial frames compatible with later exception-style restore
-- xPSR Thumb-state initialization
+- synthetic Cortex-M initial frames
 - deterministic `scheduler_self_test()`
-- UART acceptance command `schedtest -> SCHED_FOUNDATION_OK`.
+- `schedtest -> SCHED_FOUNDATION_OK`.
 
-Slice 9A intentionally does not perform a context switch and does not make PSP, SVC, PendSV, or SysTick the scheduler owner.
+Accepted Slice 9B now adds:
+
+- corrected initial-frame return semantics:
+  - initial stacked PC is halfword-aligned and relies on xPSR.T
+  - stacked LR retains the Thumb function-pointer bit for normal task return
+- Thread-mode task execution on PSP
+- SVC `#0` start
+- SVC `#1` voluntary cooperative yield
+- SVC `#2` task-return/exit
+- kernel/MSP parking and restoration
+- deterministic two-task cooperative round-robin
+- `scheduler_cooperative_self_test()`
+- `schedcoop -> SCHED_COOP_OK`
+- hardware-proven sequence `0x10 -> 0x20 -> 0x11 -> 0x21`
+- `34` complete hardware cooperative runs including real normal task returns.
+
+PendSV is still `Default_Handler`. SysTick continues to maintain the timebase/heartbeat but does not schedule tasks. Preemption is not enabled.
 
 ### Revised scheduler sequence
 
@@ -28,18 +43,18 @@ Stage A1 — **accepted**:
 - synthetic initial task frames
 - invariants/self-test.
 
-Stage A2 — next:
+Stage A2 — **accepted**:
 
 - cooperative scheduler activation
-- run real task entry functions from prepared task contexts
-- establish explicit task/PSP ownership rules
-- retain deterministic manual/cooperative switching only.
+- PSP ownership for running tasks
+- SVC start/yield/exit mechanism
+- deterministic real task execution and return-to-kernel proof.
 
-Stage B:
+Stage B — next:
 
 - PendSV context-switch mechanism
-- assembly save/restore of callee-saved registers
-- prove round-trip context integrity before preemption.
+- isolate callee-saved context handoff in the architecture exception path
+- prove repeated round-trip context integrity while remaining cooperative/manual.
 
 Stage C:
 
@@ -56,14 +71,14 @@ Stage D:
 
 ### Current accepted image
 
-- candidate binary: `10752 bytes`
-- SHA-256: `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`
+- candidate binary: `11792 bytes`
+- SHA-256: `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`
+- `.bss`: `1864 bytes`
 - scheduler static stacks: `1024 bytes`
-- TCB storage: `40 bytes`
-- `_ebss=0x200006F8`
-- remaining SRAM headroom: `18696 bytes`.
+- `_ebss=0x20000748`
+- remaining SRAM headroom: `18616 bytes`.
 
-The frozen OLED geometry is not part of the scheduler work and must remain unchanged.
+The frozen OLED geometry is not part of the scheduler work and remains unchanged.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_12 -->
 
 ## Objective

@@ -12,7 +12,9 @@ The current hardware-accepted baseline is:
   - A9 = TX
   - A10 = RX
   - `ping -> PONG`
-  - `health`, `fault`, `i2cscan`, OLED regression commands.
+  - `health`, `fault`, `i2cscan`, OLED regression commands
+  - `schedtest -> SCHED_FOUNDATION_OK`
+  - `schedcoop -> SCHED_COOP_OK`.
 - native 128x32 SSD1306-compatible OLED at I2C address `0x3C`:
   - B6 = SCL
   - B7 = SDA
@@ -22,18 +24,32 @@ The current hardware-accepted baseline is:
 - Slice 8 runtime UI boot lifecycle accepted:
   - binary `10148 bytes`
   - SHA-256 `FC8AC07A35A0FA83F4F2F8A06EBCC5C8E603C7B843DDE30E827FD7FD815E5321`.
-- Slice 9A scheduler foundation accepted:
+- Slice 9A scheduler foundation accepted and published:
+  - acceptance commit `1a57f79cda42674219e774900ce07a0da8fedaf4`
   - two static TCBs
   - two 512-byte static task stacks
   - synthetic Cortex-M initial frames
-  - foundation self-test `SCHED_FOUNDATION_OK`
-  - no PSP activation, no context switch, no PendSV scheduling, no preemption yet
-  - binary `10752 bytes`
-  - SHA-256 `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`.
-- Full post-reconnect hardware protocol regression passed on 2026-09-12.
-- Physical OLED output was confirmed after the final accepted run.
+  - foundation self-test `SCHED_FOUNDATION_OK`.
+- Slice 9B cooperative scheduler activation hardware-accepted:
+  - task Thread mode runs on PSP
+  - SVC `#0` starts the first prepared task
+  - SVC `#1` performs voluntary cooperative yield
+  - SVC `#2` handles normal task return/exit
+  - parked kernel/MSP context is restored after all prepared tasks complete
+  - initial stacked PC remains halfword-aligned with Thumb state supplied by xPSR.T
+  - stacked LR retains the Thumb function-pointer bit for normal `BX LR` task return
+  - deterministic cooperative sequence `0x10 -> 0x20 -> 0x11 -> 0x21`
+  - first real `schedcoop` PASS, 32/32 stress runs PASS, final post-reset `schedcoop` PASS
+  - real task-return path PASS across `34` complete cooperative runs
+  - PendSV remains deferred and SysTick does not schedule tasks
+  - no preemption yet
+  - candidate binary `11792 bytes`
+  - SHA-256 `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`
+  - `_ebss=0x20000748`; SRAM headroom `18616 bytes`.
+- Full UART/I2C/OLED/scheduler regression passed after cooperative activation.
+- Physical OLED output was confirmed unchanged after the final accepted run.
 
-Next scheduler boundary: activate cooperative task execution using the accepted static TCB/stack/frame foundation. PendSV/preemption remain later gates.
+Next scheduler boundary: implement and independently prove the PendSV context-switch mechanism while keeping SysTick preemption deferred.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_12 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.
@@ -82,7 +98,8 @@ Built locally:
 - [x] SSD1306 command transport at 0x3C (`oledping` / NOP transaction)
 - [x] Native 128x32 SSD1306 runtime UI with frozen status bar + retained 21x3 console
 - [x] SSD1306 retained kernel/status console
-- [x] Scheduler foundation: static TCBs/stacks + synthetic initial task frames (no switching yet)
+- [x] Scheduler foundation: static TCBs/stacks + synthetic initial task frames
+- [x] Cooperative scheduler activation: PSP tasks + SVC start/yield/exit, no preemption
 - [ ] PendSV context switching
 - [ ] IPC primitives
 - [ ] ESP8266 networking

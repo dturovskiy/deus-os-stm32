@@ -13,45 +13,55 @@ This section is authoritative for the current execution boundary and supersedes 
 - [x] Boot banner emits `OLED_RUNTIME_UI_OK`.
 - [x] Full UART/OLED regression passed.
 - [x] Physical OLED appearance/output accepted.
-- [x] Slice 8 accepted binary:
-  `10148 bytes`,
-  SHA-256 `FC8AC07A35A0FA83F4F2F8A06EBCC5C8E603C7B843DDE30E827FD7FD815E5321`.
 
-### Slice 9A — scheduler foundation — ACCEPTED
+### Slice 9A — scheduler foundation — ACCEPTED / PUBLISHED
 
-- [x] Static task-control-block model added.
-- [x] `SCHEDULER_TASK_COUNT = 2`.
-- [x] Two statically allocated 512-byte task stacks.
-- [x] Cortex-M initial task frame construction implemented.
-- [x] Stack alignment and task-frame invariants self-tested.
+- [x] Static two-task TCB model and two 512-byte static stacks.
+- [x] Cortex-M synthetic initial task frames.
 - [x] `schedtest -> SCHED_FOUNDATION_OK`.
-- [x] Candidate build/link validation passed.
-- [x] Flash identity verified:
-  `10752 bytes`,
-  SHA-256 `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`.
-- [x] Full hardware protocol regression passed after final UART reconnection.
-- [x] Frozen OLED regression passed.
-- [x] Physical OLED output confirmed.
-- [x] No SVC/PendSV vector ownership change in this slice.
-- [x] No PSP activation/context switch in this slice.
-- [x] No SysTick scheduling/preemption in this slice.
-- [x] No OLED geometry/styling changes.
+- [x] Accepted binary `10752 bytes`.
+- [x] SHA-256 `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`.
+- [x] Acceptance commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
 
-### Slice 9A acceptance change set
+### Slice 9B — cooperative scheduler activation — HARDWARE ACCEPTED
+
+- [x] Corrected stacked LR Thumb-bit semantics before first real task activation.
+- [x] SVC vector ownership moved from `Default_Handler` to `SVC_Handler`.
+- [x] SVC `#0` starts the first task on PSP.
+- [x] SVC `#1` performs voluntary cooperative yield.
+- [x] SVC `#2` handles normal task return/exit.
+- [x] Kernel/MSP context is parked and restored after all prepared tasks finish.
+- [x] Cooperative round-robin runs two prepared tasks.
+- [x] Deterministic sequence `0x10 -> 0x20 -> 0x11 -> 0x21` validated by `schedcoop`.
+- [x] First real `schedcoop -> SCHED_COOP_OK`.
+- [x] 32/32 cooperative stress runs passed.
+- [x] Final post-reset `schedcoop -> SCHED_COOP_OK`.
+- [x] Real task-return path passed across `34` complete cooperative runs.
+- [x] SysTick remained monotonic before and after scheduler stress.
+- [x] Foundation self-test remained valid after cooperative stress.
+- [x] Full UART/I2C/OLED regression passed.
+- [x] Frozen OLED physical output confirmed unchanged.
+- [x] Candidate binary `11792 bytes`.
+- [x] SHA-256 `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`.
+- [x] `_ebss=0x20000748`; SRAM headroom `18616 bytes`.
+- [x] PendSV remains `Default_Handler`.
+- [x] SysTick does not invoke scheduler policy.
+- [x] Preemption remains deferred.
+
+### Slice 9B acceptance source change set
 
 Immediately before the acceptance commit, the exact source delta is:
 
 ```text
+ M include/kernel/scheduler.h
  M src/kernel.c
-?? include/kernel/scheduler.h
-?? src/kernel/scheduler.c
+ M src/kernel/scheduler.c
+ M src/startup.s
 ```
 
-### Next active slice
+### Next active scheduler boundary
 
-**Slice 9B: cooperative scheduler activation.**
-
-Use the accepted static TCB/stack/synthetic-frame foundation to execute real cooperative tasks. Keep PendSV switching and SysTick preemption as later independently validated gates.
+Implement and independently prove the PendSV context-switch mechanism. Do not enable SysTick-driven preemption in the same acceptance gate.
 <!-- END STM32_OS_SLICE9A_ACCEPTED_STATE -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

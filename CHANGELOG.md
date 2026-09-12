@@ -15,40 +15,49 @@
 
 ### Accepted — scheduler foundation (Slice 9A)
 
-- Added `include/kernel/scheduler.h`.
-- Added `src/kernel/scheduler.c`.
-- Added two static TCBs and two 512-byte static task stacks.
-- Added synthetic initial Cortex-M task frames:
-  - software-saved r4-r11 area
-  - hardware-frame-compatible r0-r3/r12/lr/pc/xPSR area
-  - xPSR Thumb bit set.
-- Added deterministic foundation self-test command:
+- Added `include/kernel/scheduler.h` and `src/kernel/scheduler.c`.
+- Added two static TCBs, two 512-byte static task stacks, and synthetic initial Cortex-M task frames.
+- Added deterministic foundation self-test:
   - `schedtest -> SCHED_FOUNDATION_OK`.
-- This slice deliberately does **not**:
-  - activate PSP for task execution
-  - switch context
-  - change SVC/PendSV vector ownership
-  - schedule from SysTick
-  - add preemption.
-- Candidate binary: `10752 bytes`.
+- Slice 9A deliberately left PSP activation, context switching, SVC/PendSV scheduler ownership, SysTick scheduling, and preemption deferred.
+- Accepted binary: `10752 bytes`.
 - SHA-256: `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`.
-- Static scheduler stack budget: `1024 bytes`.
-- TCB storage: `40 bytes`.
-- `_ebss=0x200006F8`; SRAM headroom remains `18696 bytes`.
-- Full hardware regression after final UART reconnection:
-  - boot banner PASS
-  - `ping -> PONG`
-  - `schedtest -> SCHED_FOUNDATION_OK`
-  - I2C/OLED command, render, status, console, scroll, dirty-page, and UI-update regressions PASS
-  - `uiruntime -> OLED_RUNTIME_UI_OK`
-  - final reset PASS.
-- Physical OLED output confirmed.
-- At documentation-sync time, the accepted source/docs change set was still uncommitted; the acceptance commit is the next lifecycle gate.
+- Acceptance commit: `1a57f79cda42674219e774900ce07a0da8fedaf4`.
+
+### Accepted — cooperative scheduler activation (Slice 9B)
+
+- Corrected the synthetic-frame task return boundary before activation:
+  - stacked initial PC keeps bit 0 clear and relies on stacked xPSR.T during exception return
+  - stacked LR retains the Thumb function-pointer bit required by normal `BX LR` return.
+- Activated cooperative task execution on PSP.
+- SVC is now the cooperative scheduler exception:
+  - SVC `#0`: start first prepared task
+  - SVC `#1`: voluntary yield
+  - SVC `#2`: task returned / exit current task.
+- Added kernel/MSP parking and restoration after all prepared tasks finish.
+- Added deterministic real-execution acceptance command:
+  - `schedcoop -> SCHED_COOP_OK`
+  - expected internal sequence `0x10 -> 0x20 -> 0x11 -> 0x21`.
+- Marked scheduler state shared between Thread mode and SVC handling as volatile where required by the compiler model.
+- Hardware acceptance:
+  - exact flash readback PASS
+  - boot/health/UART PASS
+  - first real cooperative run PASS
+  - 32/32 repeated cooperative runs PASS
+  - post-stress health and foundation self-test PASS
+  - final post-reset cooperative run PASS
+  - real normal task-return path PASS across `34` complete runs
+  - full I2C/OLED legacy regression PASS
+  - physical frozen OLED output confirmed unchanged.
+- Candidate binary: `11792 bytes`.
+- SHA-256: `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`.
+- `.bss`: `1864 bytes`; `_ebss=0x20000748`; SRAM headroom `18616 bytes`.
+- PendSV, SysTick-driven scheduling, and preemption remain deliberately deferred.
 
 ### Next
 
-- Slice 9B: activate cooperative task execution from the accepted static scheduler foundation.
-- Keep PendSV/preemption as later, separately accepted scheduler gates.
+- Implement and independently validate the PendSV context-switch mechanism.
+- Keep SysTick-driven preemption as a later scheduler gate.
 <!-- END STM32_OS_CHANGELOG_2026_09_12 -->
 
 All notable project milestones are recorded here.

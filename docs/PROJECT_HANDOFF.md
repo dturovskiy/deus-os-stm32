@@ -5,21 +5,22 @@
 
 This section supersedes older “current state”, “exact next boundary”, TX-only UART, 128x64 OLED, and scheduler-non-goal text that remains below as historical milestone evidence.
 
-### Repository / Slice 9A acceptance parent
+### Repository / Slice 9B pre-acceptance state
 
 ```text
-Root:                    D:\Projects\STM32\OS
-Branch:                  main
-Pre-acceptance parent:   4217865403d9725707f4c17e572317caf7fe733f
-origin/main at docs gate: 4217865403d9725707f4c17e572317caf7fe733f
+Root:                     D:\Projects\STM32\OS
+Branch:                   main
+Pre-acceptance parent:    1a57f79cda42674219e774900ce07a0da8fedaf4
+origin/main at docs gate:  1a57f79cda42674219e774900ce07a0da8fedaf4
 ```
 
-Slice 9A source change set immediately before the acceptance commit:
+Slice 9B source change set immediately before the acceptance commit:
 
 ```text
+ M include/kernel/scheduler.h
  M src/kernel.c
-?? include/kernel/scheduler.h
-?? src/kernel/scheduler.c
+ M src/kernel/scheduler.c
+ M src/startup.s
 ```
 
 ### Current hardware
@@ -53,42 +54,50 @@ Key current geometry:
 - no side/bottom frame below status
 - notification field x `20..107`, y `2..6` reserved/not rendered.
 
-### Accepted runtime state
+### Accepted scheduler/runtime state
 
-Slice 8 boot/runtime UI lifecycle is accepted:
+Slice 9A foundation is accepted and published at commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
 
-- binary `10148 bytes`
-- SHA-256 `FC8AC07A35A0FA83F4F2F8A06EBCC5C8E603C7B843DDE30E827FD7FD815E5321`
-- boot UI and UART/OLED regression accepted.
+Slice 9B cooperative activation is hardware-accepted:
 
-Slice 9A scheduler foundation is accepted:
-
-- candidate binary `10752 bytes`
-- SHA-256 `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`
-- two TCBs
-- two 512-byte static task stacks
-- synthetic initial Cortex-M frames
+- candidate binary `11792 bytes`
+- SHA-256 `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`
+- two static TCBs and two 512-byte static task stacks
+- initial PC / stacked LR Thumb semantics corrected before activation
+- tasks execute in Thread mode on PSP
+- SVC `#0` starts task execution
+- SVC `#1` performs cooperative yield
+- SVC `#2` handles normal task return/exit
+- kernel/MSP context is restored after all prepared tasks complete
 - `schedtest -> SCHED_FOUNDATION_OK`
-- no actual context switch / PSP activation / PendSV scheduling / preemption yet.
+- `schedcoop -> SCHED_COOP_OK`
+- internal cooperative sequence `0x10 -> 0x20 -> 0x11 -> 0x21`
+- first real run PASS
+- 32/32 stress runs PASS
+- final post-reset run PASS
+- real normal task-return path PASS across `34` complete runs
+- `_ebss=0x20000748`
+- SRAM headroom `18616 bytes`
+- PendSV remains `Default_Handler`
+- SysTick scheduling/preemption remain deferred.
 
-Final 2026-09-12 post-reconnect acceptance:
+Final Slice 9B hardware acceptance:
 
-- exact target flash identity PASS
-- boot PASS
-- `ping -> PONG`
-- `health` PASS
-- I2C address `0x3C` PASS
-- all OLED render/status/console/scroll/dirty/UI-update regressions PASS
-- `schedtest -> SCHED_FOUNDATION_OK`
+- exact target flash identity PASS before/after runtime tests
+- exact boot PASS
+- UART ping/health PASS
+- scheduler foundation PASS before/after cooperative stress
+- full I2C/OLED regression PASS
 - `uiruntime -> OLED_RUNTIME_UI_OK`
 - final reset PASS
-- physical OLED output confirmed.
+- physical OLED output confirmed unchanged:
+  - `DEUS OS`
+  - `BOOT OK`
+  - `READY`.
 
 ### Exact next boundary
 
-**Slice 9B — cooperative scheduler activation.**
-
-Use the accepted TCB/static-stack/synthetic-frame foundation to execute real cooperative tasks. Do not introduce SysTick preemption yet. PendSV context switching remains the next independent scheduler mechanism after cooperative execution is proven.
+Implement and independently prove the PendSV context-switch mechanism. Keep SysTick-driven preemption for a later separate acceptance gate.
 
 ### Acceptance lifecycle
 
@@ -106,7 +115,7 @@ source
  -> push
 ```
 
-Documentation sync, acceptance commit, and push are separate gates.
+Documentation sync, acceptance commit, and push remain separate gates.
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_12 -->
 
 Updated: 2026-09-12

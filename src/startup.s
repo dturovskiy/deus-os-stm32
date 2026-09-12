@@ -10,6 +10,7 @@
 .global UsageFault_Handler
 
 .extern kernel_main
+.extern SVC_Handler
 .extern SysTick_Handler
 .extern fault_capture
 
@@ -25,7 +26,7 @@
 .word 0
 .word 0
 .word 0
-.word Default_Handler      /* SVCall */
+.word SVC_Handler          /* SVCall */
 .word Default_Handler      /* DebugMon */
 .word 0
 .word Default_Handler      /* PendSV */

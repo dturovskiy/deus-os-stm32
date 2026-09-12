@@ -21,17 +21,21 @@ Accepted through this checkpoint:
   - separate static task stacks
   - synthetic Cortex-M initial task frames
   - deterministic foundation self-test.
+- [x] Cooperative scheduler activation:
+  - Thread mode tasks execute on PSP
+  - SVC start/yield/exit path
+  - deterministic two-task round-robin
+  - normal task-return path proven on hardware
+  - `34` complete cooperative acceptance runs.
 
 Scheduler work still open:
 
-- [ ] cooperative task execution / scheduler activation
-- [ ] PSP ownership for running tasks
-- [ ] PendSV context switching
+- [ ] PendSV context-switch mechanism
 - [ ] SysTick preemption
 - [ ] `sleep()`
 - [ ] priorities
 
-Next active boundary: **cooperative scheduler activation (Slice 9B)**.
+Next active boundary: **PendSV context-switch mechanism**, with SysTick-driven preemption remaining a separate later gate.
 <!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_12 -->
 
 ## Phase 0 - Boot baseline
@@ -67,7 +71,7 @@ Next active boundary: **cooperative scheduler activation (Slice 9B)**.
 
 - [x] Task control block foundation
 - [x] Separate static task stacks + synthetic initial frames
-- [ ] Cooperative scheduling
+- [x] Cooperative scheduling
 - [ ] PendSV context switch
 - [ ] Preemptive scheduling
 - [ ] `sleep()`
