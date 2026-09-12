@@ -316,3 +316,34 @@ Accepted firmware fingerprint:
 - SHA-256: `4015795457F6844EFA768F97E7C59C8170015F147199874B61B524A1289AA5E8`
 
 Next boundary: move dirty-page presentation from acceptance/demo commands into the normal runtime UI lifecycle without reopening frozen geometry.
+
+## Slice 8 — normal runtime OLED boot UI — ACCEPTED 2026-09-12
+
+Status: **accepted**
+
+Acceptance criteria completed:
+
+- [x] Normal reset initializes the frozen product UI automatically after the UART boot banner.
+- [x] Runtime composition reuses the accepted `oled_ui_layout_default()`, status renderer, retained console, and `ssd1306_present()` path.
+- [x] Frozen status-bar/layout/font implementation files remain unchanged.
+- [x] Runtime UI shows the frozen status bar plus `DEUS OS`, `BOOT OK`, and `READY`.
+- [x] The proof clock remains `00:00`; uptime/RTC behavior stays deferred.
+- [x] `uiruntime` restores the same product UI after explicit diagnostic screens.
+- [x] Boot emits `OLED_RUNTIME_UI_OK` after successful OLED initialization/presentation.
+- [x] Full UART/OLED regression suite passes.
+- [x] Flash/verify/reset passed at SWD 4000 KHz in the acceptance run.
+- [x] Final physical OLED appearance accepted.
+
+Accepted firmware fingerprint:
+
+- binary size: 10148 bytes
+- SHA-256: `FC8AC07A35A0FA83F4F2F8A06EBCC5C8E603C7B843DDE30E827FD7FD815E5321`
+- `.text`: 10148 bytes
+- `.data`: 0 bytes
+- `.bss`: 716 bytes
+- framebuffer: 512 bytes
+- retained console state: 67 bytes
+
+Slice 8 closes the transition from acceptance/demo UI commands to the normal
+runtime boot lifecycle. Frozen UI geometry and styling remain closed; select the
+next non-UI/system slice separately.

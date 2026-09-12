@@ -332,3 +332,98 @@ UI PATH ONE
 DIRTY PAGE2 UPDATE
 UI PATH THREE
 ```
+
+## Accepted Slice 8: normal runtime OLED boot UI
+
+Hardware and physical acceptance date: **2026-09-12**
+
+Normal product boot now initializes the already frozen OLED UI automatically.
+
+Runtime behavior:
+
+- `kernel_main()` emits the existing UART boot banner first;
+- `oled_runtime_ui_show()` validates the frozen default layout;
+- the SSD1306 is initialized;
+- the framebuffer is cleared;
+- the accepted status bar is rendered with the proof time `00:00`;
+- the retained console is cleared and populated with `DEUS OS`, `BOOT OK`, `READY`;
+- the console is rendered through the frozen clip/compact-font geometry;
+- `ssd1306_present(&oled_surface)` presents the resulting dirty framebuffer;
+- the display is explicitly turned on;
+- success is reported as `OLED_RUNTIME_UI_OK`.
+
+The `uiruntime` UART command invokes the same runtime composition path so
+acceptance-only diagnostic screens can be replaced by the real product UI without
+resetting the MCU.
+
+The frozen UI implementation itself did not change. In particular:
+
+- status bar remains `x=0, y=0, width=128, height=9`;
+- row `y=9` remains blank;
+- console clip remains `x=1, y=10, width=126, height=22`;
+- console remains 21x3 using compact `5x6` glyphs / `6x7` cells;
+- notification reservation remains `x=20..107, y=2..6`;
+- uptime/RTC-driven clock behavior remains deferred.
+
+Accepted normal boot proof includes:
+
+```text
+STM32 OS
+BOOT OK
+SYSCLK=0x044AA200
+TICK_HZ=0x000003E8
+FAULTREC=0x20000270
+OLED_RUNTIME_UI_OK
+```
+
+The complete Slice 8 hardware regression passed:
+
+```text
+PONG
+ADDR=0x0000003C
+COUNT=0x00000001
+OLED_CMD_OK
+OLED_TEXT_OK
+OLED_RENDER_EQ_OK
+OLED_RENDER_OK
+OLED_UI_LAYOUT_OK
+OLED_STATUS_REFERENCE_OK
+OLED_STATUS_OK
+OLED_CONSOLE_OK
+OLED_SCROLL_STATE_OK
+OLED_SCROLL_OK
+OLED_DIRTY_MASK_OK
+OLED_DIRTY_CLEAR_OK
+OLED_DIRTY_IDLE_OK
+OLED_DIRTY_OK
+OLED_UI_CONSOLE_DIRTY_OK
+OLED_UI_ROW_MASK=0x00000004
+OLED_UI_DIRTY_PRESENT_OK
+OLED_UI_DIRTY_RENDER_OK
+OLED_UI_DISPLAY_ON_OK
+OLED_UI_UPDATE_OK
+OLED_RUNTIME_UI_OK
+```
+
+Accepted image:
+
+- text: 10148 bytes
+- data: 0 bytes
+- bss: 716 bytes
+- binary: 10148 bytes
+- SHA-256: `FC8AC07A35A0FA83F4F2F8A06EBCC5C8E603C7B843DDE30E827FD7FD815E5321`
+- framebuffer: 512 bytes
+- retained console state: 67 bytes
+- `fault_record`: resolved dynamically from the accepted ELF as `0x20000270`
+- initial MSP: `0x20005000`
+
+The final physical OLED proof was accepted with exactly the frozen status bar and:
+
+```text
+DEUS OS
+BOOT OK
+READY
+```
+
+Diagnostic UART commands remain explicit development/acceptance tools and are not
+run automatically during normal product boot.

@@ -1006,6 +1006,86 @@ static void console_oled_dirty(void)
     }
 }
 
+static int oled_runtime_ui_show(void)
+{
+    const oled_ui_layout_t *layout;
+    oled_status_bar_t status;
+
+    layout = oled_ui_layout_default();
+
+    if (
+        (layout == (const oled_ui_layout_t *)0) ||
+        (oled_ui_layout_validate(layout) == 0)
+    ) {
+        return 0;
+    }
+
+    if (ssd1306_init() == 0)
+    {
+        return 0;
+    }
+
+    mono_fb_clear(&oled_surface);
+
+    oled_status_bar_init(&status);
+    oled_status_bar_set_time(
+        &status,
+        0u,
+        0u);
+
+    oled_status_bar_render(
+        &status,
+        &oled_surface,
+        layout->status_rect);
+
+    oled_console_clear(&oled_console_state);
+
+    oled_console_write_line(
+        &oled_console_state,
+        "DEUS OS");
+
+    oled_console_write_line(
+        &oled_console_state,
+        "BOOT OK");
+
+    oled_console_write(
+        &oled_console_state,
+        "READY");
+
+    oled_console_render(
+        &oled_console_state,
+        &oled_surface,
+        layout->console_rect);
+
+    if (oled_console_state.dirty_rows != 0u)
+    {
+        return 0;
+    }
+
+    if (ssd1306_present(&oled_surface) == 0)
+    {
+        return 0;
+    }
+
+    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    {
+        return 0;
+    }
+
+    return ssd1306_display_on();
+}
+
+static void console_oled_runtime(void)
+{
+    if (oled_runtime_ui_show() != 0)
+    {
+        uart_write_line("OLED_RUNTIME_UI_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_RUNTIME_UI_ERR");
+    }
+}
 static void console_oled_ui_update(void)
 {
     const oled_ui_layout_t *layout;
@@ -1375,6 +1455,10 @@ static void console_execute(void)
     {
         console_oled_ui_update();
     }
+    else if (text_equals(uart_command, "uiruntime") != 0)
+    {
+        console_oled_runtime();
+    }
     else if (text_equals(uart_command, "oledstatus") != 0)
     {
         console_oled_status();
@@ -1561,6 +1645,15 @@ void kernel_main(void)
     systick_init(core_clock_hz);
 
     uart_boot_banner(core_clock_hz);
+
+    if (oled_runtime_ui_show() != 0)
+    {
+        uart_write_line("OLED_RUNTIME_UI_OK");
+    }
+    else
+    {
+        uart_write_line("OLED_RUNTIME_UI_ERR");
+    }
 
     /*
      * Poll RX continuously for this first RX milestone.
