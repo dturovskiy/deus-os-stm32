@@ -3,7 +3,7 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_12 -->
 ## Accepted implementation checkpoint — 2026-09-12
 
-The runtime baseline now includes the hardware-accepted native 128x32 OLED UI lifecycle, scheduler foundation, cooperative scheduler activation, and command-gated real PendSV preemption.
+The runtime baseline now includes the hardware-accepted native 128x32 OLED UI lifecycle, scheduler foundation, cooperative scheduler activation, published PendSV preemption, and hardware-accepted PSP stack canary/high-water instrumentation.
 
 ### Scheduler state
 
@@ -29,7 +29,7 @@ Accepted Slice 9B added:
 - `schedcoop -> SCHED_COOP_OK`
 - hardware-proven sequence `0x10 -> 0x20 -> 0x11 -> 0x21`.
 
-The current preemption milestone now adds:
+Accepted/published PendSV preemption adds:
 
 - active `PendSV_Handler`
 - `scheduler_tick()` hook from the existing 1 kHz SysTick
@@ -40,17 +40,30 @@ The current preemption milestone now adds:
 - pending-PendSV clear on abort and final scheduler exit
 - `scheduler_preemptive_self_test()`
 - `schedpreempt -> SCHED_PREEMPT_OK`
-- two CPU-bound acceptance tasks with no voluntary scheduler yield
-- deterministic preemption sequence `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`
-- minimum three real PendSV switches per accepted run
-- `34` complete hardware preemption runs with return-to-kernel checks
-- cooperative/foundation/UART/I2C/OLED regressions preserved.
+- CPU-bound no-yield hardware proof
+- `34` complete accepted preemption runs
+- acceptance commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
+
+The current stack high-water milestone adds:
+
+- stack canary/high-water state for each existing static scheduler task stack
+- telemetry reset at scheduler-run start
+- measurement record points on SVC yield, SVC exit, and PendSV switch
+- scanning from Handler mode/MSP, not from the measured task PSP
+- exported capacity/high-water/canary query API
+- command-gated `schedstack -> SCHED_STACK_WATER_OK`
+- cooperative and preemptive stack-water coverage
+- exact hardware high-water `72 bytes` for all four measured task paths
+- exact capacity `512 bytes` per task
+- observed free margin `440 bytes`
+- canary intact across `34` commands / `68` underlying scheduler runs
+- full UART/I2C/OLED/scheduler regression preserved.
 
 Normal boot still uses the existing polling kernel/MSP execution path. The scheduler is not yet the steady-state owner of console/OLED work.
 
 ### Revised scheduler sequence
 
-Stage A1 — **accepted**:
+Stage A1 — **accepted / published**:
 
 - static TCB data model
 - static task stacks
@@ -64,7 +77,7 @@ Stage A2 — **accepted / published**:
 - SVC start/yield/exit mechanism
 - deterministic real task execution and return-to-kernel proof.
 
-Stage B — **hardware accepted / commit pending**:
+Stage B — **accepted / published**:
 
 - PendSV context switching
 - SysTick-driven command-gated preemption
@@ -72,12 +85,21 @@ Stage B — **hardware accepted / commit pending**:
 - final-exit/abort pending-PendSV safety
 - regression preservation.
 
-Stage C — next:
+Stage C1 — **hardware accepted / commit pending**:
 
-- determine real stack requirements/high-water behavior
-- enlarge or restructure task stacks if required
-- define safe steady-state scheduler task stack budget
-- keep console/OLED on kernel/MSP until this gate passes.
+- task-stack canary/high-water instrumentation
+- Handler/MSP measurement path
+- real cooperative/preemptive PSP high-water proof
+- current synthetic test tasks: `72 / 512 bytes` used
+- canary intact
+- `34` commands / `68` scheduler runs.
+
+Stage C2 — next:
+
+- run a representative substantive workload in a command-gated PSP task
+- measure workload-specific high-water/canary behavior
+- choose/justify the first production task stack budget
+- keep normal-boot console/OLED on MSP until this gate passes.
 
 Stage D:
 
@@ -87,16 +109,18 @@ Stage D:
 - priorities
 - timers / IPC / synchronization.
 
-### Current accepted image
+### Current hardware-accepted image
 
-- candidate binary: `12740 bytes`
-- SHA-256: `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`
-- `.bss`: `1920 bytes`
-- scheduler static stacks: `1024 bytes` total (`512 bytes` per synthetic task; still test-only for tiny workloads)
-- `_ebss=0x20000780`
-- remaining SRAM headroom: `18560 bytes`.
+- candidate binary: `13408 bytes`
+- SHA-256: `4A57F4559AAC3BDAE8FEF5FD3B51F3DEA9033FC917DA19032754796459959D42`
+- `.bss`: `1936 bytes`
+- scheduler static stacks: `1024 bytes` total (`512 bytes` per task)
+- `_ebss=0x20000790`
+- remaining SRAM headroom: `18544 bytes`
+- measured synthetic-task high-water: `72 bytes`
+- measured synthetic-task free margin: `440 bytes`.
 
-The frozen OLED geometry is not part of the scheduler work and remains unchanged.
+The `72-byte` result validates the current test-task call paths, not arbitrary future task workloads. The frozen OLED geometry is not part of the scheduler work and remains unchanged.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_12 -->
 
 ## Objective

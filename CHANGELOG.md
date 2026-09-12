@@ -35,7 +35,7 @@
 - SHA-256: `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`.
 - Acceptance commit: `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
 
-### Hardware accepted — PendSV timer-driven preemption
+### Accepted / published — PendSV timer-driven preemption
 
 - Activated `PendSV_Handler`.
 - `SysTick_Handler()` calls `scheduler_tick()`.
@@ -47,30 +47,52 @@
 - Added `schedpreempt -> SCHED_PREEMPT_OK`.
 - Preemption acceptance tasks are CPU-bound and contain no voluntary yield.
 - Expected sequence: `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`.
-- At least three real PendSV switches are required.
+- Hardware path passed across `34` complete preemptive runs with full regression.
+- Accepted binary: `12740 bytes`.
+- SHA-256: `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`.
+- `.bss=1920 bytes`; `_ebss=0x20000780`; SRAM headroom `18560 bytes`.
+- Acceptance commit: `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
+
+### Hardware accepted — scheduler stack canary / high-water instrumentation
+
+- Added command-gated `schedstack -> SCHED_STACK_WATER_OK`.
+- Existing task stacks remain exactly `2 x 512 bytes`.
+- Canary/high-water telemetry is reset at the start of each scheduler run.
+- High-water is recorded on SVC yield, SVC exit, and PendSV switch paths.
+- Stack scanning executes in Handler mode/MSP, so the measurement does not consume the measured PSP stack.
+- `schedstack` runs the cooperative and preemptive self-tests and reports per-task usage.
+- Real hardware measurements:
+  - cooperative task 0: `72 bytes`
+  - cooperative task 1: `72 bytes`
+  - preemptive task 0: `72 bytes`
+  - preemptive task 1: `72 bytes`
+  - capacity: `512 bytes`
+  - observed free margin: `440 bytes`.
+- Static worst-case for the current synthetic test tasks was also `72 bytes`, matching the hardware high-water result.
+- Canary remained intact in every accepted run.
 - Hardware acceptance:
   - exact flash program/verify/readback PASS
-  - exact reset boot frame PASS
-  - first real preemptive run PASS
-  - 32/32 preemptive stress runs PASS
+  - first real stack-water command PASS
+  - 32/32 stack-water stress commands PASS
   - 4/4 return-to-kernel ping checkpoints PASS
   - post-stress SysTick health PASS
-  - `schedtest` and `schedcoop` regression PASS
+  - `schedtest`, `schedcoop`, and `schedpreempt` regressions PASS
   - full I2C/OLED legacy regression PASS
-  - final reset + preemption + cooperative + health PASS
+  - final reset + `schedstack` + cooperative + preemptive + health PASS
   - final exact flash identity PASS
-  - real timer-driven preemption path PASS across `34` complete runs
+  - total accepted stack-water commands: `34`
+  - total underlying scheduler runs: `68`
   - physical frozen OLED output confirmed unchanged.
-- Accepted candidate binary: `12740 bytes`.
-- SHA-256: `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`.
-- `.bss`: `1920 bytes`; `_ebss=0x20000780`; SRAM headroom `18560 bytes`.
-- Normal boot task migration remains deliberately deferred.
+- Accepted candidate binary: `13408 bytes`.
+- SHA-256: `4A57F4559AAC3BDAE8FEF5FD3B51F3DEA9033FC917DA19032754796459959D42`.
+- `.bss=1936 bytes`; `_ebss=0x20000790`; SRAM headroom `18544 bytes`.
+- This acceptance proves the current synthetic scheduler test tasks fit comfortably in 512-byte stacks; it does not yet prove console/OLED production workloads fit.
 
 ### Next
 
-- Audit/enlarge task stacks based on real workload requirements before moving substantive normal-boot work to PSP tasks.
-- Keep console/OLED on the current kernel/MSP path until the stack budget is explicitly proven.
-- Preserve `schedtest`, `schedcoop`, and `schedpreempt` as regression gates.
+- Run a representative substantive workload in a command-gated PSP task and measure real high-water/canary behavior.
+- Keep normal boot, console, and OLED on the current kernel/MSP path until that workload-specific stack budget is proven.
+- Preserve `schedtest`, `schedcoop`, `schedpreempt`, and `schedstack` as regression gates.
 <!-- END STM32_OS_CHANGELOG_2026_09_12 -->
 
 All notable project milestones are recorded here.

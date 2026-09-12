@@ -10,8 +10,8 @@ This section supersedes older “current state”, “exact next boundary”, TX
 ```text
 Root:                     D:\Projects\STM32\OS
 Branch:                   main
-Published HEAD:           1114621e9a6bc57d5471cf51a922c216b76bebe2
-origin/main:               1114621e9a6bc57d5471cf51a922c216b76bebe2
+Published HEAD:           44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4
+origin/main:               44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4
 Current acceptance commit: pending
 ```
 
@@ -21,20 +21,19 @@ Current hardware-accepted source change set:
  M include/kernel/scheduler.h
  M src/kernel.c
  M src/kernel/scheduler.c
- M src/startup.s
 ```
 
-Exact accepted source hashes:
+Exact hardware-accepted source hashes:
 
 ```text
 src/kernel.c
-34722ACB0F40D69580C746BFD0935DC5852002435365ED061B873F1E53DBB121
+C17B0F14BA942DF14D21F078C0C5676A76E18BB06144B284E6D19D9D4465BE1E
 
 include/kernel/scheduler.h
-6181776DCEFE17D66114F6345C4AA753C0C3F34335B7EB17878196E9F7CD693B
+1BB9CF9020AF075FC0286FF121B0225D4507A60F78C91C001937442AC8BB9E72
 
 src/kernel/scheduler.c
-A16E32B8F11DBC5DE1567C8184F3EAAD6BEAA58117509CCCD8BC0CC12F43A862
+6962C998B24679E5FE4F5AEEDD6900FCA0D50F738611F431EBD116EC1FA89B42
 
 src/startup.s
 DBAAF4FB8B98B3B114C3F4D8A7ABAEAA3B8B5C6006BDC816D91CA5073B70B90D
@@ -68,53 +67,61 @@ Slice 9A foundation is accepted and published at commit `1a57f79cda42674219e7749
 
 Slice 9B cooperative activation is accepted and published at commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
 
-Current PendSV preemption milestone is hardware-accepted:
+PendSV preemption is accepted and published at commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
 
-- candidate binary `12740 bytes`
-- SHA-256 `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`
-- `.bss=1920 bytes`
-- `_ebss=0x20000780`
-- SRAM headroom `18560 bytes`
+Current stack high-water milestone is hardware-accepted:
+
+- candidate binary `13408 bytes`
+- SHA-256 `4A57F4559AAC3BDAE8FEF5FD3B51F3DEA9033FC917DA19032754796459959D42`
+- `.bss=1936 bytes`
+- `_ebss=0x20000790`
+- SRAM headroom `18544 bytes`
 - two static TCBs and two 512-byte static task stacks
-- PendSV vector is active
-- SysTick calls `scheduler_tick()`
-- tick requests PendSV only during explicit preemptive scheduler runs
-- PendSV priority is lowest
-- task context uses PSP and software-saved `r4-r11`
-- EXC_RETURN/SPSEL is checked before PSP access; MSP-origin PendSV is a no-op
-- abort and final-exit paths clear stale pending PendSV before kernel/MSP restoration
-- SVC `#0/#1/#2` cooperative start/yield/exit path remains valid
+- normal task execution remains PSP-based
+- cooperative SVC start/yield/exit path remains valid
+- timer-driven PendSV preemption remains valid
 - `schedtest -> SCHED_FOUNDATION_OK`
 - `schedcoop -> SCHED_COOP_OK`
 - `schedpreempt -> SCHED_PREEMPT_OK`
-- preemption acceptance tasks are CPU-bound and do not voluntarily yield
-- preemption sequence `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`
-- self-test requires at least three real PendSV switches.
+- `schedstack -> SCHED_STACK_WATER_OK`
+- high-water record points: SVC yield, SVC exit, PendSV switch
+- stack scanning executes from Handler mode/MSP
+- cooperative task 0 high-water: `72 bytes`
+- cooperative task 1 high-water: `72 bytes`
+- preemptive task 0 high-water: `72 bytes`
+- preemptive task 1 high-water: `72 bytes`
+- capacity: `512 bytes`
+- observed free margin: `440 bytes`
+- canary intact across every accepted run
+- static synthetic-task worst-case `72 bytes` matched runtime high-water `72 bytes`.
 
 Final hardware acceptance:
 
 - exact candidate program/verify/readback PASS
 - exact reset boot frame PASS
-- first real preemptive run PASS
-- 32/32 preemptive stress runs PASS
+- first real stack-water run PASS
+- 32/32 stack-water stress commands PASS
 - 4/4 return-to-kernel ping checkpoints PASS
 - post-stress SysTick health PASS
-- foundation and cooperative scheduler regressions PASS
+- foundation/cooperative/preemptive regressions PASS
 - full I2C/OLED regression PASS
 - frozen runtime UI restore PASS
-- final reset + preemption + cooperative + health PASS
+- final reset + stack-water + cooperative + preemptive + health PASS
 - final exact flash identity PASS
-- real timer-driven preemption path PASS across `34` complete runs
+- total accepted stack-water commands: `34`
+- total underlying scheduler runs: `68`
 - physical OLED output confirmed unchanged:
   - `DEUS OS`
   - `BOOT OK`
   - `READY`.
 
+The `72-byte` result is authoritative for the current synthetic scheduler test workloads only. It does not prove an arbitrary console/OLED production task fits in a 512-byte stack.
+
 Normal boot task migration is still deferred. Console/OLED remain on the existing kernel/MSP path.
 
 ### Exact next boundary
 
-Audit real task stack requirements and establish a safe stack budget before moving substantive normal-boot workload to PSP tasks. Do not migrate console/OLED until stack usage is measured/proven and the current 512-byte-per-task test stacks are either justified or enlarged.
+Run a representative substantive workload in a command-gated PSP task and measure its real canary/high-water behavior. Use that result to choose/justify the first production task stack budget. Do not move normal-boot console/OLED ownership until that workload-specific proof passes.
 
 ### Acceptance lifecycle
 

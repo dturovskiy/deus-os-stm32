@@ -45,4 +45,10 @@ int scheduler_cooperative_self_test(void);
 
 int scheduler_preemptive_self_test(void);
 
+uint32_t scheduler_stack_high_water_bytes(uint32_t index);
+
+uint32_t scheduler_stack_capacity_bytes(uint32_t index);
+
+int scheduler_stack_canary_intact(uint32_t index);
+
 #endif

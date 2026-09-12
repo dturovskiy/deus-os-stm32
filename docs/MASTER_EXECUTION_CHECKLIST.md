@@ -30,7 +30,7 @@ This section is authoritative for the current execution boundary and supersedes 
 - [x] Real task-return path passed across `34` complete cooperative runs.
 - [x] Acceptance commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
 
-### PendSV timer-driven preemption — HARDWARE ACCEPTED / COMMIT PENDING
+### PendSV timer-driven preemption — ACCEPTED / PUBLISHED
 
 - [x] PendSV vector points to `PendSV_Handler`.
 - [x] SysTick invokes `scheduler_tick()`.
@@ -42,20 +42,40 @@ This section is authoritative for the current execution boundary and supersedes 
 - [x] `schedpreempt -> SCHED_PREEMPT_OK`.
 - [x] CPU-bound acceptance tasks contain no voluntary `SVC #1` yield.
 - [x] Deterministic sequence `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`.
-- [x] At least three PendSV switches required per self-test run.
-- [x] First real hardware preemption run passed.
-- [x] 32/32 preemptive stress runs passed.
-- [x] 4/4 return-to-kernel ping checkpoints passed.
-- [x] Final post-reset preemptive run passed.
 - [x] Real timer-driven preemption path passed across `34` complete runs.
-- [x] SysTick remained monotonic after preemption stress.
-- [x] `schedtest` and `schedcoop` remained valid before/after preemption.
 - [x] Full UART/I2C/OLED regression passed.
 - [x] Physical frozen OLED output confirmed unchanged.
-- [x] Candidate binary `12740 bytes`.
-- [x] SHA-256 `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`.
-- [x] `.bss=1920 bytes`; `_ebss=0x20000780`; SRAM headroom `18560 bytes`.
-- [x] Normal boot task migration remains deferred.
+- [x] Acceptance commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
+
+### Task stack canary/high-water — HARDWARE ACCEPTED / COMMIT PENDING
+
+- [x] Existing task stacks remain exactly `2 x 512 bytes`.
+- [x] Per-task stack canary/high-water telemetry added.
+- [x] Telemetry reset occurs at scheduler-run start.
+- [x] High-water is recorded on SVC yield, SVC exit, and PendSV switch paths.
+- [x] Measurement scanning executes from Handler mode/MSP.
+- [x] `schedstack -> SCHED_STACK_WATER_OK`.
+- [x] Cooperative task 0 measured `72 bytes`.
+- [x] Cooperative task 1 measured `72 bytes`.
+- [x] Preemptive task 0 measured `72 bytes`.
+- [x] Preemptive task 1 measured `72 bytes`.
+- [x] Capacity is `512 bytes`; observed free margin is `440 bytes`.
+- [x] Static synthetic-task worst-case `72 bytes` matches runtime high-water `72 bytes`.
+- [x] Canary remained intact for every accepted run.
+- [x] First real stack-water command passed.
+- [x] 32/32 stack-water stress commands passed.
+- [x] 4/4 return-to-kernel ping checkpoints passed.
+- [x] Final post-reset stack-water command passed.
+- [x] Total accepted stack-water commands: `34`.
+- [x] Total underlying scheduler runs: `68`.
+- [x] SysTick remained monotonic after stack-water stress.
+- [x] `schedtest`, `schedcoop`, and `schedpreempt` remained valid.
+- [x] Full UART/I2C/OLED regression passed.
+- [x] Physical frozen OLED output confirmed unchanged.
+- [x] Candidate binary `13408 bytes`.
+- [x] SHA-256 `4A57F4559AAC3BDAE8FEF5FD3B51F3DEA9033FC917DA19032754796459959D42`.
+- [x] `.bss=1936 bytes`; `_ebss=0x20000790`; SRAM headroom `18544 bytes`.
+- [x] Normal boot / console / OLED task migration remains deferred.
 
 ### Current acceptance source change set
 
@@ -65,12 +85,11 @@ Immediately before the acceptance commit, the exact source delta is:
  M include/kernel/scheduler.h
  M src/kernel.c
  M src/kernel/scheduler.c
- M src/startup.s
 ```
 
 ### Next active scheduler boundary
 
-Audit real task stack requirements and establish an explicit safe stack budget before migrating any substantive normal-boot workload to PSP tasks. Do not migrate console/OLED in the same gate.
+Run a representative substantive workload in a command-gated PSP task and measure workload-specific canary/high-water behavior. Do not migrate normal boot, console, or OLED ownership in the same gate.
 <!-- END STM32_OS_SLICE9A_ACCEPTED_STATE -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

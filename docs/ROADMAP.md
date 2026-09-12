@@ -25,18 +25,26 @@ Accepted through this checkpoint:
   - `r4-r11` PSP context save/restore
   - CPU-bound no-yield hardware proof
   - stale-pending PendSV safety
-  - `34` complete preemption acceptance runs
-  - cooperative/foundation/OLED regressions preserved.
+  - `34` complete preemption acceptance runs.
+- [x] Scheduler stack canary/high-water instrumentation:
+  - command-gated `schedstack`
+  - SVC/PendSV record points
+  - Handler/MSP stack scanning
+  - `72 / 512 bytes` measured for all cooperative/preemptive synthetic task paths
+  - `440 bytes` observed margin
+  - canary intact across `34` commands / `68` scheduler runs
+  - full scheduler/UART/I2C/OLED regression preserved.
 
 Scheduler work still open:
 
-- [ ] task-stack budget / high-water validation for real workloads
+- [ ] representative substantive PSP workload + high-water proof
+- [ ] production task-stack budget selection
 - [ ] normal boot task migration
 - [ ] idle task / steady-state scheduler ownership
 - [ ] `sleep()`
 - [ ] priorities
 
-Next active boundary: **task stack sizing and safety proof before normal-boot task migration**. Console/OLED migration remains deferred until stack requirements are explicit.
+Next active boundary: **command-gated representative real workload with canary/high-water measurement**. Normal-boot console/OLED migration remains deferred until workload-specific stack requirements are explicit.
 <!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_12 -->
 
 ## Phase 0 - Boot baseline

@@ -15,7 +15,8 @@ The current hardware-accepted baseline is:
   - `health`, `fault`, `i2cscan`, OLED regression commands
   - `schedtest -> SCHED_FOUNDATION_OK`
   - `schedcoop -> SCHED_COOP_OK`
-  - `schedpreempt -> SCHED_PREEMPT_OK`.
+  - `schedpreempt -> SCHED_PREEMPT_OK`
+  - `schedstack -> SCHED_STACK_WATER_OK`.
 - native 128x32 SSD1306-compatible OLED at I2C address `0x3C`:
   - B6 = SCL
   - B7 = SDA
@@ -34,14 +35,11 @@ The current hardware-accepted baseline is:
 - Slice 9B cooperative scheduler activation accepted and published:
   - acceptance commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`
   - task Thread mode runs on PSP
-  - SVC `#0` starts the first prepared task
-  - SVC `#1` performs voluntary cooperative yield
-  - SVC `#2` handles normal task return/exit
+  - SVC `#0/#1/#2` provide start / voluntary yield / task-return exit
   - parked kernel/MSP context is restored after all prepared tasks complete
-  - corrected initial PC / stacked LR Thumb semantics
   - deterministic cooperative sequence `0x10 -> 0x20 -> 0x11 -> 0x21`.
-- PendSV timer-driven preemption milestone is hardware-accepted and awaiting its acceptance commit:
-  - PendSV vector is active
+- PendSV timer-driven preemption accepted and published:
+  - acceptance commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`
   - SysTick calls `scheduler_tick()`
   - scheduler tick pends PendSV only while a preemptive scheduler run is active
   - PendSV runs at the lowest system-handler priority
@@ -50,24 +48,33 @@ The current hardware-accepted baseline is:
   - final-exit and abort paths clear stale pending PendSV before kernel/MSP restoration
   - preemption acceptance uses two CPU-bound tasks that never call `scheduler_yield()`
   - deterministic sequence `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`
-  - at least three PendSV switches are required by the self-test
-  - first real preemptive run PASS
-  - 32/32 preemptive stress runs PASS
-  - four return-to-kernel ping checkpoints PASS
-  - final post-reset preemptive run PASS
-  - real timer-driven preemption path PASS across `34` complete runs
-  - `schedtest` and `schedcoop` remain valid before/after preemption stress
-  - candidate binary `12740 bytes`
-  - SHA-256 `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`
-  - `.bss=1920 bytes`; `_ebss=0x20000780`; SRAM headroom `18560 bytes`.
-- Full UART/I2C/OLED/scheduler regression passed after real PendSV preemption.
+  - real timer-driven preemption path passed across `34` complete runs.
+- Task stack canary/high-water instrumentation is hardware-accepted and awaiting its acceptance commit:
+  - existing task stacks remain exactly `2 x 512 bytes`
+  - canary/high-water recording occurs on SVC yield, SVC exit, and PendSV switch paths
+  - stack scanning/measurement executes from Handler mode/MSP, not from the measured PSP stack
+  - `schedstack` runs both cooperative and preemptive scheduler paths
+  - all four measured task paths used exactly `72 bytes`
+  - observed free margin is `440 bytes` per 512-byte synthetic test stack
+  - canaries remained intact across all accepted runs
+  - first real `schedstack` PASS
+  - 32/32 stack-water stress commands PASS
+  - final post-reset `schedstack` PASS
+  - total accepted stack-water commands: `34`
+  - total underlying scheduler runs: `68`
+  - full UART/I2C/OLED/scheduler regression PASS
+  - candidate binary `13408 bytes`
+  - SHA-256 `4A57F4559AAC3BDAE8FEF5FD3B51F3DEA9033FC917DA19032754796459959D42`
+  - `.bss=1936 bytes`; `_ebss=0x20000790`; SRAM headroom `18544 bytes`.
 - Physical OLED output was confirmed unchanged after the final accepted run:
   - `DEUS OS`
   - `BOOT OK`
   - `READY`.
 - Normal boot task migration remains deferred; console/OLED still run on the existing kernel/MSP path.
 
-Next scheduler boundary: audit real task stack requirements and establish a safe stack budget before migrating any substantive normal-boot workload (especially console/OLED) onto PSP tasks.
+The `72-byte` high-water result validates the current synthetic scheduler test tasks only. It is not a blanket production stack-size proof for console/OLED or other substantive workloads.
+
+Next scheduler boundary: run a representative real workload in a command-gated PSP task and measure its canary/high-water behavior before any normal-boot migration.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_12 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.

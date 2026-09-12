@@ -58,6 +58,11 @@ static volatile uint32_t scheduler_preempt_error;
 static uint32_t scheduler_preempt_arg0;
 static uint32_t scheduler_preempt_arg1;
 
+static volatile uint32_t scheduler_stack_high_water_words
+    [SCHEDULER_TASK_COUNT];
+static volatile uint32_t scheduler_stack_canary_exhausted
+    [SCHEDULER_TASK_COUNT];
+
 static uint32_t scheduler_exception_pc_address(
     scheduler_task_entry_t entry)
 {
@@ -96,6 +101,68 @@ static int scheduler_frame_pointer_valid(
         ((sp & (uintptr_t)0x7u) == 0u) &&
         (sp >= low) &&
         (sp <= (high - frame_bytes));
+}
+
+static void scheduler_stack_telemetry_reset(void)
+{
+    uint32_t index;
+
+    for (index = 0u;
+         index < SCHEDULER_TASK_COUNT;
+         ++index)
+    {
+        scheduler_stack_high_water_words[index] = 0u;
+        scheduler_stack_canary_exhausted[index] = 0u;
+    }
+}
+
+static uint32_t scheduler_stack_measure_used_words(
+    const scheduler_task_t *task)
+{
+    uint32_t untouched_words = 0u;
+
+    if (
+        (task == (const scheduler_task_t *)0) ||
+        (task->stack_low == (uint32_t *)0) ||
+        (task->stack_high == (uint32_t *)0) ||
+        (task->stack_words == 0u)
+    ) {
+        return 0u;
+    }
+
+    while (
+        (untouched_words < task->stack_words) &&
+        (task->stack_low[untouched_words] ==
+            SCHEDULER_STACK_FILL)
+    ) {
+        ++untouched_words;
+    }
+
+    return task->stack_words - untouched_words;
+}
+
+static void scheduler_stack_record(uint32_t index)
+{
+    uint32_t used_words;
+    scheduler_task_t *task;
+
+    if (index >= SCHEDULER_TASK_COUNT)
+    {
+        return;
+    }
+
+    task = &scheduler_tasks[index];
+    used_words = scheduler_stack_measure_used_words(task);
+
+    if (used_words > scheduler_stack_high_water_words[index])
+    {
+        scheduler_stack_high_water_words[index] = used_words;
+    }
+
+    if (used_words >= task->stack_words)
+    {
+        scheduler_stack_canary_exhausted[index] = 1u;
+    }
 }
 
 static uint32_t scheduler_find_next_ready(uint32_t after_index)
@@ -580,10 +647,12 @@ uint32_t *scheduler_svc_dispatch(
     if (svc_number == SCHEDULER_SVC_YIELD)
     {
         current_task->saved_sp = saved_sp;
+        scheduler_stack_record(scheduler_current_index);
     }
     else if (svc_number == SCHEDULER_SVC_EXIT)
     {
         current_task->saved_sp = saved_sp;
+        scheduler_stack_record(scheduler_current_index);
         current_task->state = SCHEDULER_TASK_DONE;
         ++scheduler_completed_count;
     }
@@ -660,6 +729,7 @@ uint32_t *scheduler_pendsv_dispatch(
     }
 
     current_task->saved_sp = saved_sp;
+    scheduler_stack_record(scheduler_current_index);
 
     next_index =
         scheduler_find_next_ready(
@@ -777,6 +847,8 @@ static int scheduler_start_mode(
         return 0;
     }
 
+    scheduler_stack_telemetry_reset();
+
     for (index = 0u;
          index < SCHEDULER_TASK_COUNT;
          ++index)
@@ -850,6 +922,40 @@ void scheduler_tick(void)
             "isb\n"
             ::: "memory");
     }
+}
+
+uint32_t scheduler_stack_high_water_bytes(uint32_t index)
+{
+    if (index >= SCHEDULER_TASK_COUNT)
+    {
+        return 0u;
+    }
+
+    return
+        scheduler_stack_high_water_words[index] *
+        (uint32_t)sizeof(uint32_t);
+}
+
+uint32_t scheduler_stack_capacity_bytes(uint32_t index)
+{
+    if (index >= SCHEDULER_TASK_COUNT)
+    {
+        return 0u;
+    }
+
+    return
+        scheduler_tasks[index].stack_words *
+        (uint32_t)sizeof(uint32_t);
+}
+
+int scheduler_stack_canary_intact(uint32_t index)
+{
+    if (index >= SCHEDULER_TASK_COUNT)
+    {
+        return 0;
+    }
+
+    return scheduler_stack_canary_exhausted[index] == 0u;
 }
 
 int scheduler_self_test(void)

@@ -1430,6 +1430,85 @@ static void console_scheduler_preemptive_test(void)
     }
 }
 
+static void console_scheduler_stack_water_test(void)
+{
+    uint32_t coop_used0;
+    uint32_t coop_used1;
+    uint32_t preempt_used0;
+    uint32_t preempt_used1;
+    uint32_t capacity0;
+    uint32_t capacity1;
+    int coop_canary0;
+    int coop_canary1;
+    int preempt_canary0;
+    int preempt_canary1;
+    int coop_result;
+    int preempt_result;
+    int passed;
+
+    coop_result = scheduler_cooperative_self_test();
+    coop_used0 = scheduler_stack_high_water_bytes(0u);
+    coop_used1 = scheduler_stack_high_water_bytes(1u);
+    coop_canary0 = scheduler_stack_canary_intact(0u);
+    coop_canary1 = scheduler_stack_canary_intact(1u);
+
+    preempt_result = scheduler_preemptive_self_test();
+    preempt_used0 = scheduler_stack_high_water_bytes(0u);
+    preempt_used1 = scheduler_stack_high_water_bytes(1u);
+    preempt_canary0 = scheduler_stack_canary_intact(0u);
+    preempt_canary1 = scheduler_stack_canary_intact(1u);
+
+    capacity0 = scheduler_stack_capacity_bytes(0u);
+    capacity1 = scheduler_stack_capacity_bytes(1u);
+
+    uart_write("STACK_CAPACITY=");
+    uart_write_hex32(capacity0);
+    uart_write("\r\n");
+
+    uart_write("STACK_COOP_T0_USED=");
+    uart_write_hex32(coop_used0);
+    uart_write("\r\n");
+
+    uart_write("STACK_COOP_T1_USED=");
+    uart_write_hex32(coop_used1);
+    uart_write("\r\n");
+
+    uart_write("STACK_PREEMPT_T0_USED=");
+    uart_write_hex32(preempt_used0);
+    uart_write("\r\n");
+
+    uart_write("STACK_PREEMPT_T1_USED=");
+    uart_write_hex32(preempt_used1);
+    uart_write("\r\n");
+
+    passed =
+        (coop_result != 0) &&
+        (preempt_result != 0) &&
+        (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
+        (capacity1 == capacity0) &&
+        (coop_used0 >= 64u) &&
+        (coop_used0 < capacity0) &&
+        (coop_used1 >= 64u) &&
+        (coop_used1 < capacity1) &&
+        (preempt_used0 >= 64u) &&
+        (preempt_used0 < capacity0) &&
+        (preempt_used1 >= 64u) &&
+        (preempt_used1 < capacity1) &&
+        (coop_canary0 != 0) &&
+        (coop_canary1 != 0) &&
+        (preempt_canary0 != 0) &&
+        (preempt_canary1 != 0);
+
+    if (passed != 0)
+    {
+        uart_write_line("SCHED_STACK_WATER_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_STACK_WATER_ERR");
+    }
+}
+
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
@@ -1463,6 +1542,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "schedpreempt") != 0)
     {
         console_scheduler_preemptive_test();
+    }
+    else if (text_equals(uart_command, "schedstack") != 0)
+    {
+        console_scheduler_stack_water_test();
     }
     else if (text_equals(uart_command, "fault") != 0)
     {
