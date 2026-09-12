@@ -19,36 +19,45 @@ This section is authoritative for the current execution boundary and supersedes 
 - [x] Static two-task TCB model and two 512-byte static stacks.
 - [x] Cortex-M synthetic initial task frames.
 - [x] `schedtest -> SCHED_FOUNDATION_OK`.
-- [x] Accepted binary `10752 bytes`.
-- [x] SHA-256 `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`.
 - [x] Acceptance commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
 
-### Slice 9B — cooperative scheduler activation — HARDWARE ACCEPTED
+### Slice 9B — cooperative scheduler activation — ACCEPTED / PUBLISHED
 
-- [x] Corrected stacked LR Thumb-bit semantics before first real task activation.
-- [x] SVC vector ownership moved from `Default_Handler` to `SVC_Handler`.
-- [x] SVC `#0` starts the first task on PSP.
-- [x] SVC `#1` performs voluntary cooperative yield.
-- [x] SVC `#2` handles normal task return/exit.
+- [x] SVC `#0/#1/#2` provide start / cooperative yield / task-return exit.
 - [x] Kernel/MSP context is parked and restored after all prepared tasks finish.
-- [x] Cooperative round-robin runs two prepared tasks.
-- [x] Deterministic sequence `0x10 -> 0x20 -> 0x11 -> 0x21` validated by `schedcoop`.
-- [x] First real `schedcoop -> SCHED_COOP_OK`.
-- [x] 32/32 cooperative stress runs passed.
-- [x] Final post-reset `schedcoop -> SCHED_COOP_OK`.
+- [x] `schedcoop -> SCHED_COOP_OK`.
+- [x] Deterministic sequence `0x10 -> 0x20 -> 0x11 -> 0x21`.
 - [x] Real task-return path passed across `34` complete cooperative runs.
-- [x] SysTick remained monotonic before and after scheduler stress.
-- [x] Foundation self-test remained valid after cooperative stress.
-- [x] Full UART/I2C/OLED regression passed.
-- [x] Frozen OLED physical output confirmed unchanged.
-- [x] Candidate binary `11792 bytes`.
-- [x] SHA-256 `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`.
-- [x] `_ebss=0x20000748`; SRAM headroom `18616 bytes`.
-- [x] PendSV remains `Default_Handler`.
-- [x] SysTick does not invoke scheduler policy.
-- [x] Preemption remains deferred.
+- [x] Acceptance commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
 
-### Slice 9B acceptance source change set
+### PendSV timer-driven preemption — HARDWARE ACCEPTED / COMMIT PENDING
+
+- [x] PendSV vector points to `PendSV_Handler`.
+- [x] SysTick invokes `scheduler_tick()`.
+- [x] Scheduler tick pends PendSV only during an active preemptive test run.
+- [x] PendSV priority is lowest.
+- [x] PendSV saves/restores `r4-r11` on PSP.
+- [x] EXC_RETURN/SPSEL is checked before any PSP touch; MSP-origin PendSV is a no-op.
+- [x] Final-exit and abort paths clear pending PendSV before returning to kernel/MSP.
+- [x] `schedpreempt -> SCHED_PREEMPT_OK`.
+- [x] CPU-bound acceptance tasks contain no voluntary `SVC #1` yield.
+- [x] Deterministic sequence `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`.
+- [x] At least three PendSV switches required per self-test run.
+- [x] First real hardware preemption run passed.
+- [x] 32/32 preemptive stress runs passed.
+- [x] 4/4 return-to-kernel ping checkpoints passed.
+- [x] Final post-reset preemptive run passed.
+- [x] Real timer-driven preemption path passed across `34` complete runs.
+- [x] SysTick remained monotonic after preemption stress.
+- [x] `schedtest` and `schedcoop` remained valid before/after preemption.
+- [x] Full UART/I2C/OLED regression passed.
+- [x] Physical frozen OLED output confirmed unchanged.
+- [x] Candidate binary `12740 bytes`.
+- [x] SHA-256 `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`.
+- [x] `.bss=1920 bytes`; `_ebss=0x20000780`; SRAM headroom `18560 bytes`.
+- [x] Normal boot task migration remains deferred.
+
+### Current acceptance source change set
 
 Immediately before the acceptance commit, the exact source delta is:
 
@@ -61,7 +70,7 @@ Immediately before the acceptance commit, the exact source delta is:
 
 ### Next active scheduler boundary
 
-Implement and independently prove the PendSV context-switch mechanism. Do not enable SysTick-driven preemption in the same acceptance gate.
+Audit real task stack requirements and establish an explicit safe stack budget before migrating any substantive normal-boot workload to PSP tasks. Do not migrate console/OLED in the same gate.
 <!-- END STM32_OS_SLICE9A_ACCEPTED_STATE -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

@@ -19,45 +19,58 @@
 - Added two static TCBs, two 512-byte static task stacks, and synthetic initial Cortex-M task frames.
 - Added deterministic foundation self-test:
   - `schedtest -> SCHED_FOUNDATION_OK`.
-- Slice 9A deliberately left PSP activation, context switching, SVC/PendSV scheduler ownership, SysTick scheduling, and preemption deferred.
 - Accepted binary: `10752 bytes`.
 - SHA-256: `29CA6F248B94A861497D2A97C723B4E945208FC4002C363956753599AE38BFBC`.
 - Acceptance commit: `1a57f79cda42674219e774900ce07a0da8fedaf4`.
 
-### Accepted — cooperative scheduler activation (Slice 9B)
+### Accepted / published — cooperative scheduler activation (Slice 9B)
 
-- Corrected the synthetic-frame task return boundary before activation:
-  - stacked initial PC keeps bit 0 clear and relies on stacked xPSR.T during exception return
-  - stacked LR retains the Thumb function-pointer bit required by normal `BX LR` return.
-- Activated cooperative task execution on PSP.
-- SVC is now the cooperative scheduler exception:
-  - SVC `#0`: start first prepared task
-  - SVC `#1`: voluntary yield
-  - SVC `#2`: task returned / exit current task.
-- Added kernel/MSP parking and restoration after all prepared tasks finish.
-- Added deterministic real-execution acceptance command:
-  - `schedcoop -> SCHED_COOP_OK`
-  - expected internal sequence `0x10 -> 0x20 -> 0x11 -> 0x21`.
-- Marked scheduler state shared between Thread mode and SVC handling as volatile where required by the compiler model.
-- Hardware acceptance:
-  - exact flash readback PASS
-  - boot/health/UART PASS
-  - first real cooperative run PASS
-  - 32/32 repeated cooperative runs PASS
-  - post-stress health and foundation self-test PASS
-  - final post-reset cooperative run PASS
-  - real normal task-return path PASS across `34` complete runs
-  - full I2C/OLED legacy regression PASS
-  - physical frozen OLED output confirmed unchanged.
+- Corrected initial PC / stacked LR Thumb semantics.
+- Activated task Thread-mode execution on PSP.
+- SVC `#0/#1/#2` provide start / voluntary yield / task-return exit.
+- Added kernel/MSP parking and restoration.
+- `schedcoop -> SCHED_COOP_OK` validates `0x10 -> 0x20 -> 0x11 -> 0x21`.
+- Real normal task-return path passed across `34` complete cooperative runs.
 - Candidate binary: `11792 bytes`.
 - SHA-256: `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`.
-- `.bss`: `1864 bytes`; `_ebss=0x20000748`; SRAM headroom `18616 bytes`.
-- PendSV, SysTick-driven scheduling, and preemption remain deliberately deferred.
+- Acceptance commit: `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
+
+### Hardware accepted — PendSV timer-driven preemption
+
+- Activated `PendSV_Handler`.
+- `SysTick_Handler()` calls `scheduler_tick()`.
+- Scheduler tick requests PendSV only during the command-gated preemptive run.
+- PendSV priority is lowest.
+- PendSV saves/restores `r4-r11` on PSP.
+- EXC_RETURN/SPSEL guard prevents MSP-origin PendSV from touching PSP.
+- Abort and final-exit paths clear stale pending PendSV before kernel/MSP restoration.
+- Added `schedpreempt -> SCHED_PREEMPT_OK`.
+- Preemption acceptance tasks are CPU-bound and contain no voluntary yield.
+- Expected sequence: `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`.
+- At least three real PendSV switches are required.
+- Hardware acceptance:
+  - exact flash program/verify/readback PASS
+  - exact reset boot frame PASS
+  - first real preemptive run PASS
+  - 32/32 preemptive stress runs PASS
+  - 4/4 return-to-kernel ping checkpoints PASS
+  - post-stress SysTick health PASS
+  - `schedtest` and `schedcoop` regression PASS
+  - full I2C/OLED legacy regression PASS
+  - final reset + preemption + cooperative + health PASS
+  - final exact flash identity PASS
+  - real timer-driven preemption path PASS across `34` complete runs
+  - physical frozen OLED output confirmed unchanged.
+- Accepted candidate binary: `12740 bytes`.
+- SHA-256: `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`.
+- `.bss`: `1920 bytes`; `_ebss=0x20000780`; SRAM headroom `18560 bytes`.
+- Normal boot task migration remains deliberately deferred.
 
 ### Next
 
-- Implement and independently validate the PendSV context-switch mechanism.
-- Keep SysTick-driven preemption as a later scheduler gate.
+- Audit/enlarge task stacks based on real workload requirements before moving substantive normal-boot work to PSP tasks.
+- Keep console/OLED on the current kernel/MSP path until the stack budget is explicitly proven.
+- Preserve `schedtest`, `schedcoop`, and `schedpreempt` as regression gates.
 <!-- END STM32_OS_CHANGELOG_2026_09_12 -->
 
 All notable project milestones are recorded here.

@@ -16,26 +16,27 @@ Accepted through this checkpoint:
 - [x] Circular retained-console scrolling.
 - [x] Dirty-page presentation and runtime UI integration.
 - [x] Runtime boot UI lifecycle.
-- [x] Scheduler foundation:
-  - static TCBs
-  - separate static task stacks
-  - synthetic Cortex-M initial task frames
-  - deterministic foundation self-test.
-- [x] Cooperative scheduler activation:
-  - Thread mode tasks execute on PSP
-  - SVC start/yield/exit path
-  - deterministic two-task round-robin
-  - normal task-return path proven on hardware
-  - `34` complete cooperative acceptance runs.
+- [x] Scheduler foundation.
+- [x] Cooperative scheduler activation.
+- [x] PendSV timer-driven preemption:
+  - active PendSV vector
+  - SysTick scheduler hook
+  - lowest-priority PendSV
+  - `r4-r11` PSP context save/restore
+  - CPU-bound no-yield hardware proof
+  - stale-pending PendSV safety
+  - `34` complete preemption acceptance runs
+  - cooperative/foundation/OLED regressions preserved.
 
 Scheduler work still open:
 
-- [ ] PendSV context-switch mechanism
-- [ ] SysTick preemption
+- [ ] task-stack budget / high-water validation for real workloads
+- [ ] normal boot task migration
+- [ ] idle task / steady-state scheduler ownership
 - [ ] `sleep()`
 - [ ] priorities
 
-Next active boundary: **PendSV context-switch mechanism**, with SysTick-driven preemption remaining a separate later gate.
+Next active boundary: **task stack sizing and safety proof before normal-boot task migration**. Console/OLED migration remains deferred until stack requirements are explicit.
 <!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_12 -->
 
 ## Phase 0 - Boot baseline
@@ -72,8 +73,10 @@ Next active boundary: **PendSV context-switch mechanism**, with SysTick-driven p
 - [x] Task control block foundation
 - [x] Separate static task stacks + synthetic initial frames
 - [x] Cooperative scheduling
-- [ ] PendSV context switch
-- [ ] Preemptive scheduling
+- [x] PendSV context switch
+- [x] Command-gated SysTick preemption proof
+- [ ] Task stack budget / high-water validation
+- [ ] Normal boot task migration
 - [ ] `sleep()`
 - [ ] Priorities
 

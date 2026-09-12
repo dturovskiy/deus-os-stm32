@@ -11,6 +11,7 @@
 
 .extern kernel_main
 .extern SVC_Handler
+.extern PendSV_Handler
 .extern SysTick_Handler
 .extern fault_capture
 
@@ -29,7 +30,7 @@
 .word SVC_Handler          /* SVCall */
 .word Default_Handler      /* DebugMon */
 .word 0
-.word Default_Handler      /* PendSV */
+.word PendSV_Handler       /* PendSV */
 .word SysTick_Handler      /* SysTick */
 
 .section .text.Reset_Handler, "ax", %progbits

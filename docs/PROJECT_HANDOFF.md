@@ -5,16 +5,17 @@
 
 This section supersedes older “current state”, “exact next boundary”, TX-only UART, 128x64 OLED, and scheduler-non-goal text that remains below as historical milestone evidence.
 
-### Repository / Slice 9B pre-acceptance state
+### Repository / current acceptance state
 
 ```text
 Root:                     D:\Projects\STM32\OS
 Branch:                   main
-Pre-acceptance parent:    1a57f79cda42674219e774900ce07a0da8fedaf4
-origin/main at docs gate:  1a57f79cda42674219e774900ce07a0da8fedaf4
+Published HEAD:           1114621e9a6bc57d5471cf51a922c216b76bebe2
+origin/main:               1114621e9a6bc57d5471cf51a922c216b76bebe2
+Current acceptance commit: pending
 ```
 
-Slice 9B source change set immediately before the acceptance commit:
+Current hardware-accepted source change set:
 
 ```text
  M include/kernel/scheduler.h
@@ -23,22 +24,29 @@ Slice 9B source change set immediately before the acceptance commit:
  M src/startup.s
 ```
 
+Exact accepted source hashes:
+
+```text
+src/kernel.c
+34722ACB0F40D69580C746BFD0935DC5852002435365ED061B873F1E53DBB121
+
+include/kernel/scheduler.h
+6181776DCEFE17D66114F6345C4AA753C0C3F34335B7EB17878196E9F7CD693B
+
+src/kernel/scheduler.c
+A16E32B8F11DBC5DE1567C8184F3EAAD6BEAA58117509CCCD8BC0CC12F43A862
+
+src/startup.s
+DBAAF4FB8B98B3B114C3F4D8A7ABAEAA3B8B5C6006BDC816D91CA5073B70B90D
+```
+
 ### Current hardware
 
 - STM32F103C8T6 / Cortex-M3, 64 KiB Flash, 20 KiB SRAM.
 - ST-LINK V2, SWD 4000 KHz.
 - HW-193 / CH340 on COM3, 115200 8N1.
-- UART:
-  - A9 -> HW-193 RXD
-  - HW-193 TXD -> A10
-  - G -> GND.
-- OLED:
-  - native 128x32 SSD1306-compatible
-  - I2C `0x3C`
-  - B6 = SCL
-  - B7 = SDA
-  - 3.3 = VCC
-  - G = GND.
+- UART: A9 -> RXD, TXD -> A10, common GND.
+- OLED: native 128x32 SSD1306-compatible, I2C `0x3C`, B6=SCL, B7=SDA.
 
 ### Frozen OLED baseline
 
@@ -58,46 +66,55 @@ Key current geometry:
 
 Slice 9A foundation is accepted and published at commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
 
-Slice 9B cooperative activation is hardware-accepted:
+Slice 9B cooperative activation is accepted and published at commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
 
-- candidate binary `11792 bytes`
-- SHA-256 `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`
+Current PendSV preemption milestone is hardware-accepted:
+
+- candidate binary `12740 bytes`
+- SHA-256 `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`
+- `.bss=1920 bytes`
+- `_ebss=0x20000780`
+- SRAM headroom `18560 bytes`
 - two static TCBs and two 512-byte static task stacks
-- initial PC / stacked LR Thumb semantics corrected before activation
-- tasks execute in Thread mode on PSP
-- SVC `#0` starts task execution
-- SVC `#1` performs cooperative yield
-- SVC `#2` handles normal task return/exit
-- kernel/MSP context is restored after all prepared tasks complete
+- PendSV vector is active
+- SysTick calls `scheduler_tick()`
+- tick requests PendSV only during explicit preemptive scheduler runs
+- PendSV priority is lowest
+- task context uses PSP and software-saved `r4-r11`
+- EXC_RETURN/SPSEL is checked before PSP access; MSP-origin PendSV is a no-op
+- abort and final-exit paths clear stale pending PendSV before kernel/MSP restoration
+- SVC `#0/#1/#2` cooperative start/yield/exit path remains valid
 - `schedtest -> SCHED_FOUNDATION_OK`
 - `schedcoop -> SCHED_COOP_OK`
-- internal cooperative sequence `0x10 -> 0x20 -> 0x11 -> 0x21`
-- first real run PASS
-- 32/32 stress runs PASS
-- final post-reset run PASS
-- real normal task-return path PASS across `34` complete runs
-- `_ebss=0x20000748`
-- SRAM headroom `18616 bytes`
-- PendSV remains `Default_Handler`
-- SysTick scheduling/preemption remain deferred.
+- `schedpreempt -> SCHED_PREEMPT_OK`
+- preemption acceptance tasks are CPU-bound and do not voluntarily yield
+- preemption sequence `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`
+- self-test requires at least three real PendSV switches.
 
-Final Slice 9B hardware acceptance:
+Final hardware acceptance:
 
-- exact target flash identity PASS before/after runtime tests
-- exact boot PASS
-- UART ping/health PASS
-- scheduler foundation PASS before/after cooperative stress
+- exact candidate program/verify/readback PASS
+- exact reset boot frame PASS
+- first real preemptive run PASS
+- 32/32 preemptive stress runs PASS
+- 4/4 return-to-kernel ping checkpoints PASS
+- post-stress SysTick health PASS
+- foundation and cooperative scheduler regressions PASS
 - full I2C/OLED regression PASS
-- `uiruntime -> OLED_RUNTIME_UI_OK`
-- final reset PASS
+- frozen runtime UI restore PASS
+- final reset + preemption + cooperative + health PASS
+- final exact flash identity PASS
+- real timer-driven preemption path PASS across `34` complete runs
 - physical OLED output confirmed unchanged:
   - `DEUS OS`
   - `BOOT OK`
   - `READY`.
 
+Normal boot task migration is still deferred. Console/OLED remain on the existing kernel/MSP path.
+
 ### Exact next boundary
 
-Implement and independently prove the PendSV context-switch mechanism. Keep SysTick-driven preemption for a later separate acceptance gate.
+Audit real task stack requirements and establish a safe stack budget before moving substantive normal-boot workload to PSP tasks. Do not migrate console/OLED until stack usage is measured/proven and the current 512-byte-per-task test stacks are either justified or enlarged.
 
 ### Acceptance lifecycle
 

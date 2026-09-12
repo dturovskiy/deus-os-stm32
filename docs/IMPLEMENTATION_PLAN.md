@@ -3,7 +3,7 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_12 -->
 ## Accepted implementation checkpoint — 2026-09-12
 
-The runtime baseline now includes the hardware-accepted native 128x32 OLED UI lifecycle, scheduler foundation, and cooperative scheduler activation.
+The runtime baseline now includes the hardware-accepted native 128x32 OLED UI lifecycle, scheduler foundation, cooperative scheduler activation, and command-gated real PendSV preemption.
 
 ### Scheduler state
 
@@ -16,11 +16,9 @@ Accepted Slice 9A established:
 - deterministic `scheduler_self_test()`
 - `schedtest -> SCHED_FOUNDATION_OK`.
 
-Accepted Slice 9B now adds:
+Accepted Slice 9B added:
 
-- corrected initial-frame return semantics:
-  - initial stacked PC is halfword-aligned and relies on xPSR.T
-  - stacked LR retains the Thumb function-pointer bit for normal task return
+- corrected initial-frame return semantics
 - Thread-mode task execution on PSP
 - SVC `#0` start
 - SVC `#1` voluntary cooperative yield
@@ -29,10 +27,26 @@ Accepted Slice 9B now adds:
 - deterministic two-task cooperative round-robin
 - `scheduler_cooperative_self_test()`
 - `schedcoop -> SCHED_COOP_OK`
-- hardware-proven sequence `0x10 -> 0x20 -> 0x11 -> 0x21`
-- `34` complete hardware cooperative runs including real normal task returns.
+- hardware-proven sequence `0x10 -> 0x20 -> 0x11 -> 0x21`.
 
-PendSV is still `Default_Handler`. SysTick continues to maintain the timebase/heartbeat but does not schedule tasks. Preemption is not enabled.
+The current preemption milestone now adds:
+
+- active `PendSV_Handler`
+- `scheduler_tick()` hook from the existing 1 kHz SysTick
+- PendSV request only while an explicit preemptive scheduler run is active
+- PendSV priority configured to lowest
+- PSP software-frame save/restore for `r4-r11`
+- EXC_RETURN/SPSEL guard before PSP access
+- pending-PendSV clear on abort and final scheduler exit
+- `scheduler_preemptive_self_test()`
+- `schedpreempt -> SCHED_PREEMPT_OK`
+- two CPU-bound acceptance tasks with no voluntary scheduler yield
+- deterministic preemption sequence `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`
+- minimum three real PendSV switches per accepted run
+- `34` complete hardware preemption runs with return-to-kernel checks
+- cooperative/foundation/UART/I2C/OLED regressions preserved.
+
+Normal boot still uses the existing polling kernel/MSP execution path. The scheduler is not yet the steady-state owner of console/OLED work.
 
 ### Revised scheduler sequence
 
@@ -43,40 +57,44 @@ Stage A1 — **accepted**:
 - synthetic initial task frames
 - invariants/self-test.
 
-Stage A2 — **accepted**:
+Stage A2 — **accepted / published**:
 
 - cooperative scheduler activation
 - PSP ownership for running tasks
 - SVC start/yield/exit mechanism
 - deterministic real task execution and return-to-kernel proof.
 
-Stage B — next:
+Stage B — **hardware accepted / commit pending**:
 
-- PendSV context-switch mechanism
-- isolate callee-saved context handoff in the architecture exception path
-- prove repeated round-trip context integrity while remaining cooperative/manual.
+- PendSV context switching
+- SysTick-driven command-gated preemption
+- CPU-bound no-yield hardware proof
+- final-exit/abort pending-PendSV safety
+- regression preservation.
 
-Stage C:
+Stage C — next:
 
-- SysTick-driven preemption
-- fixed-priority scheduling
-- idle task.
+- determine real stack requirements/high-water behavior
+- enlarge or restructure task stacks if required
+- define safe steady-state scheduler task stack budget
+- keep console/OLED on kernel/MSP until this gate passes.
 
 Stage D:
 
+- normal boot task migration
+- idle task / steady-state scheduler ownership
 - sleep queues
-- timers
-- IPC
-- synchronization.
+- priorities
+- timers / IPC / synchronization.
 
 ### Current accepted image
 
-- candidate binary: `11792 bytes`
-- SHA-256: `27C5327125BFAC97526F80F83248620152893F7AD92B46F6C56542843F29B885`
-- `.bss`: `1864 bytes`
-- scheduler static stacks: `1024 bytes`
-- `_ebss=0x20000748`
-- remaining SRAM headroom: `18616 bytes`.
+- candidate binary: `12740 bytes`
+- SHA-256: `E1D02C22AF7739DB3EE71E9CB9FF65D0A5F78F8C0ED61D632EFC1444040A7E4A`
+- `.bss`: `1920 bytes`
+- scheduler static stacks: `1024 bytes` total (`512 bytes` per synthetic task; still test-only for tiny workloads)
+- `_ebss=0x20000780`
+- remaining SRAM headroom: `18560 bytes`.
 
 The frozen OLED geometry is not part of the scheduler work and remains unchanged.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_12 -->

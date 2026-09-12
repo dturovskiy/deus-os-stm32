@@ -37,8 +37,12 @@ int scheduler_start(void);
 
 void scheduler_yield(void);
 
+void scheduler_tick(void);
+
 int scheduler_self_test(void);
 
 int scheduler_cooperative_self_test(void);
+
+int scheduler_preemptive_self_test(void);
 
 #endif

@@ -1418,6 +1418,18 @@ static void console_scheduler_cooperative_test(void)
     }
 }
 
+static void console_scheduler_preemptive_test(void)
+{
+    if (scheduler_preemptive_self_test() != 0)
+    {
+        uart_write_line("SCHED_PREEMPT_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_PREEMPT_ERR");
+    }
+}
+
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
@@ -1447,6 +1459,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "schedcoop") != 0)
     {
         console_scheduler_cooperative_test();
+    }
+    else if (text_equals(uart_command, "schedpreempt") != 0)
+    {
+        console_scheduler_preemptive_test();
     }
     else if (text_equals(uart_command, "fault") != 0)
     {
@@ -1644,6 +1660,8 @@ void SysTick_Handler(void)
 
     ++kernel_ticks;
     ++led_ticks;
+
+    scheduler_tick();
 
     if (led_ticks >= 500u)
     {
