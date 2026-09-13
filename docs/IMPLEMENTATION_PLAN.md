@@ -1,125 +1,68 @@
 # STM32 OS — Implementation Plan
 
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
-## Accepted implementation checkpoint — 2026-09-13
+## Current implementation checkpoint — 2026-09-13
 
-The runtime baseline now includes the hardware-accepted native 128x32 OLED UI lifecycle, published scheduler foundation/cooperative/PendSV stages, published stack telemetry, and a hardware-accepted command-gated production-like OLED workload running preemptively on PSP.
+Published scheduler/runtime baseline now includes:
 
-### Scheduler state
+- scheduler foundation/cooperative/PendSV stages
+- stack canary/high-water telemetry
+- substantive command-gated OLED workload published as `8f6b922a7d2e55abc3133702e7571057f995da5d`.
 
-Accepted/published scheduler milestones:
+Accepted substantive PSP sizing:
 
-- Slice 9A foundation: commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
-- Slice 9B cooperative activation: commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
-- PendSV timer-driven preemption: commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
-- Stack canary/high-water telemetry: commit `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
+- task 0 frozen OLED render/present: `328 / 512 bytes`, measured margin `184 bytes`
+- task 1 CPU peer: `80 / 512 bytes`, measured margin `432 bytes`
+- static direct-call-chain analysis remains feasibility-only.
 
-The stack telemetry baseline provides:
+The production ownership decision audit established:
 
-- two 512-byte aligned static task stacks
-- SVC/PendSV high-water record points
-- Handler/MSP stack scanning
-- capacity/high-water/canary query API
-- `schedstack -> SCHED_STACK_WATER_OK`
-- synthetic task high-water `72 / 512 bytes`
-- synthetic observed margin `440 bytes`
-- canary intact across `34` commands / `68` underlying scheduler runs.
+- normal boot still executes `kernel_main()` / console on MSP
+- current scheduler is a global run-to-completion host launcher
+- scheduler wait/block/sleep states are absent
+- scheduler self-tests reinitialize the global scheduler and must not run nested inside an active production scheduler
+- full current console linked estimate: `524 bytes`
+- console + 64-byte architecture context reserve: `588 bytes`
+- therefore a 512-byte PSP stack is rejected for the full current console command surface
+- kernel/MSP runtime sizing remains a separate unproven requirement.
 
-The current substantive workload milestone adds:
+Stage C3.1 — USART1 RX IRQ/ring-buffer prerequisite — hardware + physical accepted:
 
-- public `scheduler_start_preemptive()` wrapper
-- read-only PendSV switch-count query
-- `schedworkload -> SCHED_WORKLOAD_OK`
-- workload task 0: frozen OLED runtime full render/present on PSP
-- workload task 1: CPU-only peer, no UART/I2C/OLED and no voluntary yield
-- real task overlap under timer-driven PendSV preemption
-- existing `2 x 512-byte` task stacks unchanged.
+- `USART1_IRQHandler` / external IRQ37 is the sole `USART1_DR` reader
+- RXNE interrupt enabled; USART1 NVIC priority `0x80`
+- 128-byte SPSC RX ring
+- existing `uart_try_getc()` consumes from the ring
+- console remains MSP-owned
+- production scheduler remains inactive during normal boot
+- `WFI` idle restored
+- `rxstat -> RX_IRQ_RING_OK`
+- candidate `15084 bytes`
+- SHA-256 `E25DC54C149EB9DA7B26F5378868DAA790847A1C4C7B4CFB970F294CFB738EFB`
+- USART1 IRQ own static frame `12 bytes`
+- SRAM headroom `18368 bytes`
+- hardware ring high-water `29 / 128 bytes`
+- zero drops and zero errors
+- four `32 x ping` rounds each returned exact 32 PONG responses
+- each round plus telemetry produced exact `+167` IRQ and byte deltas
+- fresh reset repeated exact `167` IRQ / `167` bytes, high-water `29`
+- scheduler/workload/health/I2C/OLED regression preserved
+- physical frozen OLED remained `DEUS OS / BOOT OK / READY`.
 
-### Stack sizing evidence
+Stage C3.2 — next:
 
-Planning feasibility estimate:
+- add MSP runtime watermark/canary/guard instrumentation without migrating Thread ownership
+- measure MSP high-water under representative SysTick, USART1 burst, SVC/PendSV scheduler diagnostics, I2C/OLED and health activity
+- define explicit measured margin and acceptance threshold
+- keep console on MSP during this proof.
 
-- `oled_runtime_ui_show()` direct-call-chain estimate: `212 bytes`
-- Cortex-M3 asynchronous context reserve used by the audit: `64 bytes`
-- combined estimate: `276 bytes`
-- nominal margin in a 512-byte stack: `236 bytes`.
+Later, separate gates are still required for:
 
-Source-build workload estimates:
+- console PSP workload sizing
+- production scheduler lifecycle / diagnostic isolation
+- wait/block/wake or equivalent idle/event semantics
+- normal boot task migration.
 
-- task 0: `220 + 64 = 284 bytes`; nominal margin `228 bytes`
-- task 1: `12 + 64 = 76 bytes`; nominal margin `436 bytes`.
-
-Hardware runtime evidence:
-
-- task 0 high-water: `328 bytes`; measured margin `184 bytes`
-- task 1 high-water: `80 bytes`; measured margin `432 bytes`
-- capacity: `512 bytes`
-- task canaries intact in every accepted workload run
-- PendSV switches: `124..126`
-- `WORKLOAD_UI_RESULT=1` and `WORKLOAD_PEER_OVERLAP=1` in every accepted workload run
-- `34` complete workload commands accepted.
-
-The task-0 runtime result (`328 bytes`) exceeds the `.su`-based source-build estimate (`284 bytes`) by `44 bytes`. Therefore the present direct-call-chain calculation is a feasibility estimate, not a conservative upper bound. Runtime watermark/canary evidence is authoritative for sizing until static analysis is strengthened.
-
-For the exact tested frozen OLED full render/present workload, `512 bytes` is hardware-validated with `184 bytes` (35.9%) measured free margin. This result must not be generalized to a future console task, arbitrary application task, or MSP/kernel stack.
-
-### Hardware acceptance
-
-- candidate binary: `14292 bytes`
-- SHA-256: `8C124B0954D65E0F698AD1C62525E72FC4F569D5133EF8F0CE67A8297A80A2CF`
-- `.bss=1952 bytes`
-- `_ebss=0x200007A0`
-- SRAM headroom: `18528 bytes`
-- exact program/verify/readback PASS
-- first workload PASS
-- 32/32 workload stress PASS
-- 4/4 return-to-kernel checkpoint pings PASS
-- final workload PASS
-- scheduler/UART/I2C/OLED regressions PASS
-- final exact target identity PASS
-- physical frozen OLED `DEUS OS / BOOT OK / READY` PASS.
-
-Hardware v1 reported only `InitialBoot` and `FinalBoot` failures because its boot matcher still expected `FAULTREC=0x20000270`. The linked candidate places `fault_record` at `0x20000284`. Recovery v2 cryptographically bound v1 evidence, proved those were the only false results, validated both captured v1 frames, then passed two fresh corrected boot checks and fresh runtime/readback verification without reflashing.
-
-Normal boot still uses the existing polling kernel/MSP execution path. The scheduler is not yet the steady-state owner of console/OLED work.
-
-### Revised scheduler sequence
-
-Stage A1 — **accepted / published**:
-- scheduler foundation.
-
-Stage A2 — **accepted / published**:
-- cooperative PSP/SVC scheduler activation.
-
-Stage B — **accepted / published**:
-- timer-driven PendSV preemption.
-
-Stage C1 — **accepted / published**:
-- task-stack canary/high-water instrumentation
-- synthetic scheduler path high-water proof.
-
-Stage C2 — **hardware + physical accepted / commit pending**:
-- representative frozen OLED workload on preemptive PSP
-- CPU-only peer overlap proof
-- real workload high-water/canary proof
-- 512-byte stack hardware validation for the exact OLED workload
-- regression preservation.
-
-Stage C3 — next:
-- define production task ownership
-- choose/document stack budgets from runtime evidence
-- prove console-task PSP stack if console ownership will migrate
-- establish a separate kernel/MSP stack budget
-- specify the normal-boot migration/rollback gate.
-
-Stage D:
-- normal boot task migration
-- idle task / steady-state scheduler ownership
-- sleep queues
-- priorities
-- timers / IPC / synchronization.
-
-The frozen OLED geometry remains unchanged and is not part of the scheduler migration decision.
+The frozen OLED geometry remains unchanged and is not part of these scheduler/stack ownership decisions.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 
 ## Objective

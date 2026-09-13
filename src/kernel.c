@@ -10,6 +10,7 @@
 #include "kernel/scheduler.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
+#define REG8(addr)  (*(volatile uint8_t *)(addr))
 
 /* Flash interface */
 #define FLASH_ACR       REG32(0x40022000u)
@@ -58,11 +59,23 @@
 #define USART1_BRR      REG32(0x40013808u)
 #define USART1_CR1      REG32(0x4001380Cu)
 
+#define USART_SR_PE     (1u << 0)
+#define USART_SR_FE     (1u << 1)
+#define USART_SR_NE     (1u << 2)
+#define USART_SR_ORE    (1u << 3)
 #define USART_SR_RXNE   (1u << 5)
 #define USART_SR_TXE    (1u << 7)
 #define USART_CR1_RE    (1u << 2)
 #define USART_CR1_TE    (1u << 3)
+#define USART_CR1_RXNEIE (1u << 5)
 #define USART_CR1_UE    (1u << 13)
+
+/* Cortex-M3 NVIC */
+#define NVIC_ISER1      REG32(0xE000E104u)
+#define NVIC_ICPR1      REG32(0xE000E284u)
+#define NVIC_IPR_USART1 REG8(0xE000E425u)
+#define NVIC_USART1_BIT (1u << 5)
+#define NVIC_USART1_PRIORITY 0x80u
 #define I2C1_CR1         REG32(0x40005400u)
 #define I2C1_CR2         REG32(0x40005404u)
 #define I2C1_DR          REG32(0x40005410u)
@@ -163,6 +176,18 @@ typedef struct
 volatile uint32_t kernel_ticks;
 volatile fault_record_t fault_record;
 
+#define UART_RX_RING_CAPACITY 128u
+#define UART_RX_RING_MASK     (UART_RX_RING_CAPACITY - 1u)
+
+static volatile uint8_t uart_rx_ring[UART_RX_RING_CAPACITY];
+static volatile uint32_t uart_rx_head;
+static volatile uint32_t uart_rx_tail;
+static volatile uint32_t uart_rx_irq_count;
+static volatile uint32_t uart_rx_byte_count;
+static volatile uint32_t uart_rx_drop_count;
+static volatile uint32_t uart_rx_error_count;
+static volatile uint32_t uart_rx_high_water;
+
 static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
 static oled_console_t oled_console_state;
@@ -251,8 +276,25 @@ static void uart_init(void)
     GPIOA_CRH &= ~((0xFu << 4) | (0xFu << 8));
     GPIOA_CRH |=  ((0xBu << 4) | (0x4u << 8));
 
+    uart_rx_head = 0u;
+    uart_rx_tail = 0u;
+    uart_rx_irq_count = 0u;
+    uart_rx_byte_count = 0u;
+    uart_rx_drop_count = 0u;
+    uart_rx_error_count = 0u;
+    uart_rx_high_water = 0u;
+
     USART1_BRR = USART1_BRR_115200;
-    USART1_CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
+
+    NVIC_ICPR1 = NVIC_USART1_BIT;
+    NVIC_IPR_USART1 = NVIC_USART1_PRIORITY;
+    NVIC_ISER1 = NVIC_USART1_BIT;
+
+    USART1_CR1 =
+        USART_CR1_RE |
+        USART_CR1_TE |
+        USART_CR1_RXNEIE |
+        USART_CR1_UE;
 }
 
 static void uart_putc(char c)
@@ -266,13 +308,60 @@ static void uart_putc(char c)
 
 static int uart_try_getc(char *c)
 {
-    if ((USART1_SR & USART_SR_RXNE) == 0u)
+    const uint32_t tail = uart_rx_tail;
+
+    if (tail == uart_rx_head)
     {
         return 0;
     }
 
-    *c = (char)(uint8_t)USART1_DR;
+    *c = (char)uart_rx_ring[tail & UART_RX_RING_MASK];
+    uart_rx_tail = tail + 1u;
+
     return 1;
+}
+
+void USART1_IRQHandler(void)
+{
+    const uint32_t status = USART1_SR;
+
+    ++uart_rx_irq_count;
+
+    if ((status & (USART_SR_PE | USART_SR_FE | USART_SR_NE | USART_SR_ORE)) != 0u)
+    {
+        ++uart_rx_error_count;
+    }
+
+    if ((status & USART_SR_RXNE) != 0u)
+    {
+        const uint8_t byte = (uint8_t)USART1_DR;
+        const uint32_t head = uart_rx_head;
+        const uint32_t depth = head - uart_rx_tail;
+
+        ++uart_rx_byte_count;
+
+        if (depth < UART_RX_RING_CAPACITY)
+        {
+            const uint32_t next_head = head + 1u;
+            const uint32_t next_depth = depth + 1u;
+
+            uart_rx_ring[head & UART_RX_RING_MASK] = byte;
+            uart_rx_head = next_head;
+
+            if (next_depth > uart_rx_high_water)
+            {
+                uart_rx_high_water = next_depth;
+            }
+        }
+        else
+        {
+            ++uart_rx_drop_count;
+        }
+    }
+    else if ((status & (USART_SR_PE | USART_SR_FE | USART_SR_NE | USART_SR_ORE)) != 0u)
+    {
+        (void)USART1_DR;
+    }
 }
 
 static void uart_write(const char *text)
@@ -1666,6 +1755,62 @@ static void console_scheduler_workload_test(void)
     }
 }
 
+static void console_uart_rx_stats(void)
+{
+    const uint32_t head = uart_rx_head;
+    const uint32_t tail = uart_rx_tail;
+    const uint32_t depth = head - tail;
+    const uint32_t irq_count = uart_rx_irq_count;
+    const uint32_t byte_count = uart_rx_byte_count;
+    const uint32_t drop_count = uart_rx_drop_count;
+    const uint32_t error_count = uart_rx_error_count;
+    const uint32_t high_water = uart_rx_high_water;
+
+    uart_write("RX_CAPACITY=");
+    uart_write_hex32(UART_RX_RING_CAPACITY);
+    uart_write("\r\n");
+
+    uart_write("RX_IRQ_COUNT=");
+    uart_write_hex32(irq_count);
+    uart_write("\r\n");
+
+    uart_write("RX_BYTE_COUNT=");
+    uart_write_hex32(byte_count);
+    uart_write("\r\n");
+
+    uart_write("RX_DROP_COUNT=");
+    uart_write_hex32(drop_count);
+    uart_write("\r\n");
+
+    uart_write("RX_ERROR_COUNT=");
+    uart_write_hex32(error_count);
+    uart_write("\r\n");
+
+    uart_write("RX_HIGH_WATER=");
+    uart_write_hex32(high_water);
+    uart_write("\r\n");
+
+    uart_write("RX_DEPTH=");
+    uart_write_hex32(depth);
+    uart_write("\r\n");
+
+    if (
+        (irq_count != 0u) &&
+        (byte_count != 0u) &&
+        (drop_count == 0u) &&
+        (error_count == 0u) &&
+        (high_water != 0u) &&
+        (high_water <= UART_RX_RING_CAPACITY) &&
+        (depth <= UART_RX_RING_CAPACITY))
+    {
+        uart_write_line("RX_IRQ_RING_OK");
+    }
+    else
+    {
+        uart_write_line("RX_IRQ_RING_ERR");
+    }
+}
+
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
@@ -1687,6 +1832,10 @@ static void console_execute(void)
         uart_write(" PC13=");
         uart_write_hex32((GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
         uart_write("\r\n");
+    }
+    else if (text_equals(uart_command, "rxstat") != 0)
+    {
+        console_uart_rx_stats();
     }
     else if (text_equals(uart_command, "schedtest") != 0)
     {
@@ -1951,12 +2100,15 @@ void kernel_main(void)
     }
 
     /*
-     * Poll RX continuously for this first RX milestone.
-     * A later USART1 RX interrupt/ring-buffer slice can restore WFI idle
-     * without risking UART overrun at 115200 baud.
+     * USART1 RXNE IRQ is the sole reader of USART1_DR and feeds a 128-byte
+     * single-producer/single-consumer ring.  The console remains on MSP for
+     * this foundation slice and drains the ring through uart_try_getc().
+     * SysTick and USART1 interrupts both wake WFI; no normal-boot task
+     * ownership migration is performed here.
      */
     for (;;)
     {
         console_poll();
+        __asm volatile ("wfi");
     }
 }

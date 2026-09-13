@@ -8,14 +8,17 @@
 .global MemManage_Handler
 .global BusFault_Handler
 .global UsageFault_Handler
+.global g_pfnVectors
 
 .extern kernel_main
 .extern SVC_Handler
 .extern PendSV_Handler
 .extern SysTick_Handler
+.extern USART1_IRQHandler
 .extern fault_capture
 
 .section .isr_vector, "a", %progbits
+g_pfnVectors:
 .word _estack
 .word Reset_Handler
 .word NMI_Handler
@@ -32,6 +35,12 @@
 .word 0
 .word PendSV_Handler       /* PendSV */
 .word SysTick_Handler      /* SysTick */
+
+/* STM32F103 medium-density external IRQs 0..36. */
+.rept 37
+.word Default_Handler
+.endr
+.word USART1_IRQHandler    /* IRQ37: USART1 */
 
 .section .text.Reset_Handler, "ax", %progbits
 .thumb_func

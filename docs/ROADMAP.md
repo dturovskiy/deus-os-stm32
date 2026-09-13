@@ -44,15 +44,29 @@ Stack-analysis rule:
 Scheduler work still open:
 
 - [x] 512-byte stack validated for the exact tested frozen OLED render/present PSP workload.
+- [x] Production ownership/stack-budget decision audit:
+  - full current console estimate `524 + 64 = 588 bytes`
+  - 512-byte full-console PSP stack rejected
+  - active nested scheduler diagnostics rejected until lifecycle separation
+  - MSP runtime budget remains separate.
+- [x] USART1 RX IRQ/ring-buffer prerequisite:
+  - IRQ37 sole `USART1_DR` reader
+  - 128-byte SPSC ring
+  - existing `uart_try_getc()` consumer
+  - WFI idle restored
+  - observed hardware high-water `29 / 128`, zero drops/errors
+  - exact `+167` IRQ/byte deltas across four burst rounds and fresh reset.
 - [ ] explicit production task ownership model
+- [x] USART1 RX IRQ + 128-byte ring-buffer foundation with real backlog/no-loss proof
+- [ ] kernel/MSP runtime high-water / guard proof
 - [ ] console-task PSP stack budget if console ownership migrates
-- [ ] kernel/MSP stack budget
+- [ ] production scheduler diagnostic isolation / lifecycle
 - [ ] normal boot task migration
-- [ ] idle task / steady-state scheduler ownership
+- [ ] idle/wait model / steady-state scheduler ownership
 - [ ] `sleep()`
 - [ ] priorities
 
-Next active boundary: **production task ownership and stack-budget decision** using the accepted runtime evidence, followed by separate console/MSP proofs as needed. Normal-boot migration remains deferred until those decisions are explicit.
+Production ownership decision is complete: direct normal-boot migration is blocked by separate console-stack, scheduler-lifecycle, and MSP-budget requirements. USART1 polling RX was the first prerequisite and is now replaced by hardware-accepted IRQ/ring receive. Next active boundary: **MSP runtime high-water / guard instrumentation**. Normal-boot migration remains deferred.
 <!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 
 ## Phase 0 - Boot baseline

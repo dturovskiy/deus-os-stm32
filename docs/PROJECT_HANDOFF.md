@@ -10,33 +10,33 @@ This section supersedes older “current state”, “exact next boundary”, TX
 ```text
 Root:                     D:\Projects\STM32\OS
 Branch:                   main
-Published HEAD:           4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c
-origin/main:               4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c
-Current acceptance commit: pending
+Published HEAD:           8f6b922a7d2e55abc3133702e7571057f995da5d
+origin/main:               8f6b922a7d2e55abc3133702e7571057f995da5d
+Published subject:        feat: add substantive PSP workload
+Current acceptance commit: pending for USART1 RX IRQ/ring-buffer slice
 ```
 
-Current hardware-accepted source change set:
+Current hardware-accepted uncommitted source change set:
 
 ```text
- M include/kernel/scheduler.h
  M src/kernel.c
- M src/kernel/scheduler.c
+ M src/startup.s
 ```
 
 Exact hardware-accepted source hashes:
 
 ```text
 src/kernel.c
-333BF32AE49D34FFC041B190B3922890DF221CC6403FE5500BFFC6E1D58477BA
+B12907DEF86EA3FCDA7EA87F98253BE3FF5CFAABB83CF683A7EB9C444A0F5A85
+
+src/startup.s
+8FDC6EC76F50D6C0B9511603565A270A829ACDCDC49765E5517B691459ACC1F0
 
 include/kernel/scheduler.h
 CA39ABBED035511E2F460C015C72B2AA4D85DAAA88DFE722C9D3B71835A0F4E2
 
 src/kernel/scheduler.c
 BCBBBC33DE74310F87053D0257FB071890CFD2824EEDCB9B66D03F10AF25AD1A
-
-src/startup.s
-DBAAF4FB8B98B3B114C3F4D8A7ABAEAA3B8B5C6006BDC816D91CA5073B70B90D
 ```
 
 ### Current hardware
@@ -51,7 +51,7 @@ DBAAF4FB8B98B3B114C3F4D8A7ABAEAA3B8B5C6006BDC816D91CA5073B70B90D
 
 The accepted OLED styling/geometry remains frozen and authoritative in `docs/OLED_UI_ACCEPTED_BASELINE.md`.
 
-Physical output after the latest accepted hardware gate:
+Physical output after the latest hardware gate:
 
 ```text
 DEUS OS
@@ -59,126 +59,108 @@ BOOT OK
 READY
 ```
 
-### Accepted scheduler/runtime state
-
-Published milestones:
+### Published scheduler/runtime milestones
 
 - Slice 9A foundation: `1a57f79cda42674219e774900ce07a0da8fedaf4`.
 - Slice 9B cooperative activation: `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
 - PendSV preemption: `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
 - Stack canary/high-water telemetry: `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
+- Substantive PSP workload: `8f6b922a7d2e55abc3133702e7571057f995da5d`.
 
-Current command-gated substantive PSP workload is hardware + physical accepted and awaiting its acceptance commit.
+Substantive workload accepted sizing:
 
-Runtime model:
+- frozen OLED task: `328 / 512 bytes`, measured free margin `184 bytes`
+- CPU peer: `80 / 512 bytes`, measured free margin `432 bytes`
+- PendSV switches `124..126`
+- 34 complete accepted workload runs
+- canaries intact in every accepted run.
 
-- two static TCBs
-- two static task stacks, exactly `512 bytes` each
-- task Thread mode on PSP
-- Handler mode on MSP
-- SVC start/yield/exit path retained
-- SysTick/PendSV preemption retained
-- `schedtest -> SCHED_FOUNDATION_OK`
-- `schedcoop -> SCHED_COOP_OK`
-- `schedpreempt -> SCHED_PREEMPT_OK`
-- `schedstack -> SCHED_STACK_WATER_OK`
-- `schedworkload -> SCHED_WORKLOAD_OK`.
+Do not treat the `.su` direct-call-chain estimate as a conservative upper bound; task 0 measured `44 bytes` above its source-build estimate.
 
-Substantive workload:
+### Production ownership decision
 
-- task 0: frozen OLED runtime full render/present on PSP
-- task 1: CPU-only preemption peer
-- task 1 has no UART/I2C/OLED calls and no voluntary yield
-- public `scheduler_start_preemptive()` wrapper added
-- read-only PendSV switch-count query added.
+The read-only ownership/stack-budget audit passed on published HEAD `8f6b922...` and established:
 
-Static/feasibility evidence:
+- normal boot Thread execution is still MSP `kernel_main()` / console
+- scheduler lifecycle is a global run-to-completion host launcher
+- scheduler blocked/sleep/wake states are absent
+- scheduler self-tests reinitialize global scheduler state
+- active-production nested scheduler diagnostics are unsafe until separated
+- full current console linked feasibility estimate: `524 bytes`
+- plus 64-byte architecture context reserve: `588 bytes`
+- direct 512-byte full-console PSP migration is rejected
+- kernel/MSP runtime stack budget remains unproven.
 
-- planning `oled_runtime_ui_show()` estimate: `212 + 64 = 276 bytes`; margin `236 bytes`
-- workload task-0 source-build estimate: `220 + 64 = 284 bytes`; margin `228 bytes`
-- workload task-1 source-build estimate: `12 + 64 = 76 bytes`; margin `436 bytes`.
+The audit selected USART1 RX IRQ/ring buffering as the first prerequisite.
 
-Authoritative runtime evidence:
+### USART1 RX IRQ / ring-buffer hardware acceptance
 
-- task 0 high-water: `328 / 512 bytes`
-- task 0 measured free margin: `184 bytes`
-- task 1 high-water: `80 / 512 bytes`
-- task 1 measured free margin: `432 bytes`
-- PendSV switch count: `124..126`
-- workload UI result: PASS every accepted run
-- peer overlap: PASS every accepted run
-- both task canaries intact every accepted run
-- first workload PASS
-- 32/32 workload stress commands PASS
-- final workload PASS
-- total accepted workload commands: `34`
-- 4/4 return-to-kernel checkpoint pings PASS
-- scheduler/UART/I2C/OLED regressions PASS
-- final exact target identity PASS.
+Architecture:
+
+```text
+USART1 RXNE
+  -> USART1_IRQHandler (IRQ37; sole USART1_DR reader)
+  -> 128-byte SPSC ring
+  -> existing uart_try_getc()
+  -> existing MSP-owned console_poll()
+```
+
+Additional behavior:
+
+- USART1 NVIC priority `0x80`
+- `WFI` idle restored
+- `rxstat -> RX_IRQ_RING_OK`
+- production scheduler is still not started on normal boot
+- normal-boot task ownership is unchanged.
 
 Candidate identity:
 
 ```text
-Binary:        14292 bytes
-SHA-256:       8C124B0954D65E0F698AD1C62525E72FC4F569D5133EF8F0CE67A8297A80A2CF
-.bss:          1952 bytes
-_ebss:         0x200007A0
-SRAM headroom: 18528 bytes
+Binary:        15084 bytes
+SHA-256:       E25DC54C149EB9DA7B26F5378868DAA790847A1C4C7B4CFB970F294CFB738EFB
+.bss:          2112 bytes
+_ebss:         0x20000840
+SRAM headroom: 18368 bytes
+fault_record:  0x20000320
+USART1 IRQ own static frame: 12 bytes
 ```
 
-### Boot-matcher recovery
+Hardware burst proof:
 
-Hardware v1 produced exactly two false results:
+- four rounds of `32 x ping`:
+  - exact 32/32 `PONG` responses each round
+  - exact `+167` USART1 IRQ delta per round including following `rxstat`
+  - exact `+167` RX byte delta per round
+- observed ring high-water `29 / 128 bytes`
+- RX drops `0`
+- RX errors `0`
+- ring depth `0` after every accepted burst
+- fresh reset:
+  - exact IRQ count `167`
+  - exact byte count `167`
+  - high-water `29`
+  - drops/errors `0`
+  - depth `0`.
+- initial/final boot PASS
+- scheduler foundation/cooperative/preemptive/stack/workload regressions PASS
+- health PASS
+- I2C/OLED regressions PASS
+- final exact flash identity PASS
+- runtime failure count `0`
+- physical OLED PASS.
 
-```text
-InitialBoot
-FinalBoot
-```
+### Current unresolved gates
 
-No workload, scheduler, I2C/OLED, health, canary, overlap, readback, or source-identity runtime gate failed.
+The RX transport blocker is closed. Normal-boot migration is still deferred because these are separate unresolved proofs:
 
-Root cause:
-
-- v1 harness expected stale `FAULTREC=0x20000270`
-- linked `fault_record` in this candidate is `0x20000284`.
-
-Recovery v2:
-
-- bound the exact v1 log by SHA-256
-- proved those were the only two false results
-- reinterpreted both captured v1 boot frames with `FAULTREC=0x20000284`: PASS
-- verified exact target candidate before runtime without reflashing
-- passed a fresh corrected boot with the accepted 20-byte stale prefix
-- passed fresh `schedworkload`: task 0 `328 bytes`, task 1 `80 bytes`, switches `124`
-- passed cooperative/preemptive/stack/I2C/health/UI checks
-- passed a second fresh corrected boot at index 0
-- passed final exact candidate readback
-- `RUNTIME_FAILURE_COUNT=0`.
-
-### Stack-sizing interpretation
-
-The task-0 runtime high-water (`328 bytes`) is `44 bytes` above the `.su`-based source-build estimate (`284 bytes`). Do not treat the current direct-call-chain static calculation as a conservative upper bound.
-
-Use this hierarchy:
-
-1. runtime watermark/canary evidence for authoritative sizing
-2. static call-chain analysis as feasibility/sanity evidence
-3. explicit margin and workload scope
-4. separate proof for different task ownership or stack domains.
-
-For the exact tested frozen OLED render/present workload, a 512-byte PSP stack is hardware-validated with `184 bytes` (35.9%) measured margin.
-
-This does not yet prove:
-
-- a future console task stack
-- arbitrary application/OLED workloads
-- kernel/MSP stack sizing.
-
-Normal boot task migration remains deferred. Console/OLED steady-state ownership remains on the existing kernel/MSP path.
+1. runtime MSP high-water / guard budget
+2. console PSP workload sizing if console ownership migrates
+3. production scheduler lifecycle and scheduler-diagnostic isolation
+4. future wait/block/wake or equivalent event/idle model for persistent tasks.
 
 ### Exact next boundary
 
-Finalize the production task ownership and stack-budget decision using the accepted runtime evidence. If console ownership will move to a PSP task, measure that workload separately. Establish a separate kernel/MSP stack budget. Then design the normal-boot migration gate with explicit rollback and acceptance criteria; do not migrate steady-state ownership in the same step as unresolved stack sizing.
+Implement **MSP runtime high-water/guard instrumentation** without changing normal-boot task ownership. Exercise it under representative USART1 burst traffic, SysTick, SVC/PendSV scheduler diagnostics, health, I2C and OLED activity, then accept an explicit measured MSP margin before proceeding to console PSP sizing or steady-state scheduler migration.
 
 ### Acceptance lifecycle
 

@@ -11,6 +11,11 @@ The current hardware-accepted baseline is:
 - bidirectional USART1 console at 115200 8N1:
   - A9 = TX
   - A10 = RX
+  - RX ownership is now interrupt-driven: `USART1_IRQHandler` (IRQ37) is the sole reader of `USART1_DR`
+  - RX bytes enter a 128-byte single-producer/single-consumer ring
+  - the existing `uart_try_getc()` remains the consumer API used by the MSP-owned console
+  - normal idle uses `WFI` again because SysTick/USART1 IRQs wake the core
+  - `rxstat -> RX_IRQ_RING_OK`
   - `ping -> PONG`
   - `health`, `fault`, `i2cscan`, OLED regression commands
   - `schedtest -> SCHED_FOUNDATION_OK`
@@ -24,53 +29,63 @@ The current hardware-accepted baseline is:
   - 512-byte framebuffer
   - frozen accepted status bar + retained 21x3 console
   - dirty-page presentation integrated into the runtime UI lifecycle.
-- Slice 8 runtime UI boot lifecycle accepted and published:
-  - acceptance commit `4217865403d9725707f4c17e572317caf7fe733f`.
-- Slice 9A scheduler foundation accepted and published:
-  - acceptance commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
-- Slice 9B cooperative scheduler activation accepted and published:
-  - acceptance commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
-- PendSV timer-driven preemption accepted and published:
-  - acceptance commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`
-  - real timer-driven preemption passed across `34` complete runs.
-- Scheduler stack canary/high-water instrumentation accepted and published:
-  - acceptance commit `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`
-  - task stacks remain exactly `2 x 512 bytes`
-  - synthetic cooperative/preemptive task paths measured `72 bytes`
-  - synthetic observed free margin `440 bytes`
-  - canary intact across `34` `schedstack` commands / `68` scheduler runs.
-- Command-gated substantive PSP workload is now hardware-accepted and awaiting its acceptance commit:
-  - task 0 executes the frozen OLED runtime full render/present path on PSP
-  - task 1 is a CPU-only preemption peer with no UART/I2C/OLED access and no voluntary yield
-  - public `scheduler_start_preemptive()` wrapper added
-  - read-only PendSV switch-count telemetry added
-  - candidate binary `14292 bytes`
-  - SHA-256 `8C124B0954D65E0F698AD1C62525E72FC4F569D5133EF8F0CE67A8297A80A2CF`
-  - `.bss=1952 bytes`; `_ebss=0x200007A0`; SRAM headroom `18528 bytes`
-  - planning feasibility estimate for `oled_runtime_ui_show()`: `212 + 64 = 276 bytes`
-  - source-build feasibility estimate for workload task 0: `220 + 64 = 284 bytes`
-  - source-build feasibility estimate for workload task 1: `12 + 64 = 76 bytes`
-  - real hardware task 0 high-water: `328 / 512 bytes`; runtime margin `184 bytes`
-  - real hardware task 1 high-water: `80 / 512 bytes`; runtime margin `432 bytes`
-  - PendSV switch count observed `124..126` per workload run
-  - `WORKLOAD_UI_RESULT=1`, `WORKLOAD_PEER_OVERLAP=1`, and both canaries intact for every accepted workload run
-  - first real workload PASS, 32/32 stress PASS, final workload PASS: `34` complete workload runs
-  - legacy `schedtest`, `schedcoop`, `schedpreempt`, `schedstack`, UART, I2C, and OLED regressions PASS
-  - hardware v1 had exactly two false-negative boot checks because the harness still expected stale `FAULTREC=0x20000270`
-  - linked `fault_record` is `0x20000284`; recovery v2 proved both captured v1 boot frames valid and passed two fresh corrected boot checks without reflashing
-  - final exact target readback PASS
-  - physical frozen OLED output confirmed unchanged:
-    - `DEUS OS`
-    - `BOOT OK`
-    - `READY`.
 
-The `.su` direct-call-chain feasibility estimate is not a conservative stack upper bound for this workload: task 0 measured `328 bytes` at runtime versus the `284-byte` source-build estimate. Runtime canary/high-water evidence is therefore authoritative for stack sizing; static call-chain analysis remains a feasibility/sanity tool unless strengthened.
+Published scheduler/runtime milestones:
 
-For the exact tested frozen OLED render/present workload, a 512-byte PSP stack has `184 bytes` (35.9%) measured free margin. This does not yet prove a future console task, arbitrary OLED workload, or kernel/MSP stack budget.
+- Slice 8 runtime UI boot lifecycle: `4217865403d9725707f4c17e572317caf7fe733f`.
+- Slice 9A scheduler foundation: `1a57f79cda42674219e774900ce07a0da8fedaf4`.
+- Slice 9B cooperative scheduler activation: `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
+- PendSV timer-driven preemption: `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
+- Scheduler stack canary/high-water instrumentation: `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
+- Substantive command-gated PSP workload: `8f6b922a7d2e55abc3133702e7571057f995da5d`.
 
-Normal boot task migration remains deferred; console/OLED steady-state ownership still uses the existing kernel/MSP path.
+Accepted substantive PSP workload evidence remains authoritative:
 
-Next scheduler boundary: define the production task ownership/stack budget using the accepted workload evidence, separately prove any console-task and MSP/kernel stack requirements, then design the normal-boot migration gate. Do not combine that design decision with an unreviewed steady-state migration.
+- exact frozen OLED render/present workload task: `328 / 512 bytes`, measured free margin `184 bytes`
+- CPU-only peer: `80 / 512 bytes`, measured free margin `432 bytes`
+- PendSV switch count observed `124..126`
+- `34` complete workload runs
+- both task canaries intact in every accepted run
+- static direct-call-chain calculation is a feasibility estimate, not a conservative upper bound.
+
+The production-ownership decision audit then proved that direct normal-boot migration is still blocked:
+
+- current scheduler is a global run-to-completion host launcher
+- scheduler diagnostic self-tests reinitialize global scheduler state and are unsafe inside an active production scheduler
+- scheduler blocked/sleep/wake states are absent
+- full current console linked feasibility estimate is `524 bytes`; with the 64-byte architecture context reserve this is `588 bytes`, so a 512-byte console PSP stack is rejected
+- kernel/MSP runtime stack budget is still unproven.
+
+The first prerequisite from that decision is now hardware-accepted: USART1 RX IRQ + ring-buffer foundation.
+
+RX IRQ/ring accepted candidate:
+
+- source delta: `src/kernel.c`, `src/startup.s`
+- candidate binary: `15084 bytes`
+- SHA-256: `E25DC54C149EB9DA7B26F5378868DAA790847A1C4C7B4CFB970F294CFB738EFB`
+- `.bss=2112 bytes`; `_ebss=0x20000840`; SRAM headroom `18368 bytes`
+- vector table contains USART1 at external IRQ37
+- linked `fault_record=0x20000320`
+- USART1 IRQ own static frame: `12 bytes`
+- USART1 NVIC priority: `0x80`
+- hardware burst proof:
+  - four rounds of `32 x ping` produced all `32/32` exact `PONG` responses per round
+  - each round plus the following `rxstat` produced exactly `+167` IRQs and `+167` received bytes
+  - observed ring high-water: `29 / 128 bytes`
+  - RX drops: `0`
+  - RX errors: `0`
+  - depth after every accepted burst: `0`
+  - fresh-reset burst repeated the exact `167` IRQ / `167` byte result with high-water `29`
+- scheduler, health, I2C, OLED and substantive PSP workload regressions remained PASS
+- final exact target readback matched the accepted candidate
+- physical frozen OLED output remained:
+  - `DEUS OS`
+  - `BOOT OK`
+  - `READY`.
+
+Normal boot task migration remains deferred. The console is still MSP-owned and the production scheduler is not started during normal boot.
+
+The next controlled boundary is **MSP runtime high-water/guard instrumentation**. Handler/MSP sizing must be measured separately before steady-state scheduler ownership is migrated; console PSP sizing, scheduler diagnostic isolation, and a future wait/block model remain separate later gates.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_13 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.
@@ -108,7 +123,7 @@ Built locally:
 - [x] Clock configuration
 - [x] SysTick
 - [x] Fault diagnostics
-- [x] USART1 A9/A10 bidirectional polling command/diagnostic console
+- [x] USART1 A9/A10 bidirectional IRQ/ring-buffer command/diagnostic console
 - [x] Stable 1 ms kernel time API with wraparound-safe comparisons
 - [x] USART1 RX / bidirectional command console
 - [x] `uptime` kernel introspection command
@@ -122,7 +137,10 @@ Built locally:
 - [x] Scheduler foundation: static TCBs/stacks + synthetic initial task frames
 - [x] Cooperative scheduler activation: PSP tasks + SVC start/yield/exit
 - [x] PendSV context switching + command-gated SysTick preemption proof
-- [ ] Task stack budget / high-water validation before normal-boot task migration
+- [x] Representative PSP task high-water validation for the accepted frozen OLED workload
+- [x] USART1 RX IRQ + 128-byte ring-buffer foundation with hardware burst proof
+- [ ] Kernel/MSP runtime high-water / guard proof
+- [ ] Console PSP stack budget and production scheduler ownership migration
 - [ ] IPC primitives
 - [ ] ESP8266 networking
 

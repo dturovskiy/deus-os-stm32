@@ -3,7 +3,61 @@
 <!-- BEGIN STM32_OS_CHANGELOG_2026_09_13 -->
 ## 2026-09-13
 
-### Hardware accepted — substantive preemptive PSP OLED workload
+### Hardware + physical accepted — USART1 RX IRQ / 128-byte ring-buffer foundation
+
+- Replaced direct polling reads of `USART1_DR` with IRQ-driven receive ownership:
+  - `USART1_IRQHandler` is the sole `USART1_DR` reader
+  - external IRQ37 is wired in the real vector table
+  - RXNE interrupt enabled; USART1 NVIC priority `0x80`.
+- Added a 128-byte single-producer/single-consumer RX ring.
+- Kept the existing `uart_try_getc()` API as the consumer path, so the console remains MSP-owned in this slice.
+- Restored `WFI` idle in `kernel_main()`; SysTick and USART1 interrupts wake the core.
+- Added read-only `rxstat -> RX_IRQ_RING_OK` telemetry:
+  - capacity
+  - IRQ count
+  - received byte count
+  - drop count
+  - error count
+  - high-water
+  - current depth.
+- Accepted source delta is exactly `src/kernel.c` + `src/startup.s`.
+- Candidate:
+  - `15084 bytes`
+  - SHA-256 `E25DC54C149EB9DA7B26F5378868DAA790847A1C4C7B4CFB970F294CFB738EFB`
+  - `.bss=2112 bytes`
+  - `_ebss=0x20000840`
+  - SRAM headroom `18368 bytes`
+  - linked `fault_record=0x20000320`
+  - USART1 IRQ own static frame `12 bytes`.
+- Hardware burst proof:
+  - `4 x 32` `ping` commands: every round returned exact `32/32` `PONG`
+  - each burst plus its `rxstat` snapshot produced exact `+167` IRQ and `+167` byte deltas
+  - observed RX ring high-water `29 / 128 bytes`
+  - zero drops
+  - zero RX errors
+  - depth returned to zero after every accepted burst
+  - fresh reset repeated exact `167` IRQ / `167` bytes with high-water `29`.
+- Scheduler, substantive PSP workload, health, I2C and full OLED regressions remained PASS.
+- Final flash readback exactly matched the accepted candidate.
+- Physical OLED remained `DEUS OS / BOOT OK / READY`.
+- This slice does **not** start the production scheduler or migrate the normal console to PSP.
+
+### Architecture decision after substantive PSP workload
+
+- Substantive PSP workload is published as `8f6b922a7d2e55abc3133702e7571057f995da5d`.
+- Direct normal-boot migration was rejected until prerequisite ownership/stack issues are separated.
+- The full current console linked feasibility estimate is `524 bytes`; with the 64-byte context reserve it is `588 bytes`, so a 512-byte console PSP stack is not accepted.
+- Scheduler self-tests currently reinitialize global scheduler state and cannot safely run nested inside an active production scheduler.
+- Kernel/MSP runtime stack budget remains unproven.
+- USART1 polling RX was selected as the first prerequisite and is now closed by the IRQ/ring-buffer hardware acceptance above.
+
+### Next
+
+- Add runtime MSP high-water/guard instrumentation and obtain hardware evidence under RX bursts, scheduler diagnostics, OLED/I2C activity, and exception-handler traffic.
+- Keep console ownership on MSP until console PSP sizing and production scheduler lifecycle/diagnostic isolation have their own acceptance gates.
+- Keep normal-boot task migration deferred.
+
+### Accepted / published — substantive preemptive PSP OLED workload
 
 - Added command-gated `schedworkload -> SCHED_WORKLOAD_OK`.
 - Added public `scheduler_start_preemptive()` wrapper and read-only PendSV switch-count telemetry.

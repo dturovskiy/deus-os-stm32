@@ -33,7 +33,7 @@ This section is authoritative for the current execution boundary and supersedes 
 - [x] Synthetic observed free margin `440 bytes`.
 - [x] Canary intact across `34` stack-water commands / `68` scheduler runs.
 
-### Substantive PSP workload — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
+### Substantive PSP workload — ACCEPTED / PUBLISHED
 
 - [x] `schedworkload -> SCHED_WORKLOAD_OK`.
 - [x] Workload task 0 runs frozen OLED runtime full render/present on PSP.
@@ -64,6 +64,7 @@ This section is authoritative for the current execution boundary and supersedes 
 - [x] SHA-256 `8C124B0954D65E0F698AD1C62525E72FC4F569D5133EF8F0CE67A8297A80A2CF`.
 - [x] `.bss=1952 bytes`; `_ebss=0x200007A0`; SRAM headroom `18528 bytes`.
 - [x] Normal boot / console / OLED steady-state scheduler migration remains deferred.
+- [x] Substantive PSP workload acceptance commit published as `8f6b922a7d2e55abc3133702e7571057f995da5d`.
 
 ### Stack-analysis rule learned from this gate
 
@@ -84,9 +85,46 @@ Immediately before the acceptance commit, the exact source delta is:
  M src/kernel/scheduler.c
 ```
 
+### Production ownership decision — ACCEPTED
+
+- [x] Current scheduler lifecycle identified as a global run-to-completion host launcher.
+- [x] Scheduler wait/block/sleep states confirmed absent.
+- [x] Scheduler self-tests confirmed to reinitialize global scheduler state.
+- [x] Active-production nested scheduler diagnostics classified unsafe until separated.
+- [x] Full current console linked feasibility estimate: `524 bytes`.
+- [x] Full current console + 64-byte context reserve: `588 bytes`.
+- [x] 512-byte PSP stack rejected for the full current console surface.
+- [x] Static method remains feasibility-only after prior observed `44-byte` underprediction.
+- [x] Normal-boot migration remained blocked.
+- [x] First prerequisite selected: USART1 RX IRQ/ring-buffer foundation.
+
+### USART1 RX IRQ / ring-buffer foundation — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
+
+- [x] `USART1_IRQHandler` is the sole `USART1_DR` reader.
+- [x] Vector table extended through external IRQ37 and linked USART1 handler verified.
+- [x] RXNE interrupt enabled; USART1 NVIC priority `0x80`.
+- [x] 128-byte SPSC RX ring added.
+- [x] Existing `uart_try_getc()` retained as ring consumer API.
+- [x] MSP-owned console retained; production scheduler not started.
+- [x] `WFI` idle restored.
+- [x] `rxstat -> RX_IRQ_RING_OK` added.
+- [x] Candidate `15084 bytes`, SHA-256 `E25DC54C149EB9DA7B26F5378868DAA790847A1C4C7B4CFB970F294CFB738EFB`.
+- [x] USART1 IRQ static frame `12 bytes`; SRAM headroom `18368 bytes`.
+- [x] Four `32 x ping` burst rounds returned exact `32/32` PONG each.
+- [x] Every round produced exact `+167` IRQ and `+167` byte deltas including the telemetry command.
+- [x] Observed ring high-water `29 / 128 bytes`.
+- [x] Zero RX drops and zero RX errors.
+- [x] Ring depth returned to zero after every accepted burst.
+- [x] Fresh-reset burst repeated exact `167` IRQ / `167` byte counters and high-water `29`.
+- [x] Scheduler/workload/health/I2C/OLED regressions passed.
+- [x] Final exact flash identity passed.
+- [x] Physical OLED remained `DEUS OS / BOOT OK / READY`.
+- [x] Normal-boot task migration remains deferred.
+- [x] Full console 512-byte PSP stack remains not accepted.
+
 ### Next active scheduler boundary
 
-Finalize the production task ownership/stack budget from the accepted runtime evidence. Separately prove console-task and MSP/kernel stack requirements as needed. Only then design/activate normal-boot scheduler ownership; do not combine that migration with unresolved stack sizing.
+Add **MSP runtime high-water/guard instrumentation** and obtain hardware evidence under representative IRQ, scheduler-diagnostic, UART burst, I2C and OLED activity. Keep console PSP sizing, diagnostic isolation/production scheduler lifecycle, and normal-boot ownership migration as later separate gates.
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
