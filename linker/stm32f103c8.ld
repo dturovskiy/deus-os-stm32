@@ -7,6 +7,10 @@ MEMORY
 }
 
 _estack = ORIGIN(RAM) + LENGTH(RAM);
+_msp_stack_size = 0x800;
+_msp_stack_guard_size = 0x40;
+_smsp_stack = _estack - _msp_stack_size;
+_emsp_guard = _smsp_stack + _msp_stack_guard_size;
 
 SECTIONS
 {
@@ -48,4 +52,19 @@ SECTIONS
         . = ALIGN(4);
         _ebss = .;
     } > RAM
+
+    .msp_stack _smsp_stack (NOLOAD) :
+    {
+        . = ALIGN(8);
+        _msp_stack_section_start = .;
+        . += _msp_stack_size;
+        _emsp_stack = .;
+    } > RAM
+
+    ASSERT(_msp_stack_section_start == _smsp_stack,
+           "MSP stack section placement mismatch")
+    ASSERT(_emsp_stack == _estack,
+           "MSP stack must end at _estack")
+    ASSERT(_ebss <= _smsp_stack,
+           "RAM overflow: .bss overlaps reserved MSP stack")
 }

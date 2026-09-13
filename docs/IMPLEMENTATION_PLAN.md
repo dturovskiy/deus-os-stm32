@@ -24,7 +24,7 @@ The production ownership decision audit established:
 - full current console linked estimate: `524 bytes`
 - console + 64-byte architecture context reserve: `588 bytes`
 - therefore a 512-byte PSP stack is rejected for the full current console command surface
-- kernel/MSP runtime sizing remains a separate unproven requirement.
+- kernel/MSP runtime sizing was a separate requirement and is now closed by Stage C3.2 below.
 
 Stage C3.1 — USART1 RX IRQ/ring-buffer prerequisite — hardware + physical accepted:
 
@@ -48,16 +48,35 @@ Stage C3.1 — USART1 RX IRQ/ring-buffer prerequisite — hardware + physical ac
 - scheduler/workload/health/I2C/OLED regression preserved
 - physical frozen OLED remained `DEUS OS / BOOT OK / READY`.
 
-Stage C3.2 — next:
+Stage C3.2 — MSP runtime high-water / guard — hardware + physical accepted:
 
-- add MSP runtime watermark/canary/guard instrumentation without migrating Thread ownership
-- measure MSP high-water under representative SysTick, USART1 burst, SVC/PendSV scheduler diagnostics, I2C/OLED and health activity
-- define explicit measured margin and acceptance threshold
-- keep console on MSP during this proof.
+- dedicated MSP reservation `2048 bytes` at `0x20004800..0x20005000`
+- `64-byte` bottom guard/canary
+- `1984-byte` measurable watermark capacity
+- reset assembly initializes guard + watermark before first `BL kernel_main`
+- read-only `mspstat -> MSP_STACK_OK`
+- candidate `15620 bytes`
+- SHA-256 `C15634184CAB7BA3C5CE503773EB7BA4BB45DDB4B32A3D399F6BE587C518D907`
+- initial MSP use `400 bytes`; margin `1584 bytes`
+- accepted stress high-water `596 bytes`; minimum margin `1388 bytes`
+- acceptance floor `512 bytes`
+- canary intact
+- `12/12` composite pressure rounds passed across OLED status, scheduler preemption, and substantive workload
+- RX pressure high-water `80 / 128 bytes`, zero drops/errors, depth zero
+- fresh reset accepted at `572 bytes` used / `1412 bytes` margin
+- final workload, health, OLED/I2C and exact flash identity passed
+- console remains MSP-owned
+- production scheduler remains inactive during normal boot
+- physical OLED remained `DEUS OS / BOOT OK / READY`.
+
+Stage C3.3 — next:
+
+- prove the console PSP workload stack budget with runtime watermark/canary evidence
+- choose a console task stack size from measured workload evidence, not the rejected 512-byte assumption
+- retain MSP ownership until that sizing gate is accepted.
 
 Later, separate gates are still required for:
 
-- console PSP workload sizing
 - production scheduler lifecycle / diagnostic isolation
 - wait/block/wake or equivalent idle/event semantics
 - normal boot task migration.

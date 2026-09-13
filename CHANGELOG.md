@@ -3,6 +3,47 @@
 <!-- BEGIN STM32_OS_CHANGELOG_2026_09_13 -->
 ## 2026-09-13
 
+### Hardware + physical accepted — MSP runtime high-water / guard foundation
+
+- Reserved the upper `2048 bytes` of SRAM as a dedicated MSP region:
+  - bottom `64 bytes` are the guard/canary area
+  - upper `1984 bytes` are the measurable watermark capacity
+  - `_smsp_stack=0x20004800`
+  - `_emsp_guard=0x20004840`
+  - `_estack=0x20005000`.
+- `Reset_Handler` initializes the MSP guard and watermark before its first `BL kernel_main`, so boot/runtime Thread-mode MSP usage is included in the measurement.
+- Added read-only `mspstat -> MSP_STACK_OK` telemetry:
+  - reserved size
+  - guard size
+  - usable capacity
+  - high-water used bytes
+  - remaining margin
+  - current MSP use
+  - canary state.
+- Accepted source delta is exactly `src/kernel.c` + `src/startup.s` + `linker/stm32f103c8.ld`.
+- Candidate:
+  - `15620 bytes`
+  - SHA-256 `C15634184CAB7BA3C5CE503773EB7BA4BB45DDB4B32A3D399F6BE587C518D907`
+  - MSP reserved `2048 bytes`
+  - MSP usable capacity `1984 bytes`
+  - SRAM gap below MSP reservation `16320 bytes`.
+- Hardware proof:
+  - initial MSP high-water `400 bytes`; margin `1584 bytes`
+  - OLED/I2C regression raised high-water to `568 bytes`
+  - accepted maximum high-water `596 bytes`
+  - minimum observed margin `1388 bytes`
+  - canary remained intact
+  - `12/12` composite nested-pressure rounds passed
+  - pressure classes: `oledstatus`, `schedpreempt`, `schedworkload`
+  - each composite included `16 x ping`
+  - RX ring high-water reached `80 / 128 bytes`
+  - RX drops `0`, errors `0`, depth `0` after accepted composites
+  - fresh-reset MSP pressure accepted at `572 bytes` used / `1412 bytes` margin.
+- Scheduler/workload/health/I2C/OLED regressions remained PASS.
+- Final exact flash readback matched the candidate.
+- Physical OLED remained `DEUS OS / BOOT OK / READY`.
+- Console ownership is still MSP; the production scheduler is still not started during normal boot.
+
 ### Hardware + physical accepted — USART1 RX IRQ / 128-byte ring-buffer foundation
 
 - Replaced direct polling reads of `USART1_DR` with IRQ-driven receive ownership:
@@ -48,14 +89,15 @@
 - Direct normal-boot migration was rejected until prerequisite ownership/stack issues are separated.
 - The full current console linked feasibility estimate is `524 bytes`; with the 64-byte context reserve it is `588 bytes`, so a 512-byte console PSP stack is not accepted.
 - Scheduler self-tests currently reinitialize global scheduler state and cannot safely run nested inside an active production scheduler.
-- Kernel/MSP runtime stack budget remains unproven.
-- USART1 polling RX was selected as the first prerequisite and is now closed by the IRQ/ring-buffer hardware acceptance above.
+- Kernel/MSP runtime stack budget was unproven at the decision-audit boundary.
+- USART1 polling RX was selected as the first prerequisite and is closed by the IRQ/ring-buffer hardware acceptance above.
+- The separate MSP runtime budget prerequisite is now closed by the measured guard/high-water acceptance above.
 
 ### Next
 
-- Add runtime MSP high-water/guard instrumentation and obtain hardware evidence under RX bursts, scheduler diagnostics, OLED/I2C activity, and exception-handler traffic.
-- Keep console ownership on MSP until console PSP sizing and production scheduler lifecycle/diagnostic isolation have their own acceptance gates.
-- Keep normal-boot task migration deferred.
+- Prove the console PSP workload stack budget explicitly; the prior `524 + 64 = 588-byte` feasibility result still rejects a 512-byte full-console PSP stack.
+- Keep console ownership on MSP until that runtime workload-sizing gate passes.
+- Keep production scheduler lifecycle/diagnostic isolation and normal-boot task migration as separate later gates.
 
 ### Accepted / published — substantive preemptive PSP OLED workload
 

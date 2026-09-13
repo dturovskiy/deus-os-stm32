@@ -38,6 +38,7 @@ Published scheduler/runtime milestones:
 - PendSV timer-driven preemption: `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
 - Scheduler stack canary/high-water instrumentation: `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
 - Substantive command-gated PSP workload: `8f6b922a7d2e55abc3133702e7571057f995da5d`.
+- USART1 RX IRQ + 128-byte ring-buffer foundation: `53054e16c5b4dbb54626b0f080c9492629ccb285`.
 
 Accepted substantive PSP workload evidence remains authoritative:
 
@@ -54,7 +55,7 @@ The production-ownership decision audit then proved that direct normal-boot migr
 - scheduler diagnostic self-tests reinitialize global scheduler state and are unsafe inside an active production scheduler
 - scheduler blocked/sleep/wake states are absent
 - full current console linked feasibility estimate is `524 bytes`; with the 64-byte architecture context reserve this is `588 bytes`, so a 512-byte console PSP stack is rejected
-- kernel/MSP runtime stack budget is still unproven.
+- kernel/MSP runtime stack budget was still unproven at that audit boundary.
 
 The first prerequisite from that decision is now hardware-accepted: USART1 RX IRQ + ring-buffer foundation.
 
@@ -83,9 +84,29 @@ RX IRQ/ring accepted candidate:
   - `BOOT OK`
   - `READY`.
 
+The second prerequisite is now hardware- and physically accepted: dedicated MSP runtime high-water/guard instrumentation.
+
+MSP runtime stack proof:
+
+- source delta: `src/kernel.c`, `src/startup.s`, `linker/stm32f103c8.ld`
+- candidate binary: `15620 bytes`
+- SHA-256: `C15634184CAB7BA3C5CE503773EB7BA4BB45DDB4B32A3D399F6BE587C518D907`
+- dedicated MSP reservation: `2048 bytes` at `0x20004800..0x20005000`
+- guard: `64 bytes` at `0x20004800..0x20004840`
+- usable watermark capacity: `1984 bytes`
+- Reset_Handler fills guard + watermark before its first `BL kernel_main`
+- initial measured MSP use: `400 bytes`; margin `1584 bytes`
+- accepted stress high-water: `596 bytes`; minimum measured margin `1388 bytes`
+- MSP canary remained intact
+- `12 / 12` nested-pressure rounds passed across OLED status, PendSV preemption diagnostics, and substantive PSP workload
+- each composite round included `16 x ping`; RX high-water reached `80 / 128 bytes` with zero drops/errors and depth returning to zero
+- fresh-reset pressure proof passed with MSP use `572 bytes`, margin `1412 bytes`
+- final scheduler workload and exact flash readback passed
+- physical frozen OLED remained `DEUS OS / BOOT OK / READY`.
+
 Normal boot task migration remains deferred. The console is still MSP-owned and the production scheduler is not started during normal boot.
 
-The next controlled boundary is **MSP runtime high-water/guard instrumentation**. Handler/MSP sizing must be measured separately before steady-state scheduler ownership is migrated; console PSP sizing, scheduler diagnostic isolation, and a future wait/block model remain separate later gates.
+The next controlled boundary is **console PSP stack-budget foundation**. The current full-console 512-byte PSP size remains rejected; console workload sizing must be proven explicitly before any normal-boot ownership migration. Scheduler diagnostic isolation/lifecycle and a future wait/block model remain separate later gates.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_13 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.
@@ -139,7 +160,7 @@ Built locally:
 - [x] PendSV context switching + command-gated SysTick preemption proof
 - [x] Representative PSP task high-water validation for the accepted frozen OLED workload
 - [x] USART1 RX IRQ + 128-byte ring-buffer foundation with hardware burst proof
-- [ ] Kernel/MSP runtime high-water / guard proof
+- [x] Kernel/MSP runtime high-water / guard proof
 - [ ] Console PSP stack budget and production scheduler ownership migration
 - [ ] IPC primitives
 - [ ] ESP8266 networking

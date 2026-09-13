@@ -10,15 +10,16 @@ This section supersedes older “current state”, “exact next boundary”, TX
 ```text
 Root:                     D:\Projects\STM32\OS
 Branch:                   main
-Published HEAD:           8f6b922a7d2e55abc3133702e7571057f995da5d
-origin/main:               8f6b922a7d2e55abc3133702e7571057f995da5d
-Published subject:        feat: add substantive PSP workload
-Current acceptance commit: pending for USART1 RX IRQ/ring-buffer slice
+Published HEAD:           53054e16c5b4dbb54626b0f080c9492629ccb285
+origin/main:               53054e16c5b4dbb54626b0f080c9492629ccb285
+Published subject:        feat: add USART1 RX IRQ ring buffer
+Current acceptance commit: pending for MSP runtime high-water/guard slice
 ```
 
 Current hardware-accepted uncommitted source change set:
 
 ```text
+ M linker/stm32f103c8.ld
  M src/kernel.c
  M src/startup.s
 ```
@@ -27,10 +28,13 @@ Exact hardware-accepted source hashes:
 
 ```text
 src/kernel.c
-B12907DEF86EA3FCDA7EA87F98253BE3FF5CFAABB83CF683A7EB9C444A0F5A85
+EB193B1EF33D6F7DFF3DB766B2EB6EAAA760065FE9277700FE23BE883424DF60
 
 src/startup.s
-8FDC6EC76F50D6C0B9511603565A270A829ACDCDC49765E5517B691459ACC1F0
+048C4D3604C3922F1491A6AC475609DE3593C41622648386D391F42688082E17
+
+linker/stm32f103c8.ld
+43E3269205CA83CFBC98D7664B86DB7293CF634875BF770ED714E7D6AE52BC2A
 
 include/kernel/scheduler.h
 CA39ABBED035511E2F460C015C72B2AA4D85DAAA88DFE722C9D3B71835A0F4E2
@@ -66,6 +70,7 @@ READY
 - PendSV preemption: `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
 - Stack canary/high-water telemetry: `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
 - Substantive PSP workload: `8f6b922a7d2e55abc3133702e7571057f995da5d`.
+- USART1 RX IRQ/ring-buffer foundation: `53054e16c5b4dbb54626b0f080c9492629ccb285`.
 
 Substantive workload accepted sizing:
 
@@ -89,7 +94,7 @@ The read-only ownership/stack-budget audit passed on published HEAD `8f6b922...`
 - full current console linked feasibility estimate: `524 bytes`
 - plus 64-byte architecture context reserve: `588 bytes`
 - direct 512-byte full-console PSP migration is rejected
-- kernel/MSP runtime stack budget remains unproven.
+- kernel/MSP runtime stack budget was unproven at that decision-audit boundary.
 
 The audit selected USART1 RX IRQ/ring buffering as the first prerequisite.
 
@@ -149,18 +154,79 @@ Hardware burst proof:
 - runtime failure count `0`
 - physical OLED PASS.
 
+### MSP runtime high-water / guard hardware acceptance
+
+Memory layout:
+
+```text
+0x20005000  _estack / MSP top
+     |
+     | 1984-byte measurable watermark capacity
+     |
+0x20004840  _emsp_guard
+     | 64-byte guard/canary
+0x20004800  _smsp_stack
+     |
+     | 16320-byte gap below reserved MSP region
+     |
+0x20000840  _ebss
+```
+
+Instrumentation behavior:
+
+- `Reset_Handler` fills the guard and watermark before its first `BL kernel_main`
+- read-only `mspstat -> MSP_STACK_OK`
+- normal boot Thread execution remains MSP `kernel_main()` / console
+- production scheduler is still not started during normal boot.
+
+Candidate identity:
+
+```text
+Binary:        15620 bytes
+SHA-256:       C15634184CAB7BA3C5CE503773EB7BA4BB45DDB4B32A3D399F6BE587C518D907
+MSP reserved:  2048 bytes
+MSP guard:     64 bytes
+MSP capacity:  1984 bytes
+RAM gap:       16320 bytes
+fault_record:  0x20000320
+```
+
+Hardware MSP proof:
+
+- initial high-water `400 bytes`; margin `1584 bytes`
+- scheduler diagnostics alone remained at `400 bytes`
+- OLED/I2C regression raised high-water to `568 bytes`
+- accepted maximum high-water `596 bytes`
+- minimum observed margin `1388 bytes`
+- canary remained intact in all accepted snapshots
+- `12/12` composite nested-pressure rounds passed:
+  - four `oledstatus + 16 x ping`
+  - four `schedpreempt + 16 x ping`
+  - four `schedworkload + 16 x ping`
+- RX ring high-water reached `80 / 128 bytes`
+- RX drops `0`
+- RX errors `0`
+- ring depth `0` after accepted composites
+- fresh reset:
+  - baseline MSP use `400 bytes`
+  - post-pressure MSP use `572 bytes`
+  - margin `1412 bytes`
+- final scheduler workload PASS
+- final exact flash identity PASS
+- runtime failure count `0`
+- physical OLED PASS.
+
 ### Current unresolved gates
 
-The RX transport blocker is closed. Normal-boot migration is still deferred because these are separate unresolved proofs:
+RX transport and MSP runtime-budget blockers are closed. Normal-boot migration is still deferred because these are separate unresolved proofs:
 
-1. runtime MSP high-water / guard budget
-2. console PSP workload sizing if console ownership migrates
-3. production scheduler lifecycle and scheduler-diagnostic isolation
-4. future wait/block/wake or equivalent event/idle model for persistent tasks.
+1. console PSP workload sizing if console ownership migrates
+2. production scheduler lifecycle and scheduler-diagnostic isolation
+3. future wait/block/wake or equivalent event/idle model for persistent tasks.
 
 ### Exact next boundary
 
-Implement **MSP runtime high-water/guard instrumentation** without changing normal-boot task ownership. Exercise it under representative USART1 burst traffic, SysTick, SVC/PendSV scheduler diagnostics, health, I2C and OLED activity, then accept an explicit measured MSP margin before proceeding to console PSP sizing or steady-state scheduler migration.
+Build the **console PSP stack-budget foundation** without changing normal-boot task ownership. Exercise the real console command surface under workload-specific runtime watermark/canary measurement, select an explicit stack size from measured evidence, and keep the current 512-byte full-console PSP size rejected unless the runtime proof establishes otherwise. Production scheduler lifecycle/diagnostic isolation remains a separate later gate.
 
 ### Acceptance lifecycle
 

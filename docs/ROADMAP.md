@@ -48,7 +48,7 @@ Scheduler work still open:
   - full current console estimate `524 + 64 = 588 bytes`
   - 512-byte full-console PSP stack rejected
   - active nested scheduler diagnostics rejected until lifecycle separation
-  - MSP runtime budget remains separate.
+  - MSP runtime budget was a separate prerequisite and is now measured/accepted below.
 - [x] USART1 RX IRQ/ring-buffer prerequisite:
   - IRQ37 sole `USART1_DR` reader
   - 128-byte SPSC ring
@@ -58,7 +58,7 @@ Scheduler work still open:
   - exact `+167` IRQ/byte deltas across four burst rounds and fresh reset.
 - [ ] explicit production task ownership model
 - [x] USART1 RX IRQ + 128-byte ring-buffer foundation with real backlog/no-loss proof
-- [ ] kernel/MSP runtime high-water / guard proof
+- [x] kernel/MSP runtime high-water / guard proof: `596 / 1984 bytes`, margin `1388 bytes`, canary intact
 - [ ] console-task PSP stack budget if console ownership migrates
 - [ ] production scheduler diagnostic isolation / lifecycle
 - [ ] normal boot task migration
@@ -66,7 +66,7 @@ Scheduler work still open:
 - [ ] `sleep()`
 - [ ] priorities
 
-Production ownership decision is complete: direct normal-boot migration is blocked by separate console-stack, scheduler-lifecycle, and MSP-budget requirements. USART1 polling RX was the first prerequisite and is now replaced by hardware-accepted IRQ/ring receive. Next active boundary: **MSP runtime high-water / guard instrumentation**. Normal-boot migration remains deferred.
+Production ownership decision is complete. USART1 polling RX has been replaced by hardware-accepted IRQ/ring receive, and the separate MSP runtime budget is now hardware-accepted at `596 / 1984 bytes` with `1388 bytes` measured margin and intact canary. Next active boundary: **console PSP stack-budget foundation**. The 512-byte full-console PSP size remains rejected; production scheduler lifecycle/diagnostic isolation and normal-boot migration remain deferred.
 <!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 
 ## Phase 0 - Boot baseline

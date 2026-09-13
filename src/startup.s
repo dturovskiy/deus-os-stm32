@@ -16,6 +16,9 @@
 .extern SysTick_Handler
 .extern USART1_IRQHandler
 .extern fault_capture
+.extern _smsp_stack
+.extern _emsp_guard
+.extern _estack
 
 .section .isr_vector, "a", %progbits
 g_pfnVectors:
@@ -70,6 +73,34 @@ clear_bss_loop:
     b clear_bss_loop
 
 start_kernel:
+    /*
+     * Initialize the dedicated MSP measurement region before the first BL
+     * and before any C frame exists. Reset entry itself has used no stack.
+     *
+     * Bottom 64 bytes are a guard canary. The remaining 1984 bytes are
+     * watermark-filled and consumed downward from _estack.
+     */
+    ldr r0, =_smsp_stack
+    ldr r1, =_emsp_guard
+    ldr r2, =0xD15EA5E5
+
+fill_msp_guard:
+    cmp r0, r1
+    bcs fill_msp_watermark_begin
+    str r2, [r0], #4
+    b fill_msp_guard
+
+fill_msp_watermark_begin:
+    ldr r1, =_estack
+    ldr r2, =0xA5A5A5A5
+
+fill_msp_watermark:
+    cmp r0, r1
+    bcs call_kernel
+    str r2, [r0], #4
+    b fill_msp_watermark
+
+call_kernel:
     bl kernel_main
 
 hang:

@@ -145,6 +145,16 @@
 #define SRAM_END        0x20005000u
 #define FAULT_MAGIC     0xFA17FA17u
 
+extern uint32_t _smsp_stack;
+extern uint32_t _emsp_guard;
+extern uint32_t _estack;
+
+#define MSP_STACK_RESERVED_BYTES 2048u
+#define MSP_STACK_GUARD_BYTES      64u
+#define MSP_STACK_CAPACITY_BYTES (MSP_STACK_RESERVED_BYTES - MSP_STACK_GUARD_BYTES)
+#define MSP_STACK_FILL_PATTERN   0xA5A5A5A5u
+#define MSP_STACK_GUARD_PATTERN  0xD15EA5E5u
+
 typedef struct
 {
     uint32_t magic;
@@ -1811,6 +1821,132 @@ static void console_uart_rx_stats(void)
     }
 }
 
+static uint32_t msp_stack_reserved_bytes(void)
+{
+    return (uint32_t)(
+        (uintptr_t)&_estack -
+        (uintptr_t)&_smsp_stack);
+}
+
+static uint32_t msp_stack_capacity_bytes(void)
+{
+    return (uint32_t)(
+        (uintptr_t)&_estack -
+        (uintptr_t)&_emsp_guard);
+}
+
+static int msp_stack_canary_intact(void)
+{
+    volatile const uint32_t *word =
+        (volatile const uint32_t *)&_smsp_stack;
+    volatile const uint32_t *end =
+        (volatile const uint32_t *)&_emsp_guard;
+
+    while (word < end)
+    {
+        if (*word != MSP_STACK_GUARD_PATTERN)
+        {
+            return 0;
+        }
+
+        ++word;
+    }
+
+    return 1;
+}
+
+static uint32_t msp_stack_high_water_bytes(void)
+{
+    volatile const uint32_t *word =
+        (volatile const uint32_t *)&_emsp_guard;
+    volatile const uint32_t *top =
+        (volatile const uint32_t *)&_estack;
+
+    while ((word < top) && (*word == MSP_STACK_FILL_PATTERN))
+    {
+        ++word;
+    }
+
+    return (uint32_t)(
+        (uintptr_t)&_estack -
+        (uintptr_t)word);
+}
+
+static uint32_t msp_stack_current_used_bytes(void)
+{
+    uint32_t current_msp;
+
+    __asm volatile ("mrs %0, msp" : "=r" (current_msp));
+
+    if (current_msp >= (uint32_t)(uintptr_t)&_estack)
+    {
+        return 0u;
+    }
+
+    if (current_msp <= (uint32_t)(uintptr_t)&_smsp_stack)
+    {
+        return MSP_STACK_RESERVED_BYTES;
+    }
+
+    return (uint32_t)(
+        (uintptr_t)&_estack -
+        (uintptr_t)current_msp);
+}
+
+static void console_msp_stack_stats(void)
+{
+    const uint32_t reserved = msp_stack_reserved_bytes();
+    const uint32_t capacity = msp_stack_capacity_bytes();
+    const uint32_t used = msp_stack_high_water_bytes();
+    const uint32_t current = msp_stack_current_used_bytes();
+    const uint32_t margin = (used < capacity) ? (capacity - used) : 0u;
+    const uint32_t canary = (msp_stack_canary_intact() != 0) ? 1u : 0u;
+
+    uart_write("MSP_RESERVED=");
+    uart_write_hex32(reserved);
+    uart_write("\r\n");
+
+    uart_write("MSP_GUARD=");
+    uart_write_hex32(MSP_STACK_GUARD_BYTES);
+    uart_write("\r\n");
+
+    uart_write("MSP_CAPACITY=");
+    uart_write_hex32(capacity);
+    uart_write("\r\n");
+
+    uart_write("MSP_USED=");
+    uart_write_hex32(used);
+    uart_write("\r\n");
+
+    uart_write("MSP_MARGIN=");
+    uart_write_hex32(margin);
+    uart_write("\r\n");
+
+    uart_write("MSP_CURRENT=");
+    uart_write_hex32(current);
+    uart_write("\r\n");
+
+    uart_write("MSP_CANARY=");
+    uart_write_hex32(canary);
+    uart_write("\r\n");
+
+    if (
+        (reserved == MSP_STACK_RESERVED_BYTES) &&
+        (capacity == MSP_STACK_CAPACITY_BYTES) &&
+        (used > 0u) &&
+        (used < capacity) &&
+        (current > 0u) &&
+        (current < capacity) &&
+        (canary != 0u))
+    {
+        uart_write_line("MSP_STACK_OK");
+    }
+    else
+    {
+        uart_write_line("MSP_STACK_ERR");
+    }
+}
+
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
@@ -1836,6 +1972,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "rxstat") != 0)
     {
         console_uart_rx_stats();
+    }
+    else if (text_equals(uart_command, "mspstat") != 0)
+    {
+        console_msp_stack_stats();
     }
     else if (text_equals(uart_command, "schedtest") != 0)
     {

@@ -73,16 +73,16 @@ This section is authoritative for the current execution boundary and supersedes 
 - [x] Runtime watermark/canary evidence is authoritative for stack sizing until the static method is strengthened.
 - [x] A 512-byte PSP stack is accepted for the exact tested frozen OLED render/present workload with `184 bytes` measured margin.
 - [ ] Console-task PSP stack budget still requires workload-specific proof if/when console ownership migrates.
-- [ ] Kernel/MSP stack budget must be treated separately.
+- [x] Kernel/MSP stack budget measured separately and accepted with runtime watermark/canary evidence.
 
 ### Current acceptance source change set
 
-Immediately before the acceptance commit, the exact source delta is:
+Immediately before the MSP high-water acceptance commit, the exact source delta is:
 
 ```text
- M include/kernel/scheduler.h
+ M linker/stm32f103c8.ld
  M src/kernel.c
- M src/kernel/scheduler.c
+ M src/startup.s
 ```
 
 ### Production ownership decision — ACCEPTED
@@ -98,7 +98,7 @@ Immediately before the acceptance commit, the exact source delta is:
 - [x] Normal-boot migration remained blocked.
 - [x] First prerequisite selected: USART1 RX IRQ/ring-buffer foundation.
 
-### USART1 RX IRQ / ring-buffer foundation — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
+### USART1 RX IRQ / ring-buffer foundation — ACCEPTED / PUBLISHED
 
 - [x] `USART1_IRQHandler` is the sole `USART1_DR` reader.
 - [x] Vector table extended through external IRQ37 and linked USART1 handler verified.
@@ -121,10 +121,30 @@ Immediately before the acceptance commit, the exact source delta is:
 - [x] Physical OLED remained `DEUS OS / BOOT OK / READY`.
 - [x] Normal-boot task migration remains deferred.
 - [x] Full console 512-byte PSP stack remains not accepted.
+- [x] Acceptance commit published as `53054e16c5b4dbb54626b0f080c9492629ccb285`.
+
+### MSP runtime high-water / guard — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
+
+- [x] Dedicated upper-SRAM MSP reservation: `2048 bytes` at `0x20004800..0x20005000`.
+- [x] Bottom guard/canary: `64 bytes`; measurable capacity: `1984 bytes`.
+- [x] Reset handler initializes guard + watermark before its first `BL kernel_main`.
+- [x] `mspstat -> MSP_STACK_OK` added as read-only telemetry.
+- [x] Candidate `15620 bytes`, SHA-256 `C15634184CAB7BA3C5CE503773EB7BA4BB45DDB4B32A3D399F6BE587C518D907`.
+- [x] Initial high-water `400 bytes`; initial margin `1584 bytes`.
+- [x] Accepted maximum MSP high-water `596 bytes`.
+- [x] Minimum observed MSP margin `1388 bytes`, above the `512-byte` acceptance floor.
+- [x] MSP guard canary remained intact.
+- [x] `12/12` composite nested-pressure rounds passed across `oledstatus`, `schedpreempt`, and `schedworkload`.
+- [x] Each composite included `16 x ping`; RX ring high-water reached `80 / 128 bytes` with zero drops/errors and depth zero after snapshots.
+- [x] Fresh-reset MSP proof: `572 bytes` used / `1412 bytes` margin.
+- [x] Final scheduler workload, health, I2C/OLED regressions and exact flash identity passed.
+- [x] Physical OLED remained `DEUS OS / BOOT OK / READY`.
+- [x] Console remains MSP-owned; production scheduler still not started during normal boot.
+- [x] Normal-boot task migration remains deferred.
 
 ### Next active scheduler boundary
 
-Add **MSP runtime high-water/guard instrumentation** and obtain hardware evidence under representative IRQ, scheduler-diagnostic, UART burst, I2C and OLED activity. Keep console PSP sizing, diagnostic isolation/production scheduler lifecycle, and normal-boot ownership migration as later separate gates.
+Prove the **console PSP stack budget** with workload-specific runtime evidence. The prior full-console feasibility result remains `524 + 64 = 588 bytes`, so a 512-byte console PSP stack is still rejected. Do not migrate normal-boot ownership until console sizing passes; production scheduler lifecycle/diagnostic isolation remains a separate later gate.
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
