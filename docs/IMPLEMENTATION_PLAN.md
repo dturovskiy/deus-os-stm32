@@ -3,109 +3,60 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Current implementation checkpoint — 2026-09-13
 
-Published scheduler/runtime baseline now includes:
+Published baseline: `8bc1510265d0377adafda663d320c1e55f5b2c3a` (`feat: add console PSP stack-budget probe`). Current lifecycle-isolation source is hardware/physical accepted and commit-pending.
 
-- scheduler foundation/cooperative/PendSV stages
-- stack canary/high-water telemetry
-- substantive command-gated OLED workload published as `8f6b922a7d2e55abc3133702e7571057f995da5d`.
+Closed scheduler prerequisites:
 
-Accepted substantive PSP sizing:
+- scheduler foundation, cooperative SVC activation, PendSV preemption, stack canary/high-water telemetry.
+- substantive OLED PSP workload: `328 / 512 bytes`; CPU peer `80 / 512 bytes`.
+- USART1 RX IRQ + 128-byte SPSC ring; IRQ37 sole `USART1_DR` reader; zero-loss stress accepted.
+- MSP runtime guard/high-water: `2048-byte` reservation, `1984-byte` capacity, canary accepted.
+- safe console PSP budget: exact `17` non-scheduler commands on `1024 bytes`; published high-water `600 bytes`, minimum margin `424 bytes`; 512-byte full-console migration remains rejected.
 
-- task 0 frozen OLED render/present: `328 / 512 bytes`, measured margin `184 bytes`
-- task 1 CPU peer: `80 / 512 bytes`, measured margin `432 bytes`
-- static direct-call-chain analysis remains feasibility-only.
+Stage C3.4 — production scheduler lifecycle / diagnostic isolation — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING:
 
-The production ownership decision audit established:
+- [x] `scheduler_init()` returns status and rejects active reset before any global scheduler mutation.
+- [x] `scheduler_is_active()` added as a read-only lifecycle query.
+- [x] all previously published `scheduler_init()` call sites check the result fail-closed.
+- [x] six invasive scheduler diagnostics are centrally isolated from active scheduler execution.
+- [x] active diagnostic contract is exact `SCHED_DIAG_BUSY`; idle diagnostic handlers/output remain preserved.
+- [x] new `schedisolate` offline diagnostic runs real preemption and proves reset rejection, diagnostic blocking, active preservation, overlap, switches and both task canaries.
+- [x] source delta remains exactly `include/kernel/scheduler.h`, `src/kernel.c`, `src/kernel/scheduler.c`.
+- [x] candidate `18324 bytes`, SHA-256 `9AFDE9AC5AF196E98A2896BAC0DD7AE610414FB5A2888F1D499D2A5E0A12794B`.
+- [x] `.bss=5248 bytes`; `_ebss=0x20000C80`; RAM gap below MSP `15232 bytes`; `fault_record=0x20000764`.
+- [x] console probe stack remains exact `1024 bytes` at `0x20000060`; internal scheduler stack pool remains `2 x 512 bytes`.
+- [x] lifecycle isolation `4/4` PASS; each round: exactly six busy lines, `INIT_REJECT=1`, `BLOCKED_DIAGNOSTICS=6`, `ACTIVE_PRESERVED=1`, `OVERLAP=1`, canaries intact.
+- [x] isolation task high-water `160 / 512`; peer `88 / 512`; switches `16`.
+- [x] six legacy scheduler diagnostics PASS before isolation and after isolation.
+- [x] standalone console probe regression `2/2` PASS.
+- [x] composite console PSP + UART pressure `4/4` PASS with exact `+105` IRQ / `+105` byte deltas each round.
+- [x] console PSP high-water `560 / 1024`; minimum margin `464`; peer `88 / 512`; maximum switches `693`.
+- [x] RX high-water `80 / 128`; zero drops/errors; depth zero after accepted stress.
+- [x] MSP high-water `320 / 1984`; minimum margin `1664`; canary intact.
+- [x] fresh-reset isolation + console probe PASS.
+- [x] final exact flash identity PASS.
+- [x] manual physical OLED remained `DEUS OS / BOOT OK / READY`.
+- [x] normal boot ownership unchanged: MSP console; production scheduler not started.
 
-- normal boot still executes `kernel_main()` / console on MSP
-- current scheduler is a global run-to-completion host launcher
-- scheduler wait/block/sleep states are absent
-- scheduler self-tests reinitialize the global scheduler and must not run nested inside an active production scheduler
-- original ownership audit rejected a 512-byte full-console PSP stack
-- planning audit on the published MSP baseline measured current full-console feasibility at `540 + 64 = 604 bytes`
-- previous runtime evidence showed a `44-byte` static underprediction, so runtime watermark/canary remains authoritative
-- kernel/MSP runtime sizing was a separate requirement and is now closed by Stage C3.2 below.
+Stage C3.5 — NEXT ACTIVE GATE: production scheduler steady-state wait/wake foundation.
 
-Stage C3.1 — USART1 RX IRQ/ring-buffer prerequisite — hardware + physical accepted:
+Goals for this gate, still without normal-boot migration:
 
-- `USART1_IRQHandler` / external IRQ37 is the sole `USART1_DR` reader
-- RXNE interrupt enabled; USART1 NVIC priority `0x80`
-- 128-byte SPSC RX ring
-- existing `uart_try_getc()` consumes from the ring
-- console remains MSP-owned
-- production scheduler remains inactive during normal boot
-- `WFI` idle restored
-- `rxstat -> RX_IRQ_RING_OK`
-- candidate `15084 bytes`
-- SHA-256 `E25DC54C149EB9DA7B26F5378868DAA790847A1C4C7B4CFB970F294CFB738EFB`
-- USART1 IRQ own static frame `12 bytes`
-- SRAM headroom `18368 bytes`
-- hardware ring high-water `29 / 128 bytes`
-- zero drops and zero errors
-- four `32 x ping` rounds each returned exact 32 PONG responses
-- each round plus telemetry produced exact `+167` IRQ and byte deltas
-- fresh reset repeated exact `167` IRQ / `167` bytes, high-water `29`
-- scheduler/workload/health/I2C/OLED regression preserved
-- physical frozen OLED remained `DEUS OS / BOOT OK / READY`.
+- define explicit persistent task states for runnable vs blocked/waiting execution.
+- define deterministic wake/event semantics suitable for UART/event-driven work without busy-spin.
+- define stable scheduler idle ownership and return/park behavior.
+- prove PendSV/context/canary invariants across block/wake transitions.
+- preserve lifecycle diagnostic isolation, the accepted `1024-byte` safe-console PSP budget, RX no-loss behavior, MSP guard and frozen OLED UI.
 
-Stage C3.2 — MSP runtime high-water / guard — hardware + physical accepted:
+Later separate gates remain:
 
-- dedicated MSP reservation `2048 bytes` at `0x20004800..0x20005000`
-- `64-byte` bottom guard/canary
-- `1984-byte` measurable watermark capacity
-- reset assembly initializes guard + watermark before first `BL kernel_main`
-- read-only `mspstat -> MSP_STACK_OK`
-- candidate `15620 bytes`
-- SHA-256 `C15634184CAB7BA3C5CE503773EB7BA4BB45DDB4B32A3D399F6BE587C518D907`
-- initial MSP use `400 bytes`; margin `1584 bytes`
-- accepted stress high-water `596 bytes`; minimum margin `1388 bytes`
-- acceptance floor `512 bytes`
-- canary intact
-- `12/12` composite pressure rounds passed across OLED status, scheduler preemption, and substantive workload
-- RX pressure high-water `80 / 128 bytes`, zero drops/errors, depth zero
-- fresh reset accepted at `572 bytes` used / `1412 bytes` margin
-- final workload, health, OLED/I2C and exact flash identity passed
-- console remains MSP-owned
-- production scheduler remains inactive during normal boot
-- physical OLED remained `DEUS OS / BOOT OK / READY`.
-
-Stage C3.3 — console PSP stack-budget foundation — hardware + physical accepted:
-
-- inactive-only external stack binding
-- legacy internal scheduler stacks remain `2 x 512 bytes`
-- dedicated aligned external console stack `1024 bytes` at `0x20000048`
-- exact 17-command non-scheduler safe surface
-- scheduler diagnostics excluded from active probe scheduler
-- `UART_COMMAND_CAPACITY=32`; `schedconsoleprobe` length `17`
-- candidate `17028 bytes`; SHA-256 `13539E4F0C422FF0E3C373EF4167F3238FFA6D9A1B09F309C1A07787F2596C7F`
-- `.bss=5224 bytes`; `_ebss=0x20000C68`; RAM gap `15256 bytes`; `fault_record=0x2000074C`
-- static probe estimate `524 bytes`; +64-byte context `588`; calibrated floor `632`
-- `4/4` standalone and `8/8` composite probes passed
-- runtime PSP high-water `600 / 1024 bytes`; minimum margin `424 bytes`
-- peer high-water `88 / 512 bytes`; maximum switches `693`; overlap `1`; canaries intact
-- exact safe surface `17/17` completed
-- RX high-water `80 / 128`, zero drops/errors, depth zero
-- exact `+105` IRQ/byte delta in all `8/8` composites
-- MSP high-water `360 / 1984`, minimum margin `1624`, canary intact
-- fresh-reset probe + exact fresh `+105` delta passed
-- final flash identity passed
-- physical OLED remained `DEUS OS / BOOT OK / READY`
-- accepted sizing: `1024 bytes` for the exact tested safe surface; 512-byte full-console size remains rejected.
-
-Stage C3.4 — next:
-
-- separate production scheduler lifecycle from command-gated diagnostic/self-test lifecycle
-- make scheduler diagnostics unavailable or safely isolated while the production scheduler is active
-- preserve normal boot MSP ownership during this gate.
-
-Later, separate gates are still required for:
-
-- wait/block/wake or equivalent idle/event semantics
-- normal boot task migration.
+- explicit normal-boot production task ownership/migration.
+- `sleep()`/timer integration on top of the accepted wait/wake model.
+- priorities.
 
 Native USB remains a later transport slice. The provisional Windows/Linux host application name is **Deus OS CP** (`Deus OS Control Panel`); naming may change without changing protocol architecture.
 
-The frozen OLED geometry remains unchanged and is not part of these scheduler/stack ownership decisions.
+The frozen OLED geometry remains unchanged and is not reopened by scheduler work.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 
 ## Objective

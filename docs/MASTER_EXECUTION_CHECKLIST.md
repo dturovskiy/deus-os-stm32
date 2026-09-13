@@ -3,168 +3,71 @@
 <!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
 ## Current accepted execution state — 2026-09-13
 
-This section is authoritative for the current execution boundary and supersedes stale unchecked rows in older planning sections below.
+This section is authoritative for the current execution boundary and supersedes stale unchecked rows in historical planning sections below.
 
-### Accepted runtime/UI baseline
+### Published baseline
 
-- [x] Frozen native 128x32 OLED geometry remains unchanged.
-- [x] Runtime UI boot lifecycle accepted and published.
-- [x] Boot UART contract includes `OLED_RUNTIME_UI_OK`.
-- [x] Full UART/OLED regression passed.
-- [x] Physical OLED appearance/output accepted.
+- [x] Published HEAD/origin/main: `8bc1510265d0377adafda663d320c1e55f5b2c3a`.
+- [x] Published subject: `feat: add console PSP stack-budget probe`.
+- [x] Repository baseline before this acceptance delta was clean.
 
-### Scheduler foundation / cooperative / preemption — ACCEPTED / PUBLISHED
+### Runtime/UI / transport invariants — ACCEPTED
 
-- [x] Slice 9A foundation commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
-- [x] Slice 9B cooperative activation commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
-- [x] PendSV timer-driven preemption commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
-- [x] `schedtest -> SCHED_FOUNDATION_OK`.
-- [x] `schedcoop -> SCHED_COOP_OK`.
-- [x] `schedpreempt -> SCHED_PREEMPT_OK`.
-- [x] CPU-bound no-yield preemption path accepted across `34` complete runs.
+- [x] Frozen native 128x32 OLED geometry unchanged; physical output `DEUS OS / BOOT OK / READY`.
+- [x] USART1 IRQ37 is sole `USART1_DR` reader; 128-byte SPSC RX ring remains accepted.
+- [x] MSP guard/high-water instrumentation remains accepted.
+- [x] Normal boot console remains MSP-owned and uses `WFI` idle.
+- [x] Production scheduler is not started during normal boot.
 
-### Task stack canary/high-water — ACCEPTED / PUBLISHED
+### Console PSP stack budget — ACCEPTED / PUBLISHED
 
-- [x] Acceptance commit `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
-- [x] Existing task stacks remain exactly `2 x 512 bytes`.
-- [x] Per-task canary/high-water telemetry is measured from Handler mode/MSP.
-- [x] `schedstack -> SCHED_STACK_WATER_OK`.
-- [x] Synthetic cooperative/preemptive task paths measured `72 / 512 bytes`.
-- [x] Synthetic observed free margin `440 bytes`.
-- [x] Canary intact across `34` stack-water commands / `68` scheduler runs.
+- [x] Commit `8bc1510265d0377adafda663d320c1e55f5b2c3a`.
+- [x] Dedicated console PSP stack `1024 bytes`; safe PSP surface exact `17` non-scheduler commands.
+- [x] Published hardware high-water `600 / 1024`; minimum margin `424`.
+- [x] 512-byte full-console migration remains rejected.
 
-### Substantive PSP workload — ACCEPTED / PUBLISHED
+### Production scheduler lifecycle / diagnostic isolation — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
 
-- [x] `schedworkload -> SCHED_WORKLOAD_OK`.
-- [x] Workload task 0 runs frozen OLED runtime full render/present on PSP.
-- [x] Workload task 1 is CPU-only with no UART/I2C/OLED access and no voluntary yield.
-- [x] Public `scheduler_start_preemptive()` wrapper added.
-- [x] Read-only PendSV switch-count telemetry added.
-- [x] Current task stacks remain exactly `2 x 512 bytes`.
-- [x] Planning feasibility estimate: `212 + 64 = 276 bytes`; margin `236 bytes`.
-- [x] Source-build task-0 feasibility estimate: `220 + 64 = 284 bytes`; margin `228 bytes`.
-- [x] Source-build task-1 feasibility estimate: `12 + 64 = 76 bytes`; margin `436 bytes`.
-- [x] Runtime task-0 high-water: `328 bytes`; measured margin `184 bytes`.
-- [x] Runtime task-1 high-water: `80 bytes`; measured margin `432 bytes`.
-- [x] PendSV switches observed `124..126`.
-- [x] `WORKLOAD_UI_RESULT=1` for every accepted workload run.
-- [x] `WORKLOAD_PEER_OVERLAP=1` for every accepted workload run.
-- [x] Both task canaries intact for every accepted workload run.
-- [x] First workload passed.
-- [x] 32/32 workload stress commands passed.
-- [x] 4/4 return-to-kernel checkpoint pings passed.
-- [x] Final workload passed.
-- [x] Total accepted workload commands: `34`.
-- [x] Full scheduler/UART/I2C/OLED regression passed.
-- [x] Final exact flash identity passed.
-- [x] Hardware v1 had exactly two false-negative boot matcher results due to stale `FAULTREC=0x20000270`.
-- [x] Recovery v2 proved linked `fault_record=0x20000284`, validated both old boot captures, and passed two fresh corrected boot checks without reflashing.
-- [x] Physical frozen OLED output confirmed `DEUS OS / BOOT OK / READY`.
-- [x] Candidate binary `14292 bytes`.
-- [x] SHA-256 `8C124B0954D65E0F698AD1C62525E72FC4F569D5133EF8F0CE67A8297A80A2CF`.
-- [x] `.bss=1952 bytes`; `_ebss=0x200007A0`; SRAM headroom `18528 bytes`.
-- [x] Normal boot / console / OLED steady-state scheduler migration remains deferred.
-- [x] Substantive PSP workload acceptance commit published as `8f6b922a7d2e55abc3133702e7571057f995da5d`.
+- [x] Exact source delta: `include/kernel/scheduler.h`, `src/kernel.c`, `src/kernel/scheduler.c`.
+- [x] `scheduler_init()` is status-returning and inactive-only.
+- [x] Active reset rejection occurs before any scheduler-global mutation.
+- [x] `scheduler_is_active()` is read-only.
+- [x] Existing reset call sites check failure.
+- [x] Scheduler diagnostics centralized behind active lifecycle gate.
+- [x] Active diagnostic output contract: exact `SCHED_DIAG_BUSY`.
+- [x] Six published scheduler diagnostic handlers retain idle behavior/output.
+- [x] `schedisolate` proves active reset rejection and diagnostic isolation under real preemption.
+- [x] Candidate `18324 bytes` / SHA-256 `9AFDE9AC5AF196E98A2896BAC0DD7AE610414FB5A2888F1D499D2A5E0A12794B`.
+- [x] `.bss=5248`; `_ebss=0x20000C80`; RAM gap below MSP `15232`; `fault_record=0x20000764`.
+- [x] `4/4` isolation rounds PASS; exactly six busy lines per round.
+- [x] `INIT_REJECT=1`, `BLOCKED_DIAGNOSTICS=6`, `ACTIVE_PRESERVED=1`, `OVERLAP=1` in every accepted round.
+- [x] Isolation stacks: task 0 `160 / 512`, task 1 `88 / 512`; switches `16`; canaries intact.
+- [x] Legacy scheduler suite PASS before isolation and after isolation.
+- [x] Standalone console PSP regression `2/2` PASS.
+- [x] Composite console PSP + RX pressure `4/4` PASS.
+- [x] Exact `+105` IRQ and `+105` RX-byte delta for every composite.
+- [x] Console PSP high-water `560 / 1024`; minimum margin `464`; peer `88 / 512`; maximum switches `693`.
+- [x] RX high-water `80 / 128`; zero drops/errors; depth returns to zero.
+- [x] MSP high-water `320 / 1984`; minimum margin `1664`; canary intact.
+- [x] Fresh-reset isolation and console probe PASS.
+- [x] Final exact flash readback PASS.
+- [x] Manual physical OLED PASS.
+- [x] Runtime failure count `0`.
 
-### Stack-analysis rule learned from this gate
+### Architecture state
 
-- [x] Runtime task-0 high-water `328 bytes` exceeded the `.su`-based `284-byte` estimate.
-- [x] Treat the current `.su` direct-call-chain calculation as feasibility/sanity evidence, not a conservative upper bound.
-- [x] Runtime watermark/canary evidence is authoritative for stack sizing until the static method is strengthened.
-- [x] A 512-byte PSP stack is accepted for the exact tested frozen OLED render/present workload with `184 bytes` measured margin.
-- [x] Console-task PSP stack budget accepted at `1024 bytes` for the exact tested 17-command safe surface; high-water `600 bytes`, margin `424 bytes`.
-- [x] Kernel/MSP stack budget measured separately and accepted with runtime watermark/canary evidence.
+- [x] Lifecycle/diagnostic contradiction closed without moving normal-boot ownership.
+- [x] Safe 17-command PSP surface remains isolated from invasive scheduler diagnostics.
+- [x] No normal-boot scheduler migration in this slice.
+- [ ] Persistent scheduler blocked/waiting + wake/event model.
+- [ ] Stable steady-state scheduler idle ownership.
+- [ ] Explicit normal-boot production task ownership/migration.
+- [ ] `sleep()` / timer blocking semantics.
+- [ ] Priorities.
 
-### Current acceptance source change set
+### Next active scheduler boundary
 
-Immediately before the console PSP stack-budget acceptance commit, the exact source delta is:
-
-```text
- M include/kernel/scheduler.h
- M src/kernel.c
- M src/kernel/scheduler.c
-```
-
-### Production ownership decision — ACCEPTED
-
-- [x] Current scheduler lifecycle identified as a global run-to-completion host launcher.
-- [x] Scheduler wait/block/sleep states confirmed absent.
-- [x] Scheduler self-tests confirmed to reinitialize global scheduler state.
-- [x] Active-production nested scheduler diagnostics classified unsafe until separated.
-- [x] Full current console linked feasibility estimate: `524 bytes`.
-- [x] Full current console + 64-byte context reserve: `588 bytes`.
-- [x] 512-byte PSP stack rejected for the full current console surface.
-- [x] Static method remains feasibility-only after prior observed `44-byte` underprediction.
-- [x] Normal-boot migration remained blocked.
-- [x] First prerequisite selected: USART1 RX IRQ/ring-buffer foundation.
-
-### USART1 RX IRQ / ring-buffer foundation — ACCEPTED / PUBLISHED
-
-- [x] `USART1_IRQHandler` is the sole `USART1_DR` reader.
-- [x] Vector table extended through external IRQ37 and linked USART1 handler verified.
-- [x] RXNE interrupt enabled; USART1 NVIC priority `0x80`.
-- [x] 128-byte SPSC RX ring added.
-- [x] Existing `uart_try_getc()` retained as ring consumer API.
-- [x] MSP-owned console retained; production scheduler not started.
-- [x] `WFI` idle restored.
-- [x] `rxstat -> RX_IRQ_RING_OK` added.
-- [x] Candidate `15084 bytes`, SHA-256 `E25DC54C149EB9DA7B26F5378868DAA790847A1C4C7B4CFB970F294CFB738EFB`.
-- [x] USART1 IRQ static frame `12 bytes`; SRAM headroom `18368 bytes`.
-- [x] Four `32 x ping` burst rounds returned exact `32/32` PONG each.
-- [x] Every round produced exact `+167` IRQ and `+167` byte deltas including the telemetry command.
-- [x] Observed ring high-water `29 / 128 bytes`.
-- [x] Zero RX drops and zero RX errors.
-- [x] Ring depth returned to zero after every accepted burst.
-- [x] Fresh-reset burst repeated exact `167` IRQ / `167` byte counters and high-water `29`.
-- [x] Scheduler/workload/health/I2C/OLED regressions passed.
-- [x] Final exact flash identity passed.
-- [x] Physical OLED remained `DEUS OS / BOOT OK / READY`.
-- [x] Normal-boot task migration remains deferred.
-- [x] Full console 512-byte PSP stack remains not accepted.
-- [x] Acceptance commit published as `53054e16c5b4dbb54626b0f080c9492629ccb285`.
-
-### MSP runtime high-water / guard — ACCEPTED / PUBLISHED
-
-- [x] Dedicated upper-SRAM MSP reservation: `2048 bytes` at `0x20004800..0x20005000`.
-- [x] Bottom guard/canary: `64 bytes`; measurable capacity: `1984 bytes`.
-- [x] Reset handler initializes guard + watermark before its first `BL kernel_main`.
-- [x] `mspstat -> MSP_STACK_OK` added as read-only telemetry.
-- [x] Candidate `15620 bytes`, SHA-256 `C15634184CAB7BA3C5CE503773EB7BA4BB45DDB4B32A3D399F6BE587C518D907`.
-- [x] Initial high-water `400 bytes`; initial margin `1584 bytes`.
-- [x] Accepted maximum MSP high-water `596 bytes`.
-- [x] Minimum observed MSP margin `1388 bytes`, above the `512-byte` acceptance floor.
-- [x] MSP guard canary remained intact.
-- [x] `12/12` composite nested-pressure rounds passed across `oledstatus`, `schedpreempt`, and `schedworkload`.
-- [x] Each composite included `16 x ping`; RX ring high-water reached `80 / 128 bytes` with zero drops/errors and depth zero after snapshots.
-- [x] Fresh-reset MSP proof: `572 bytes` used / `1412 bytes` margin.
-- [x] Final scheduler workload, health, I2C/OLED regressions and exact flash identity passed.
-- [x] Physical OLED remained `DEUS OS / BOOT OK / READY`.
-- [x] Console remains MSP-owned; production scheduler still not started during normal boot.
-- [x] Normal-boot task migration remains deferred.
-- [x] Acceptance commit published as `d3efae463cd65e087f0c1a3556de640105ed1b44`.
-
-### Console PSP stack-budget foundation — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
-
-- [x] Inactive-only external task-stack binding added.
-- [x] Legacy internal scheduler stacks remain `2 x 512 bytes`.
-- [x] Dedicated aligned external console probe stack is exactly `1024 bytes` at `0x20000048`.
-- [x] `UART_COMMAND_CAPACITY=32`; longest command `schedconsoleprobe` is 17 characters.
-- [x] Safe PSP surface is exact `17` non-scheduler commands; scheduler diagnostics are excluded.
-- [x] Candidate `17028 bytes`, SHA-256 `13539E4F0C422FF0E3C373EF4167F3238FFA6D9A1B09F309C1A07787F2596C7F`.
-- [x] `.bss=5224 bytes`; `_ebss=0x20000C68`; RAM gap below MSP `15256 bytes`; linked `fault_record=0x2000074C`.
-- [x] `4/4` standalone probes passed.
-- [x] `8/8` composite `schedconsoleprobe + 16 x ping` probes passed.
-- [x] PSP high-water `600 / 1024 bytes`; minimum margin `424 bytes` >= `256-byte` floor.
-- [x] Peer high-water `88 / 512 bytes`; maximum switches `693`; overlap `1`; both canaries intact.
-- [x] Exact safe surface `17/17` completed.
-- [x] RX high-water `80 / 128`; zero drops/errors; depth zero after accepted stress.
-- [x] Exact `+105` IRQ / `+105` byte deltas in all `8/8` composites.
-- [x] MSP high-water `360 / 1984`; minimum margin `1624`; canary intact.
-- [x] Fresh-reset probe and exact fresh `+105` delta passed.
-- [x] Legacy scheduler/health/I2C/OLED regressions and exact final flash identity passed.
-- [x] Physical OLED remained `DEUS OS / BOOT OK / READY`.
-- [x] `1024 bytes` accepted for the exact tested 17-command safe console workload.
-- [x] Normal boot remains MSP-owned; production scheduler still not started.
+Implement and prove **production scheduler steady-state wait/wake foundation** without changing normal-boot ownership. Establish blocked/waiting task state, deterministic event wake, and stable idle behavior while preserving lifecycle isolation, stack/RX/MSP/OLED acceptance contracts.
 
 ### Planned native USB / host control direction
 
@@ -173,12 +76,7 @@ Immediately before the console PSP stack-budget acceptance commit, the exact sou
 - [ ] Transport-neutral shell/RPC shared with UART.
 - [ ] Binary transport after CDC semantics stabilize.
 - [ ] Cross-platform Windows/Linux host application, provisional name **Deus OS CP** (`Deus OS Control Panel`).
-- [ ] Product name may change later; branding must not define protocol architecture.
 - [ ] UART remains emergency console; ST-LINK remains recovery/debug.
-
-### Next active scheduler boundary
-
-Implement and prove **production scheduler lifecycle / scheduler-diagnostic isolation** without changing normal-boot ownership. Scheduler diagnostics that reinitialize global scheduler state must not run inside an active production scheduler context. Keep the accepted `1024-byte` safe-console PSP workload budget as evidence; wait/block/wake semantics and normal-boot migration remain later gates.
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

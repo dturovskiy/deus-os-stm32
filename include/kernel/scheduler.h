@@ -24,7 +24,9 @@ typedef struct
     volatile scheduler_task_state_t state;
 } scheduler_task_t;
 
-void scheduler_init(void);
+int scheduler_init(void);
+
+int scheduler_is_active(void);
 
 int scheduler_task_stack_bind(
     uint32_t index,

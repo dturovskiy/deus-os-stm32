@@ -3,6 +3,28 @@
 <!-- BEGIN STM32_OS_CHANGELOG_2026_09_13 -->
 ## 2026-09-13
 
+### Hardware + physical accepted — production scheduler lifecycle / diagnostic isolation
+
+- Published baseline before this delta: `8bc1510265d0377adafda663d320c1e55f5b2c3a` (`feat: add console PSP stack-budget probe`).
+- `scheduler_init()` is now status-returning and rejects reset while active before any scheduler-global mutation.
+- Added read-only `scheduler_is_active()`.
+- Centralized scheduler diagnostics behind an active-lifecycle gate; six published invasive diagnostics return exact `SCHED_DIAG_BUSY` while active and preserve idle behavior.
+- Added offline `schedisolate` real-preemption diagnostic.
+- Accepted source delta remains exactly `include/kernel/scheduler.h`, `src/kernel.c`, `src/kernel/scheduler.c`.
+- Candidate `18324 bytes`, SHA-256 `9AFDE9AC5AF196E98A2896BAC0DD7AE610414FB5A2888F1D499D2A5E0A12794B`.
+- `.bss=5248 bytes`, `_ebss=0x20000C80`, RAM gap below MSP `15232 bytes`, `fault_record=0x20000764`, probe stack `0x20000060 / 1024 bytes`.
+- `4/4` isolation rounds PASS; every round had six busy lines, `INIT_REJECT=1`, `BLOCKED_DIAGNOSTICS=6`, `ACTIVE_PRESERVED=1`, `OVERLAP=1`, both canaries intact.
+- Isolation stacks: `160 / 512` and `88 / 512`; switches `16`.
+- All six published scheduler diagnostics PASS before and after isolation.
+- Console PSP regression: standalone `2/2`; composite `4/4`; exact `+105` IRQ / `+105` byte deltas in every composite.
+- Console PSP high-water `560 / 1024`, minimum margin `464`; peer `88 / 512`; maximum switches `693`.
+- RX high-water `80 / 128`, zero drops/errors, depth zero after stress.
+- MSP high-water `320 / 1984`, minimum margin `1664`, canary intact.
+- Fresh reset isolation + console probe PASS; final exact flash identity PASS; runtime failures `0`.
+- Physical OLED remained `DEUS OS / BOOT OK / READY`.
+- Normal boot remains MSP-owned and production scheduler remains inactive during normal boot.
+- Next active scheduler gate: steady-state wait/wake foundation; normal-boot migration remains later.
+
 ### Hardware + physical accepted — console PSP stack-budget foundation
 
 - Added inactive-only external task-stack binding while preserving the legacy internal scheduler stack pool at `2 x 512 bytes`.
@@ -22,7 +44,7 @@
 - Legacy scheduler, health, I2C/OLED regressions and final exact flash identity passed.
 - Physical OLED remained `DEUS OS / BOOT OK / READY`.
 - Accepted sizing decision: `1024 bytes` for the exact tested 17-command safe PSP surface; 512-byte full-console size remains rejected.
-- Normal boot remains MSP-owned; production scheduler lifecycle/diagnostic isolation is the next gate.
+- Normal boot remains MSP-owned; lifecycle/diagnostic isolation is now accepted above; steady-state wait/wake is the next scheduler gate.
 
 ### Planned host application naming
 

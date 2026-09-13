@@ -3,72 +3,39 @@
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 ## Current roadmap checkpoint — 2026-09-13
 
-Earlier unchecked Phase 0-2 rows are historical planning debt; the hardware baseline has already advanced beyond them.
+Earlier unchecked Phase 0-2 rows are historical planning debt; this checkpoint is authoritative.
 
 Accepted through this checkpoint:
 
-- [x] Boot / custom startup / linker / hardware execution.
-- [x] Clock, GPIO, SysTick, monotonic time.
-- [x] Fault diagnostics.
-- [x] Bidirectional USART1 command console.
-- [x] I2C1 master and SSD1306 at `0x3C`.
-- [x] Native 128x32 OLED framebuffer/text/status/retained-console stack.
-- [x] Circular retained-console scrolling.
-- [x] Dirty-page presentation and runtime UI integration.
-- [x] Runtime boot UI lifecycle.
-- [x] Scheduler foundation.
-- [x] Cooperative scheduler activation.
-- [x] PendSV timer-driven preemption.
-- [x] Scheduler stack canary/high-water instrumentation:
-  - published at `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`
-  - `72 / 512 bytes` measured for all cooperative/preemptive synthetic task paths
-  - canary intact across `34` commands / `68` scheduler runs.
-- [x] Representative substantive preemptive PSP OLED workload:
-  - command-gated `schedworkload`
-  - frozen OLED runtime full render/present on task 0
-  - CPU-only no-yield task 1
-  - task 0 runtime high-water `328 / 512 bytes`; margin `184 bytes`
-  - task 1 runtime high-water `80 / 512 bytes`; margin `432 bytes`
-  - PendSV switches `124..126`
-  - UI result / peer overlap / canaries PASS across `34` complete workload runs
-  - full scheduler/UART/I2C/OLED regression preserved
-  - corrected boot proof and exact target readback PASS
-  - physical frozen OLED PASS.
+- [x] Boot/startup/linker, clock/GPIO/SysTick/time and fault diagnostics.
+- [x] Bidirectional USART1 command console with IRQ37 sole-DR-reader + 128-byte SPSC ring.
+- [x] I2C1 + native frozen 128x32 SSD1306 runtime UI.
+- [x] Scheduler foundation, cooperative SVC activation and PendSV preemption.
+- [x] Scheduler stack canary/high-water instrumentation.
+- [x] Substantive PSP OLED workload: `328 / 512` task 0, `80 / 512` peer.
+- [x] MSP runtime guard/high-water: `2048-byte` reservation, `1984-byte` usable capacity.
+- [x] Console PSP stack budget: exact 17-command safe surface, accepted `1024-byte` stack; published high-water `600`, minimum margin `424`.
+- [x] Production scheduler lifecycle / scheduler-diagnostic isolation:
+  - active `scheduler_init()` reset rejected before mutation
+  - read-only `scheduler_is_active()`
+  - six invasive diagnostics return `SCHED_DIAG_BUSY` while active and preserve idle behavior
+  - `schedisolate` hardware proof `4/4`
+  - isolation task `160 / 512`, peer `88 / 512`, switches `16`, canaries intact
+  - legacy diagnostics PASS before and after isolation
+  - console PSP regression + RX/MSP/OLED/final-flash identity PASS
+  - physical OLED PASS.
 
-Stack-analysis rule:
+Current production scheduler work still open:
 
-- [x] `.su` direct-call-chain analysis is useful as a feasibility estimate.
-- [x] The task-0 runtime high-water (`328 bytes`) exceeded the source-build estimate (`284 bytes`), so the current static method is not a conservative upper bound.
-- [x] Runtime watermark/canary evidence controls sizing for the accepted workload.
-
-Scheduler work still open:
-
-- [x] 512-byte stack validated for the exact tested frozen OLED render/present PSP workload.
-- [x] Production ownership/stack-budget decision audit:
-  - current full-console planning estimate `540 + 64 = 604 bytes` on the published MSP baseline
-  - 512-byte full-console PSP stack rejected
-  - active nested scheduler diagnostics rejected until lifecycle separation
-  - MSP runtime budget was a separate prerequisite and is now measured/accepted below.
-- [x] USART1 RX IRQ/ring-buffer prerequisite:
-  - IRQ37 sole `USART1_DR` reader
-  - 128-byte SPSC ring
-  - existing `uart_try_getc()` consumer
-  - WFI idle restored
-  - observed hardware high-water `29 / 128`, zero drops/errors
-  - exact `+167` IRQ/byte deltas across four burst rounds and fresh reset.
-- [ ] explicit production task ownership model
-- [x] USART1 RX IRQ + 128-byte ring-buffer foundation with real backlog/no-loss proof
-- [x] kernel/MSP runtime high-water / guard proof: `596 / 1984 bytes`, margin `1388 bytes`, canary intact
-- [x] console-task PSP stack budget for exact tested 17-command safe surface: `600 / 1024 bytes`, margin `424 bytes`
-- [x] inactive-only external stack binding; legacy internal stacks remain `2 x 512 bytes`
-- [x] scheduler diagnostics excluded from the active PSP safe surface
-- [ ] production scheduler diagnostic isolation / lifecycle
+- [ ] persistent runnable vs blocked/waiting task state model
+- [ ] deterministic wake/event primitive suitable for UART/event-driven work
+- [ ] stable steady-state scheduler idle ownership / no busy-spin
+- [ ] explicit production task ownership model for normal boot
 - [ ] normal boot task migration
-- [ ] idle/wait model / steady-state scheduler ownership
-- [ ] `sleep()`
+- [ ] `sleep()` built on accepted blocking/wake semantics
 - [ ] priorities
 
-Production ownership prerequisite work now includes accepted IRQ/ring RX, MSP runtime budget, and a hardware-accepted `1024-byte` PSP budget for the exact 17-command safe console surface (`600-byte` high-water, `424-byte` minimum margin). The 512-byte full-console size remains rejected. Next active boundary: **production scheduler lifecycle / scheduler-diagnostic isolation**. Wait/block/wake semantics and normal-boot migration remain deferred.
+The next active boundary is **production scheduler steady-state wait/wake foundation**. Normal boot remains MSP-owned and the production scheduler remains inactive during normal boot until this persistent-task/idle model is proven. Normal-boot migration is a later separate gate.
 <!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 
 ## Phase 0 - Boot baseline

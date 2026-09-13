@@ -114,6 +114,7 @@
 #define SCHED_CONSOLE_PROBE_STACK_BYTES     (SCHED_CONSOLE_PROBE_STACK_WORDS * 4u)
 #define SCHED_CONSOLE_PROBE_MIN_MARGIN_BYTES 256u
 #define SCHED_CONSOLE_PROBE_COMMAND_COUNT 17u
+#define SCHED_ISOLATION_DIAGNOSTIC_COUNT 6u
 
 /*
  * PCLK2 = 72 MHz.
@@ -224,9 +225,19 @@ static volatile uint32_t scheduler_console_probe_peer_done;
 static volatile uint32_t scheduler_console_probe_completed_count;
 static volatile uint32_t scheduler_console_probe_ui_restore_result;
 
+static volatile uint32_t scheduler_isolation_task_started;
+static volatile uint32_t scheduler_isolation_task_done;
+static volatile uint32_t scheduler_isolation_peer_overlap;
+static volatile uint32_t scheduler_isolation_peer_done;
+static volatile uint32_t scheduler_isolation_init_reject;
+static volatile uint32_t scheduler_isolation_active_preserved;
+static volatile uint32_t scheduler_diagnostic_busy_count;
+
 static int console_execute_safe_named(const char *command);
+static int console_execute_scheduler_diagnostic(const char *command);
 static void console_execute_named(const char *command);
 static void console_scheduler_console_probe_test(void);
+static void console_scheduler_isolation_test(void);
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -1681,7 +1692,11 @@ static void console_scheduler_workload_test(void)
     int start_result;
     int passed;
 
-    scheduler_init();
+    if (scheduler_init() == 0)
+    {
+        uart_write_line("SCHED_WORKLOAD_PREPARE_ERR");
+        return;
+    }
 
     scheduler_workload_task0_started = 0u;
     scheduler_workload_task0_done = 0u;
@@ -2064,7 +2079,11 @@ static void console_scheduler_console_probe_test(void)
     int start_result;
     int passed;
 
-    scheduler_init();
+    if (scheduler_init() == 0)
+    {
+        uart_write_line("SCHED_CONSOLE_PROBE_PREPARE_ERR");
+        return;
+    }
 
     scheduler_console_probe_task_started = 0u;
     scheduler_console_probe_task_done = 0u;
@@ -2196,6 +2215,228 @@ static void console_scheduler_console_probe_test(void)
     }
 }
 
+static const char * const scheduler_isolation_diagnostic_commands
+    [SCHED_ISOLATION_DIAGNOSTIC_COUNT] =
+{
+    "schedtest",
+    "schedcoop",
+    "schedpreempt",
+    "schedstack",
+    "schedworkload",
+    "schedconsoleprobe"
+};
+
+static void scheduler_isolation_task(void *argument)
+{
+    uint32_t index;
+
+    if (argument != (void *)scheduler_isolation_diagnostic_commands)
+    {
+        scheduler_isolation_active_preserved = 0u;
+        scheduler_isolation_task_done = 1u;
+        return;
+    }
+
+    scheduler_isolation_task_started = 1u;
+
+    if (scheduler_init() == 0)
+    {
+        scheduler_isolation_init_reject = 1u;
+    }
+
+    if (scheduler_is_active() == 0)
+    {
+        scheduler_isolation_active_preserved = 0u;
+    }
+
+    for (index = 0u;
+         index < SCHED_ISOLATION_DIAGNOSTIC_COUNT;
+         ++index)
+    {
+        if (
+            console_execute_scheduler_diagnostic(
+                scheduler_isolation_diagnostic_commands[index]) == 0
+        ) {
+            scheduler_isolation_active_preserved = 0u;
+        }
+
+        if (scheduler_is_active() == 0)
+        {
+            scheduler_isolation_active_preserved = 0u;
+        }
+    }
+
+    scheduler_isolation_task_done = 1u;
+}
+
+static void scheduler_isolation_peer_task(void *argument)
+{
+    volatile uint32_t spin;
+
+    if (argument != (void *)0)
+    {
+        scheduler_isolation_peer_done = 1u;
+        return;
+    }
+
+    for (spin = 0u;
+         spin < SCHED_WORKLOAD_PEER_SPINS;
+         ++spin)
+    {
+        if (
+            (scheduler_isolation_task_started != 0u) &&
+            (scheduler_isolation_task_done == 0u)
+        ) {
+            scheduler_isolation_peer_overlap = 1u;
+        }
+
+        __asm volatile ("nop");
+    }
+
+    scheduler_isolation_peer_done = 1u;
+}
+
+static void console_scheduler_isolation_test(void)
+{
+    const scheduler_task_t *task0;
+    const scheduler_task_t *task1;
+    uint32_t used0;
+    uint32_t used1;
+    uint32_t capacity0;
+    uint32_t capacity1;
+    uint32_t switches;
+    int canary0;
+    int canary1;
+    int prepare0;
+    int prepare1;
+    int start_result;
+    int passed;
+
+    if (scheduler_init() == 0)
+    {
+        uart_write_line("SCHED_ISOLATE_PREPARE_ERR");
+        return;
+    }
+
+    scheduler_isolation_task_started = 0u;
+    scheduler_isolation_task_done = 0u;
+    scheduler_isolation_peer_overlap = 0u;
+    scheduler_isolation_peer_done = 0u;
+    scheduler_isolation_init_reject = 0u;
+    scheduler_isolation_active_preserved = 1u;
+    scheduler_diagnostic_busy_count = 0u;
+
+    prepare0 =
+        scheduler_task_prepare(
+            0u,
+            scheduler_isolation_task,
+            (void *)scheduler_isolation_diagnostic_commands);
+
+    prepare1 =
+        scheduler_task_prepare(
+            1u,
+            scheduler_isolation_peer_task,
+            (void *)0);
+
+    if ((prepare0 == 0) || (prepare1 == 0))
+    {
+        uart_write_line("SCHED_ISOLATE_PREPARE_ERR");
+        return;
+    }
+
+    start_result = scheduler_start_preemptive();
+
+    used0 = scheduler_stack_high_water_bytes(0u);
+    used1 = scheduler_stack_high_water_bytes(1u);
+    capacity0 = scheduler_stack_capacity_bytes(0u);
+    capacity1 = scheduler_stack_capacity_bytes(1u);
+    canary0 = scheduler_stack_canary_intact(0u);
+    canary1 = scheduler_stack_canary_intact(1u);
+    switches = scheduler_preempt_switch_count_get();
+
+    task0 = scheduler_task_get(0u);
+    task1 = scheduler_task_get(1u);
+
+    uart_write("SCHED_ISOLATE_CAPACITY_T0=");
+    uart_write_hex32(capacity0);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_USED_T0=");
+    uart_write_hex32(used0);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_CAPACITY_T1=");
+    uart_write_hex32(capacity1);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_USED_T1=");
+    uart_write_hex32(used1);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_SWITCHES=");
+    uart_write_hex32(switches);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_INIT_REJECT=");
+    uart_write_hex32(scheduler_isolation_init_reject);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_BLOCKED_DIAGNOSTICS=");
+    uart_write_hex32(scheduler_diagnostic_busy_count);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_ACTIVE_PRESERVED=");
+    uart_write_hex32(scheduler_isolation_active_preserved);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_OVERLAP=");
+    uart_write_hex32(scheduler_isolation_peer_overlap);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_CANARY_T0=");
+    uart_write_hex32((canary0 != 0) ? 1u : 0u);
+    uart_write("\r\n");
+
+    uart_write("SCHED_ISOLATE_CANARY_T1=");
+    uart_write_hex32((canary1 != 0) ? 1u : 0u);
+    uart_write("\r\n");
+
+    passed =
+        (start_result != 0) &&
+        (scheduler_isolation_task_started != 0u) &&
+        (scheduler_isolation_task_done != 0u) &&
+        (scheduler_isolation_peer_done != 0u) &&
+        (scheduler_isolation_init_reject != 0u) &&
+        (scheduler_diagnostic_busy_count ==
+            SCHED_ISOLATION_DIAGNOSTIC_COUNT) &&
+        (scheduler_isolation_active_preserved != 0u) &&
+        (scheduler_isolation_peer_overlap != 0u) &&
+        (switches >= 2u) &&
+        (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
+        (capacity1 == capacity0) &&
+        (used0 >= 64u) &&
+        (used0 < capacity0) &&
+        (used1 >= 64u) &&
+        (used1 < capacity1) &&
+        (canary0 != 0) &&
+        (canary1 != 0) &&
+        (task0 != (const scheduler_task_t *)0) &&
+        (task1 != (const scheduler_task_t *)0) &&
+        (task0->state == SCHEDULER_TASK_DONE) &&
+        (task1->state == SCHEDULER_TASK_DONE) &&
+        (scheduler_is_active() == 0);
+
+    if (passed != 0)
+    {
+        uart_write_line("SCHED_ISOLATE_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_ISOLATE_ERR");
+    }
+}
+
+
 static int console_execute_safe_named(const char *command)
 {
     if (text_equals(command, "ping") != 0)
@@ -2280,33 +2521,86 @@ static int console_execute_safe_named(const char *command)
     return 1;
 }
 
-static void console_execute_named(const char *command)
+static int console_scheduler_diagnostic_block_if_active(void)
+{
+    if (scheduler_is_active() == 0)
+    {
+        return 0;
+    }
+
+    ++scheduler_diagnostic_busy_count;
+    uart_write_line("SCHED_DIAG_BUSY");
+
+    return 1;
+}
+
+static int console_execute_scheduler_diagnostic(const char *command)
 {
     if (text_equals(command, "schedtest") != 0)
     {
-        console_scheduler_test();
+        if (console_scheduler_diagnostic_block_if_active() == 0)
+        {
+            console_scheduler_test();
+        }
     }
     else if (text_equals(command, "schedcoop") != 0)
     {
-        console_scheduler_cooperative_test();
+        if (console_scheduler_diagnostic_block_if_active() == 0)
+        {
+            console_scheduler_cooperative_test();
+        }
     }
     else if (text_equals(command, "schedpreempt") != 0)
     {
-        console_scheduler_preemptive_test();
+        if (console_scheduler_diagnostic_block_if_active() == 0)
+        {
+            console_scheduler_preemptive_test();
+        }
     }
     else if (text_equals(command, "schedstack") != 0)
     {
-        console_scheduler_stack_water_test();
+        if (console_scheduler_diagnostic_block_if_active() == 0)
+        {
+            console_scheduler_stack_water_test();
+        }
     }
     else if (text_equals(command, "schedworkload") != 0)
     {
-        console_scheduler_workload_test();
+        if (console_scheduler_diagnostic_block_if_active() == 0)
+        {
+            console_scheduler_workload_test();
+        }
     }
     else if (text_equals(command, "schedconsoleprobe") != 0)
     {
-        console_scheduler_console_probe_test();
+        if (console_scheduler_diagnostic_block_if_active() == 0)
+        {
+            console_scheduler_console_probe_test();
+        }
     }
-    else if (console_execute_safe_named(command) == 0)
+    else if (text_equals(command, "schedisolate") != 0)
+    {
+        if (console_scheduler_diagnostic_block_if_active() == 0)
+        {
+            console_scheduler_isolation_test();
+        }
+    }
+    else
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+static void console_execute_named(const char *command)
+{
+    if (console_execute_scheduler_diagnostic(command) != 0)
+    {
+        return;
+    }
+
+    if (console_execute_safe_named(command) == 0)
     {
         uart_write_line("ERR");
     }

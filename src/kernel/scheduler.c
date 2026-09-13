@@ -397,10 +397,15 @@ static void scheduler_preempt_task1(void *argument)
     scheduler_preempt_record(0x42u);
 }
 
-void scheduler_init(void)
+int scheduler_init(void)
 {
     uint32_t task_index;
     uint32_t word_index;
+
+    if (scheduler_active != 0u)
+    {
+        return 0;
+    }
 
     scheduler_current_index = SCHEDULER_NO_TASK;
     scheduler_active = 0u;
@@ -437,6 +442,13 @@ void scheduler_init(void)
                     SCHEDULER_STACK_FILL;
         }
     }
+
+    return 1;
+}
+
+int scheduler_is_active(void)
+{
+    return (scheduler_active != 0u) ? 1 : 0;
 }
 
 int scheduler_task_stack_bind(
@@ -1022,7 +1034,10 @@ int scheduler_self_test(void)
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
 
-    scheduler_init();
+    if (scheduler_init() == 0)
+    {
+        return 0;
+    }
 
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
@@ -1086,7 +1101,10 @@ int scheduler_self_test(void)
         return 0;
     }
 
-    scheduler_init();
+    if (scheduler_init() == 0)
+    {
+        return 0;
+    }
 
     return
         (task0->state == SCHEDULER_TASK_UNUSED) &&
@@ -1102,7 +1120,10 @@ int scheduler_cooperative_self_test(void)
     int start_result;
     int passed;
 
-    scheduler_init();
+    if (scheduler_init() == 0)
+    {
+        return 0;
+    }
 
     scheduler_coop_sequence[0] = 0u;
     scheduler_coop_sequence[1] = 0u;
@@ -1117,7 +1138,11 @@ int scheduler_cooperative_self_test(void)
             scheduler_coop_task0,
             (void *)&scheduler_coop_arg0) == 0
     ) {
-        scheduler_init();
+        if (scheduler_init() == 0)
+        {
+            return 0;
+        }
+
         return 0;
     }
 
@@ -1127,7 +1152,11 @@ int scheduler_cooperative_self_test(void)
             scheduler_coop_task1,
             (void *)&scheduler_coop_arg1) == 0
     ) {
-        scheduler_init();
+        if (scheduler_init() == 0)
+        {
+            return 0;
+        }
+
         return 0;
     }
 
@@ -1149,7 +1178,10 @@ int scheduler_cooperative_self_test(void)
         (task0->state == SCHEDULER_TASK_DONE) &&
         (task1->state == SCHEDULER_TASK_DONE);
 
-    scheduler_init();
+    if (scheduler_init() == 0)
+    {
+        return 0;
+    }
 
     return passed;
 }
@@ -1161,7 +1193,10 @@ int scheduler_preemptive_self_test(void)
     int start_result;
     int passed;
 
-    scheduler_init();
+    if (scheduler_init() == 0)
+    {
+        return 0;
+    }
 
     scheduler_preempt_sequence[0] = 0u;
     scheduler_preempt_sequence[1] = 0u;
@@ -1179,7 +1214,11 @@ int scheduler_preemptive_self_test(void)
             scheduler_preempt_task0,
             (void *)&scheduler_preempt_arg0) == 0
     ) {
-        scheduler_init();
+        if (scheduler_init() == 0)
+        {
+            return 0;
+        }
+
         return 0;
     }
 
@@ -1189,7 +1228,11 @@ int scheduler_preemptive_self_test(void)
             scheduler_preempt_task1,
             (void *)&scheduler_preempt_arg1) == 0
     ) {
-        scheduler_init();
+        if (scheduler_init() == 0)
+        {
+            return 0;
+        }
+
         return 0;
     }
 
@@ -1214,7 +1257,10 @@ int scheduler_preemptive_self_test(void)
         (task0->state == SCHEDULER_TASK_DONE) &&
         (task1->state == SCHEDULER_TASK_DONE);
 
-    scheduler_init();
+    if (scheduler_init() == 0)
+    {
+        return 0;
+    }
 
     return passed;
 }
