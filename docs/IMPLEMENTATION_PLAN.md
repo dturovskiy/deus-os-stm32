@@ -21,9 +21,9 @@ The production ownership decision audit established:
 - current scheduler is a global run-to-completion host launcher
 - scheduler wait/block/sleep states are absent
 - scheduler self-tests reinitialize the global scheduler and must not run nested inside an active production scheduler
-- full current console linked estimate: `524 bytes`
-- console + 64-byte architecture context reserve: `588 bytes`
-- therefore a 512-byte PSP stack is rejected for the full current console command surface
+- original ownership audit rejected a 512-byte full-console PSP stack
+- planning audit on the published MSP baseline measured current full-console feasibility at `540 + 64 = 604 bytes`
+- previous runtime evidence showed a `44-byte` static underprediction, so runtime watermark/canary remains authoritative
 - kernel/MSP runtime sizing was a separate requirement and is now closed by Stage C3.2 below.
 
 Stage C3.1 — USART1 RX IRQ/ring-buffer prerequisite — hardware + physical accepted:
@@ -69,17 +69,41 @@ Stage C3.2 — MSP runtime high-water / guard — hardware + physical accepted:
 - production scheduler remains inactive during normal boot
 - physical OLED remained `DEUS OS / BOOT OK / READY`.
 
-Stage C3.3 — next:
+Stage C3.3 — console PSP stack-budget foundation — hardware + physical accepted:
 
-- prove the console PSP workload stack budget with runtime watermark/canary evidence
-- choose a console task stack size from measured workload evidence, not the rejected 512-byte assumption
-- retain MSP ownership until that sizing gate is accepted.
+- inactive-only external stack binding
+- legacy internal scheduler stacks remain `2 x 512 bytes`
+- dedicated aligned external console stack `1024 bytes` at `0x20000048`
+- exact 17-command non-scheduler safe surface
+- scheduler diagnostics excluded from active probe scheduler
+- `UART_COMMAND_CAPACITY=32`; `schedconsoleprobe` length `17`
+- candidate `17028 bytes`; SHA-256 `13539E4F0C422FF0E3C373EF4167F3238FFA6D9A1B09F309C1A07787F2596C7F`
+- `.bss=5224 bytes`; `_ebss=0x20000C68`; RAM gap `15256 bytes`; `fault_record=0x2000074C`
+- static probe estimate `524 bytes`; +64-byte context `588`; calibrated floor `632`
+- `4/4` standalone and `8/8` composite probes passed
+- runtime PSP high-water `600 / 1024 bytes`; minimum margin `424 bytes`
+- peer high-water `88 / 512 bytes`; maximum switches `693`; overlap `1`; canaries intact
+- exact safe surface `17/17` completed
+- RX high-water `80 / 128`, zero drops/errors, depth zero
+- exact `+105` IRQ/byte delta in all `8/8` composites
+- MSP high-water `360 / 1984`, minimum margin `1624`, canary intact
+- fresh-reset probe + exact fresh `+105` delta passed
+- final flash identity passed
+- physical OLED remained `DEUS OS / BOOT OK / READY`
+- accepted sizing: `1024 bytes` for the exact tested safe surface; 512-byte full-console size remains rejected.
+
+Stage C3.4 — next:
+
+- separate production scheduler lifecycle from command-gated diagnostic/self-test lifecycle
+- make scheduler diagnostics unavailable or safely isolated while the production scheduler is active
+- preserve normal boot MSP ownership during this gate.
 
 Later, separate gates are still required for:
 
-- production scheduler lifecycle / diagnostic isolation
 - wait/block/wake or equivalent idle/event semantics
 - normal boot task migration.
+
+Native USB remains a later transport slice. The provisional Windows/Linux host application name is **Deus OS CP** (`Deus OS Control Panel`); naming may change without changing protocol architecture.
 
 The frozen OLED geometry remains unchanged and is not part of these scheduler/stack ownership decisions.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
@@ -273,7 +297,7 @@ Do not implement yet:
 
 - dynamic heap allocator
 - filesystem
-- USB stack
+- USB stack implementation (architecture planned; implementation deferred until the current scheduler lifecycle boundary is closed)
 - TCP/IP directly on STM32
 - user/kernel privilege separation
 - MPU isolation

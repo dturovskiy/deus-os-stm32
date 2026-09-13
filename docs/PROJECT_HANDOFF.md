@@ -10,37 +10,37 @@ This section supersedes older “current state”, “exact next boundary”, TX
 ```text
 Root:                     D:\Projects\STM32\OS
 Branch:                   main
-Published HEAD:           53054e16c5b4dbb54626b0f080c9492629ccb285
-origin/main:               53054e16c5b4dbb54626b0f080c9492629ccb285
-Published subject:        feat: add USART1 RX IRQ ring buffer
-Current acceptance commit: pending for MSP runtime high-water/guard slice
+Published HEAD:           d3efae463cd65e087f0c1a3556de640105ed1b44
+origin/main:               d3efae463cd65e087f0c1a3556de640105ed1b44
+Published subject:        feat: add MSP stack high-water telemetry
+Current acceptance commit: pending for console PSP stack-budget foundation
 ```
 
-Current hardware-accepted uncommitted source change set:
+Current hardware- and physically accepted uncommitted source change set:
 
 ```text
- M linker/stm32f103c8.ld
+ M include/kernel/scheduler.h
  M src/kernel.c
- M src/startup.s
+ M src/kernel/scheduler.c
 ```
 
 Exact hardware-accepted source hashes:
 
 ```text
+include/kernel/scheduler.h
+E7A3358D37C5A2919AF6CA53FC5ADEF9F42FD9B495992123C9C5A4D15630B05B
+
 src/kernel.c
-EB193B1EF33D6F7DFF3DB766B2EB6EAAA760065FE9277700FE23BE883424DF60
+9F9A0AE44D04F6F8136A708957F649F054E55B2508064DD751CF1746BBB049AD
+
+src/kernel/scheduler.c
+7C0421D6B78D3C1807549A4A85402EAAB45FF47B8EEC2C770D5F59DE5BB0179F
 
 src/startup.s
 048C4D3604C3922F1491A6AC475609DE3593C41622648386D391F42688082E17
 
 linker/stm32f103c8.ld
 43E3269205CA83CFBC98D7664B86DB7293CF634875BF770ED714E7D6AE52BC2A
-
-include/kernel/scheduler.h
-CA39ABBED035511E2F460C015C72B2AA4D85DAAA88DFE722C9D3B71835A0F4E2
-
-src/kernel/scheduler.c
-BCBBBC33DE74310F87053D0257FB071890CFD2824EEDCB9B66D03F10AF25AD1A
 ```
 
 ### Current hardware
@@ -71,6 +71,7 @@ READY
 - Stack canary/high-water telemetry: `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
 - Substantive PSP workload: `8f6b922a7d2e55abc3133702e7571057f995da5d`.
 - USART1 RX IRQ/ring-buffer foundation: `53054e16c5b4dbb54626b0f080c9492629ccb285`.
+- MSP runtime high-water/guard: `d3efae463cd65e087f0c1a3556de640105ed1b44`.
 
 Substantive workload accepted sizing:
 
@@ -216,17 +217,74 @@ Hardware MSP proof:
 - runtime failure count `0`
 - physical OLED PASS.
 
+### Console PSP stack-budget hardware acceptance
+
+Architecture:
+
+- inactive-only `scheduler_task_stack_bind(...)`
+- legacy internal scheduler stacks remain `2 x 512 bytes`
+- dedicated aligned `1024-byte` external console probe stack
+- exact `17` non-scheduler safe console commands on PSP
+- scheduler diagnostics excluded from active probe scheduler
+- `UART_COMMAND_CAPACITY=32`; longest command `schedconsoleprobe` length `17`.
+
+Candidate identity:
+
+```text
+Binary:              17028 bytes
+SHA-256:             13539E4F0C422FF0E3C373EF4167F3238FFA6D9A1B09F309C1A07787F2596C7F
+.bss:                5224 bytes
+_ebss:               0x20000C68
+RAM gap below MSP:   15256 bytes
+fault_record:        0x2000074C
+probe stack:         0x20000048 / 1024 bytes
+```
+
+Static feasibility evidence:
+
+- linked probe estimate `524 bytes`
+- +64-byte context reserve -> `588 bytes`
+- calibrated floor `632 bytes` using prior `44-byte` runtime underprediction
+- calibrated 1024-byte margin `392 bytes`.
+
+Hardware v3 proof:
+
+- `4/4` standalone complete probes PASS
+- `8/8` composite `schedconsoleprobe + 16 x ping` probes PASS
+- exact safe surface `17/17` complete
+- PSP high-water `600 / 1024 bytes`; minimum margin `424 bytes` >= `256-byte` floor
+- peer high-water `88 / 512 bytes`; maximum switches `693`; overlap `1`
+- probe and peer canaries intact
+- RX high-water `80 / 128`; drops `0`; errors `0`; depth `0` after stress
+- exact `+105` IRQ / `+105` byte deltas in all `8/8` composites
+- MSP high-water `360 / 1984`; minimum margin `1624`; canary intact
+- fresh-reset composite probe and exact fresh `+105` delta PASS
+- legacy scheduler/health/I2C/OLED regressions PASS
+- final exact flash identity PASS
+- runtime failure count `0`
+- manual physical OLED PASS.
+
+Accepted stack-budget decision:
+
+- 512-byte full-console PSP size remains rejected
+- `1024 bytes` is accepted for the exact tested 17-command safe console surface
+- normal boot remains MSP-owned; production scheduler is still not started.
+
+### Native USB / host application direction
+
+Native USB remains planned as a first-class STM32F103 USB Device transport on PA11/PA12. The initial target remains CDC ACM, followed by a transport-neutral shell/RPC and later binary transport. The provisional Windows/Linux host application name is **Deus OS CP** (`Deus OS Control Panel`). Naming may change later without changing protocol architecture. UART remains the emergency console; ST-LINK remains recovery/debug access.
+
 ### Current unresolved gates
 
-RX transport and MSP runtime-budget blockers are closed. Normal-boot migration is still deferred because these are separate unresolved proofs:
+RX transport, MSP runtime budget, and console PSP workload sizing are closed. Normal-boot migration is still deferred because these separate unresolved gates remain:
 
-1. console PSP workload sizing if console ownership migrates
-2. production scheduler lifecycle and scheduler-diagnostic isolation
-3. future wait/block/wake or equivalent event/idle model for persistent tasks.
+1. production scheduler lifecycle and scheduler-diagnostic isolation
+2. future wait/block/wake or equivalent event/idle model for persistent tasks
+3. normal-boot task ownership migration.
 
 ### Exact next boundary
 
-Build the **console PSP stack-budget foundation** without changing normal-boot task ownership. Exercise the real console command surface under workload-specific runtime watermark/canary measurement, select an explicit stack size from measured evidence, and keep the current 512-byte full-console PSP size rejected unless the runtime proof establishes otherwise. Production scheduler lifecycle/diagnostic isolation remains a separate later gate.
+Build the **production scheduler lifecycle / scheduler-diagnostic isolation** foundation without changing normal-boot task ownership. Scheduler diagnostics/self-tests that reinitialize global scheduler state must be separated from an active production scheduler context. Preserve the accepted `1024-byte` safe-console PSP workload budget as evidence; wait/block/wake semantics and normal-boot migration remain later gates.
 
 ### Acceptance lifecycle
 
@@ -599,7 +657,7 @@ source -> build -> ELF/bin validation -> ST-LINK flash -> verify -> reset -> UAR
 
 Current UART is TX-only from STM32 to host. A later RX/command-console slice will extend this to a fully bidirectional automated test loop.
 
-Native USB is planned to eventually consolidate normal console/control/update traffic onto the board's micro-USB connector.
+Native USB is planned to eventually consolidate normal console/control/update traffic onto the board's micro-USB connector. The provisional Windows/Linux host application name is **Deus OS CP** (`Deus OS Control Panel`).
 <!-- END STM32_OS_DEV_LOOP -->
 
 <!-- BEGIN STM32_OS_PHASE3_TIME_ACCEPTANCE -->

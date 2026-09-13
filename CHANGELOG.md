@@ -3,6 +3,34 @@
 <!-- BEGIN STM32_OS_CHANGELOG_2026_09_13 -->
 ## 2026-09-13
 
+### Hardware + physical accepted — console PSP stack-budget foundation
+
+- Added inactive-only external task-stack binding while preserving the legacy internal scheduler stack pool at `2 x 512 bytes`.
+- Added a dedicated aligned `1024-byte` console PSP measurement stack.
+- Split safe named console dispatch from scheduler diagnostics; the accepted PSP surface is exactly `17` non-scheduler commands.
+- Increased `UART_COMMAND_CAPACITY` from `16` to `32` after hardware v1 proved the 17-character `schedconsoleprobe` command could not reach dispatch with the old parser capacity.
+- Accepted source delta: `include/kernel/scheduler.h`, `src/kernel.c`, `src/kernel/scheduler.c`.
+- Candidate `17028 bytes`, SHA-256 `13539E4F0C422FF0E3C373EF4167F3238FFA6D9A1B09F309C1A07787F2596C7F`.
+- `.bss=5224 bytes`, `_ebss=0x20000C68`, RAM gap below MSP reservation `15256 bytes`, `fault_record=0x2000074C`, probe stack `0x20000048 / 1024 bytes`.
+- Hardware v3: `4/4` standalone and `8/8` composite probes passed.
+- PSP high-water `600 / 1024 bytes`; minimum margin `424 bytes` >= `256-byte` acceptance floor.
+- Peer high-water `88 / 512 bytes`; maximum switches `693`; overlap `1`; both canaries intact.
+- Exact safe console surface `17/17` completed.
+- RX high-water `80 / 128`; drops/errors `0`; depth returned to zero; all `8/8` composites produced exact `+105` IRQ / `+105` byte deltas.
+- MSP high-water `360 / 1984`; minimum margin `1624`; canary intact.
+- Fresh-reset probe and exact fresh `+105` delta passed.
+- Legacy scheduler, health, I2C/OLED regressions and final exact flash identity passed.
+- Physical OLED remained `DEUS OS / BOOT OK / READY`.
+- Accepted sizing decision: `1024 bytes` for the exact tested 17-command safe PSP surface; 512-byte full-console size remains rejected.
+- Normal boot remains MSP-owned; production scheduler lifecycle/diagnostic isolation is the next gate.
+
+### Planned host application naming
+
+- Native USB direction remains STM32F103 USB Device -> CDC ACM -> shell/RPC -> binary transport -> host control/update tooling.
+- Provisional cross-platform Windows/Linux host application name: **Deus OS CP** (`Deus OS Control Panel`).
+- The name may be changed later without changing the protocol/transport architecture.
+- UART remains the emergency console and ST-LINK remains recovery/debug access.
+
 ### Hardware + physical accepted — MSP runtime high-water / guard foundation
 
 - Reserved the upper `2048 bytes` of SRAM as a dedicated MSP region:

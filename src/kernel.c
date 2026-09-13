@@ -110,6 +110,11 @@
 #define I2C_SPIN_LIMIT    100000u
 #define SCHED_WORKLOAD_PEER_SPINS 1000000u
 
+#define SCHED_CONSOLE_PROBE_STACK_WORDS 256u
+#define SCHED_CONSOLE_PROBE_STACK_BYTES     (SCHED_CONSOLE_PROBE_STACK_WORDS * 4u)
+#define SCHED_CONSOLE_PROBE_MIN_MARGIN_BYTES 256u
+#define SCHED_CONSOLE_PROBE_COMMAND_COUNT 17u
+
 /*
  * PCLK2 = 72 MHz.
  * USARTDIV = 72,000,000 / (16 * 115,200) = 39.0625
@@ -207,6 +212,21 @@ static volatile uint32_t scheduler_workload_task0_done;
 static volatile uint32_t scheduler_workload_peer_overlap;
 static volatile uint32_t scheduler_workload_peer_done;
 static volatile uint32_t scheduler_workload_ui_result;
+
+static uint32_t scheduler_console_probe_stack
+    [SCHED_CONSOLE_PROBE_STACK_WORDS]
+    __attribute__((aligned(8)));
+
+static volatile uint32_t scheduler_console_probe_task_started;
+static volatile uint32_t scheduler_console_probe_task_done;
+static volatile uint32_t scheduler_console_probe_peer_overlap;
+static volatile uint32_t scheduler_console_probe_peer_done;
+static volatile uint32_t scheduler_console_probe_completed_count;
+static volatile uint32_t scheduler_console_probe_ui_restore_result;
+
+static int console_execute_safe_named(const char *command);
+static void console_execute_named(const char *command);
+static void console_scheduler_console_probe_test(void);
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -424,7 +444,7 @@ static void uart_boot_banner(uint32_t core_clock_hz)
     uart_write("\r\n");
 }
 
-#define UART_COMMAND_CAPACITY 16u
+#define UART_COMMAND_CAPACITY 32u
 
 static char uart_command[UART_COMMAND_CAPACITY];
 static uint32_t uart_command_length;
@@ -1947,21 +1967,248 @@ static void console_msp_stack_stats(void)
     }
 }
 
-static void console_execute(void)
+static const char * const scheduler_console_probe_commands
+    [SCHED_CONSOLE_PROBE_COMMAND_COUNT] =
 {
-    uart_command[uart_command_length] = '\0';
+    "ping",
+    "uptime",
+    "health",
+    "rxstat",
+    "mspstat",
+    "fault",
+    "i2cscan",
+    "oledping",
+    "oledtest",
+    "oledtext",
+    "oledrender",
+    "oledconsole",
+    "oledscroll",
+    "oleddirty",
+    "oleduiupdate",
+    "uiruntime",
+    "oledstatus"
+};
 
-    if (text_equals(uart_command, "ping") != 0)
+static void scheduler_console_probe_task(void *argument)
+{
+    uint32_t index;
+
+    if (argument != (void *)scheduler_console_probe_commands)
+    {
+        scheduler_console_probe_task_done = 1u;
+        return;
+    }
+
+    scheduler_console_probe_task_started = 1u;
+
+    for (index = 0u;
+         index < SCHED_CONSOLE_PROBE_COMMAND_COUNT;
+         ++index)
+    {
+        if (
+            console_execute_safe_named(
+                scheduler_console_probe_commands[index]) != 0
+        ) {
+            ++scheduler_console_probe_completed_count;
+        }
+    }
+
+    scheduler_console_probe_ui_restore_result =
+        (oled_runtime_ui_show() != 0) ? 1u : 0u;
+
+    scheduler_console_probe_task_done = 1u;
+}
+
+static void scheduler_console_probe_peer_task(void *argument)
+{
+    volatile uint32_t spin;
+
+    if (argument != (void *)0)
+    {
+        scheduler_console_probe_peer_done = 1u;
+        return;
+    }
+
+    for (spin = 0u;
+         spin < SCHED_WORKLOAD_PEER_SPINS;
+         ++spin)
+    {
+        if (
+            (scheduler_console_probe_task_started != 0u) &&
+            (scheduler_console_probe_task_done == 0u)
+        ) {
+            scheduler_console_probe_peer_overlap = 1u;
+        }
+
+        __asm volatile ("nop");
+    }
+
+    scheduler_console_probe_peer_done = 1u;
+}
+
+static void console_scheduler_console_probe_test(void)
+{
+    const scheduler_task_t *task0;
+    const scheduler_task_t *task1;
+    uint32_t used0;
+    uint32_t used1;
+    uint32_t capacity0;
+    uint32_t capacity1;
+    uint32_t margin0;
+    uint32_t switches;
+    int canary0;
+    int canary1;
+    int bind_result;
+    int prepare0;
+    int prepare1;
+    int start_result;
+    int passed;
+
+    scheduler_init();
+
+    scheduler_console_probe_task_started = 0u;
+    scheduler_console_probe_task_done = 0u;
+    scheduler_console_probe_peer_overlap = 0u;
+    scheduler_console_probe_peer_done = 0u;
+    scheduler_console_probe_completed_count = 0u;
+    scheduler_console_probe_ui_restore_result = 0u;
+
+    bind_result =
+        scheduler_task_stack_bind(
+            0u,
+            scheduler_console_probe_stack,
+            SCHED_CONSOLE_PROBE_STACK_WORDS);
+
+    prepare0 =
+        scheduler_task_prepare(
+            0u,
+            scheduler_console_probe_task,
+            (void *)scheduler_console_probe_commands);
+
+    prepare1 =
+        scheduler_task_prepare(
+            1u,
+            scheduler_console_probe_peer_task,
+            (void *)0);
+
+    if (
+        (bind_result == 0) ||
+        (prepare0 == 0) ||
+        (prepare1 == 0)
+    ) {
+        uart_write_line("SCHED_CONSOLE_PROBE_PREPARE_ERR");
+        return;
+    }
+
+    start_result = scheduler_start_preemptive();
+
+    used0 = scheduler_stack_high_water_bytes(0u);
+    used1 = scheduler_stack_high_water_bytes(1u);
+    capacity0 = scheduler_stack_capacity_bytes(0u);
+    capacity1 = scheduler_stack_capacity_bytes(1u);
+    margin0 = (used0 < capacity0) ? (capacity0 - used0) : 0u;
+    canary0 = scheduler_stack_canary_intact(0u);
+    canary1 = scheduler_stack_canary_intact(1u);
+    switches = scheduler_preempt_switch_count_get();
+
+    task0 = scheduler_task_get(0u);
+    task1 = scheduler_task_get(1u);
+
+    uart_write("CONSOLE_PROBE_CAPACITY=");
+    uart_write_hex32(capacity0);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_USED=");
+    uart_write_hex32(used0);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_MARGIN=");
+    uart_write_hex32(margin0);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_PEER_CAPACITY=");
+    uart_write_hex32(capacity1);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_PEER_USED=");
+    uart_write_hex32(used1);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_SWITCHES=");
+    uart_write_hex32(switches);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_OVERLAP=");
+    uart_write_hex32(scheduler_console_probe_peer_overlap);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_SURFACE_COUNT=");
+    uart_write_hex32(SCHED_CONSOLE_PROBE_COMMAND_COUNT);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_COMPLETED=");
+    uart_write_hex32(scheduler_console_probe_completed_count);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_UI_RESTORE=");
+    uart_write_hex32(scheduler_console_probe_ui_restore_result);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_CANARY=");
+    uart_write_hex32((canary0 != 0) ? 1u : 0u);
+    uart_write("\r\n");
+
+    uart_write("CONSOLE_PROBE_PEER_CANARY=");
+    uart_write_hex32((canary1 != 0) ? 1u : 0u);
+    uart_write("\r\n");
+
+    passed =
+        (start_result != 0) &&
+        (scheduler_console_probe_task_started != 0u) &&
+        (scheduler_console_probe_task_done != 0u) &&
+        (scheduler_console_probe_peer_done != 0u) &&
+        (scheduler_console_probe_peer_overlap != 0u) &&
+        (scheduler_console_probe_completed_count ==
+            SCHED_CONSOLE_PROBE_COMMAND_COUNT) &&
+        (scheduler_console_probe_ui_restore_result != 0u) &&
+        (switches >= 2u) &&
+        (capacity0 == SCHED_CONSOLE_PROBE_STACK_BYTES) &&
+        (capacity1 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
+        (used0 >= 64u) &&
+        (used0 < capacity0) &&
+        (margin0 >= SCHED_CONSOLE_PROBE_MIN_MARGIN_BYTES) &&
+        (used1 >= 64u) &&
+        (used1 < capacity1) &&
+        (canary0 != 0) &&
+        (canary1 != 0) &&
+        (task0 != (const scheduler_task_t *)0) &&
+        (task1 != (const scheduler_task_t *)0) &&
+        (task0->state == SCHEDULER_TASK_DONE) &&
+        (task1->state == SCHEDULER_TASK_DONE);
+
+    if (passed != 0)
+    {
+        uart_write_line("SCHED_CONSOLE_PROBE_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_CONSOLE_PROBE_ERR");
+    }
+}
+
+static int console_execute_safe_named(const char *command)
+{
+    if (text_equals(command, "ping") != 0)
     {
         uart_write_line("PONG");
     }
-    else if (text_equals(uart_command, "uptime") != 0)
+    else if (text_equals(command, "uptime") != 0)
     {
         uart_write("UPTIME_MS=");
         uart_write_hex32(kernel_time_now());
         uart_write("\r\n");
     }
-    else if (text_equals(uart_command, "health") != 0)
+    else if (text_equals(command, "health") != 0)
     {
         uart_write("HEALTH TICK=");
         uart_write_hex32(kernel_time_now());
@@ -1969,88 +2216,106 @@ static void console_execute(void)
         uart_write_hex32((GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
         uart_write("\r\n");
     }
-    else if (text_equals(uart_command, "rxstat") != 0)
+    else if (text_equals(command, "rxstat") != 0)
     {
         console_uart_rx_stats();
     }
-    else if (text_equals(uart_command, "mspstat") != 0)
+    else if (text_equals(command, "mspstat") != 0)
     {
         console_msp_stack_stats();
     }
-    else if (text_equals(uart_command, "schedtest") != 0)
-    {
-        console_scheduler_test();
-    }
-    else if (text_equals(uart_command, "schedcoop") != 0)
-    {
-        console_scheduler_cooperative_test();
-    }
-    else if (text_equals(uart_command, "schedpreempt") != 0)
-    {
-        console_scheduler_preemptive_test();
-    }
-    else if (text_equals(uart_command, "schedstack") != 0)
-    {
-        console_scheduler_stack_water_test();
-    }
-    else if (text_equals(uart_command, "schedworkload") != 0)
-    {
-        console_scheduler_workload_test();
-    }
-    else if (text_equals(uart_command, "fault") != 0)
+    else if (text_equals(command, "fault") != 0)
     {
         console_write_fault();
     }
-    else if (text_equals(uart_command, "i2cscan") != 0)
+    else if (text_equals(command, "i2cscan") != 0)
     {
         console_i2c_scan();
     }
-    else if (text_equals(uart_command, "oledping") != 0)
+    else if (text_equals(command, "oledping") != 0)
     {
         console_oled_ping();
     }
-    else if (text_equals(uart_command, "oledtest") != 0)
+    else if (text_equals(command, "oledtest") != 0)
     {
         console_oled_test();
     }
-    else if (text_equals(uart_command, "oledtext") != 0)
+    else if (text_equals(command, "oledtext") != 0)
     {
         console_oled_text();
     }
-    else if (text_equals(uart_command, "oledrender") != 0)
+    else if (text_equals(command, "oledrender") != 0)
     {
         console_oled_render();
     }
-    else if (text_equals(uart_command, "oledconsole") != 0)
+    else if (text_equals(command, "oledconsole") != 0)
     {
         console_oled_console();
     }
-    else if (text_equals(uart_command, "oledscroll") != 0)
+    else if (text_equals(command, "oledscroll") != 0)
     {
         console_oled_scroll();
     }
-    else if (text_equals(uart_command, "oleddirty") != 0)
+    else if (text_equals(command, "oleddirty") != 0)
     {
         console_oled_dirty();
     }
-    else if (text_equals(uart_command, "oleduiupdate") != 0)
+    else if (text_equals(command, "oleduiupdate") != 0)
     {
         console_oled_ui_update();
     }
-    else if (text_equals(uart_command, "uiruntime") != 0)
+    else if (text_equals(command, "uiruntime") != 0)
     {
         console_oled_runtime();
     }
-    else if (text_equals(uart_command, "oledstatus") != 0)
+    else if (text_equals(command, "oledstatus") != 0)
     {
         console_oled_status();
     }
-
     else
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+static void console_execute_named(const char *command)
+{
+    if (text_equals(command, "schedtest") != 0)
+    {
+        console_scheduler_test();
+    }
+    else if (text_equals(command, "schedcoop") != 0)
+    {
+        console_scheduler_cooperative_test();
+    }
+    else if (text_equals(command, "schedpreempt") != 0)
+    {
+        console_scheduler_preemptive_test();
+    }
+    else if (text_equals(command, "schedstack") != 0)
+    {
+        console_scheduler_stack_water_test();
+    }
+    else if (text_equals(command, "schedworkload") != 0)
+    {
+        console_scheduler_workload_test();
+    }
+    else if (text_equals(command, "schedconsoleprobe") != 0)
+    {
+        console_scheduler_console_probe_test();
+    }
+    else if (console_execute_safe_named(command) == 0)
     {
         uart_write_line("ERR");
     }
+}
 
+static void console_execute(void)
+{
+    uart_command[uart_command_length] = '\0';
+    console_execute_named(uart_command);
     uart_command_length = 0u;
 }
 

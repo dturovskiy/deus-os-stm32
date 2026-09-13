@@ -439,6 +439,55 @@ void scheduler_init(void)
     }
 }
 
+int scheduler_task_stack_bind(
+    uint32_t index,
+    uint32_t *stack_low,
+    uint32_t stack_words)
+{
+    scheduler_task_t *task;
+    uint32_t *stack_high;
+    uint32_t word_index;
+
+    if (
+        (index >= SCHEDULER_TASK_COUNT) ||
+        (stack_low == (uint32_t *)0) ||
+        (stack_words < SCHEDULER_INITIAL_FRAME_WORDS) ||
+        (scheduler_active != 0u)
+    ) {
+        return 0;
+    }
+
+    stack_high = stack_low + stack_words;
+
+    if (
+        ((((uintptr_t)stack_low) & (uintptr_t)0x7u) != 0u) ||
+        ((((uintptr_t)stack_high) & (uintptr_t)0x7u) != 0u)
+    ) {
+        return 0;
+    }
+
+    task = &scheduler_tasks[index];
+
+    if (task->state != SCHEDULER_TASK_UNUSED)
+    {
+        return 0;
+    }
+
+    task->stack_low = stack_low;
+    task->stack_high = stack_high;
+    task->saved_sp = stack_high;
+    task->stack_words = stack_words;
+
+    for (word_index = 0u;
+         word_index < stack_words;
+         ++word_index)
+    {
+        stack_low[word_index] = SCHEDULER_STACK_FILL;
+    }
+
+    return 1;
+}
+
 int scheduler_task_prepare(
     uint32_t index,
     scheduler_task_entry_t entry,

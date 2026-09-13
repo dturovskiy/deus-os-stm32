@@ -72,17 +72,17 @@ This section is authoritative for the current execution boundary and supersedes 
 - [x] Treat the current `.su` direct-call-chain calculation as feasibility/sanity evidence, not a conservative upper bound.
 - [x] Runtime watermark/canary evidence is authoritative for stack sizing until the static method is strengthened.
 - [x] A 512-byte PSP stack is accepted for the exact tested frozen OLED render/present workload with `184 bytes` measured margin.
-- [ ] Console-task PSP stack budget still requires workload-specific proof if/when console ownership migrates.
+- [x] Console-task PSP stack budget accepted at `1024 bytes` for the exact tested 17-command safe surface; high-water `600 bytes`, margin `424 bytes`.
 - [x] Kernel/MSP stack budget measured separately and accepted with runtime watermark/canary evidence.
 
 ### Current acceptance source change set
 
-Immediately before the MSP high-water acceptance commit, the exact source delta is:
+Immediately before the console PSP stack-budget acceptance commit, the exact source delta is:
 
 ```text
- M linker/stm32f103c8.ld
+ M include/kernel/scheduler.h
  M src/kernel.c
- M src/startup.s
+ M src/kernel/scheduler.c
 ```
 
 ### Production ownership decision — ACCEPTED
@@ -123,7 +123,7 @@ Immediately before the MSP high-water acceptance commit, the exact source delta 
 - [x] Full console 512-byte PSP stack remains not accepted.
 - [x] Acceptance commit published as `53054e16c5b4dbb54626b0f080c9492629ccb285`.
 
-### MSP runtime high-water / guard — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
+### MSP runtime high-water / guard — ACCEPTED / PUBLISHED
 
 - [x] Dedicated upper-SRAM MSP reservation: `2048 bytes` at `0x20004800..0x20005000`.
 - [x] Bottom guard/canary: `64 bytes`; measurable capacity: `1984 bytes`.
@@ -141,10 +141,44 @@ Immediately before the MSP high-water acceptance commit, the exact source delta 
 - [x] Physical OLED remained `DEUS OS / BOOT OK / READY`.
 - [x] Console remains MSP-owned; production scheduler still not started during normal boot.
 - [x] Normal-boot task migration remains deferred.
+- [x] Acceptance commit published as `d3efae463cd65e087f0c1a3556de640105ed1b44`.
+
+### Console PSP stack-budget foundation — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
+
+- [x] Inactive-only external task-stack binding added.
+- [x] Legacy internal scheduler stacks remain `2 x 512 bytes`.
+- [x] Dedicated aligned external console probe stack is exactly `1024 bytes` at `0x20000048`.
+- [x] `UART_COMMAND_CAPACITY=32`; longest command `schedconsoleprobe` is 17 characters.
+- [x] Safe PSP surface is exact `17` non-scheduler commands; scheduler diagnostics are excluded.
+- [x] Candidate `17028 bytes`, SHA-256 `13539E4F0C422FF0E3C373EF4167F3238FFA6D9A1B09F309C1A07787F2596C7F`.
+- [x] `.bss=5224 bytes`; `_ebss=0x20000C68`; RAM gap below MSP `15256 bytes`; linked `fault_record=0x2000074C`.
+- [x] `4/4` standalone probes passed.
+- [x] `8/8` composite `schedconsoleprobe + 16 x ping` probes passed.
+- [x] PSP high-water `600 / 1024 bytes`; minimum margin `424 bytes` >= `256-byte` floor.
+- [x] Peer high-water `88 / 512 bytes`; maximum switches `693`; overlap `1`; both canaries intact.
+- [x] Exact safe surface `17/17` completed.
+- [x] RX high-water `80 / 128`; zero drops/errors; depth zero after accepted stress.
+- [x] Exact `+105` IRQ / `+105` byte deltas in all `8/8` composites.
+- [x] MSP high-water `360 / 1984`; minimum margin `1624`; canary intact.
+- [x] Fresh-reset probe and exact fresh `+105` delta passed.
+- [x] Legacy scheduler/health/I2C/OLED regressions and exact final flash identity passed.
+- [x] Physical OLED remained `DEUS OS / BOOT OK / READY`.
+- [x] `1024 bytes` accepted for the exact tested 17-command safe console workload.
+- [x] Normal boot remains MSP-owned; production scheduler still not started.
+
+### Planned native USB / host control direction
+
+- [ ] STM32F103 USB Device core on PA11/PA12 without HAL.
+- [ ] USB CDC ACM command/diagnostic console.
+- [ ] Transport-neutral shell/RPC shared with UART.
+- [ ] Binary transport after CDC semantics stabilize.
+- [ ] Cross-platform Windows/Linux host application, provisional name **Deus OS CP** (`Deus OS Control Panel`).
+- [ ] Product name may change later; branding must not define protocol architecture.
+- [ ] UART remains emergency console; ST-LINK remains recovery/debug.
 
 ### Next active scheduler boundary
 
-Prove the **console PSP stack budget** with workload-specific runtime evidence. The prior full-console feasibility result remains `524 + 64 = 588 bytes`, so a 512-byte console PSP stack is still rejected. Do not migrate normal-boot ownership until console sizing passes; production scheduler lifecycle/diagnostic isolation remains a separate later gate.
+Implement and prove **production scheduler lifecycle / scheduler-diagnostic isolation** without changing normal-boot ownership. Scheduler diagnostics that reinitialize global scheduler state must not run inside an active production scheduler context. Keep the accepted `1024-byte` safe-console PSP workload budget as evidence; wait/block/wake semantics and normal-boot migration remain later gates.
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

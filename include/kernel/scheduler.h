@@ -26,6 +26,11 @@ typedef struct
 
 void scheduler_init(void);
 
+int scheduler_task_stack_bind(
+    uint32_t index,
+    uint32_t *stack_low,
+    uint32_t stack_words);
+
 int scheduler_task_prepare(
     uint32_t index,
     scheduler_task_entry_t entry,

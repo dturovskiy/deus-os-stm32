@@ -45,7 +45,7 @@ Scheduler work still open:
 
 - [x] 512-byte stack validated for the exact tested frozen OLED render/present PSP workload.
 - [x] Production ownership/stack-budget decision audit:
-  - full current console estimate `524 + 64 = 588 bytes`
+  - current full-console planning estimate `540 + 64 = 604 bytes` on the published MSP baseline
   - 512-byte full-console PSP stack rejected
   - active nested scheduler diagnostics rejected until lifecycle separation
   - MSP runtime budget was a separate prerequisite and is now measured/accepted below.
@@ -59,14 +59,16 @@ Scheduler work still open:
 - [ ] explicit production task ownership model
 - [x] USART1 RX IRQ + 128-byte ring-buffer foundation with real backlog/no-loss proof
 - [x] kernel/MSP runtime high-water / guard proof: `596 / 1984 bytes`, margin `1388 bytes`, canary intact
-- [ ] console-task PSP stack budget if console ownership migrates
+- [x] console-task PSP stack budget for exact tested 17-command safe surface: `600 / 1024 bytes`, margin `424 bytes`
+- [x] inactive-only external stack binding; legacy internal stacks remain `2 x 512 bytes`
+- [x] scheduler diagnostics excluded from the active PSP safe surface
 - [ ] production scheduler diagnostic isolation / lifecycle
 - [ ] normal boot task migration
 - [ ] idle/wait model / steady-state scheduler ownership
 - [ ] `sleep()`
 - [ ] priorities
 
-Production ownership decision is complete. USART1 polling RX has been replaced by hardware-accepted IRQ/ring receive, and the separate MSP runtime budget is now hardware-accepted at `596 / 1984 bytes` with `1388 bytes` measured margin and intact canary. Next active boundary: **console PSP stack-budget foundation**. The 512-byte full-console PSP size remains rejected; production scheduler lifecycle/diagnostic isolation and normal-boot migration remain deferred.
+Production ownership prerequisite work now includes accepted IRQ/ring RX, MSP runtime budget, and a hardware-accepted `1024-byte` PSP budget for the exact 17-command safe console surface (`600-byte` high-water, `424-byte` minimum margin). The 512-byte full-console size remains rejected. Next active boundary: **production scheduler lifecycle / scheduler-diagnostic isolation**. Wait/block/wake semantics and normal-boot migration remain deferred.
 <!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 
 ## Phase 0 - Boot baseline
@@ -137,9 +139,12 @@ Target progression:
 2. USB CDC ACM diagnostic/command console.
 3. Bidirectional kernel shell/RPC transport over USB.
 4. Binary transport for structured telemetry, files, bitmap/framebuffer chunks, and host-rendered UI primitives.
-5. Host-side client capable of presenting an interactive remote UI / desktop-like view of the STM32 OS.
-6. USB firmware-update path and a small recoverable bootloader so normal development can eventually use the native micro-USB cable without the external UART adapter.
-7. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary transport.
+5. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); the name may change later without changing protocol architecture.
+6. Host-side interactive/control UI and CLI-style control surface over the stable protocol.
+7. USB firmware-update path and a small recoverable bootloader so normal development can eventually use the native micro-USB cable without the external UART adapter.
+8. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary transport.
+
+Initial host integration should avoid requiring a custom kernel-mode USB driver: CDC ACM is the first compatibility target. A later vendor-specific bulk interface through standard userspace USB facilities may be considered only if CDC becomes a throughput/latency limitation.
 
 Constraint: STM32F103C8 is a USB Device target here, not a general USB Host platform. Keyboard/mouse emulation is possible as USB HID device behavior; directly hosting commodity USB peripherals is outside the baseline architecture.
 <!-- END STM32_OS_USB_STRATEGY -->
