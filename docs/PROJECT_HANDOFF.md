@@ -689,3 +689,61 @@ Phase 3 governance debt is closed.
 - Full framebuffer-backed kernel console and text rendering remain pending
 - Next implementation boundary: **framebuffer-backed drawing primitives and minimal text rendering**
 <!-- END STM32_OS_SSD1306_VISIBLE_ACCEPTANCE -->
+
+<!-- BEGIN STM32_OS_SCHED_WAIT_WAKE_HANDOFF_CURRENT_20260913 -->
+## Current dynamic state — 2026-09-13 — scheduler wait/wake accepted
+
+**This section supersedes earlier current-boundary notes in this file. Historical milestone sections remain valid as history.**
+
+Technical acceptance state:
+
+- published Git baseline entering this slice: `54bcaaa571d4a670b97dd49d5051c7462c30fd49`;
+- accepted source files for this slice:
+  - `include/kernel/scheduler.h`
+  - `src/kernel.c`
+  - `src/kernel/scheduler.c`
+- accepted candidate: `build\scheduler_wait_wake_foundation_v2\os.bin`;
+- candidate bytes: `19932`;
+- candidate SHA-256: `C21915F3DFA898C8E9F2FC601BC9E0FDA4ABE8EBB23528BF14F25D82FE28CE81`;
+- source/build gate: PASS;
+- hardware acceptance: PASS;
+- physical OLED acceptance: `PASS_OPERATOR_CONFIRMED_2026-09-13`;
+- normal boot ownership: **MSP remains owner**;
+- production scheduler: **not automatically started on normal boot**.
+
+Accepted wait/wake model:
+
+- blocked task state is explicit;
+- task waits are SVC-mediated;
+- event posting is ISR-safe;
+- pending events close lost-wakeup races;
+- no-runnable scheduler state parks host MSP in `WFE`;
+- IRQ wake can resume PSP work;
+- UART RX events are published after ring insertion;
+- event consumers re-check their condition/FIFO after wake;
+- CR/LF protocol framing is not treated as application payload.
+
+Regression status:
+
+- four wait/wake UART IRQ rounds: PASS;
+- existing scheduler diagnostics before/after: 6/6 PASS;
+- lifecycle isolation: seven invasive diagnostics blocked while active;
+- RX drops/errors: zero;
+- PSP canaries: intact;
+- MSP canary: intact;
+- OLED runtime restore: PASS;
+- final target readback: exact candidate match.
+
+Operational script/evidence failures must be handled according to:
+`docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`.
+
+The playbook distinguishes HARNESS, PRODUCT, ENVIRONMENT, and EVIDENCE/STATE-DRIFT failures and requires evidence-first classification before source changes.
+
+Publication commit/push is a separate gate and does not change the technical acceptance claim above.
+
+### Exact next implementation boundary
+
+**NORMAL_BOOT_PRODUCTION_TASK_OWNERSHIP_MIGRATION**
+
+Do not implement timer `sleep()` or priorities in that gate. They remain later milestones built on the accepted wait/wake foundation.
+<!-- END STM32_OS_SCHED_WAIT_WAKE_HANDOFF_CURRENT_20260913 -->

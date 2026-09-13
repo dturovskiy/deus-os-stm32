@@ -160,3 +160,37 @@ Current USART1 is bidirectional at 115200 8N1 and is part of the automated hardw
 
 Native USB is planned to eventually consolidate normal console/control/update traffic onto the board's micro-USB connector. The provisional Windows/Linux host application name is **Deus OS CP** (`Deus OS Control Panel`); naming may be revised later.
 <!-- END STM32_OS_DEV_LOOP -->
+
+<!-- BEGIN STM32_OS_SCHED_WAIT_WAKE_ACCEPTED_20260913 -->
+## Production scheduler steady-state wait/wake foundation — accepted 2026-09-13
+
+The production scheduler now has an accepted steady-state wait/wake foundation while normal boot remains MSP-owned.
+
+Accepted behavior:
+
+- explicit `SCHEDULER_TASK_BLOCKED` state alongside UNUSED / READY / DONE;
+- task-side event wait through `scheduler_wait_events()` / SVC #3;
+- ISR-safe `scheduler_event_signal()` wake path;
+- pending-event handling closes the wait-vs-signal race;
+- no-runnable scheduler state parks the preserved host MSP with `WFE` rather than busy-spinning or falsely completing the run;
+- UART RX IRQ publishes an event only after the RX byte is committed to the ring;
+- event consumers treat an event as a notification to re-check the FIFO/condition, not as the payload itself;
+- normal reset still runs the product console on MSP and does not automatically start the production scheduler.
+
+Accepted firmware:
+
+- candidate: `build\scheduler_wait_wake_foundation_v2\os.bin`
+- size: **19932 bytes**
+- SHA-256: `C21915F3DFA898C8E9F2FC601BC9E0FDA4ABE8EBB23528BF14F25D82FE28CE81`
+- hardware wait/wake rounds: **4/4 PASS**
+- legacy scheduler regression: **6/6 PASS before and after**
+- lifecycle diagnostic isolation: **7/7 blocked while active**
+- UART RX: zero drops / zero errors
+- task and MSP canaries: intact
+- frozen OLED runtime regression: PASS
+- physical OLED appearance: **operator-confirmed PASS**
+
+Harness/evidence/recovery procedures are documented in `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`.
+
+Next implementation boundary after publication: **normal-boot production task ownership / migration**. `sleep()` / timer blocking and scheduler priorities remain separate later gates.
+<!-- END STM32_OS_SCHED_WAIT_WAKE_ACCEPTED_20260913 -->

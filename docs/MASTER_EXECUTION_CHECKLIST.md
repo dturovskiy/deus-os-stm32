@@ -427,3 +427,50 @@ Accepted firmware fingerprint:
 Slice 8 closes the transition from acceptance/demo UI commands to the normal
 runtime boot lifecycle. Frozen UI geometry and styling remain closed; select the
 next non-UI/system slice separately.
+
+<!-- BEGIN STM32_OS_SCHED_WAIT_WAKE_MASTER_ACCEPTED_20260913 -->
+## Production scheduler steady-state wait/wake foundation — ACCEPTED 2026-09-13
+
+Status: **hardware and physical acceptance complete**
+
+Acceptance criteria completed:
+
+- [x] Explicit runnable vs blocked state exists through `SCHEDULER_TASK_BLOCKED`.
+- [x] Task wait path uses `scheduler_wait_events()` through SVC #3.
+- [x] ISR-side event signalling can wake blocked tasks safely.
+- [x] Pending-event semantics close the check-vs-block lost-wakeup race.
+- [x] When no task is runnable but blocked work remains, scheduler ownership parks on preserved host MSP with `WFE`; it does not busy-spin and does not falsely finish the run.
+- [x] UART RX event publication occurs after ring-buffer byte publication.
+- [x] Event consumer re-checks RX FIFO after wake and separates CR/LF protocol framing from payload.
+- [x] Four UART IRQ wait/wake hardware rounds pass with raw sentinel `0x57`.
+- [x] Positive idle-WFE count is proven in every round.
+- [x] Task canaries remain intact; observed diagnostic task high-water stays within 512-byte task stacks.
+- [x] Lifecycle isolation blocks all seven invasive scheduler diagnostics while active.
+- [x] Existing foundation/cooperative/preemptive/stack/workload/console-probe diagnostics pass before and after wait/wake proof.
+- [x] USART1 RX ring reports zero drops and zero errors after the complete regression.
+- [x] MSP guard/canary and margin remain healthy.
+- [x] Frozen OLED runtime regression passes.
+- [x] Final physical OLED appearance is operator-confirmed PASS.
+- [x] Final target Flash readback exactly matches the accepted candidate.
+
+Accepted firmware fingerprint:
+
+- path: `build\scheduler_wait_wake_foundation_v2\os.bin`
+- bytes: `19932`
+- SHA-256: `C21915F3DFA898C8E9F2FC601BC9E0FDA4ABE8EBB23528BF14F25D82FE28CE81`
+
+Accepted evidence:
+
+- source/build log SHA-256: `220316AF92C3328F9B0D4F850B6EBF9F09A345CD673AAD81A301ED0E9ADD0219`
+- source/build ZIP SHA-256: `A6A449669CFDD401E569578C40D91169C8FC8E7A5CF557600E945FE92AAF2D3B`
+- hardware log SHA-256: `970656981374C7252A96748B5EF16A17600ABAFDFE73624870DE4C73F33C484A`
+- hardware ZIP SHA-256: `C4FD9B7774934102A95F4A66C5BF7AC586D0A85C360BA9DF34C7C1315A1B9590`
+- physical OLED: `PASS_OPERATOR_CONFIRMED_2026-09-13`
+
+Procedural rulebook for host scripts, evidence and recovery:
+`docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`
+
+Publication is handled by separate commit and non-force push gates.
+
+**Next implementation boundary after publication:** normal-boot production task ownership / migration. Do not fold `sleep()` / timer integration or priorities into that migration gate.
+<!-- END STM32_OS_SCHED_WAIT_WAKE_MASTER_ACCEPTED_20260913 -->

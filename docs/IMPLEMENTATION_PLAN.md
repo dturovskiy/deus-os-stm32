@@ -257,3 +257,40 @@ Do not implement yet:
 - graphical game engine
 
 These can be revisited only after the scheduler and diagnostics baseline is stable.
+
+<!-- BEGIN STM32_OS_SCHED_WAIT_WAKE_IMPLEMENTATION_ACCEPTED_20260913 -->
+## Accepted scheduler steady-state wait/wake foundation — 2026-09-13
+
+The scheduler now has the minimum accepted production blocking model required before normal-boot ownership migration:
+
+- `UNUSED`, `READY`, `DONE`, and explicit `BLOCKED` task states;
+- per-task wait/wake event state;
+- SVC-based task wait transition;
+- ISR-safe event signalling;
+- pending-event protection against lost wakeups;
+- stable host-MSP `WFE` idle while all incomplete tasks are blocked;
+- PSP task resume after IRQ wake;
+- UART event integration after RX ring publication;
+- framing-aware FIFO re-check semantics for event-driven consumers.
+
+Hardware proof covers repeated block -> idle -> UART IRQ -> wake -> resume cycles, canaries, stack margins, lifecycle isolation, legacy scheduler regressions, RX pressure, MSP telemetry, OLED runtime restoration, target Flash identity, and manual physical OLED acceptance.
+
+### Next implementation slice
+
+**Normal-boot production task ownership / migration**
+
+Constraints for that slice:
+
+- preserve the accepted wait/wake model rather than introducing a second blocking mechanism;
+- migrate ownership deliberately from the current MSP-owned `console_poll(); WFI` normal boot;
+- preserve USART1 single-reader/ring-buffer ownership;
+- preserve frozen OLED behavior;
+- keep lifecycle diagnostics isolated from active production scheduler state;
+- prove normal-boot idle remains non-busy and interrupt-driven.
+
+Still deferred to later independent gates:
+
+- `sleep()` / timer-backed blocking on top of the accepted event model;
+- scheduler priorities;
+- broader application/task topology changes.
+<!-- END STM32_OS_SCHED_WAIT_WAKE_IMPLEMENTATION_ACCEPTED_20260913 -->

@@ -342,3 +342,33 @@ This project is currently pre-release; entries are milestone-oriented rather tha
 - OLED SSD1306 system/status console.
 - Scheduler/tasks and PendSV context switching.
 <!-- END STM32_OS_CHANGELOG_2026_09_10 -->
+
+<!-- BEGIN STM32_OS_SCHED_WAIT_WAKE_CHANGELOG_20260913 -->
+## 2026-09-13 — production scheduler steady-state wait/wake foundation accepted
+
+### Added
+
+- `SCHEDULER_TASK_BLOCKED` lifecycle state and per-task wait/wake event metadata.
+- `scheduler_wait_events()` SVC wait path and ISR-safe `scheduler_event_signal()`.
+- Host-MSP `WFE` scheduler idle ownership when all incomplete tasks are blocked.
+- `schedwaitwake` UART-IRQ hardware diagnostic.
+- `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` for harness/evidence/failure classification and recovery rules.
+
+### Corrected
+
+- Wait/wake diagnostic now treats UART events as notifications to re-check the RX FIFO instead of assuming the event identifies the next payload byte.
+- CR/LF console framing is filtered from the wait/wake payload proof.
+- `SCHED_WAIT_WAKE_ARMED` is emitted from the active scheduler task so the host can prove blocked -> WFE idle -> IRQ wake -> PSP resume.
+
+### Accepted evidence
+
+- source/build candidate: `19932` bytes, SHA-256 `C21915F3DFA898C8E9F2FC601BC9E0FDA4ABE8EBB23528BF14F25D82FE28CE81`;
+- four real UART IRQ wait/wake rounds passed with payload `0x57`, positive idle-WFE counts, and intact PSP canaries;
+- lifecycle isolation passed with seven invasive diagnostics blocked while the scheduler was active;
+- all six existing scheduler diagnostics passed before and after wait/wake proof;
+- USART1 RX ring remained at zero drops and zero errors;
+- MSP canary and margin remained healthy;
+- OLED runtime regression and final physical OLED appearance passed.
+
+Normal boot remains MSP-owned. Production scheduler normal-boot ownership/migration is the next implementation boundary; timer sleep semantics and priorities remain deferred.
+<!-- END STM32_OS_SCHED_WAIT_WAKE_CHANGELOG_20260913 -->

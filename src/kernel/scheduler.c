@@ -14,7 +14,8 @@
 
 #define SCHEDULER_SVC_START 0u
 #define SCHEDULER_SVC_YIELD 1u
-#define SCHEDULER_SVC_EXIT  2u
+#define SCHEDULER_SVC_EXIT        2u
+#define SCHEDULER_SVC_WAIT_EVENTS 3u
 
 #define SCHEDULER_PREEMPT_SPIN_LIMIT 5000000u
 
@@ -44,6 +45,8 @@ static volatile uint32_t scheduler_target_count;
 static volatile uint32_t scheduler_run_result;
 static volatile uint32_t scheduler_preempt_enabled;
 static volatile uint32_t scheduler_preempt_switch_count;
+static volatile uint32_t scheduler_pending_events;
+static volatile uint32_t scheduler_idle_wait_count;
 
 static volatile uint32_t scheduler_coop_sequence[4];
 static volatile uint32_t scheduler_coop_sequence_count;
@@ -184,6 +187,46 @@ static uint32_t scheduler_find_next_ready(uint32_t after_index)
     }
 
     return SCHEDULER_NO_TASK;
+}
+
+static int scheduler_has_blocked_tasks(void)
+{
+    uint32_t index;
+
+    for (index = 0u;
+         index < SCHEDULER_TASK_COUNT;
+         ++index)
+    {
+        if (scheduler_tasks[index].state == SCHEDULER_TASK_BLOCKED)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static uint32_t scheduler_irq_save(void)
+{
+    uint32_t primask;
+
+    __asm volatile (
+        "mrs %0, primask\n"
+        "cpsid i\n"
+        : "=r" (primask)
+        :
+        : "memory");
+
+    return primask;
+}
+
+static void scheduler_irq_restore(uint32_t primask)
+{
+    __asm volatile (
+        "msr primask, %0\n"
+        :
+        : "r" (primask)
+        : "memory");
 }
 
 static uint32_t scheduler_decode_svc_number(
@@ -414,6 +457,8 @@ int scheduler_init(void)
     scheduler_run_result = 0u;
     scheduler_preempt_enabled = 0u;
     scheduler_preempt_switch_count = 0u;
+    scheduler_pending_events = 0u;
+    scheduler_idle_wait_count = 0u;
 
     for (task_index = 0u;
          task_index < SCHEDULER_TASK_COUNT;
@@ -432,6 +477,8 @@ int scheduler_init(void)
         task->saved_sp = task->stack_high;
         task->stack_words = SCHEDULER_TASK_STACK_WORDS;
         task->state = SCHEDULER_TASK_UNUSED;
+        task->wait_events = 0u;
+        task->wake_events = 0u;
 
         for (word_index = 0u;
              word_index < SCHEDULER_TASK_STACK_WORDS;
@@ -489,6 +536,8 @@ int scheduler_task_stack_bind(
     task->stack_high = stack_high;
     task->saved_sp = stack_high;
     task->stack_words = stack_words;
+    task->wait_events = 0u;
+    task->wake_events = 0u;
 
     for (word_index = 0u;
          word_index < stack_words;
@@ -568,6 +617,8 @@ int scheduler_task_prepare(
 
     task->saved_sp = frame;
     task->state = SCHEDULER_TASK_READY;
+    task->wait_events = 0u;
+    task->wake_events = 0u;
 
     return 1;
 }
@@ -715,7 +766,53 @@ uint32_t *scheduler_svc_dispatch(
         current_task->saved_sp = saved_sp;
         scheduler_stack_record(scheduler_current_index);
         current_task->state = SCHEDULER_TASK_DONE;
+        current_task->wait_events = 0u;
+        current_task->wake_events = 0u;
         ++scheduler_completed_count;
+    }
+    else if (svc_number == SCHEDULER_SVC_WAIT_EVENTS)
+    {
+        uint32_t requested_events = saved_sp[8];
+        uint32_t matched_events;
+        uint32_t primask;
+
+        if (requested_events == 0u)
+        {
+            scheduler_abort_run();
+            return (uint32_t *)0;
+        }
+
+        current_task->saved_sp = saved_sp;
+        scheduler_stack_record(scheduler_current_index);
+
+        primask = scheduler_irq_save();
+
+        matched_events =
+            scheduler_pending_events &
+            requested_events;
+
+        if (matched_events != 0u)
+        {
+            scheduler_pending_events &=
+                ~matched_events;
+
+            current_task->wait_events = 0u;
+            current_task->wake_events =
+                matched_events;
+
+            saved_sp[8] = matched_events;
+
+            scheduler_irq_restore(primask);
+
+            return current_task->saved_sp;
+        }
+
+        current_task->wait_events =
+            requested_events;
+        current_task->wake_events = 0u;
+        current_task->state = SCHEDULER_TASK_BLOCKED;
+
+        scheduler_irq_restore(primask);
     }
     else
     {
@@ -729,17 +826,22 @@ uint32_t *scheduler_svc_dispatch(
 
     if (next_index >= SCHEDULER_TASK_COUNT)
     {
-        scheduler_preempt_enabled = 0u;
         scheduler_clear_pending_pendsv();
 
         scheduler_current_index = SCHEDULER_NO_TASK;
-        scheduler_active = 0u;
 
-        scheduler_run_result =
-            (scheduler_completed_count ==
-             scheduler_target_count) ?
-                1u :
-                0u;
+        if (
+            scheduler_completed_count ==
+            scheduler_target_count
+        ) {
+            scheduler_preempt_enabled = 0u;
+            scheduler_active = 0u;
+            scheduler_run_result = 1u;
+        }
+        else if (scheduler_has_blocked_tasks() == 0)
+        {
+            scheduler_abort_run();
+        }
 
         return (uint32_t *)0;
     }
@@ -949,8 +1051,44 @@ static int scheduler_start_mode(
 
     __asm volatile ("svc #0" ::: "memory");
 
+    while (scheduler_active != 0u)
+    {
+        if (scheduler_current_index != SCHEDULER_NO_TASK)
+        {
+            scheduler_abort_run();
+            break;
+        }
+
+        if (
+            scheduler_find_next_ready(
+                SCHEDULER_TASK_COUNT - 1u) <
+            SCHEDULER_TASK_COUNT
+        ) {
+            __asm volatile ("svc #0" ::: "memory");
+            continue;
+        }
+
+        if (scheduler_has_blocked_tasks() == 0)
+        {
+            scheduler_abort_run();
+            break;
+        }
+
+        ++scheduler_idle_wait_count;
+
+        /*
+         * Event producers execute SEV after publishing READY state. If an
+         * event races with this park point, the event register keeps WFE
+         * from sleeping past the wakeup.
+         */
+        __asm volatile (
+            "dsb\n"
+            "wfe\n"
+            "isb\n"
+            ::: "memory");
+    }
+
     result =
-        (scheduler_active == 0u) &&
         (scheduler_current_index == SCHEDULER_NO_TASK) &&
         (scheduler_run_result != 0u);
 
@@ -972,6 +1110,105 @@ int scheduler_start_preemptive(void)
 uint32_t scheduler_preempt_switch_count_get(void)
 {
     return scheduler_preempt_switch_count;
+}
+
+uint32_t scheduler_wait_events(uint32_t events)
+{
+    register uint32_t result __asm("r0") = events;
+
+    if (events == 0u)
+    {
+        return 0u;
+    }
+
+    __asm volatile (
+        "svc #3"
+        : "+r" (result)
+        :
+        : "memory");
+
+    return result;
+}
+
+void scheduler_event_signal(uint32_t events)
+{
+    uint32_t index;
+    uint32_t consumed_events = 0u;
+    uint32_t woke_task = 0u;
+    uint32_t primask;
+
+    if (events == 0u)
+    {
+        return;
+    }
+
+    primask = scheduler_irq_save();
+
+    if (scheduler_active == 0u)
+    {
+        scheduler_irq_restore(primask);
+        return;
+    }
+
+    scheduler_pending_events |= events;
+
+    for (index = 0u;
+         index < SCHEDULER_TASK_COUNT;
+         ++index)
+    {
+        scheduler_task_t *task =
+            &scheduler_tasks[index];
+
+        if (task->state == SCHEDULER_TASK_BLOCKED)
+        {
+            uint32_t matched_events =
+                task->wait_events &
+                scheduler_pending_events;
+
+            if (matched_events != 0u)
+            {
+                task->wait_events = 0u;
+                task->wake_events = matched_events;
+                task->saved_sp[8] = matched_events;
+                task->state = SCHEDULER_TASK_READY;
+
+                consumed_events |= matched_events;
+                woke_task = 1u;
+            }
+        }
+    }
+
+    /*
+     * Event bits are broadcast to all matching tasks that were blocked at
+     * signal time. Bits with no current waiter remain latched for a future
+     * wait in this scheduler run.
+     */
+    scheduler_pending_events &=
+        ~consumed_events;
+
+    scheduler_irq_restore(primask);
+
+    if (
+        (woke_task != 0u) &&
+        (scheduler_preempt_enabled != 0u) &&
+        (scheduler_current_index < SCHEDULER_TASK_COUNT)
+    ) {
+        SCB_ICSR = SCB_ICSR_PENDSVSET;
+
+        __asm volatile (
+            "dsb\n"
+            "isb\n"
+            ::: "memory");
+    }
+
+    __asm volatile (
+        "sev\n"
+        ::: "memory");
+}
+
+uint32_t scheduler_idle_wait_count_get(void)
+{
+    return scheduler_idle_wait_count;
 }
 
 void scheduler_yield(void)
@@ -1058,6 +1295,10 @@ int scheduler_self_test(void)
         (task1->stack_words != SCHEDULER_TASK_STACK_WORDS) ||
         (task0->saved_sp != task0->stack_high) ||
         (task1->saved_sp != task1->stack_high) ||
+        (task0->wait_events != 0u) ||
+        (task1->wait_events != 0u) ||
+        (task0->wake_events != 0u) ||
+        (task1->wake_events != 0u) ||
         ((((uintptr_t)task0->stack_low) & (uintptr_t)0x7u) != 0u) ||
         ((((uintptr_t)task1->stack_low) & (uintptr_t)0x7u) != 0u) ||
         (task0->stack_high != task1->stack_low)
@@ -1110,7 +1351,11 @@ int scheduler_self_test(void)
         (task0->state == SCHEDULER_TASK_UNUSED) &&
         (task1->state == SCHEDULER_TASK_UNUSED) &&
         (task0->saved_sp == task0->stack_high) &&
-        (task1->saved_sp == task1->stack_high);
+        (task1->saved_sp == task1->stack_high) &&
+        (task0->wait_events == 0u) &&
+        (task1->wait_events == 0u) &&
+        (task0->wake_events == 0u) &&
+        (task1->wake_events == 0u);
 }
 
 int scheduler_cooperative_self_test(void)

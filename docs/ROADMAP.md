@@ -115,3 +115,36 @@ Initial host integration should avoid requiring a custom kernel-mode USB driver:
 
 Constraint: STM32F103C8 is a USB Device target here, not a general USB Host platform. Keyboard/mouse emulation is possible as USB HID device behavior; directly hosting commodity USB peripherals is outside the baseline architecture.
 <!-- END STM32_OS_USB_STRATEGY -->
+
+<!-- BEGIN STM32_OS_SCHED_WAIT_WAKE_ROADMAP_ACCEPTED_20260913 -->
+## Scheduler steady-state wait/wake foundation — accepted 2026-09-13
+
+Completed:
+
+- explicit blocked task state;
+- SVC event wait;
+- ISR-safe event signal/wake;
+- pending-event lost-wakeup protection;
+- non-busy scheduler idle on preserved host MSP using `WFE`;
+- PSP resume after event-driven wake;
+- UART RX event integration;
+- repeated hardware proof and full scheduler/RX/MSP/OLED regression.
+
+Accepted candidate: `19932` bytes, SHA-256 `C21915F3DFA898C8E9F2FC601BC9E0FDA4ABE8EBB23528BF14F25D82FE28CE81`.
+
+### Next
+
+1. **Normal-boot production task ownership / migration**
+   - move from the current MSP-owned normal boot to deliberate production task ownership;
+   - preserve accepted event wait/wake and interrupt-driven idle semantics;
+   - preserve UART ring ownership and frozen OLED behavior.
+
+2. **Timer-backed sleep integration**
+   - build `sleep()` / timed blocking on the accepted wait/wake model;
+   - do not create a parallel blocking mechanism.
+
+3. **Scheduler priorities**
+   - add only after production ownership and timer blocking semantics are independently accepted.
+
+Harness/evidence/recovery rules live in `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`.
+<!-- END STM32_OS_SCHED_WAIT_WAKE_ROADMAP_ACCEPTED_20260913 -->

@@ -114,7 +114,9 @@
 #define SCHED_CONSOLE_PROBE_STACK_BYTES     (SCHED_CONSOLE_PROBE_STACK_WORDS * 4u)
 #define SCHED_CONSOLE_PROBE_MIN_MARGIN_BYTES 256u
 #define SCHED_CONSOLE_PROBE_COMMAND_COUNT 17u
-#define SCHED_ISOLATION_DIAGNOSTIC_COUNT 6u
+#define SCHED_ISOLATION_DIAGNOSTIC_COUNT 7u
+#define SCHED_WAIT_WAKE_UART_EVENT       (1u << 0)
+#define SCHED_WAIT_WAKE_SENTINEL         0x57u
 
 /*
  * PCLK2 = 72 MHz.
@@ -233,11 +235,20 @@ static volatile uint32_t scheduler_isolation_init_reject;
 static volatile uint32_t scheduler_isolation_active_preserved;
 static volatile uint32_t scheduler_diagnostic_busy_count;
 
+static volatile uint32_t scheduler_wait_wake_task_started;
+static volatile uint32_t scheduler_wait_wake_task_resumed;
+static volatile uint32_t scheduler_wait_wake_peer_done;
+static volatile uint32_t scheduler_wait_wake_events;
+static volatile uint32_t scheduler_wait_wake_byte;
+static volatile uint32_t scheduler_wait_wake_byte_ok;
+static volatile uint32_t scheduler_wait_wake_framing_bytes;
+
 static int console_execute_safe_named(const char *command);
 static int console_execute_scheduler_diagnostic(const char *command);
 static void console_execute_named(const char *command);
 static void console_scheduler_console_probe_test(void);
 static void console_scheduler_isolation_test(void);
+static void console_scheduler_wait_wake_test(void);
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -388,6 +399,9 @@ void USART1_IRQHandler(void)
 
             uart_rx_ring[head & UART_RX_RING_MASK] = byte;
             uart_rx_head = next_head;
+
+            scheduler_event_signal(
+                SCHED_WAIT_WAKE_UART_EVENT);
 
             if (next_depth > uart_rx_high_water)
             {
@@ -2215,6 +2229,220 @@ static void console_scheduler_console_probe_test(void)
     }
 }
 
+static void scheduler_wait_wake_task(void *argument)
+{
+    uint32_t events;
+    char byte = 0;
+
+    if (argument != (void *)0)
+    {
+        scheduler_wait_wake_task_resumed = 1u;
+        return;
+    }
+
+    scheduler_wait_wake_task_started = 1u;
+
+    /*
+     * console_poll() executes a command as soon as it consumes CR or LF.
+     * With a normal CRLF host line, the second delimiter can still be queued
+     * when this scheduler diagnostic starts. Framing bytes are not payload.
+     */
+    while (uart_try_getc(&byte) != 0)
+    {
+        if ((byte == '\r') || (byte == '\n'))
+        {
+            ++scheduler_wait_wake_framing_bytes;
+            continue;
+        }
+
+        scheduler_wait_wake_byte =
+            (uint32_t)(uint8_t)byte;
+        scheduler_wait_wake_task_resumed = 1u;
+        return;
+    }
+
+    /*
+     * This token now means the scheduler is active and the wait task itself
+     * has reached the wait protocol. A UART event racing with the following
+     * SVC is safely latched by scheduler_event_signal().
+     */
+    uart_write_line("SCHED_WAIT_WAKE_ARMED");
+
+    for (;;)
+    {
+        events =
+            scheduler_wait_events(
+                SCHED_WAIT_WAKE_UART_EVENT);
+
+        scheduler_wait_wake_events |= events;
+
+        if ((events & SCHED_WAIT_WAKE_UART_EVENT) == 0u)
+        {
+            break;
+        }
+
+        while (uart_try_getc(&byte) != 0)
+        {
+            if ((byte == '\r') || (byte == '\n'))
+            {
+                ++scheduler_wait_wake_framing_bytes;
+                continue;
+            }
+
+            scheduler_wait_wake_byte =
+                (uint32_t)(uint8_t)byte;
+
+            if (
+                (uint32_t)(uint8_t)byte ==
+                SCHED_WAIT_WAKE_SENTINEL
+            ) {
+                scheduler_wait_wake_byte_ok = 1u;
+            }
+
+            scheduler_wait_wake_task_resumed = 1u;
+            return;
+        }
+    }
+
+    scheduler_wait_wake_task_resumed = 1u;
+}
+
+static void scheduler_wait_wake_peer_task(void *argument)
+{
+    if (argument == (void *)0)
+    {
+        scheduler_wait_wake_peer_done = 1u;
+    }
+}
+
+static void console_scheduler_wait_wake_test(void)
+{
+    const scheduler_task_t *task0;
+    const scheduler_task_t *task1;
+    uint32_t used0;
+    uint32_t used1;
+    uint32_t capacity0;
+    uint32_t capacity1;
+    uint32_t idle_waits;
+    int canary0;
+    int canary1;
+    int prepare0;
+    int prepare1;
+    int start_result;
+    int passed;
+
+    if (scheduler_init() == 0)
+    {
+        uart_write_line("SCHED_WAIT_WAKE_PREPARE_ERR");
+        return;
+    }
+
+    scheduler_wait_wake_task_started = 0u;
+    scheduler_wait_wake_task_resumed = 0u;
+    scheduler_wait_wake_peer_done = 0u;
+    scheduler_wait_wake_events = 0u;
+    scheduler_wait_wake_byte = 0u;
+    scheduler_wait_wake_byte_ok = 0u;
+    scheduler_wait_wake_framing_bytes = 0u;
+
+    prepare0 =
+        scheduler_task_prepare(
+            0u,
+            scheduler_wait_wake_task,
+            (void *)0);
+
+    prepare1 =
+        scheduler_task_prepare(
+            1u,
+            scheduler_wait_wake_peer_task,
+            (void *)0);
+
+    if ((prepare0 == 0) || (prepare1 == 0))
+    {
+        uart_write_line("SCHED_WAIT_WAKE_PREPARE_ERR");
+        return;
+    }
+
+    start_result = scheduler_start_preemptive();
+
+    used0 = scheduler_stack_high_water_bytes(0u);
+    used1 = scheduler_stack_high_water_bytes(1u);
+    capacity0 = scheduler_stack_capacity_bytes(0u);
+    capacity1 = scheduler_stack_capacity_bytes(1u);
+    canary0 = scheduler_stack_canary_intact(0u);
+    canary1 = scheduler_stack_canary_intact(1u);
+    idle_waits = scheduler_idle_wait_count_get();
+
+    task0 = scheduler_task_get(0u);
+    task1 = scheduler_task_get(1u);
+
+    uart_write("SCHED_WAIT_WAKE_EVENTS=");
+    uart_write_hex32(scheduler_wait_wake_events);
+    uart_write("\r\n");
+
+    uart_write("SCHED_WAIT_WAKE_BYTE=");
+    uart_write_hex32(scheduler_wait_wake_byte);
+    uart_write("\r\n");
+
+    uart_write("SCHED_WAIT_WAKE_FRAMING_BYTES=");
+    uart_write_hex32(scheduler_wait_wake_framing_bytes);
+    uart_write("\r\n");
+
+    uart_write("SCHED_WAIT_WAKE_IDLE_WAITS=");
+    uart_write_hex32(idle_waits);
+    uart_write("\r\n");
+
+    uart_write("SCHED_WAIT_WAKE_USED_T0=");
+    uart_write_hex32(used0);
+    uart_write("\r\n");
+
+    uart_write("SCHED_WAIT_WAKE_USED_T1=");
+    uart_write_hex32(used1);
+    uart_write("\r\n");
+
+    uart_write("SCHED_WAIT_WAKE_CANARY_T0=");
+    uart_write_hex32((canary0 != 0) ? 1u : 0u);
+    uart_write("\r\n");
+
+    uart_write("SCHED_WAIT_WAKE_CANARY_T1=");
+    uart_write_hex32((canary1 != 0) ? 1u : 0u);
+    uart_write("\r\n");
+
+    passed =
+        (start_result != 0) &&
+        (scheduler_wait_wake_task_started != 0u) &&
+        (scheduler_wait_wake_task_resumed != 0u) &&
+        (scheduler_wait_wake_peer_done != 0u) &&
+        (scheduler_wait_wake_events ==
+            SCHED_WAIT_WAKE_UART_EVENT) &&
+        (scheduler_wait_wake_byte_ok != 0u) &&
+        (idle_waits != 0u) &&
+        (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
+        (capacity1 == capacity0) &&
+        (used0 >= 64u) &&
+        (used0 < capacity0) &&
+        (used1 >= 64u) &&
+        (used1 < capacity1) &&
+        (canary0 != 0) &&
+        (canary1 != 0) &&
+        (task0 != (const scheduler_task_t *)0) &&
+        (task1 != (const scheduler_task_t *)0) &&
+        (task0->state == SCHEDULER_TASK_DONE) &&
+        (task1->state == SCHEDULER_TASK_DONE) &&
+        (task0->wait_events == 0u) &&
+        (task1->wait_events == 0u) &&
+        (scheduler_is_active() == 0);
+
+    if (passed != 0)
+    {
+        uart_write_line("SCHED_WAIT_WAKE_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_WAIT_WAKE_ERR");
+    }
+}
+
 static const char * const scheduler_isolation_diagnostic_commands
     [SCHED_ISOLATION_DIAGNOSTIC_COUNT] =
 {
@@ -2223,7 +2451,8 @@ static const char * const scheduler_isolation_diagnostic_commands
     "schedpreempt",
     "schedstack",
     "schedworkload",
-    "schedconsoleprobe"
+    "schedconsoleprobe",
+    "schedwaitwake"
 };
 
 static void scheduler_isolation_task(void *argument)
@@ -2576,6 +2805,13 @@ static int console_execute_scheduler_diagnostic(const char *command)
         if (console_scheduler_diagnostic_block_if_active() == 0)
         {
             console_scheduler_console_probe_test();
+        }
+    }
+    else if (text_equals(command, "schedwaitwake") != 0)
+    {
+        if (console_scheduler_diagnostic_block_if_active() == 0)
+        {
+            console_scheduler_wait_wake_test();
         }
     }
     else if (text_equals(command, "schedisolate") != 0)

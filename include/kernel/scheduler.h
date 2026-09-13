@@ -12,7 +12,8 @@ typedef enum
 {
     SCHEDULER_TASK_UNUSED = 0,
     SCHEDULER_TASK_READY = 1,
-    SCHEDULER_TASK_DONE = 2
+    SCHEDULER_TASK_DONE = 2,
+    SCHEDULER_TASK_BLOCKED = 3
 } scheduler_task_state_t;
 
 typedef struct
@@ -22,6 +23,8 @@ typedef struct
     uint32_t *stack_high;
     uint32_t stack_words;
     volatile scheduler_task_state_t state;
+    volatile uint32_t wait_events;
+    volatile uint32_t wake_events;
 } scheduler_task_t;
 
 int scheduler_init(void);
@@ -45,6 +48,24 @@ int scheduler_start(void);
 int scheduler_start_preemptive(void);
 
 uint32_t scheduler_preempt_switch_count_get(void);
+
+/*
+ * Block the current scheduler task until any requested event bit is
+ * signaled. A matching event already pending in the active scheduler run
+ * is consumed immediately. The returned value is the matched event mask.
+ */
+uint32_t scheduler_wait_events(uint32_t events);
+
+/*
+ * Signal event bits to the active scheduler run. All currently blocked
+ * matching tasks are made READY; unmatched bits remain pending until a
+ * future waiter consumes them. Calls while the scheduler is inactive are
+ * intentionally ignored.
+ */
+void scheduler_event_signal(uint32_t events);
+
+/* Number of host-MSP WFE park iterations in the current scheduler run. */
+uint32_t scheduler_idle_wait_count_get(void);
 
 void scheduler_yield(void);
 
