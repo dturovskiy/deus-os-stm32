@@ -1,81 +1,78 @@
 > [!IMPORTANT]
 
-<!-- BEGIN STM32_OS_SLICE9A_ACCEPTED_STATE -->
-## Current accepted execution state — 2026-09-12
+<!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
+## Current accepted execution state — 2026-09-13
 
 This section is authoritative for the current execution boundary and supersedes stale unchecked rows in older planning sections below.
 
 ### Accepted runtime/UI baseline
 
 - [x] Frozen native 128x32 OLED geometry remains unchanged.
-- [x] Slice 7 dirty-page UI integration accepted.
-- [x] Slice 8 boot/runtime UI lifecycle accepted.
-- [x] Boot banner emits `OLED_RUNTIME_UI_OK`.
+- [x] Runtime UI boot lifecycle accepted and published.
+- [x] Boot UART contract includes `OLED_RUNTIME_UI_OK`.
 - [x] Full UART/OLED regression passed.
 - [x] Physical OLED appearance/output accepted.
 
-### Slice 9A — scheduler foundation — ACCEPTED / PUBLISHED
+### Scheduler foundation / cooperative / preemption — ACCEPTED / PUBLISHED
 
-- [x] Static two-task TCB model and two 512-byte static stacks.
-- [x] Cortex-M synthetic initial task frames.
+- [x] Slice 9A foundation commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
+- [x] Slice 9B cooperative activation commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
+- [x] PendSV timer-driven preemption commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
 - [x] `schedtest -> SCHED_FOUNDATION_OK`.
-- [x] Acceptance commit `1a57f79cda42674219e774900ce07a0da8fedaf4`.
-
-### Slice 9B — cooperative scheduler activation — ACCEPTED / PUBLISHED
-
-- [x] SVC `#0/#1/#2` provide start / cooperative yield / task-return exit.
-- [x] Kernel/MSP context is parked and restored after all prepared tasks finish.
 - [x] `schedcoop -> SCHED_COOP_OK`.
-- [x] Deterministic sequence `0x10 -> 0x20 -> 0x11 -> 0x21`.
-- [x] Real task-return path passed across `34` complete cooperative runs.
-- [x] Acceptance commit `1114621e9a6bc57d5471cf51a922c216b76bebe2`.
-
-### PendSV timer-driven preemption — ACCEPTED / PUBLISHED
-
-- [x] PendSV vector points to `PendSV_Handler`.
-- [x] SysTick invokes `scheduler_tick()`.
-- [x] Scheduler tick pends PendSV only during an active preemptive test run.
-- [x] PendSV priority is lowest.
-- [x] PendSV saves/restores `r4-r11` on PSP.
-- [x] EXC_RETURN/SPSEL is checked before any PSP touch; MSP-origin PendSV is a no-op.
-- [x] Final-exit and abort paths clear pending PendSV before returning to kernel/MSP.
 - [x] `schedpreempt -> SCHED_PREEMPT_OK`.
-- [x] CPU-bound acceptance tasks contain no voluntary `SVC #1` yield.
-- [x] Deterministic sequence `0x30 -> 0x40 -> 0x31 -> 0x41 -> 0x42 -> 0x32`.
-- [x] Real timer-driven preemption path passed across `34` complete runs.
-- [x] Full UART/I2C/OLED regression passed.
-- [x] Physical frozen OLED output confirmed unchanged.
-- [x] Acceptance commit `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
+- [x] CPU-bound no-yield preemption path accepted across `34` complete runs.
 
-### Task stack canary/high-water — HARDWARE ACCEPTED / COMMIT PENDING
+### Task stack canary/high-water — ACCEPTED / PUBLISHED
 
+- [x] Acceptance commit `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
 - [x] Existing task stacks remain exactly `2 x 512 bytes`.
-- [x] Per-task stack canary/high-water telemetry added.
-- [x] Telemetry reset occurs at scheduler-run start.
-- [x] High-water is recorded on SVC yield, SVC exit, and PendSV switch paths.
-- [x] Measurement scanning executes from Handler mode/MSP.
+- [x] Per-task canary/high-water telemetry is measured from Handler mode/MSP.
 - [x] `schedstack -> SCHED_STACK_WATER_OK`.
-- [x] Cooperative task 0 measured `72 bytes`.
-- [x] Cooperative task 1 measured `72 bytes`.
-- [x] Preemptive task 0 measured `72 bytes`.
-- [x] Preemptive task 1 measured `72 bytes`.
-- [x] Capacity is `512 bytes`; observed free margin is `440 bytes`.
-- [x] Static synthetic-task worst-case `72 bytes` matches runtime high-water `72 bytes`.
-- [x] Canary remained intact for every accepted run.
-- [x] First real stack-water command passed.
-- [x] 32/32 stack-water stress commands passed.
-- [x] 4/4 return-to-kernel ping checkpoints passed.
-- [x] Final post-reset stack-water command passed.
-- [x] Total accepted stack-water commands: `34`.
-- [x] Total underlying scheduler runs: `68`.
-- [x] SysTick remained monotonic after stack-water stress.
-- [x] `schedtest`, `schedcoop`, and `schedpreempt` remained valid.
-- [x] Full UART/I2C/OLED regression passed.
-- [x] Physical frozen OLED output confirmed unchanged.
-- [x] Candidate binary `13408 bytes`.
-- [x] SHA-256 `4A57F4559AAC3BDAE8FEF5FD3B51F3DEA9033FC917DA19032754796459959D42`.
-- [x] `.bss=1936 bytes`; `_ebss=0x20000790`; SRAM headroom `18544 bytes`.
-- [x] Normal boot / console / OLED task migration remains deferred.
+- [x] Synthetic cooperative/preemptive task paths measured `72 / 512 bytes`.
+- [x] Synthetic observed free margin `440 bytes`.
+- [x] Canary intact across `34` stack-water commands / `68` scheduler runs.
+
+### Substantive PSP workload — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
+
+- [x] `schedworkload -> SCHED_WORKLOAD_OK`.
+- [x] Workload task 0 runs frozen OLED runtime full render/present on PSP.
+- [x] Workload task 1 is CPU-only with no UART/I2C/OLED access and no voluntary yield.
+- [x] Public `scheduler_start_preemptive()` wrapper added.
+- [x] Read-only PendSV switch-count telemetry added.
+- [x] Current task stacks remain exactly `2 x 512 bytes`.
+- [x] Planning feasibility estimate: `212 + 64 = 276 bytes`; margin `236 bytes`.
+- [x] Source-build task-0 feasibility estimate: `220 + 64 = 284 bytes`; margin `228 bytes`.
+- [x] Source-build task-1 feasibility estimate: `12 + 64 = 76 bytes`; margin `436 bytes`.
+- [x] Runtime task-0 high-water: `328 bytes`; measured margin `184 bytes`.
+- [x] Runtime task-1 high-water: `80 bytes`; measured margin `432 bytes`.
+- [x] PendSV switches observed `124..126`.
+- [x] `WORKLOAD_UI_RESULT=1` for every accepted workload run.
+- [x] `WORKLOAD_PEER_OVERLAP=1` for every accepted workload run.
+- [x] Both task canaries intact for every accepted workload run.
+- [x] First workload passed.
+- [x] 32/32 workload stress commands passed.
+- [x] 4/4 return-to-kernel checkpoint pings passed.
+- [x] Final workload passed.
+- [x] Total accepted workload commands: `34`.
+- [x] Full scheduler/UART/I2C/OLED regression passed.
+- [x] Final exact flash identity passed.
+- [x] Hardware v1 had exactly two false-negative boot matcher results due to stale `FAULTREC=0x20000270`.
+- [x] Recovery v2 proved linked `fault_record=0x20000284`, validated both old boot captures, and passed two fresh corrected boot checks without reflashing.
+- [x] Physical frozen OLED output confirmed `DEUS OS / BOOT OK / READY`.
+- [x] Candidate binary `14292 bytes`.
+- [x] SHA-256 `8C124B0954D65E0F698AD1C62525E72FC4F569D5133EF8F0CE67A8297A80A2CF`.
+- [x] `.bss=1952 bytes`; `_ebss=0x200007A0`; SRAM headroom `18528 bytes`.
+- [x] Normal boot / console / OLED steady-state scheduler migration remains deferred.
+
+### Stack-analysis rule learned from this gate
+
+- [x] Runtime task-0 high-water `328 bytes` exceeded the `.su`-based `284-byte` estimate.
+- [x] Treat the current `.su` direct-call-chain calculation as feasibility/sanity evidence, not a conservative upper bound.
+- [x] Runtime watermark/canary evidence is authoritative for stack sizing until the static method is strengthened.
+- [x] A 512-byte PSP stack is accepted for the exact tested frozen OLED render/present workload with `184 bytes` measured margin.
+- [ ] Console-task PSP stack budget still requires workload-specific proof if/when console ownership migrates.
+- [ ] Kernel/MSP stack budget must be treated separately.
 
 ### Current acceptance source change set
 
@@ -89,8 +86,8 @@ Immediately before the acceptance commit, the exact source delta is:
 
 ### Next active scheduler boundary
 
-Run a representative substantive workload in a command-gated PSP task and measure workload-specific canary/high-water behavior. Do not migrate normal boot, console, or OLED ownership in the same gate.
-<!-- END STM32_OS_SLICE9A_ACCEPTED_STATE -->
+Finalize the production task ownership/stack budget from the accepted runtime evidence. Separately prove console-task and MSP/kernel stack requirements as needed. Only then design/activate normal-boot scheduler ownership; do not combine that migration with unresolved stack sizing.
+<!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
 > The authoritative hardware-accepted geometry and firmware fingerprint are in

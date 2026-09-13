@@ -95,6 +95,7 @@
 #define I2C1_CCR_100KHZ   180u
 #define I2C1_TRISE_100KHZ 37u
 #define I2C_SPIN_LIMIT    100000u
+#define SCHED_WORKLOAD_PEER_SPINS 1000000u
 
 /*
  * PCLK2 = 72 MHz.
@@ -165,6 +166,12 @@ volatile fault_record_t fault_record;
 static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
 static oled_console_t oled_console_state;
+
+static volatile uint32_t scheduler_workload_task0_started;
+static volatile uint32_t scheduler_workload_task0_done;
+static volatile uint32_t scheduler_workload_peer_overlap;
+static volatile uint32_t scheduler_workload_peer_done;
+static volatile uint32_t scheduler_workload_ui_result;
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -1076,6 +1083,38 @@ static int oled_runtime_ui_show(void)
     return ssd1306_display_on();
 }
 
+static void scheduler_workload_oled_task(void *argument)
+{
+    (void)argument;
+
+    scheduler_workload_task0_started = 1u;
+    scheduler_workload_ui_result =
+        (oled_runtime_ui_show() != 0) ? 1u : 0u;
+    scheduler_workload_task0_done = 1u;
+}
+
+static void scheduler_workload_cpu_peer_task(void *argument)
+{
+    uint32_t i;
+
+    (void)argument;
+
+    for (i = 0u; i < SCHED_WORKLOAD_PEER_SPINS; ++i)
+    {
+        if (
+            (scheduler_workload_task0_started != 0u) &&
+            (scheduler_workload_task0_done == 0u)
+        ) {
+            scheduler_workload_peer_overlap = 1u;
+        }
+
+        __asm volatile ("nop");
+    }
+
+    scheduler_workload_peer_done = 1u;
+}
+
+
 static void console_oled_runtime(void)
 {
     if (oled_runtime_ui_show() != 0)
@@ -1509,6 +1548,124 @@ static void console_scheduler_stack_water_test(void)
     }
 }
 
+static void console_scheduler_workload_test(void)
+{
+    const scheduler_task_t *task0;
+    const scheduler_task_t *task1;
+    uint32_t used0;
+    uint32_t used1;
+    uint32_t capacity0;
+    uint32_t capacity1;
+    uint32_t switches;
+    int canary0;
+    int canary1;
+    int start_result;
+    int passed;
+
+    scheduler_init();
+
+    scheduler_workload_task0_started = 0u;
+    scheduler_workload_task0_done = 0u;
+    scheduler_workload_peer_overlap = 0u;
+    scheduler_workload_peer_done = 0u;
+    scheduler_workload_ui_result = 0u;
+
+    if (
+        scheduler_task_prepare(
+            0u,
+            scheduler_workload_oled_task,
+            (void *)0) == 0
+    ) {
+        uart_write_line("SCHED_WORKLOAD_PREPARE_ERR");
+        return;
+    }
+
+    if (
+        scheduler_task_prepare(
+            1u,
+            scheduler_workload_cpu_peer_task,
+            (void *)0) == 0
+    ) {
+        uart_write_line("SCHED_WORKLOAD_PREPARE_ERR");
+        return;
+    }
+
+    start_result = scheduler_start_preemptive();
+
+    used0 = scheduler_stack_high_water_bytes(0u);
+    used1 = scheduler_stack_high_water_bytes(1u);
+    capacity0 = scheduler_stack_capacity_bytes(0u);
+    capacity1 = scheduler_stack_capacity_bytes(1u);
+    canary0 = scheduler_stack_canary_intact(0u);
+    canary1 = scheduler_stack_canary_intact(1u);
+    switches = scheduler_preempt_switch_count_get();
+
+    task0 = scheduler_task_get(0u);
+    task1 = scheduler_task_get(1u);
+
+    uart_write("WORKLOAD_CAPACITY=");
+    uart_write_hex32(capacity0);
+    uart_write("\r\n");
+
+    uart_write("WORKLOAD_T0_USED=");
+    uart_write_hex32(used0);
+    uart_write("\r\n");
+
+    uart_write("WORKLOAD_T1_USED=");
+    uart_write_hex32(used1);
+    uart_write("\r\n");
+
+    uart_write("WORKLOAD_SWITCHES=");
+    uart_write_hex32(switches);
+    uart_write("\r\n");
+
+    uart_write("WORKLOAD_UI_RESULT=");
+    uart_write_hex32(scheduler_workload_ui_result);
+    uart_write("\r\n");
+
+    uart_write("WORKLOAD_PEER_OVERLAP=");
+    uart_write_hex32(scheduler_workload_peer_overlap);
+    uart_write("\r\n");
+
+    uart_write("WORKLOAD_CANARY_T0=");
+    uart_write_hex32((canary0 != 0) ? 1u : 0u);
+    uart_write("\r\n");
+
+    uart_write("WORKLOAD_CANARY_T1=");
+    uart_write_hex32((canary1 != 0) ? 1u : 0u);
+    uart_write("\r\n");
+
+    passed =
+        (start_result != 0) &&
+        (scheduler_workload_task0_started != 0u) &&
+        (scheduler_workload_task0_done != 0u) &&
+        (scheduler_workload_peer_done != 0u) &&
+        (scheduler_workload_peer_overlap != 0u) &&
+        (scheduler_workload_ui_result != 0u) &&
+        (switches >= 2u) &&
+        (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
+        (capacity1 == capacity0) &&
+        (used0 >= 64u) &&
+        (used0 < capacity0) &&
+        (used1 >= 64u) &&
+        (used1 < capacity1) &&
+        (canary0 != 0) &&
+        (canary1 != 0) &&
+        (task0 != (const scheduler_task_t *)0) &&
+        (task1 != (const scheduler_task_t *)0) &&
+        (task0->state == SCHEDULER_TASK_DONE) &&
+        (task1->state == SCHEDULER_TASK_DONE);
+
+    if (passed != 0)
+    {
+        uart_write_line("SCHED_WORKLOAD_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_WORKLOAD_ERR");
+    }
+}
+
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
@@ -1546,6 +1703,10 @@ static void console_execute(void)
     else if (text_equals(uart_command, "schedstack") != 0)
     {
         console_scheduler_stack_water_test();
+    }
+    else if (text_equals(uart_command, "schedworkload") != 0)
+    {
+        console_scheduler_workload_test();
     }
     else if (text_equals(uart_command, "fault") != 0)
     {

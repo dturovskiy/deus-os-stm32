@@ -903,6 +903,16 @@ int scheduler_start(void)
     return scheduler_start_mode(0u);
 }
 
+int scheduler_start_preemptive(void)
+{
+    return scheduler_start_mode(1u);
+}
+
+uint32_t scheduler_preempt_switch_count_get(void)
+{
+    return scheduler_preempt_switch_count;
+}
+
 void scheduler_yield(void)
 {
     __asm volatile ("svc #1" ::: "memory");
@@ -1134,7 +1144,7 @@ int scheduler_preemptive_self_test(void)
         return 0;
     }
 
-    start_result = scheduler_start_mode(1u);
+    start_result = scheduler_start_preemptive();
 
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);

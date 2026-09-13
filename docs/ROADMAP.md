@@ -1,7 +1,7 @@
 # Roadmap
 
-<!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_12 -->
-## Current roadmap checkpoint — 2026-09-12
+<!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
+## Current roadmap checkpoint — 2026-09-13
 
 Earlier unchecked Phase 0-2 rows are historical planning debt; the hardware baseline has already advanced beyond them.
 
@@ -18,34 +18,42 @@ Accepted through this checkpoint:
 - [x] Runtime boot UI lifecycle.
 - [x] Scheduler foundation.
 - [x] Cooperative scheduler activation.
-- [x] PendSV timer-driven preemption:
-  - active PendSV vector
-  - SysTick scheduler hook
-  - lowest-priority PendSV
-  - `r4-r11` PSP context save/restore
-  - CPU-bound no-yield hardware proof
-  - stale-pending PendSV safety
-  - `34` complete preemption acceptance runs.
+- [x] PendSV timer-driven preemption.
 - [x] Scheduler stack canary/high-water instrumentation:
-  - command-gated `schedstack`
-  - SVC/PendSV record points
-  - Handler/MSP stack scanning
+  - published at `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`
   - `72 / 512 bytes` measured for all cooperative/preemptive synthetic task paths
-  - `440 bytes` observed margin
-  - canary intact across `34` commands / `68` scheduler runs
-  - full scheduler/UART/I2C/OLED regression preserved.
+  - canary intact across `34` commands / `68` scheduler runs.
+- [x] Representative substantive preemptive PSP OLED workload:
+  - command-gated `schedworkload`
+  - frozen OLED runtime full render/present on task 0
+  - CPU-only no-yield task 1
+  - task 0 runtime high-water `328 / 512 bytes`; margin `184 bytes`
+  - task 1 runtime high-water `80 / 512 bytes`; margin `432 bytes`
+  - PendSV switches `124..126`
+  - UI result / peer overlap / canaries PASS across `34` complete workload runs
+  - full scheduler/UART/I2C/OLED regression preserved
+  - corrected boot proof and exact target readback PASS
+  - physical frozen OLED PASS.
+
+Stack-analysis rule:
+
+- [x] `.su` direct-call-chain analysis is useful as a feasibility estimate.
+- [x] The task-0 runtime high-water (`328 bytes`) exceeded the source-build estimate (`284 bytes`), so the current static method is not a conservative upper bound.
+- [x] Runtime watermark/canary evidence controls sizing for the accepted workload.
 
 Scheduler work still open:
 
-- [ ] representative substantive PSP workload + high-water proof
-- [ ] production task-stack budget selection
+- [x] 512-byte stack validated for the exact tested frozen OLED render/present PSP workload.
+- [ ] explicit production task ownership model
+- [ ] console-task PSP stack budget if console ownership migrates
+- [ ] kernel/MSP stack budget
 - [ ] normal boot task migration
 - [ ] idle task / steady-state scheduler ownership
 - [ ] `sleep()`
 - [ ] priorities
 
-Next active boundary: **command-gated representative real workload with canary/high-water measurement**. Normal-boot console/OLED migration remains deferred until workload-specific stack requirements are explicit.
-<!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_12 -->
+Next active boundary: **production task ownership and stack-budget decision** using the accepted runtime evidence, followed by separate console/MSP proofs as needed. Normal-boot migration remains deferred until those decisions are explicit.
+<!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 
 ## Phase 0 - Boot baseline
 
@@ -83,7 +91,7 @@ Next active boundary: **command-gated representative real workload with canary/h
 - [x] Cooperative scheduling
 - [x] PendSV context switch
 - [x] Command-gated SysTick preemption proof
-- [ ] Task stack budget / high-water validation
+- [x] Task stack budget / high-water validation for the accepted command-gated frozen OLED workload
 - [ ] Normal boot task migration
 - [ ] `sleep()`
 - [ ] Priorities

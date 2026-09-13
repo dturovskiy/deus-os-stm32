@@ -35,6 +35,10 @@ const scheduler_task_t *scheduler_task_get(uint32_t index);
 
 int scheduler_start(void);
 
+int scheduler_start_preemptive(void);
+
+uint32_t scheduler_preempt_switch_count_get(void);
+
 void scheduler_yield(void);
 
 void scheduler_tick(void);

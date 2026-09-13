@@ -1,7 +1,58 @@
 # Changelog
 
-<!-- BEGIN STM32_OS_CHANGELOG_2026_09_12 -->
+<!-- BEGIN STM32_OS_CHANGELOG_2026_09_13 -->
+## 2026-09-13
+
+### Hardware accepted — substantive preemptive PSP OLED workload
+
+- Added command-gated `schedworkload -> SCHED_WORKLOAD_OK`.
+- Added public `scheduler_start_preemptive()` wrapper and read-only PendSV switch-count telemetry.
+- Workload task 0 executes the frozen OLED runtime full render/present path on PSP.
+- Workload task 1 is CPU-only, performs no UART/I2C/OLED access, and does not voluntarily yield.
+- Task stacks remain exactly `2 x 512 bytes`.
+- Static feasibility evidence:
+  - planning estimate for `oled_runtime_ui_show()`: `212 + 64 = 276 bytes`; margin `236 bytes`
+  - source-build workload task 0 estimate: `220 + 64 = 284 bytes`; margin `228 bytes`
+  - source-build workload task 1 estimate: `12 + 64 = 76 bytes`; margin `436 bytes`.
+- Real hardware high-water:
+  - workload task 0: `328 bytes`; measured free margin `184 bytes`
+  - workload task 1: `80 bytes`; measured free margin `432 bytes`
+  - capacity: `512 bytes` per task
+  - canaries intact for both tasks in every accepted run.
+- Real preemption proof:
+  - `WORKLOAD_UI_RESULT=1`
+  - `WORKLOAD_PEER_OVERLAP=1`
+  - PendSV switches observed `124..126`
+  - first workload PASS
+  - 32/32 workload stress commands PASS
+  - 4/4 return-to-kernel checkpoint pings PASS
+  - final workload PASS
+  - total accepted workload commands: `34`.
+- Full scheduler/UART/I2C/OLED regression remained valid and final exact flash identity matched the candidate.
+- Hardware v1 boot checks were false negatives caused by stale harness expectation `FAULTREC=0x20000270`.
+- Linked `fault_record` is `0x20000284`; recovery v2:
+  - proved the only two v1 false results were the boot matcher
+  - revalidated both captured v1 boot frames
+  - passed two fresh corrected boot checks
+  - revalidated `schedworkload`, scheduler regressions, I2C, health, runtime UI, and exact target readback without reflashing.
+- Accepted candidate binary: `14292 bytes`.
+- SHA-256: `8C124B0954D65E0F698AD1C62525E72FC4F569D5133EF8F0CE67A8297A80A2CF`.
+- `.bss=1952 bytes`; `_ebss=0x200007A0`; SRAM headroom `18528 bytes`.
+- Physical frozen OLED output confirmed unchanged: `DEUS OS / BOOT OK / READY`.
+
+The runtime `328-byte` task-0 high-water exceeds the `.su`-based `284-byte` source-build estimate. Therefore that static call-chain method is a feasibility estimate, not a conservative stack upper bound. Runtime watermark/canary evidence is authoritative for sizing.
+
+For the exact tested frozen OLED render/present workload, the current 512-byte PSP stack has `184 bytes` (35.9%) measured margin. Console-task and MSP/kernel stack requirements remain separate open proofs.
+
+### Next
+
+- Finalize the production task ownership/stack budget from the accepted runtime evidence.
+- Prove any console-task stack and MSP/kernel stack budgets separately.
+- Keep normal-boot scheduler ownership migration deferred until those budgets and the migration design are explicit.
+- Preserve `schedtest`, `schedcoop`, `schedpreempt`, `schedstack`, and `schedworkload` as regression gates.
+
 ## 2026-09-12
+
 
 ### Accepted — OLED runtime lifecycle (Slice 8)
 
@@ -53,7 +104,7 @@
 - `.bss=1920 bytes`; `_ebss=0x20000780`; SRAM headroom `18560 bytes`.
 - Acceptance commit: `44c9d1c44dc9ce95fde77e68588cc98b5cd8aab4`.
 
-### Hardware accepted — scheduler stack canary / high-water instrumentation
+### Accepted / published — scheduler stack canary / high-water instrumentation
 
 - Added command-gated `schedstack -> SCHED_STACK_WATER_OK`.
 - Existing task stacks remain exactly `2 x 512 bytes`.
@@ -86,14 +137,14 @@
 - Accepted candidate binary: `13408 bytes`.
 - SHA-256: `4A57F4559AAC3BDAE8FEF5FD3B51F3DEA9033FC917DA19032754796459959D42`.
 - `.bss=1936 bytes`; `_ebss=0x20000790`; SRAM headroom `18544 bytes`.
-- This acceptance proves the current synthetic scheduler test tasks fit comfortably in 512-byte stacks; it does not yet prove console/OLED production workloads fit.
+- This acceptance proves the current synthetic scheduler test tasks fit comfortably in 512-byte stacks; workload-specific proof remains required for substantive production paths.
+- Acceptance commit: `4eaa4f1845fd973ec7ac4393e2f4354fdaf7c66c`.
 
-### Next
+### Transition
 
-- Run a representative substantive workload in a command-gated PSP task and measure real high-water/canary behavior.
-- Keep normal boot, console, and OLED on the current kernel/MSP path until that workload-specific stack budget is proven.
-- Preserve `schedtest`, `schedcoop`, `schedpreempt`, and `schedstack` as regression gates.
-<!-- END STM32_OS_CHANGELOG_2026_09_12 -->
+- The next gate after this milestone is a representative substantive PSP workload with real high-water/canary measurement.
+- Normal boot, console, and OLED remain on the current kernel/MSP path until that workload-specific proof is complete.
+<!-- END STM32_OS_CHANGELOG_2026_09_13 -->
 
 All notable project milestones are recorded here.
 
