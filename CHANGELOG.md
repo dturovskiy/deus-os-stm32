@@ -1,7 +1,70 @@
 # Changelog
 
 <!-- BEGIN STM32_OS_CHANGELOG_2026_09_13 -->
+## 2026-09-14
+
+### Accepted — normal-boot production task ownership + atomic host-idle race closure
+
+Accepted C3.6 candidate:
+
+- path: `build\normal_boot_production_ownership_atomic_racefix_v1\os.bin`
+- bytes: `21832`
+- SHA-256: `4E3C82B68C7E5B2D6EEE72BFD12FD282F944A32934FB891E5C24B585FE2695BB`
+- scheduler core: `src/kernel/scheduler.c` SHA-256 `FA649EF24569AEE653A1CA022778237F76FF236A3F0B1B38FDDA8FB06F867649`
+- production ownership source: `src/kernel.c` SHA-256 `FE046521F7A017B3DE204E984ECC392CA471C82824530B00EFCBFDFA433658F1`
+
+- Normal boot now automatically starts one cooperative production console/runtime task on PSP.
+- Slot 0 owns production console/runtime work; slot 1 remains `UNUSED`.
+- MSP is bootstrap-complete scheduler host/idle + exception stack and uses `WFE` when no task is READY.
+- The hardware-discovered READY/BLOCKED terminal-classification race was closed by PRIMASK-atomic host classification in `scheduler_start_mode()`.
+- Full safe production command surface: `18/18` PASS.
+- Invasive scheduler commands: `8/8` exact `SCHED_DIAG_BUSY`.
+- Atomic regression: `4 x 32` unpaced `ping`, `128/128 PONG`, no scheduler return/fatal path.
+- RX drops/errors/final depth = `0/0/0`; burst high-water = `4`.
+- Production stack = `580 used / 444 free`, canary intact.
+- MSP = `320 used / 1664 free`, canary intact.
+- Final Flash readback exactly matched the accepted candidate.
+- Automated OLED regression + `uiruntime` PASS.
+- Physical frozen OLED `DEUS OS / BOOT OK / READY`: `OLED PASS`.
+- Local acceptance commit and non-force publication are the only remaining gates.
+
 ## 2026-09-13
+
+### Published — scheduler steady-state wait/wake foundation
+
+- Published commit `bfed76e0de1c52bf65e60f66c029cc41710fabd0` (`feat: add scheduler steady-state wait/wake foundation`) by normal non-force fast-forward.
+- Published candidate `19932 bytes`, SHA-256 `C21915F3DFA898C8E9F2FC601BC9E0FDA4ABE8EBB23528BF14F25D82FE28CE81`.
+- Added explicit BLOCKED task state, SVC event wait, ISR-safe event wake, pending-event race closure and host-MSP WFE idle.
+- UART RX event publication occurs only after ring insertion; event consumers re-check FIFO/condition after wake.
+- Hardware acceptance: 4/4 UART IRQ wait/wake rounds PASS; lifecycle/RX/MSP/OLED regression PASS; physical OLED PASS.
+- Worktree/index clean after publication.
+
+### Hardware discovery / scope reclassification — normal-boot production ownership
+
+- Gate 1 source implementation completed in `src/kernel.c`; Gate 2 fresh GNU validation PASS.
+- Initial production candidate: `21804 bytes`, SHA-256 `609BFB2216B178C59E6BC7D0F04F4986571465A24C820E3A34E575DB768858E3`.
+- Hardware v1 proved automatic cooperative production ownership, PSP execution, host-MSP WFE idle, all 18 safe commands, and all 8 invasive diagnostics blocked with `SCHED_DIAG_BUSY`.
+- Before burst pressure: production stack high-water `580 / 1024`, free margin `444`, canary intact; RX drops/errors were `0`.
+- UART burst then exposed a scheduler host-idle TOCTOU race: a task can transition `BLOCKED -> READY` between the host's first READY scan and its BLOCKED scan, causing a false `scheduler_abort_run()` and `scheduler_start()` return `0`.
+- Observed failure signature: 14 `PONG`, then `SCHED_PROD_RETURN=0x00000000`, `SCHED_PROD_UNEXPECTED_RETURN`, `SCHED_PROD_FATAL`.
+- This is a real scheduler-core correctness blocker, not a harness failure.
+- C3.6 source scope is therefore reclassified from `src/kernel.c` only to `src/kernel.c` plus a minimal `src/kernel/scheduler.c` host-idle race fix.
+- Gate 2B linked the first-pass second READY scan, but static review found a smaller remaining IRQ window before `scheduler_abort_run()`. Final closure requires atomic READY/BLOCKED terminal classification under `PRIMASK`, with terminal abort committed before interrupt restore.
+- `include/kernel/scheduler.h`, startup, linker and frozen OLED implementation remain guards.
+- Regression hardware acceptance must repeat burst rounds and prove no unexpected scheduler return/fatal path.
+
+### Planning baseline — normal-boot production task ownership migration
+
+- Canonical next boundary is `NORMAL_BOOT_PRODUCTION_TASK_OWNERSHIP_MIGRATION`.
+- Added detailed ownership design and acceptance plans.
+- Chosen first production topology: one cooperative console/runtime task on PSP, slot 1 UNUSED.
+- Reuse accepted 1024-byte console PSP allocation; migration must re-prove >=256-byte free margin.
+- Preserve USART1 IRQ sole-DR-reader/ring ownership and drain-first event consumer semantics.
+- MSP becomes scheduler host/idle + exception stack after bootstrap; no dummy idle task.
+- Initial OLED UI remains bootstrap work; runtime OLED/I2C application calls move with console ownership to PSP.
+- All eight console-visible invasive scheduler diagnostics remain blocked with `SCHED_DIAG_BUSY` while production scheduler is active.
+- `sleep()`/timed waits, priorities, second production task, OLED task and IPC remain deferred.
+- Original target source boundary was `src/kernel.c` only; hardware v1 reclassified C3.6 to `src/kernel.c` plus a minimal `src/kernel/scheduler.c` host-idle race fix. Scheduler header, startup/linker and frozen OLED modules remain guards.
 
 ### Hardware + physical accepted — production scheduler lifecycle / diagnostic isolation
 

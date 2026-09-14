@@ -1,83 +1,78 @@
 > [!IMPORTANT]
 
-<!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
-## Current accepted execution state — 2026-09-13
+<!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
+## Current accepted execution state — 2026-09-14
 
-This section is authoritative for the current execution boundary and supersedes stale unchecked rows in historical planning sections below.
+This section is authoritative for the current execution boundary and supersedes stale historical rows below.
 
 ### Published baseline
 
-- [x] Published HEAD/origin/main: `8bc1510265d0377adafda663d320c1e55f5b2c3a`.
-- [x] Published subject: `feat: add console PSP stack-budget probe`.
-- [x] Repository baseline before this acceptance delta was clean.
+- [x] Published `main` remains `bfed76e0de1c52bf65e60f66c029cc41710fabd0`.
+- [x] Published subject remains `feat: add scheduler steady-state wait/wake foundation`.
+- [x] Current migration is accepted locally but not yet committed/pushed.
 
-### Runtime/UI / transport invariants — ACCEPTED
+### Normal-boot production ownership — HARDWARE + PHYSICAL ACCEPTED
 
-- [x] Frozen native 128x32 OLED geometry unchanged; physical output `DEUS OS / BOOT OK / READY`.
-- [x] USART1 IRQ37 is sole `USART1_DR` reader; 128-byte SPSC RX ring remains accepted.
-- [x] MSP guard/high-water instrumentation remains accepted.
-- [x] Normal boot console remains MSP-owned and uses `WFI` idle.
-- [x] Production scheduler is not started during normal boot.
+Accepted C3.6 candidate:
 
-### Console PSP stack budget — ACCEPTED / PUBLISHED
+- path: `build\normal_boot_production_ownership_atomic_racefix_v1\os.bin`
+- bytes: `21832`
+- SHA-256: `4E3C82B68C7E5B2D6EEE72BFD12FD282F944A32934FB891E5C24B585FE2695BB`
+- scheduler core: `src/kernel/scheduler.c` SHA-256 `FA649EF24569AEE653A1CA022778237F76FF236A3F0B1B38FDDA8FB06F867649`
+- production ownership source: `src/kernel.c` SHA-256 `FE046521F7A017B3DE204E984ECC392CA471C82824530B00EFCBFDFA433658F1`
 
-- [x] Commit `8bc1510265d0377adafda663d320c1e55f5b2c3a`.
-- [x] Dedicated console PSP stack `1024 bytes`; safe PSP surface exact `17` non-scheduler commands.
-- [x] Published hardware high-water `600 / 1024`; minimum margin `424`.
-- [x] 512-byte full-console migration remains rejected.
+- [x] one cooperative production console/runtime task;
+- [x] slot 0 production console, slot 1 `UNUSED`;
+- [x] 1024-byte production PSP stack;
+- [x] MSP bootstrap -> scheduler host/idle + exceptions;
+- [x] host `WFE` idle;
+- [x] UART IRQ sole DR reader / ring producer;
+- [x] drain-first / wait-second event consumption;
+- [x] runtime OLED/I2C ownership on PSP;
+- [x] eight invasive scheduler diagnostics blocked with `SCHED_DIAG_BUSY`;
+- [x] unexpected scheduler return fail-closed.
 
-### Production scheduler lifecycle / diagnostic isolation — HARDWARE + PHYSICAL ACCEPTED / COMMIT PENDING
+### Scheduler race closure
 
-- [x] Exact source delta: `include/kernel/scheduler.h`, `src/kernel.c`, `src/kernel/scheduler.c`.
-- [x] `scheduler_init()` is status-returning and inactive-only.
-- [x] Active reset rejection occurs before any scheduler-global mutation.
-- [x] `scheduler_is_active()` is read-only.
-- [x] Existing reset call sites check failure.
-- [x] Scheduler diagnostics centralized behind active lifecycle gate.
-- [x] Active diagnostic output contract: exact `SCHED_DIAG_BUSY`.
-- [x] Six published scheduler diagnostic handlers retain idle behavior/output.
-- [x] `schedisolate` proves active reset rejection and diagnostic isolation under real preemption.
-- [x] Candidate `18324 bytes` / SHA-256 `9AFDE9AC5AF196E98A2896BAC0DD7AE610414FB5A2888F1D499D2A5E0A12794B`.
-- [x] `.bss=5248`; `_ebss=0x20000C80`; RAM gap below MSP `15232`; `fault_record=0x20000764`.
-- [x] `4/4` isolation rounds PASS; exactly six busy lines per round.
-- [x] `INIT_REJECT=1`, `BLOCKED_DIAGNOSTICS=6`, `ACTIVE_PRESERVED=1`, `OVERLAP=1` in every accepted round.
-- [x] Isolation stacks: task 0 `160 / 512`, task 1 `88 / 512`; switches `16`; canaries intact.
-- [x] Legacy scheduler suite PASS before isolation and after isolation.
-- [x] Standalone console PSP regression `2/2` PASS.
-- [x] Composite console PSP + RX pressure `4/4` PASS.
-- [x] Exact `+105` IRQ and `+105` RX-byte delta for every composite.
-- [x] Console PSP high-water `560 / 1024`; minimum margin `464`; peer `88 / 512`; maximum switches `693`.
-- [x] RX high-water `80 / 128`; zero drops/errors; depth returns to zero.
-- [x] MSP high-water `320 / 1984`; minimum margin `1664`; canary intact.
-- [x] Fresh-reset isolation and console probe PASS.
-- [x] Final exact flash readback PASS.
-- [x] Manual physical OLED PASS.
-- [x] Runtime failure count `0`.
+- [x] hardware v1 reproduced false host abort under burst pressure;
+- [x] first unlocked READY re-check was rejected by static review as incomplete;
+- [x] final fix uses PRIMASK-atomic READY/BLOCKED/terminal classification;
+- [x] linked CFG proof confirms terminal abort before PRIMASK restore;
+- [x] linked blocked path restores PRIMASK before `WFE`.
 
-### Architecture state
+### Acceptance gates
 
-- [x] Lifecycle/diagnostic contradiction closed without moving normal-boot ownership.
-- [x] Safe 17-command PSP surface remains isolated from invasive scheduler diagnostics.
-- [x] No normal-boot scheduler migration in this slice.
-- [ ] Persistent scheduler blocked/waiting + wake/event model.
-- [ ] Stable steady-state scheduler idle ownership.
-- [ ] Explicit normal-boot production task ownership/migration.
-- [ ] `sleep()` / timer blocking semantics.
-- [ ] Priorities.
+- [x] Gate 0 planning synchronization.
+- [x] Gate 1A production ownership source implementation.
+- [x] Gate 2A initial GNU build.
+- [x] Gate 3A hardware discovery of real scheduler race.
+- [x] Gate 0R scope reclassification.
+- [x] Gate 1B / 2B first-pass fix + build; rejected before hardware after static review.
+- [x] Gate 0C atomic replan.
+- [x] Gate 1C atomic scheduler source fix.
+- [x] Gate 2C fresh GNU build + CFG-aware linked proof.
+- [x] Gate 3C atomic hardware race regression acceptance.
+- [x] Gate 4 manual physical OLED acceptance (`OLED PASS`).
+- [x] Gate 5 documentation finalization + temporary-index commit-candidate check.
+- [ ] Gate 6 local acceptance commit.
+- [ ] Gate 7 non-force fast-forward push.
 
-### Next active scheduler boundary
+### Accepted hardware facts
 
-Implement and prove **production scheduler steady-state wait/wake foundation** without changing normal-boot ownership. Establish blocked/waiting task state, deterministic event wake, and stable idle behavior while preserving lifecycle isolation, stack/RX/MSP/OLED acceptance contracts.
+- [x] safe production commands: `18/18`.
+- [x] invasive scheduler diagnostics: `8/8` BUSY.
+- [x] burst regression: `4/4 x 32 ping`, total `128/128 PONG`.
+- [x] RX drops/errors/depth: `0/0/0`.
+- [x] production stack: `580 used`, `444 margin`, canary intact.
+- [x] MSP: `320 used`, `1664 margin`, canary intact.
+- [x] final target readback matches candidate.
+- [x] automated OLED runtime restore PASS.
+- [x] physical OLED PASS.
 
-### Planned native USB / host control direction
+### Next boundary after publication
 
-- [ ] STM32F103 USB Device core on PA11/PA12 without HAL.
-- [ ] USB CDC ACM command/diagnostic console.
-- [ ] Transport-neutral shell/RPC shared with UART.
-- [ ] Binary transport after CDC semantics stabilize.
-- [ ] Cross-platform Windows/Linux host application, provisional name **Deus OS CP** (`Deus OS Control Panel`).
-- [ ] UART remains emergency console; ST-LINK remains recovery/debug.
-<!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_13 -->
+Timer-backed `sleep()` / timed blocking built on the accepted event model. Scheduler priorities remain after timed blocking stabilizes.
+<!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
 > The authoritative hardware-accepted geometry and firmware fingerprint are in

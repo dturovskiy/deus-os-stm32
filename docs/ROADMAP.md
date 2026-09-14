@@ -1,42 +1,38 @@
 # Roadmap
 
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
-## Current roadmap checkpoint — 2026-09-13
+## Current roadmap checkpoint — 2026-09-14
 
-Earlier unchecked Phase 0-2 rows are historical planning debt; this checkpoint is authoritative.
+### C3.6 normal-boot production ownership — ACCEPTED LOCALLY
 
-Accepted through this checkpoint:
+Accepted C3.6 candidate:
 
-- [x] Boot/startup/linker, clock/GPIO/SysTick/time and fault diagnostics.
-- [x] Bidirectional USART1 command console with IRQ37 sole-DR-reader + 128-byte SPSC ring.
-- [x] I2C1 + native frozen 128x32 SSD1306 runtime UI.
-- [x] Scheduler foundation, cooperative SVC activation and PendSV preemption.
-- [x] Scheduler stack canary/high-water instrumentation.
-- [x] Substantive PSP OLED workload: `328 / 512` task 0, `80 / 512` peer.
-- [x] MSP runtime guard/high-water: `2048-byte` reservation, `1984-byte` usable capacity.
-- [x] Console PSP stack budget: exact 17-command safe surface, accepted `1024-byte` stack; published high-water `600`, minimum margin `424`.
-- [x] Production scheduler lifecycle / scheduler-diagnostic isolation:
-  - active `scheduler_init()` reset rejected before mutation
-  - read-only `scheduler_is_active()`
-  - six invasive diagnostics return `SCHED_DIAG_BUSY` while active and preserve idle behavior
-  - `schedisolate` hardware proof `4/4`
-  - isolation task `160 / 512`, peer `88 / 512`, switches `16`, canaries intact
-  - legacy diagnostics PASS before and after isolation
-  - console PSP regression + RX/MSP/OLED/final-flash identity PASS
-  - physical OLED PASS.
+- path: `build\normal_boot_production_ownership_atomic_racefix_v1\os.bin`
+- bytes: `21832`
+- SHA-256: `4E3C82B68C7E5B2D6EEE72BFD12FD282F944A32934FB891E5C24B585FE2695BB`
+- scheduler core: `src/kernel/scheduler.c` SHA-256 `FA649EF24569AEE653A1CA022778237F76FF236A3F0B1B38FDDA8FB06F867649`
+- production ownership source: `src/kernel.c` SHA-256 `FE046521F7A017B3DE204E984ECC392CA471C82824530B00EFCBFDFA433658F1`
 
-Current production scheduler work still open:
+- [x] one cooperative production PSP console/runtime task;
+- [x] slot 0 production, slot 1 UNUSED;
+- [x] 1024-byte production stack;
+- [x] MSP host `WFE` idle;
+- [x] UART IRQ/ring/event ownership preserved;
+- [x] hardware-discovered false-abort race closed atomically under PRIMASK;
+- [x] 18 safe commands PASS;
+- [x] 8 diagnostics BUSY PASS;
+- [x] 4 x 32 burst regression PASS, 128/128 PONG;
+- [x] RX drops/errors/depth zero;
+- [x] stack/MSP margins accepted;
+- [x] OLED automated + physical acceptance PASS;
+- [ ] local acceptance commit;
+- [ ] non-force push.
 
-- [ ] persistent runnable vs blocked/waiting task state model
-- [ ] deterministic wake/event primitive suitable for UART/event-driven work
-- [ ] stable steady-state scheduler idle ownership / no busy-spin
-- [ ] explicit production task ownership model for normal boot
-- [ ] normal boot task migration
-- [ ] `sleep()` built on accepted blocking/wake semantics
-- [ ] priorities
+### Next scheduler sequence
 
-The next active boundary is **production scheduler steady-state wait/wake foundation**. Normal boot remains MSP-owned and the production scheduler remains inactive during normal boot until this persistent-task/idle model is proven. Normal-boot migration is a later separate gate.
-<!-- END STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
+1. timer-backed `sleep()` / timed blocking;
+2. scheduler priorities after timed blocking stabilizes;
+3. only then consider additional production tasks / IPC ownership.
 
 ## Phase 0 - Boot baseline
 

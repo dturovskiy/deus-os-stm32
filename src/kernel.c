@@ -110,12 +110,13 @@
 #define I2C_SPIN_LIMIT    100000u
 #define SCHED_WORKLOAD_PEER_SPINS 1000000u
 
-#define SCHED_CONSOLE_PROBE_STACK_WORDS 256u
-#define SCHED_CONSOLE_PROBE_STACK_BYTES     (SCHED_CONSOLE_PROBE_STACK_WORDS * 4u)
-#define SCHED_CONSOLE_PROBE_MIN_MARGIN_BYTES 256u
+#define PRODUCTION_CONSOLE_STACK_WORDS 256u
+#define PRODUCTION_CONSOLE_STACK_BYTES \
+    (PRODUCTION_CONSOLE_STACK_WORDS * 4u)
+#define PRODUCTION_CONSOLE_MIN_MARGIN_BYTES 256u
 #define SCHED_CONSOLE_PROBE_COMMAND_COUNT 17u
 #define SCHED_ISOLATION_DIAGNOSTIC_COUNT 7u
-#define SCHED_WAIT_WAKE_UART_EVENT       (1u << 0)
+#define PRODUCTION_UART_RX_EVENT         (1u << 0)
 #define SCHED_WAIT_WAKE_SENTINEL         0x57u
 
 /*
@@ -216,9 +217,17 @@ static volatile uint32_t scheduler_workload_peer_overlap;
 static volatile uint32_t scheduler_workload_peer_done;
 static volatile uint32_t scheduler_workload_ui_result;
 
-static uint32_t scheduler_console_probe_stack
-    [SCHED_CONSOLE_PROBE_STACK_WORDS]
+static uint32_t production_console_stack
+    [PRODUCTION_CONSOLE_STACK_WORDS]
     __attribute__((aligned(8)));
+
+static uint32_t production_console_task_cookie;
+static volatile uint32_t production_console_task_started;
+static volatile uint32_t production_console_wait_count;
+static volatile uint32_t production_console_wake_count;
+static volatile uint32_t production_console_wake_events;
+static volatile uint32_t production_console_command_count;
+static volatile uint32_t production_console_fault;
 
 static volatile uint32_t scheduler_console_probe_task_started;
 static volatile uint32_t scheduler_console_probe_task_done;
@@ -246,6 +255,7 @@ static volatile uint32_t scheduler_wait_wake_framing_bytes;
 static int console_execute_safe_named(const char *command);
 static int console_execute_scheduler_diagnostic(const char *command);
 static void console_execute_named(const char *command);
+static void console_production_scheduler_stats(void);
 static void console_scheduler_console_probe_test(void);
 static void console_scheduler_isolation_test(void);
 static void console_scheduler_wait_wake_test(void);
@@ -401,7 +411,7 @@ void USART1_IRQHandler(void)
             uart_rx_head = next_head;
 
             scheduler_event_signal(
-                SCHED_WAIT_WAKE_UART_EVENT);
+                PRODUCTION_UART_RX_EVENT);
 
             if (next_depth > uart_rx_high_water)
             {
@@ -2109,8 +2119,8 @@ static void console_scheduler_console_probe_test(void)
     bind_result =
         scheduler_task_stack_bind(
             0u,
-            scheduler_console_probe_stack,
-            SCHED_CONSOLE_PROBE_STACK_WORDS);
+            production_console_stack,
+            PRODUCTION_CONSOLE_STACK_WORDS);
 
     prepare0 =
         scheduler_task_prepare(
@@ -2205,11 +2215,11 @@ static void console_scheduler_console_probe_test(void)
             SCHED_CONSOLE_PROBE_COMMAND_COUNT) &&
         (scheduler_console_probe_ui_restore_result != 0u) &&
         (switches >= 2u) &&
-        (capacity0 == SCHED_CONSOLE_PROBE_STACK_BYTES) &&
+        (capacity0 == PRODUCTION_CONSOLE_STACK_BYTES) &&
         (capacity1 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
         (used0 >= 64u) &&
         (used0 < capacity0) &&
-        (margin0 >= SCHED_CONSOLE_PROBE_MIN_MARGIN_BYTES) &&
+        (margin0 >= PRODUCTION_CONSOLE_MIN_MARGIN_BYTES) &&
         (used1 >= 64u) &&
         (used1 < capacity1) &&
         (canary0 != 0) &&
@@ -2243,7 +2253,7 @@ static void scheduler_wait_wake_task(void *argument)
     scheduler_wait_wake_task_started = 1u;
 
     /*
-     * console_poll() executes a command as soon as it consumes CR or LF.
+     * console_drain_rx() executes a command as soon as it consumes CR or LF.
      * With a normal CRLF host line, the second delimiter can still be queued
      * when this scheduler diagnostic starts. Framing bytes are not payload.
      */
@@ -2272,11 +2282,11 @@ static void scheduler_wait_wake_task(void *argument)
     {
         events =
             scheduler_wait_events(
-                SCHED_WAIT_WAKE_UART_EVENT);
+                PRODUCTION_UART_RX_EVENT);
 
         scheduler_wait_wake_events |= events;
 
-        if ((events & SCHED_WAIT_WAKE_UART_EVENT) == 0u)
+        if ((events & PRODUCTION_UART_RX_EVENT) == 0u)
         {
             break;
         }
@@ -2414,7 +2424,7 @@ static void console_scheduler_wait_wake_test(void)
         (scheduler_wait_wake_task_resumed != 0u) &&
         (scheduler_wait_wake_peer_done != 0u) &&
         (scheduler_wait_wake_events ==
-            SCHED_WAIT_WAKE_UART_EVENT) &&
+            PRODUCTION_UART_RX_EVENT) &&
         (scheduler_wait_wake_byte_ok != 0u) &&
         (idle_waits != 0u) &&
         (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
@@ -2666,6 +2676,193 @@ static void console_scheduler_isolation_test(void)
 }
 
 
+
+static uint32_t cpu_control_get(void)
+{
+    uint32_t value;
+
+    __asm volatile (
+        "mrs %0, control"
+        : "=r" (value));
+
+    return value;
+}
+
+static uint32_t cpu_psp_get(void)
+{
+    uint32_t value;
+
+    __asm volatile (
+        "mrs %0, psp"
+        : "=r" (value));
+
+    return value;
+}
+
+static void console_production_scheduler_stats(void)
+{
+    const scheduler_task_t *task0 = scheduler_task_get(0u);
+    const scheduler_task_t *task1 = scheduler_task_get(1u);
+    const uint32_t active =
+        (scheduler_is_active() != 0) ? 1u : 0u;
+    const uint32_t control = cpu_control_get();
+    const uint32_t psp = cpu_psp_get();
+    const uint32_t thread_psp =
+        ((control & 0x2u) != 0u) ? 1u : 0u;
+    const uint32_t capacity =
+        scheduler_stack_capacity_bytes(0u);
+    const uint32_t used =
+        scheduler_stack_high_water_bytes(0u);
+    const uint32_t margin =
+        (used < capacity) ? (capacity - used) : 0u;
+    const uint32_t canary =
+        (scheduler_stack_canary_intact(0u) != 0) ?
+            1u :
+            0u;
+    const uint32_t idle_waits =
+        scheduler_idle_wait_count_get();
+    const uint32_t preempt_switches =
+        scheduler_preempt_switch_count_get();
+    uint32_t psp_in_range = 0u;
+    uint32_t task0_state = 0xFFFFFFFFu;
+    uint32_t task0_wait_events = 0u;
+    uint32_t task0_wake_events = 0u;
+    uint32_t task1_state = 0xFFFFFFFFu;
+    int passed;
+
+    if (task0 != (const scheduler_task_t *)0)
+    {
+        const uint32_t low =
+            (uint32_t)(uintptr_t)task0->stack_low;
+        const uint32_t high =
+            (uint32_t)(uintptr_t)task0->stack_high;
+
+        task0_state = (uint32_t)task0->state;
+        task0_wait_events = task0->wait_events;
+        task0_wake_events = task0->wake_events;
+
+        if ((psp >= low) && (psp <= high))
+        {
+            psp_in_range = 1u;
+        }
+    }
+
+    if (task1 != (const scheduler_task_t *)0)
+    {
+        task1_state = (uint32_t)task1->state;
+    }
+
+    uart_write("SCHED_PROD_ACTIVE=");
+    uart_write_hex32(active);
+    uart_write("\r\n");
+
+    uart_write_line("SCHED_PROD_MODE=COOPERATIVE");
+
+    uart_write("SCHED_PROD_THREAD_PSP=");
+    uart_write_hex32(thread_psp);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_CONTROL=");
+    uart_write_hex32(control);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_PSP=");
+    uart_write_hex32(psp);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_PSP_IN_RANGE=");
+    uart_write_hex32(psp_in_range);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_TASK0_STATE=");
+    uart_write_hex32(task0_state);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_TASK0_WAIT_EVENTS=");
+    uart_write_hex32(task0_wait_events);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_TASK0_WAKE_EVENTS=");
+    uart_write_hex32(task0_wake_events);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_TASK1_STATE=");
+    uart_write_hex32(task1_state);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_CONSOLE_CAPACITY=");
+    uart_write_hex32(capacity);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_CONSOLE_USED=");
+    uart_write_hex32(used);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_CONSOLE_MARGIN=");
+    uart_write_hex32(margin);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_CONSOLE_CANARY=");
+    uart_write_hex32(canary);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_IDLE_WAITS=");
+    uart_write_hex32(idle_waits);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_WAIT_COUNT=");
+    uart_write_hex32(production_console_wait_count);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_WAKE_COUNT=");
+    uart_write_hex32(production_console_wake_count);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_WAKE_EVENTS=");
+    uart_write_hex32(production_console_wake_events);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_COMMAND_COUNT=");
+    uart_write_hex32(production_console_command_count);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_DIAG_BUSY_COUNT=");
+    uart_write_hex32(scheduler_diagnostic_busy_count);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_PREEMPT_SWITCHES=");
+    uart_write_hex32(preempt_switches);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_FAULT=");
+    uart_write_hex32(production_console_fault);
+    uart_write("\r\n");
+
+    passed =
+        (active != 0u) &&
+        (production_console_task_started != 0u) &&
+        (thread_psp != 0u) &&
+        (psp_in_range != 0u) &&
+        (task0 != (const scheduler_task_t *)0) &&
+        (task1 != (const scheduler_task_t *)0) &&
+        (task0->state == SCHEDULER_TASK_READY) &&
+        (task1->state == SCHEDULER_TASK_UNUSED) &&
+        (capacity == PRODUCTION_CONSOLE_STACK_BYTES) &&
+        (margin >= PRODUCTION_CONSOLE_MIN_MARGIN_BYTES) &&
+        (canary != 0u) &&
+        (preempt_switches == 0u) &&
+        (production_console_fault == 0u);
+
+    if (passed != 0)
+    {
+        uart_write_line("SCHED_PROD_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_PROD_ERR");
+    }
+}
+
 static int console_execute_safe_named(const char *command)
 {
     if (text_equals(command, "ping") != 0)
@@ -2693,6 +2890,10 @@ static int console_execute_safe_named(const char *command)
     else if (text_equals(command, "mspstat") != 0)
     {
         console_msp_stack_stats();
+    }
+    else if (text_equals(command, "schedprod") != 0)
+    {
+        console_production_scheduler_stats();
     }
     else if (text_equals(command, "fault") != 0)
     {
@@ -2845,11 +3046,17 @@ static void console_execute_named(const char *command)
 static void console_execute(void)
 {
     uart_command[uart_command_length] = '\0';
+
+    if (production_console_task_started != 0u)
+    {
+        ++production_console_command_count;
+    }
+
     console_execute_named(uart_command);
     uart_command_length = 0u;
 }
 
-static void console_poll(void)
+static void console_drain_rx(void)
 {
     char c;
 
@@ -2885,6 +3092,54 @@ static void console_poll(void)
             uart_command_length = 0u;
             uart_write_line("ERR");
         }
+    }
+}
+
+
+static void production_console_task(void *argument)
+{
+    uint32_t events;
+
+    if (argument != (void *)&production_console_task_cookie)
+    {
+        production_console_fault = 1u;
+        return;
+    }
+
+    production_console_task_started = 1u;
+    uart_write_line("SCHED_PROD_CONSOLE_ONLINE");
+
+    for (;;)
+    {
+        console_drain_rx();
+
+        ++production_console_wait_count;
+
+        events =
+            scheduler_wait_events(
+                PRODUCTION_UART_RX_EVENT);
+
+        production_console_wake_events |= events;
+        ++production_console_wake_count;
+
+        if ((events & PRODUCTION_UART_RX_EVENT) == 0u)
+        {
+            production_console_fault = 1u;
+            return;
+        }
+    }
+}
+
+__attribute__((noreturn))
+static void production_fail_closed(
+    const char *reason)
+{
+    uart_write_line(reason);
+    uart_write_line("SCHED_PROD_FATAL");
+
+    for (;;)
+    {
+        __asm volatile ("wfi");
     }
 }
 
@@ -3010,6 +3265,10 @@ void SysTick_Handler(void)
 void kernel_main(void)
 {
     const uint32_t core_clock_hz = clock_init();
+    const scheduler_task_t *task1;
+    int bind_result;
+    int prepare_result;
+    int start_result;
 
     gpio_init();
     uart_init();
@@ -3035,15 +3294,62 @@ void kernel_main(void)
     }
 
     /*
-     * USART1 RXNE IRQ is the sole reader of USART1_DR and feeds a 128-byte
-     * single-producer/single-consumer ring.  The console remains on MSP for
-     * this foundation slice and drains the ring through uart_try_getc().
-     * SysTick and USART1 interrupts both wake WFI; no normal-boot task
-     * ownership migration is performed here.
+     * Normal boot now transfers application runtime ownership to one
+     * cooperative PSP console task. USART1 IRQ remains the sole DR reader:
+     * it publishes bytes to the RX ring before signalling the scheduler
+     * event. The task drains the authoritative ring before each wait so
+     * boot-time bytes remain visible even though event signals are ignored
+     * while the scheduler is inactive.
+     *
+     * Slot 1 intentionally remains UNUSED. When task 0 is BLOCKED, the
+     * scheduler host owns Thread/MSP and parks with WFE.
      */
-    for (;;)
+    if (scheduler_init() == 0)
     {
-        console_poll();
-        __asm volatile ("wfi");
+        production_fail_closed(
+            "SCHED_PROD_INIT_ERR");
     }
+
+    production_console_task_started = 0u;
+    production_console_wait_count = 0u;
+    production_console_wake_count = 0u;
+    production_console_wake_events = 0u;
+    production_console_command_count = 0u;
+    production_console_fault = 0u;
+
+    bind_result =
+        scheduler_task_stack_bind(
+            0u,
+            production_console_stack,
+            PRODUCTION_CONSOLE_STACK_WORDS);
+
+    prepare_result =
+        scheduler_task_prepare(
+            0u,
+            production_console_task,
+            (void *)&production_console_task_cookie);
+
+    task1 = scheduler_task_get(1u);
+
+    if (
+        (bind_result == 0) ||
+        (prepare_result == 0) ||
+        (task1 == (const scheduler_task_t *)0) ||
+        (task1->state != SCHEDULER_TASK_UNUSED)
+    ) {
+        production_fail_closed(
+            "SCHED_PROD_PREPARE_ERR");
+    }
+
+    uart_write_line("SCHED_PROD_PREPARE_OK");
+    uart_write_line("SCHED_PROD_START");
+
+    start_result = scheduler_start();
+
+    uart_write("SCHED_PROD_RETURN=");
+    uart_write_hex32((uint32_t)start_result);
+    uart_write("\r\n");
+
+    production_fail_closed(
+        "SCHED_PROD_UNEXPECTED_RETURN");
 }

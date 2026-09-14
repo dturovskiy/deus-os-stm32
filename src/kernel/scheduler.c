@@ -1053,39 +1053,53 @@ static int scheduler_start_mode(
 
     while (scheduler_active != 0u)
     {
+        uint32_t primask;
+
         if (scheduler_current_index != SCHEDULER_NO_TASK)
         {
             scheduler_abort_run();
             break;
         }
 
+        /*
+         * Classify READY/BLOCKED/terminal state atomically. A wake IRQ
+         * must not be able to move the only BLOCKED task to READY between
+         * the final scheduler state observation and scheduler_abort_run().
+         */
+        primask = scheduler_irq_save();
+
         if (
             scheduler_find_next_ready(
                 SCHEDULER_TASK_COUNT - 1u) <
             SCHEDULER_TASK_COUNT
         ) {
+            scheduler_irq_restore(primask);
             __asm volatile ("svc #0" ::: "memory");
             continue;
         }
 
-        if (scheduler_has_blocked_tasks() == 0)
+        if (scheduler_has_blocked_tasks() != 0)
         {
-            scheduler_abort_run();
-            break;
+            ++scheduler_idle_wait_count;
+            scheduler_irq_restore(primask);
+
+            /*
+             * Event producers execute SEV after publishing READY state.
+             * If an event races after PRIMASK restore and before this park
+             * point, the event register keeps WFE from sleeping past it.
+             */
+            __asm volatile (
+                "dsb\n"
+                "wfe\n"
+                "isb\n"
+                ::: "memory");
+
+            continue;
         }
 
-        ++scheduler_idle_wait_count;
-
-        /*
-         * Event producers execute SEV after publishing READY state. If an
-         * event races with this park point, the event register keeps WFE
-         * from sleeping past the wakeup.
-         */
-        __asm volatile (
-            "dsb\n"
-            "wfe\n"
-            "isb\n"
-            ::: "memory");
+        scheduler_abort_run();
+        scheduler_irq_restore(primask);
+        break;
     }
 
     result =

@@ -388,6 +388,8 @@ A repeated class of harness failure must be added to this playbook before contin
 | PWR-PARSER-01 | package runner fails before line 1 execution | interpolated `$variable:` parsed as scoped-variable syntax | AST-parse `apply.ps1` before execution; use `${variable}:` or format operator |
 | DOC-CHECK-01 | correct finalized document rejected by package validator | validator searched case-sensitive prose (`normal-boot` vs `Normal-boot`) even though payload SHA was exact | validate exact post-SHA plus unique structural milestone markers; do not re-parse prose semantics with brittle substrings |
 | UNTRACKED-CHECK-01 | finalization passes `git diff --check`, commit gate later finds whitespace in a new file | ordinary `git diff --check` does not include untracked files | validate the full would-be commit through a temporary Git index and run `git diff --cached --check` there before accepting finalization |
+| DOC-CURRENT-STATE-01 | new chat reads contradictory current state | older top/current checkpoint still names a superseded baseline while newer acceptance is appended later | when a milestone is published, replace/update authoritative current-state blocks across MASTER / IMPLEMENTATION / HANDOFF / ROADMAP / README; do not rely on a later appended section to override stale top text |
+| PWR-CMDTOKEN-01 | AST parse passes but runner fails with “term is not recognized” for a helper/built-in command | PowerShell command name was immediately adjacent to its first argument (`Write-Host"..."`, `L'...'`, `Sha$p`, `SaveEvidence'PASS'`), so tokenization produced a different command name | require whitespace between a command name and every argument; generator statically rejects adjacent-argument calls for all package helper commands and critical built-ins |
 
 ---
 
@@ -479,3 +481,68 @@ Before a source/document finalization gate is declared commit-ready:
 5. destroy the temporary index without touching the real index.
 
 This check must cover tracked modifications and newly added files together.
+
+### Canonical current-state synchronization
+
+When a milestone becomes the published baseline, authoritative "current state" blocks must be synchronized in the same documentation planning/finalization payload.
+
+At minimum inspect:
+
+- `docs/MASTER_EXECUTION_CHECKLIST.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/PROJECT_HANDOFF.md`
+- `docs/ARCHITECTURE.md`
+- `docs/ROADMAP.md`
+- `README.md`
+- `CHANGELOG.md`
+
+A later appended acceptance section is not sufficient if an earlier/top block still claims an older HEAD or an already-closed next gate.
+
+Specialized subsystem acceptance documents should remain unchanged when their accepted contract is preserved; do not churn unrelated docs merely to touch every file.
+
+### PowerShell command-token spacing
+
+A zero-error AST parse is necessary but not sufficient.
+
+PowerShell may parse an adjacent command/argument sequence as a different command token, for example:
+
+- `Write-Host"message"`
+- `Log'PASS'`
+- `Hash$Path`
+- `SaveEvidence'FAILED'`
+
+Package-generation validation must therefore enforce:
+
+1. a command name is followed by whitespace before its first argument;
+2. package helper commands are not invoked in compressed adjacent-token form;
+3. critical built-ins such as `Write-Host` are checked for the same defect;
+4. the runner is written in readable statement-per-line form rather than dense semicolon-compressed command chains.
+
+This lint is in addition to the mandatory PowerShell AST parser preflight.
+
+
+## Hardware-race and disassembly-proof lessons — 2026-09-14
+
+### HARN-CFG-01 — disassembly text order is not control-flow order
+
+Do not prove IRQ masking / restore ordering by comparing only the nearest textually preceding instruction in `objdump` output when branches are present.
+
+The atomic scheduler build initially produced a false negative because a READY-path `msr PRIMASK` appeared textually before a terminal abort block, while the terminal conditional branch jumped directly over that restore.
+
+Required practice:
+- parse instruction addresses;
+- parse branch targets;
+- prove the actual control-flow edge to the target block;
+- then verify ordering inside that block/path.
+
+A linear disassembly heuristic is acceptable only for truly branch-free local sequences.
+
+### ARCH-RACE-01 — repeated reads do not close an interrupt race
+
+When task state can change in IRQ context, a second unlocked READY check before terminal abort is still racy. The classification and terminal action must share one interrupt-masked critical section when correctness depends on the state remaining stable until abort.
+
+For blocked idle, restore interrupts before `WFE`; retain the established `SEV` producer contract so an event racing between restore and `WFE` remains observable.
+
+### EVID-HW-01 — hardware race regression must reproduce pressure, not only nominal wake
+
+After a timing race is found under burst traffic, the acceptance regression must preserve that pressure shape. For this milestone the permanent pattern was multiple unpaced bursts with exact response counts, exact RX byte/IRQ accounting, zero drop/error/depth, and scheduler telemetry after every round.
