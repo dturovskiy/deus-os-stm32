@@ -3,38 +3,41 @@
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 ## Current roadmap checkpoint — 2026-09-15
 
-### C3.7 timed blocking / sleep — PUBLISHED
+### C3.8 fixed-priority scheduling — PUBLISHED
 
-- [x] commit `90df6a690230c9800c0d8497d5597f87a5ae0409`;
-- [x] tree `c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`;
-- [x] hardware + OLED accepted;
-- [x] non-force publication complete.
+- [x] `0312bb376c365c0235b9cafe22e927254528f2c4` published and synchronized.
 
-### C3.8 fixed-priority scheduling — ACCEPTED, PUBLICATION PENDING
+### C3.9 production heartbeat task ownership — ACCEPTED, PUBLICATION PENDING
 
-- [x] architecture and acceptance planning;
-- [x] static TCB priority;
-- [x] inactive-only priority setter;
-- [x] priority-aware shared READY selector;
-- [x] equal-priority round-robin preservation;
-- [x] cooperative priority semantics;
-- [x] preemptive selector integration;
-- [x] production task0 DEFAULT priority telemetry;
-- [x] safe `schedprio` selector self-test;
+- [x] planning/docs synchronization;
+- [x] `src/kernel.c` implementation only;
+- [x] task1 stack `512 B`, priority `255`;
+- [x] heartbeat moved from SysTick to `scheduler_sleep_ms(500)` task;
+- [x] SysTick heartbeat GPIO policy removed;
+- [x] production telemetry extended;
 - [x] fresh GNU validation;
-- [x] hardware priority + retained C3.7 regression;
-- [x] Gate 4 OLED conditional N/A;
-- [x] docs/evidence finalization;
+- [x] real two-task hardware acceptance;
+- [x] heartbeat count delta `7`;
+- [x] PC13 hardware transitions `5`, both ODR states;
+- [x] safe `20/20`, timed `4/4`, BUSY `8/8`, `128/128 PONG`;
+- [x] OLED Gate 4 conditional N/A;
+- [x] documentation/evidence finalization;
 - [ ] local acceptance commit;
-- [ ] non-force publication.
+- [ ] ordinary non-force publication.
 
-Accepted candidate: `23792` bytes / `492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F`.
+Accepted candidate:
 
-### Sequence after C3.8 publication
+`24648` bytes /
+`4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`.
 
-1. additional production tasks only when an independent responsibility exists;
-2. message queues/synchronization only when shared ownership actually exists;
-3. generic timer callbacks only when a real consumer requires them.
+### Sequence after C3.9 publication
+
+1. keep the current stable status-bar/UI frozen until its dedicated UI slice;
+2. introduce IPC only when a later responsibility actually requires cross-task
+   data ownership;
+3. consider a dedicated display task only with an explicit OLED/I2C ownership
+   and message model;
+4. generic timer callbacks only when a real consumer requires them.
 ## Phase 0 - Boot baseline
 
 - [x] ARM GNU toolchain

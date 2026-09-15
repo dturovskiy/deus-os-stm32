@@ -3,81 +3,48 @@
 <!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 ## Accepted project state — 2026-09-15
 
-Published parent remains:
+Published parent:
 
-`90df6a690230c9800c0d8497d5597f87a5ae0409` — `feat: add scheduler timed blocking foundation`
+`0312bb376c365c0235b9cafe22e927254528f2c4` — `feat: add fixed-priority scheduler policy`
 
-Published parent tree:
+C3.9 production heartbeat task ownership is **hardware accepted and awaiting local acceptance commit**.
 
-`c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`
+Accepted candidate:
 
-C3.8 static fixed-priority scheduling is **hardware accepted and awaiting local
-acceptance commit / publication**.
-
-Accepted C3.8 firmware:
-
-- path: `build\scheduler_fixed_priority_v1\os.bin`
-- bytes: `23792`
-- SHA-256: `492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F`
-- `src/kernel.c`: `235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D`
-- `src/kernel/scheduler.c`: `B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88`
-- `include/kernel/scheduler.h`: `A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841`
-
-Accepted priority architecture:
-
-- static task priority range `0..255`;
-- lower numeric value means higher priority;
-- default priority `128`;
-- priority mutation is rejected while scheduler is active;
-- one shared READY selector owns SVC/cooperative/host/PendSV choice;
-- equal priorities retain round-robin tie order;
-- cooperative production mode remains non-preemptive;
-- task 0 remains production console/runtime at priority `128`;
-- task 1 remains UNUSED;
-- no new SVC;
-- timed/event blocking semantics remain unchanged.
+- path: `build\production_heartbeat_task_v1\os.bin`
+- bytes: `24648`
+- SHA-256: `4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`
+- task0: console/runtime, priority `128`, stack `1024 B`
+- task1: PC13 heartbeat, priority `255`, stack `512 B`
+- heartbeat wait: `scheduler_sleep_ms(500)`
+- SysTick: kernel tick + `scheduler_tick()` only
+- IPC: none
+- new SVC: none
 
 Hardware acceptance:
 
-- `schedprio` phase `1/1` PASS;
-- selector self-test exact `0x0000003F`;
-- task0 priority `128 -> 128` across rejected live mutation;
-- cooperative preempt-switch count `0`;
-- safe production surface `20/20`;
-- timed phases `4/4`;
-- sleep `50 ms`, timeout `50 ms`;
-- external UART event wake `171 ms`, event mask `0x00000001`;
-- timed RX delta `26`, timed host-idle delta `3004`;
-- invasive scheduler diagnostics `8/8` exact `SCHED_DIAG_BUSY`;
-- retained race regression `4 x 32`, `128/128 PONG`;
-- RX drops/errors/final depth `0/0/0`;
-- production PSP stack `580 used / 444 margin`;
-- MSP `340 used / 1644 margin`;
-- final Flash readback exact candidate;
-- automated OLED runtime restore PASS.
+- heartbeat count `3 -> 10`, delta `7`
+- PC13 hardware transitions `5`, both ODR states observed
+- heartbeat task stack `80 used / 432 margin`, canary healthy
+- console task stack `616 used / 408 margin`, canary healthy
+- fixed-priority selector self-test exact `0x0000003F`
+- task0 priority `128 -> 128`
+- task1 priority `255 -> 255`
+- cooperative preempt switches `0`
+- safe production surface `20/20`
+- timed blocking `4/4`
+- invasive diagnostics `8/8 SCHED_DIAG_BUSY`
+- retained UART race regression `4 x 32 = 128/128 PONG`
+- RX drops/errors/depth `0/0/0`, high-water `7`
+- MSP `340 used / 1644 margin`, canary healthy
+- final Flash readback exact candidate
+- OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
-Gate 4 physical OLED disposition:
+Gates 0–5 are accepted.
 
-`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+Next gate:
 
-OLED/gfx sources are byte-identical to C3.7 and no display behavior was changed.
-
-Accepted evidence:
-
-- build log SHA-256 `306AC5D97125F5BEFB4B2DB95E602ED8F6541E32CF364AA61ACD3D93A0E946D0`;
-- build evidence SHA-256 `33E699282A456B79A0F15C8B2B6DF756BAD5979867091863599575A851CEA000`;
-- hardware log SHA-256 `005D646FD613506896BC1A3961DDA752D9D424AD7F4AD0CFAAEE377C50E05222`;
-- hardware evidence SHA-256 `41665A892477FB195D00DD722A093F69B09AB2A66669EB872DDB7A3518EACC6C`.
-
-Current gate:
-
-**C3.8 Gate 5 — documentation/evidence finalization complete when this exact
-document set passes its finalization harness.**
-
-Next:
-
-1. Gate 6 — local acceptance commit;
-2. Gate 7 — ordinary non-force fast-forward publication.
+**C3.9 Gate 6 — local acceptance commit.**
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.

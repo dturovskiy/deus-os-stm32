@@ -3,63 +3,48 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Current implementation checkpoint — 2026-09-15
 
-### Stage C3.7 — SysTick-backed timed blocking — PUBLISHED
+### Stage C3.8 — static fixed-priority scheduling — PUBLISHED
 
-Published commit: `90df6a690230c9800c0d8497d5597f87a5ae0409`.
+Published commit: `0312bb376c365c0235b9cafe22e927254528f2c4`.
 
-Published tree: `c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`.
+### Stage C3.9 — production heartbeat task ownership — HARDWARE ACCEPTED
 
-### Stage C3.8 — static fixed-priority scheduling — HARDWARE ACCEPTED
+Candidate:
 
-Accepted firmware:
+`build\production_heartbeat_task_v1\os.bin`
 
-- `23792` bytes;
-- SHA-256 `492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F`;
-- text `23792`;
-- data `0`;
-- BSS `5360`;
-- RAM gap below MSP `15120`.
+`24648` bytes / `4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`.
 
-Accepted source:
+Implemented:
 
-- `include/kernel/scheduler.h` `A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841`;
-- `src/kernel/scheduler.c` `B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88`;
-- `src/kernel.c` `235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D`.
+```text
+task0  console/runtime  priority 128  stack 1024 B
+task1  PC13 heartbeat   priority 255  stack  512 B
+```
 
-Accepted model:
+Task1 blocks through `scheduler_sleep_ms(500)`. SysTick now owns only
+`kernel_ticks` and `scheduler_tick()`. No IPC and no new SVC were added.
 
-- static priority `0..255`, default `128`;
-- lower numeric value wins;
-- inactive-only priority setter;
-- one shared READY selector;
-- equal-priority round-robin tie behavior;
-- no new SVC;
-- cooperative production unchanged;
-- task0 DEFAULT, task1 UNUSED;
-- safe `schedprio` self-test `0x3F`;
-- timed/event architecture retained.
+Hardware acceptance:
 
-Hardware:
-
-- priority runtime `1/1`;
-- active mutation rejection PASS;
-- safe `20/20`;
-- timed `4/4`;
-- diagnostics `8/8` BUSY;
-- retained `4 x 32 = 128/128 PONG`;
-- PSP `580 used / 444 margin`;
-- MSP `340 used / 1644 margin`;
+- heartbeat count delta `7`;
+- PC13 transitions `5`, both ODR states;
+- heartbeat stack usage `80`, margin `432`;
+- console stack usage `616`, margin `408`;
+- priority self-test `0x0000003F`;
+- `20/20` safe commands;
+- timed blocking `4/4`;
+- `8/8` invasive commands blocked;
+- `128/128 PONG`;
 - RX `0/0/0`;
-- final Flash exact;
-- automated OLED restore PASS.
+- MSP margin `1644`;
+- final Flash exact.
 
-OLED Gate 4:
-`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+Gate 4:
 
-Remaining:
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
-1. local acceptance commit;
-2. non-force fast-forward push.
+Gate 6 local acceptance commit is next.
 ## Objective
 
 Build a small, understandable, fast bare-metal operating system for STM32F103-class Cortex-M3 hardware while learning ARM/Thumb assembly, exception mechanics, scheduling, memory layout, drivers, and low-level performance.

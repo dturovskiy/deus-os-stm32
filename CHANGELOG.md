@@ -1,5 +1,48 @@
 ## 2026-09-15
 
+### Accepted — C3.9 production heartbeat task ownership
+
+Status: hardware accepted; local acceptance commit and publication pending.
+
+Accepted candidate:
+
+```text
+build\production_heartbeat_task_v1\os.bin
+24648 bytes
+4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86
+```
+
+Accepted architecture:
+
+- task0 remains console/runtime, priority `128`, stack `1024 B`;
+- task1 owns normal-runtime PC13 heartbeat, priority `255`, stack `512 B`;
+- heartbeat blocks with `scheduler_sleep_ms(500)`;
+- SysTick retains only kernel time + `scheduler_tick()`;
+- fatal-fault PC13 blink remains an out-of-band diagnostic exception;
+- no IPC, no new SVC, cooperative production retained.
+
+Hardware proof:
+
+- heartbeat count `3 -> 10`, delta `7`;
+- PC13: `5` transitions, both ODR states observed;
+- heartbeat stack `80 used / 432 margin`;
+- console stack `616 used / 408 margin`;
+- fixed-priority self-test `0x0000003F`;
+- task0 `128 -> 128`, task1 `255 -> 255`;
+- safe surface `20/20`;
+- timed blocking `4/4`;
+- invasive diagnostics `8/8 BUSY`;
+- retained `4 x 32 = 128/128 PONG`;
+- RX `drop/error/depth = 0/0/0`;
+- MSP `340 used / 1644 margin`;
+- `OLED_RUNTIME_UI_OK`;
+- final Flash identity exact.
+
+OLED Gate 4:
+
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+
+Next: Gate 6 local acceptance commit, then Gate 7 ordinary non-force publication.
 ### Accepted — C3.8 static fixed-priority scheduling
 
 Accepted candidate:
@@ -47,7 +90,7 @@ Evidence:
 - hardware log `005D646FD613506896BC1A3961DDA752D9D424AD7F4AD0CFAAEE377C50E05222`;
 - hardware evidence `41665A892477FB195D00DD722A093F69B09AB2A66669EB872DDB7A3518EACC6C`.
 
-Publication remains pending Gate 6 local commit and Gate 7 non-force push.
+Published as `0312bb376c365c0235b9cafe22e927254528f2c4` (`feat: add fixed-priority scheduler policy`).
 ## 2026-09-14
 
 ### Accepted — C3.7 SysTick-backed timed blocking / sleep foundation

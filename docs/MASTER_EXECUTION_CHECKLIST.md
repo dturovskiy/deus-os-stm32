@@ -5,78 +5,64 @@
 
 This section is authoritative.
 
-### Published baseline
+### Published baseline — C3.8
 
-- [x] `main` / `origin/main` / remote `main` = `90df6a690230c9800c0d8497d5597f87a5ae0409`.
-- [x] parent tree = `c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`.
-- [x] parent subject = `feat: add scheduler timed blocking foundation`.
+- [x] `main` / `origin/main` / remote `main` = `0312bb376c365c0235b9cafe22e927254528f2c4`.
+- [x] published tree = `4789d9f4e2712fb3c0d7c9f926cd8b853c818e32`.
+- [x] subject = `feat: add fixed-priority scheduler policy`.
 
-### C3.8 — static fixed-priority scheduling
+### C3.9 — production heartbeat task ownership — GATES 0–5 ACCEPTED
 
-Gate order:
+Boundary ID:
 
-- [x] Gate 0 planning/docs synchronization.
-- [x] Gate 1 source implementation.
-- [x] Gate 2 fresh GNU build.
-- [x] Gate 3 hardware priority + retained C3.7 regression.
-- [x] Gate 4 physical OLED = conditional N/A because UI source hashes are unchanged and automated restore passed.
-- [x] Gate 5 documentation/evidence finalization + temporary-index commit-candidate check — this exact final document set.
-- [ ] Gate 6 local acceptance commit.
-- [ ] Gate 7 non-force fast-forward push.
+`PRODUCTION_HEARTBEAT_TASK_OWNERSHIP_C3_9`
 
 Accepted candidate:
 
-```text
-build\scheduler_fixed_priority_v1\os.bin
-bytes  = 23792
-SHA256 = 492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F
-```
+`24648` bytes / `4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`.
 
-Accepted source identities:
+Gate status:
 
-```text
-include/kernel/scheduler.h = A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841
-src/kernel/scheduler.c     = B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88
-src/kernel.c               = 235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D
-```
+- [x] Gate 0 planning/docs synchronization.
+- [x] Gate 1 source implementation (`src/kernel.c` only).
+- [x] Gate 2 fresh GNU build validation.
+- [x] Gate 3 hardware two-production-task acceptance.
+- [x] Gate 4 physical OLED = conditional N/A.
+- [x] Gate 5 documentation/evidence finalization.
+- [ ] Gate 6 local acceptance commit.
+- [ ] Gate 7 non-force fast-forward push.
 
-Accepted invariants:
+Accepted runtime:
 
-- [x] static priority range `0..255`.
-- [x] lower numeric value means higher priority.
-- [x] default priority `128`.
-- [x] priority mutation rejected while scheduler active.
-- [x] stack bind/prepare preserve assigned priority.
-- [x] one shared READY selector owns all dispatch paths.
-- [x] equal-priority tie retains round-robin order.
-- [x] SVC0/cooperative/host/PendSV paths use shared policy.
-- [x] no new SVC; SVC 0..4 retained.
-- [x] cooperative production remains non-preemptive.
-- [x] task0 priority `128`; task1 UNUSED.
-- [x] `schedprio` self-test exact `0x0000003F`.
-- [x] active priority-set rejection hardware PASS.
-- [x] safe production commands `20/20`.
-- [x] timed blocking `4/4` retained.
-- [x] invasive diagnostics `8/8` BUSY.
-- [x] retained `4 x 32` / `128/128 PONG`.
-- [x] RX drops/errors/depth `0/0/0`.
-- [x] production margin `444`, MSP margin `1644`.
-- [x] final Flash identity exact.
-- [x] OLED runtime restore PASS.
-- [x] physical OLED Gate 4 = N/A by unchanged-source policy.
+- task0 console/runtime, priority `128`, stack `1024 B`;
+- task1 PC13 heartbeat, priority `255`, stack `512 B`;
+- task1 waits through `scheduler_sleep_ms(500)`;
+- normal-runtime PC13 owner = task1;
+- SysTick = kernel tick + `scheduler_tick()` only;
+- cooperative production, preempt switches `0`;
+- no IPC, no new SVC.
 
-Accepted evidence:
+Acceptance record:
 
-```text
-build log      306AC5D97125F5BEFB4B2DB95E602ED8F6541E32CF364AA61ACD3D93A0E946D0
-build evidence 33E699282A456B79A0F15C8B2B6DF756BAD5979867091863599575A851CEA000
-hardware log   005D646FD613506896BC1A3961DDA752D9D424AD7F4AD0CFAAEE377C50E05222
-hardware ev    41665A892477FB195D00DD722A093F69B09AB2A66669EB872DDB7A3518EACC6C
-```
+- heartbeat count `3 -> 10`, delta `7`;
+- PC13 hardware transitions `5`, both ODR states;
+- heartbeat stack `80/512 used`, margin `432`;
+- console stack `616/1024 used`, margin `408`;
+- `schedprio` self-test exact `0x0000003F`;
+- task0 priority `128 -> 128`;
+- task1 priority `255 -> 255`;
+- safe surface `20/20`;
+- timed blocking `4/4`;
+- invasive diagnostics `8/8 BUSY`;
+- retained UART regression `4 x 32 = 128/128 PONG`;
+- RX drops/errors/depth `0/0/0`;
+- MSP `340 used / 1644 margin`;
+- final Flash exact;
+- OLED Gate 4 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
 
-Next gate:
+Exact next gate:
 
-**C3.8 Gate 6 — local acceptance commit.**
+**C3.9 Gate 6 — local acceptance commit.**
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

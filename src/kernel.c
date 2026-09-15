@@ -114,6 +114,11 @@
 #define PRODUCTION_CONSOLE_STACK_BYTES \
     (PRODUCTION_CONSOLE_STACK_WORDS * 4u)
 #define PRODUCTION_CONSOLE_MIN_MARGIN_BYTES 256u
+#define PRODUCTION_HEARTBEAT_STACK_WORDS 128u
+#define PRODUCTION_HEARTBEAT_STACK_BYTES \
+    (PRODUCTION_HEARTBEAT_STACK_WORDS * 4u)
+#define PRODUCTION_HEARTBEAT_MIN_MARGIN_BYTES 256u
+#define PRODUCTION_HEARTBEAT_PERIOD_MS 500u
 #define SCHED_CONSOLE_PROBE_COMMAND_COUNT 17u
 #define SCHED_ISOLATION_DIAGNOSTIC_COUNT 7u
 #define PRODUCTION_UART_RX_EVENT         (1u << 0)
@@ -231,6 +236,16 @@ static volatile uint32_t production_console_wake_count;
 static volatile uint32_t production_console_wake_events;
 static volatile uint32_t production_console_command_count;
 static volatile uint32_t production_console_fault;
+
+static uint32_t production_heartbeat_stack
+    [PRODUCTION_HEARTBEAT_STACK_WORDS]
+    __attribute__((aligned(8)));
+
+static uint32_t production_heartbeat_task_cookie;
+static volatile uint32_t production_heartbeat_task_started;
+static volatile uint32_t production_heartbeat_count;
+static volatile uint32_t production_heartbeat_led_on;
+static volatile uint32_t production_heartbeat_fault;
 
 static volatile uint32_t scheduler_console_probe_task_started;
 static volatile uint32_t scheduler_console_probe_task_done;
@@ -2714,14 +2729,28 @@ static void console_production_scheduler_stats(void)
     const uint32_t psp = cpu_psp_get();
     const uint32_t thread_psp =
         ((control & 0x2u) != 0u) ? 1u : 0u;
-    const uint32_t capacity =
+    const uint32_t console_capacity =
         scheduler_stack_capacity_bytes(0u);
-    const uint32_t used =
+    const uint32_t console_used =
         scheduler_stack_high_water_bytes(0u);
-    const uint32_t margin =
-        (used < capacity) ? (capacity - used) : 0u;
-    const uint32_t canary =
+    const uint32_t console_margin =
+        (console_used < console_capacity) ?
+            (console_capacity - console_used) :
+            0u;
+    const uint32_t console_canary =
         (scheduler_stack_canary_intact(0u) != 0) ?
+            1u :
+            0u;
+    const uint32_t heartbeat_capacity =
+        scheduler_stack_capacity_bytes(1u);
+    const uint32_t heartbeat_used =
+        scheduler_stack_high_water_bytes(1u);
+    const uint32_t heartbeat_margin =
+        (heartbeat_used < heartbeat_capacity) ?
+            (heartbeat_capacity - heartbeat_used) :
+            0u;
+    const uint32_t heartbeat_canary =
+        (scheduler_stack_canary_intact(1u) != 0) ?
             1u :
             0u;
     const uint32_t idle_waits =
@@ -2734,6 +2763,7 @@ static void console_production_scheduler_stats(void)
     uint32_t task0_wait_events = 0u;
     uint32_t task0_wake_events = 0u;
     uint32_t task1_state = 0xFFFFFFFFu;
+    uint32_t task1_priority = 0xFFFFFFFFu;
     int passed;
 
     if (task0 != (const scheduler_task_t *)0)
@@ -2757,6 +2787,7 @@ static void console_production_scheduler_stats(void)
     if (task1 != (const scheduler_task_t *)0)
     {
         task1_state = (uint32_t)task1->state;
+        task1_priority = task1->priority;
     }
 
     uart_write("SCHED_PROD_ACTIVE=");
@@ -2801,20 +2832,56 @@ static void console_production_scheduler_stats(void)
     uart_write_hex32(task1_state);
     uart_write("\r\n");
 
+    uart_write("SCHED_PROD_TASK1_PRIORITY=");
+    uart_write_hex32(task1_priority);
+    uart_write("\r\n");
+
     uart_write("SCHED_PROD_CONSOLE_CAPACITY=");
-    uart_write_hex32(capacity);
+    uart_write_hex32(console_capacity);
     uart_write("\r\n");
 
     uart_write("SCHED_PROD_CONSOLE_USED=");
-    uart_write_hex32(used);
+    uart_write_hex32(console_used);
     uart_write("\r\n");
 
     uart_write("SCHED_PROD_CONSOLE_MARGIN=");
-    uart_write_hex32(margin);
+    uart_write_hex32(console_margin);
     uart_write("\r\n");
 
     uart_write("SCHED_PROD_CONSOLE_CANARY=");
-    uart_write_hex32(canary);
+    uart_write_hex32(console_canary);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_HEARTBEAT_STARTED=");
+    uart_write_hex32(production_heartbeat_task_started);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_HEARTBEAT_COUNT=");
+    uart_write_hex32(production_heartbeat_count);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_HEARTBEAT_LED_ON=");
+    uart_write_hex32(production_heartbeat_led_on);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_HEARTBEAT_FAULT=");
+    uart_write_hex32(production_heartbeat_fault);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_HEARTBEAT_CAPACITY=");
+    uart_write_hex32(heartbeat_capacity);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_HEARTBEAT_USED=");
+    uart_write_hex32(heartbeat_used);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_HEARTBEAT_MARGIN=");
+    uart_write_hex32(heartbeat_margin);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_HEARTBEAT_CANARY=");
+    uart_write_hex32(heartbeat_canary);
     uart_write("\r\n");
 
     uart_write("SCHED_PROD_IDLE_WAITS=");
@@ -2852,18 +2919,27 @@ static void console_production_scheduler_stats(void)
     passed =
         (active != 0u) &&
         (production_console_task_started != 0u) &&
+        (production_heartbeat_task_started != 0u) &&
         (thread_psp != 0u) &&
         (psp_in_range != 0u) &&
         (task0 != (const scheduler_task_t *)0) &&
         (task1 != (const scheduler_task_t *)0) &&
         (task0->state == SCHEDULER_TASK_READY) &&
         (task0->priority == SCHEDULER_PRIORITY_DEFAULT) &&
-        (task1->state == SCHEDULER_TASK_UNUSED) &&
-        (capacity == PRODUCTION_CONSOLE_STACK_BYTES) &&
-        (margin >= PRODUCTION_CONSOLE_MIN_MARGIN_BYTES) &&
-        (canary != 0u) &&
+        (
+            (task1->state == SCHEDULER_TASK_READY) ||
+            (task1->state == SCHEDULER_TASK_BLOCKED)
+        ) &&
+        (task1->priority == SCHEDULER_PRIORITY_LOWEST) &&
+        (console_capacity == PRODUCTION_CONSOLE_STACK_BYTES) &&
+        (console_margin >= PRODUCTION_CONSOLE_MIN_MARGIN_BYTES) &&
+        (console_canary != 0u) &&
+        (heartbeat_capacity == PRODUCTION_HEARTBEAT_STACK_BYTES) &&
+        (heartbeat_margin >= PRODUCTION_HEARTBEAT_MIN_MARGIN_BYTES) &&
+        (heartbeat_canary != 0u) &&
         (preempt_switches == 0u) &&
-        (production_console_fault == 0u);
+        (production_console_fault == 0u) &&
+        (production_heartbeat_fault == 0u);
 
     if (passed != 0)
     {
@@ -2878,29 +2954,49 @@ static void console_production_scheduler_stats(void)
 static void console_scheduler_priority_test(void)
 {
     const scheduler_task_t *task0 = scheduler_task_get(0u);
-    uint32_t priority_before = 0xFFFFFFFFu;
-    uint32_t priority_after = 0xFFFFFFFFu;
+    const scheduler_task_t *task1 = scheduler_task_get(1u);
+    uint32_t task0_priority_before = 0xFFFFFFFFu;
+    uint32_t task0_priority_after = 0xFFFFFFFFu;
+    uint32_t task1_priority_before = 0xFFFFFFFFu;
+    uint32_t task1_priority_after = 0xFFFFFFFFu;
     uint32_t self_test;
-    int active_set_result;
+    int task0_active_set_result;
+    int task1_active_set_result;
     int passed = 1;
 
     if (task0 != (const scheduler_task_t *)0)
     {
-        priority_before = task0->priority;
+        task0_priority_before = task0->priority;
+    }
+
+    if (task1 != (const scheduler_task_t *)0)
+    {
+        task1_priority_before = task1->priority;
     }
 
     self_test = scheduler_priority_self_test();
 
-    active_set_result =
+    task0_active_set_result =
         scheduler_task_priority_set(
             0u,
             SCHEDULER_PRIORITY_HIGHEST);
 
+    task1_active_set_result =
+        scheduler_task_priority_set(
+            1u,
+            SCHEDULER_PRIORITY_DEFAULT);
+
     task0 = scheduler_task_get(0u);
+    task1 = scheduler_task_get(1u);
 
     if (task0 != (const scheduler_task_t *)0)
     {
-        priority_after = task0->priority;
+        task0_priority_after = task0->priority;
+    }
+
+    if (task1 != (const scheduler_task_t *)0)
+    {
+        task1_priority_after = task1->priority;
     }
 
     uart_write_line("SCHED_PRIO_POLICY=LOWER_VALUE_HIGHER");
@@ -2918,7 +3014,11 @@ static void console_scheduler_priority_test(void)
     uart_write("\r\n");
 
     uart_write("SCHED_PRIO_TASK0=");
-    uart_write_hex32(priority_after);
+    uart_write_hex32(task0_priority_after);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PRIO_TASK1=");
+    uart_write_hex32(task1_priority_after);
     uart_write("\r\n");
 
     uart_write("SCHED_PRIO_SELFTEST=");
@@ -2927,9 +3027,12 @@ static void console_scheduler_priority_test(void)
 
     if (
         (scheduler_is_active() != 0) &&
-        (active_set_result == 0) &&
-        (priority_before == SCHEDULER_PRIORITY_DEFAULT) &&
-        (priority_after == priority_before)
+        (task0_active_set_result == 0) &&
+        (task1_active_set_result == 0) &&
+        (task0_priority_before == SCHEDULER_PRIORITY_DEFAULT) &&
+        (task1_priority_before == SCHEDULER_PRIORITY_LOWEST) &&
+        (task0_priority_after == task0_priority_before) &&
+        (task1_priority_after == task1_priority_before)
     ) {
         uart_write_line("SCHED_PRIO_ACTIVE_SET_REJECT_OK");
     }
@@ -2940,7 +3043,8 @@ static void console_scheduler_priority_test(void)
     }
 
     if (
-        (priority_after != SCHEDULER_PRIORITY_DEFAULT) ||
+        (task0_priority_after != SCHEDULER_PRIORITY_DEFAULT) ||
+        (task1_priority_after != SCHEDULER_PRIORITY_LOWEST) ||
         (self_test != 0x0000003Fu)
     ) {
         passed = 0;
@@ -3352,6 +3456,41 @@ static void production_console_task(void *argument)
     }
 }
 
+static void production_heartbeat_task(void *argument)
+{
+    if (argument != (void *)&production_heartbeat_task_cookie)
+    {
+        production_heartbeat_fault = 1u;
+        return;
+    }
+
+    production_heartbeat_task_started = 1u;
+
+    for (;;)
+    {
+        if (
+            scheduler_sleep_ms(
+                PRODUCTION_HEARTBEAT_PERIOD_MS) == 0
+        ) {
+            production_heartbeat_fault = 1u;
+            return;
+        }
+
+        production_heartbeat_led_on ^= 1u;
+
+        if (production_heartbeat_led_on != 0u)
+        {
+            GPIOC_BSRR = GPIO_RESET_13;
+        }
+        else
+        {
+            GPIOC_BSRR = GPIO_PIN_13;
+        }
+
+        ++production_heartbeat_count;
+    }
+}
+
 __attribute__((noreturn))
 static void production_fail_closed(
     const char *reason)
@@ -3460,28 +3599,8 @@ void fault_capture(
 
 void SysTick_Handler(void)
 {
-    static uint32_t led_ticks;
-    static uint32_t led_on;
-
     ++kernel_ticks;
-    ++led_ticks;
-
     scheduler_tick(kernel_ticks);
-
-    if (led_ticks >= 500u)
-    {
-        led_ticks = 0u;
-        led_on ^= 1u;
-
-        if (led_on != 0u)
-        {
-            GPIOC_BSRR = GPIO_RESET_13;
-        }
-        else
-        {
-            GPIOC_BSRR = GPIO_PIN_13;
-        }
-    }
 }
 
 void kernel_main(void)
@@ -3489,9 +3608,12 @@ void kernel_main(void)
     const uint32_t core_clock_hz = clock_init();
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
-    int bind_result;
-    int priority_result;
-    int prepare_result;
+    int task0_bind_result;
+    int task0_priority_result;
+    int task0_prepare_result;
+    int task1_bind_result;
+    int task1_priority_result;
+    int task1_prepare_result;
     int start_result;
 
     gpio_init();
@@ -3518,15 +3640,22 @@ void kernel_main(void)
     }
 
     /*
-     * Normal boot now transfers application runtime ownership to one
-     * cooperative PSP console task. USART1 IRQ remains the sole DR reader:
-     * it publishes bytes to the RX ring before signalling the scheduler
-     * event. The task drains the authoritative ring before each wait so
-     * boot-time bytes remain visible even though event signals are ignored
-     * while the scheduler is inactive.
+     * Normal boot transfers application runtime ownership to two cooperative
+     * PSP tasks with disjoint responsibilities.
      *
-     * Slot 1 intentionally remains UNUSED. When task 0 is BLOCKED, the
-     * scheduler host owns Thread/MSP and parks with WFE.
+     * Task 0 owns the production console/runtime path. USART1 IRQ remains the
+     * sole DR reader: it publishes bytes to the RX ring before signalling the
+     * scheduler event. Task 0 drains the authoritative ring before each wait.
+     *
+     * Task 1 owns normal-runtime PC13 heartbeat policy. It sleeps on the
+     * scheduler clock and performs one short GPIO update per wake. SysTick
+     * owns timekeeping only and never performs normal heartbeat GPIO writes.
+     *
+     * The fatal fault path intentionally remains an out-of-band PC13 blinker;
+     * it is not part of normal production ownership.
+     *
+     * When both tasks are BLOCKED, the scheduler host owns Thread/MSP and
+     * parks with WFE.
      */
     if (scheduler_init() == 0)
     {
@@ -3541,34 +3670,61 @@ void kernel_main(void)
     production_console_command_count = 0u;
     production_console_fault = 0u;
 
-    bind_result =
+    production_heartbeat_task_started = 0u;
+    production_heartbeat_count = 0u;
+    production_heartbeat_led_on = 0u;
+    production_heartbeat_fault = 0u;
+
+    task0_bind_result =
         scheduler_task_stack_bind(
             0u,
             production_console_stack,
             PRODUCTION_CONSOLE_STACK_WORDS);
 
-    priority_result =
+    task0_priority_result =
         scheduler_task_priority_set(
             0u,
             SCHEDULER_PRIORITY_DEFAULT);
 
-    prepare_result =
+    task0_prepare_result =
         scheduler_task_prepare(
             0u,
             production_console_task,
             (void *)&production_console_task_cookie);
 
+    task1_bind_result =
+        scheduler_task_stack_bind(
+            1u,
+            production_heartbeat_stack,
+            PRODUCTION_HEARTBEAT_STACK_WORDS);
+
+    task1_priority_result =
+        scheduler_task_priority_set(
+            1u,
+            SCHEDULER_PRIORITY_LOWEST);
+
+    task1_prepare_result =
+        scheduler_task_prepare(
+            1u,
+            production_heartbeat_task,
+            (void *)&production_heartbeat_task_cookie);
+
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
     if (
-        (bind_result == 0) ||
-        (priority_result == 0) ||
-        (prepare_result == 0) ||
+        (task0_bind_result == 0) ||
+        (task0_priority_result == 0) ||
+        (task0_prepare_result == 0) ||
+        (task1_bind_result == 0) ||
+        (task1_priority_result == 0) ||
+        (task1_prepare_result == 0) ||
         (task0 == (const scheduler_task_t *)0) ||
         (task1 == (const scheduler_task_t *)0) ||
+        (task0->state != SCHEDULER_TASK_READY) ||
+        (task1->state != SCHEDULER_TASK_READY) ||
         (task0->priority != SCHEDULER_PRIORITY_DEFAULT) ||
-        (task1->state != SCHEDULER_TASK_UNUSED)
+        (task1->priority != SCHEDULER_PRIORITY_LOWEST)
     ) {
         production_fail_closed(
             "SCHED_PROD_PREPARE_ERR");

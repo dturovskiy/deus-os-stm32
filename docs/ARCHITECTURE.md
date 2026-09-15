@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **published parent `90df6a690230c9800c0d8497d5597f87a5ae0409` plus hardware-accepted C3.8 fixed-priority candidate awaiting commit/publication**
+Status: **published through C3.8 `0312bb376c365c0235b9cafe22e927254528f2c4`; C3.9 production heartbeat task hardware accepted, publication pending**
 
 ## 1. Boot flow
 
@@ -538,3 +538,107 @@ passed, therefore Gate 4 is recorded as:
 
 Dynamic priority mutation, inheritance, aging, deadline scheduling and
 additional production tasks remain outside C3.8.
+
+
+## C3.9 planned production heartbeat task ownership
+
+C3.9 activates the existing second scheduler slot for a concrete independent
+responsibility: the Blue Pill PC13 heartbeat.
+
+```text
+                    +-------------------------------+
+USART1 IRQ/ring --->| task0 console/runtime         |
+                    | priority 128 / PSP / 1024 B   |
+                    +-------------------------------+
+                                   |
+                                   | blocks on UART event
+                                   v
+
+SysTick --------> scheduler tick / deadlines
+                   |
+                   +------ wakes task1 every 500 ms
+                                   |
+                                   v
+                    +-------------------------------+
+                    | task1 PC13 heartbeat          |
+                    | priority 255 / PSP / 512 B    |
+                    +-------------------------------+
+                                   |
+                                   +--> GPIOC_BSRR
+
+both BLOCKED -> host Thread/MSP WFE
+```
+
+Ownership rules:
+
+- task0 remains sole runtime owner of UART TX, console policy, OLED and I2C;
+- USART1 IRQ remains sole `USART1_DR` reader and RX-ring producer;
+- task1 is sole post-scheduler writer of PC13;
+- SysTick stops writing PC13 entirely;
+- bootstrap `gpio_init()` may set the initial LED-off state before scheduler
+  start.
+
+Task1 timing:
+
+```text
+scheduler_sleep_ms(500)
+toggle PC13
+increment heartbeat count
+repeat
+```
+
+Priority:
+
+- task0 = `SCHEDULER_PRIORITY_DEFAULT` = `128`;
+- task1 = `SCHEDULER_PRIORITY_LOWEST` = `255`.
+
+This preserves console precedence if both tasks become READY at the same
+scheduling point, while normal production remains cooperative.
+
+C3.9 does not need IPC. The two production tasks have disjoint write ownership
+and share only scheduler/time infrastructure plus read-only telemetry.
+
+The safe command surface remains unchanged. Existing `schedprod` is extended
+with task1/heartbeat stack and lifecycle telemetry. Existing `schedprio`
+retains its selector self-test and verifies both production priorities without
+changing them while active. Existing `health` reads PC13 ODR and is used by the
+hardware harness to correlate GPIO state with heartbeat progress.
+
+No new scheduler state, SVC, queue, semaphore, mutex, timer callback, OLED
+worker task, preemptive production mode, HAL, Arduino or FreeRTOS is introduced.
+
+
+## C3.9 acceptance record — 2026-09-15
+
+Accepted firmware:
+
+`24648` bytes /
+`4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`.
+
+The planned two-task ownership model is validated on real hardware:
+
+- task0 remains the cooperative console/runtime task at priority `128`;
+- task1 is the persistent PC13 heartbeat task at priority `255`;
+- task1 uses `scheduler_sleep_ms(500)` and remains READY/BLOCKED only;
+- SysTick contains time/scheduler work, not normal heartbeat GPIO policy;
+- heartbeat task stack high-water is `80 B`, margin `432 B`;
+- console task high-water is `616 B`, margin `408 B`;
+- host Thread/MSP WFE idle remains healthy;
+- PC13 hardware sampling observed `5` transitions and both ODR states;
+- heartbeat telemetry progressed `3 -> 10` in the dedicated phase;
+- priority selector self-test is `0x0000003F`;
+- active priority mutation remains rejected for both tasks;
+- cooperative preempt-switch count remains `0`;
+- safe surface `20/20`, timed blocking `4/4`, invasive BUSY `8/8`;
+- retained UART race regression `128/128 PONG`, RX drop/error/depth `0/0/0`;
+- MSP margin `1644 B`;
+- final Flash readback matches the exact accepted candidate.
+
+No IPC, new SVC, scheduler state, alternate clock, OLED task, HAL, Arduino or
+FreeRTOS was introduced.
+
+OLED Gate 4 is:
+
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+
+The next repository mutation after Gate 5 is one local C3.9 acceptance commit.

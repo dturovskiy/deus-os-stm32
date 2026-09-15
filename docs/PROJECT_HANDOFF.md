@@ -3,86 +3,74 @@
 <!-- BEGIN STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Current authoritative handoff — 2026-09-15
 
-### Published repository parent
+### Published repository baseline
 
 `main`, `origin/main` and remote `main` remain synchronized at:
 
-`90df6a690230c9800c0d8497d5597f87a5ae0409` — `feat: add scheduler timed blocking foundation`
+`0312bb376c365c0235b9cafe22e927254528f2c4` — `feat: add fixed-priority scheduler policy`
 
-Tree: `c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`.
+Tree: `4789d9f4e2712fb3c0d7c9f926cd8b853c818e32`.
 
-C3.8 is accepted in the working tree but is **not yet committed or published**.
-
-### Accepted C3.8 candidate
+### C3.9 accepted candidate
 
 ```text
-build\scheduler_fixed_priority_v1\os.bin
-23792 bytes
-492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F
+build\production_heartbeat_task_v1\os.bin
+24648 bytes
+4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86
 ```
 
-Source:
+C3.9 Gates 0–5 are accepted.
+
+Production topology:
 
 ```text
-include/kernel/scheduler.h A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841
-src/kernel/scheduler.c     B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88
-src/kernel.c               235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D
+slot0  console/runtime   priority 128  PSP stack 1024 B
+slot1  PC13 heartbeat    priority 255  PSP stack  512 B
+host   Thread/MSP WFE when production tasks are blocked
 ```
 
-### Accepted priority architecture
+Ownership:
 
 ```text
-0   highest
-128 default
-255 lowest
+USART1 RX DR   USART1 IRQ only
+UART ring      IRQ producer / task0 consumer
+UART TX        task0 only
+OLED + I2C     task0 only
+PC13 runtime   task1 only
+kernel time    SysTick authority
+fatal PC13     out-of-band fault diagnostic only
 ```
 
-- lower numeric value wins;
-- priority is static while scheduler active;
-- one shared READY selector;
-- equal priority retains round-robin tie order;
-- cooperative production remains non-preemptive;
-- task0 = production console/runtime at 128;
-- task1 = UNUSED;
-- no new SVC;
-- timed/event/WFE/PRIMASK semantics unchanged.
-
-### Accepted hardware
+Acceptance:
 
 ```text
-priority phase        1/1
-selector self-test    0x0000003F
+heartbeat count       3 -> 10 (delta 7)
+PC13 transitions      5, both states
+task1 stack           80 used / 432 margin
+task0 stack           616 used / 408 margin
+priority self-test    0x0000003F
 task0 priority        128 -> 128
+task1 priority        255 -> 255
 preempt switches      0
 safe surface          20/20
-timed phases          4/4
-sleep / timeout       50 / 50 ms
-event wake            171 ms / mask 1
+timed blocking        4/4
 diagnostic BUSY       8/8
-burst regression      4 x 32 = 128/128 PONG
-production stack      580 used / 444 margin
-MSP                   340 used / 1644 margin
+UART burst            4 x 32 = 128/128 PONG
 RX drop/error/depth   0/0/0
-final Flash           exact
-OLED runtime          PASS
+MSP                    340 used / 1644 margin
 OLED Gate 4           N/A unchanged-source policy
+final Flash            exact
 ```
 
-Evidence:
+OLED Gate 4:
 
-```text
-build log      306AC5D97125F5BEFB4B2DB95E602ED8F6541E32CF364AA61ACD3D93A0E946D0
-build evidence 33E699282A456B79A0F15C8B2B6DF756BAD5979867091863599575A851CEA000
-hardware log   005D646FD613506896BC1A3961DDA752D9D424AD7F4AD0CFAAEE377C50E05222
-hardware ev    41665A892477FB195D00DD722A093F69B09AB2A66669EB872DDB7A3518EACC6C
-```
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
-### Exact next gate
+No IPC/synchronization primitive was introduced in C3.9.
 
-**C3.8 Gate 6 — local acceptance commit.**
+Exact next gate:
 
-Do not rebuild or reflash for Gate 6. Gate 7 is a plain non-force
-fast-forward push after local commit verification.
+**C3.9 Gate 6 — local acceptance commit.**
 ## Project identity
 
 ```text
