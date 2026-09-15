@@ -1,69 +1,85 @@
 # STM32 OS — Project Handoff
 
 <!-- BEGIN STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
-## Current authoritative handoff — 2026-09-14
+## Current authoritative handoff — 2026-09-15
 
-### Repository / publication state
+### Published repository parent
 
-Published `main` is still:
+`main`, `origin/main` and remote `main` remain synchronized at:
 
-`bfed76e0de1c52bf65e60f66c029cc41710fabd0` — `feat: add scheduler steady-state wait/wake foundation`
+`33f15f1d23dfa31fabf9f2c83542a5f34046cde8` — `feat: migrate normal boot to production scheduler ownership`
 
-The C3.6 candidate is **hardware + physical accepted locally** and awaits Gate 6 commit + Gate 7 non-force push.
+Tree: `a5447420a58b0aed7cd541069979fa665df40aa9`.
 
-### Accepted C3.6 runtime
+C3.7 is accepted in the working tree but is **not yet committed or published**.
 
-Accepted C3.6 candidate:
+### Accepted C3.7 candidate
 
-- path: `build\normal_boot_production_ownership_atomic_racefix_v1\os.bin`
-- bytes: `21832`
-- SHA-256: `4E3C82B68C7E5B2D6EEE72BFD12FD282F944A32934FB891E5C24B585FE2695BB`
-- scheduler core: `src/kernel/scheduler.c` SHA-256 `FA649EF24569AEE653A1CA022778237F76FF236A3F0B1B38FDDA8FB06F867649`
-- production ownership source: `src/kernel.c` SHA-256 `FE046521F7A017B3DE204E984ECC392CA471C82824530B00EFCBFDFA433658F1`
+```text
+build\scheduler_timed_blocking_v1\os.bin
+22900 bytes
+366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A
+```
 
-- production scheduler starts automatically in normal boot;
-- cooperative mode;
-- console/runtime owner = task 0 / Thread/PSP;
-- task 1 = UNUSED;
-- production stack = 1024 bytes;
-- host MSP = scheduler WFE idle + exception stack after bootstrap;
-- USART1 IRQ is sole DR reader and publishes ring data before event notification;
-- event remains notification, not payload identity;
-- runtime OLED/I2C application calls execute from production PSP context;
-- no MSP application-console fallback.
+Source:
 
-### Atomic scheduler correction
+```text
+include/kernel/scheduler.h F1EF9AB65CF95C68872E09CDB91BAAF87F01D8EACC2F86B483577A75C5FCF547
+src/kernel/scheduler.c     90B53B43D53EB53A0BADC97DC5EEF3D2434A32A999F3940B01AE4B0F8129E618
+src/kernel.c               44056ABC0371E75DA242D68FBB530B90C56512C11916533982BD543BCF59ACEC
+```
 
-The hardware-v1 false-abort race is closed by PRIMASK-atomic classification of READY/BLOCKED/terminal state in `scheduler_start_mode()`.
+### Accepted architecture
 
-Linked Gate 2C proof:
-- terminal branch reaches `scheduler_abort_run()` while IRQs remain masked;
-- PRIMASK restore follows the abort call;
-- blocked idle restores PRIMASK before `WFE`.
+- production task 0 remains cooperative Thread/PSP owner;
+- task 1 remains UNUSED;
+- host MSP remains WFE idle + exception stack;
+- one BLOCKED state plus deadline metadata;
+- `scheduler_sleep_ms()` + `scheduler_wait_events_timeout()`;
+- SVC 4 timed block;
+- `kernel_ticks` remains clock authority;
+- event/timeout first atomic transition wins;
+- timeout publishes READY then `SEV`;
+- production UART wait remains untimed;
+- ring is payload; event is notification;
+- priorities remain deferred.
 
-### Accepted hardware evidence
+### Accepted hardware
 
-- boot-adjacent command preserved and processed;
-- `18/18` safe production commands PASS;
-- `8/8` invasive diagnostics -> `SCHED_DIAG_BUSY`;
-- `4/4 x 32` unpaced ping rounds PASS;
-- `128/128 PONG`;
-- RX drops/errors/depth `0/0/0`;
-- production stack `580 used / 444 margin`, canary intact;
-- MSP `320 used / 1664 margin`, canary intact;
-- final scheduler fault `0`;
-- final target readback exact candidate;
-- OLED automated restore PASS;
-- physical OLED `OLED PASS`.
+```text
+timed phases        4/4
+sleep elapsed       50 ms
+timeout elapsed     50 ms
+event elapsed       164 ms
+event mask          0x00000001
+timed RX delta      26
+timed idle delta    2904
+safe surface        19/19
+diagnostic BUSY     8/8
+burst regression    4 x 32 = 128/128 PONG
+production stack    580 used / 444 margin
+MSP                 340 used / 1644 margin
+RX drop/error/depth 0/0/0
+final Flash         exact
+OLED runtime        PASS
+physical OLED       PASS
+```
 
-### Exact next boundary
+Evidence:
 
-1. local acceptance commit of the 12-file candidate;
-2. non-force push;
-3. timer-backed `sleep()` / timed blocking.
+```text
+build log      6B523A798B4C801B041D54C039064B8675B7AAD43A1766B6559084B370DF6D84
+build evidence 431B01CD3CBC62E4EB7BD0718CCDFABA90F6B8511DCED3A9EB50069DA39D5199
+hardware log   3B0BC09AA70F58974B77AE03F8AC754C871545E766851C16C1806487810E4769
+hardware ev    ACF91D141F3789A7F42556046574EA13585A9BC46F50DF95FDD948E5F51D8EF4
+```
 
-Do not reopen the production ownership architecture unless new evidence demonstrates a defect.
+### Exact next gate
 
+**C3.7 Gate 6 — local acceptance commit.**
+
+Do not rebuild or reflash for Gate 6. Do not start priorities. After the local
+commit passes, Gate 7 is a plain non-force fast-forward push.
 ## Project identity
 
 ```text

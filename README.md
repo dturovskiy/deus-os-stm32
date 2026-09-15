@@ -1,63 +1,79 @@
 # STM32 OS
 
 <!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_14 -->
-## Accepted project state — 2026-09-14
+## Accepted project state — 2026-09-15
 
-Current published Git baseline remains:
+Current published parent remains:
 
-`bfed76e0de1c52bf65e60f66c029cc41710fabd0` — `feat: add scheduler steady-state wait/wake foundation`
+`33f15f1d23dfa31fabf9f2c83542a5f34046cde8` — `feat: migrate normal boot to production scheduler ownership`
 
-The normal-boot production ownership migration is now **hardware + physical accepted locally** and awaits only acceptance commit + non-force publication.
+Published parent tree:
 
-Accepted C3.6 candidate:
+`a5447420a58b0aed7cd541069979fa665df40aa9`
 
-- path: `build\normal_boot_production_ownership_atomic_racefix_v1\os.bin`
-- bytes: `21832`
-- SHA-256: `4E3C82B68C7E5B2D6EEE72BFD12FD282F944A32934FB891E5C24B585FE2695BB`
-- scheduler core: `src/kernel/scheduler.c` SHA-256 `FA649EF24569AEE653A1CA022778237F76FF236A3F0B1B38FDDA8FB06F867649`
-- production ownership source: `src/kernel.c` SHA-256 `FE046521F7A017B3DE204E984ECC392CA471C82824530B00EFCBFDFA433658F1`
+C3.7 timed blocking is **hardware + physical OLED accepted and awaiting local acceptance commit / publication**.
 
-Accepted production runtime:
+Accepted C3.7 firmware:
 
-- exactly one long-lived cooperative production console/runtime task on PSP;
-- task slot 0 = production console, slot 1 = `UNUSED`;
-- 1024-byte production PSP stack;
-- MSP after bootstrap = scheduler host/idle + exception stack;
-- host no-ready idle uses `WFE`;
-- USART1 IRQ remains sole `DR` reader and ring producer;
-- UART event is notification only; RX ring remains payload authority;
-- production task uses drain-first / wait-second;
-- runtime OLED/I2C application work runs from production PSP context;
-- all eight invasive scheduler diagnostics remain blocked with exact `SCHED_DIAG_BUSY`;
-- unexpected scheduler return remains fail-closed.
+- path: `build\scheduler_timed_blocking_v1\os.bin`
+- bytes: `22900`
+- SHA-256: `366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A`
+- `src/kernel.c`: `44056ABC0371E75DA242D68FBB530B90C56512C11916533982BD543BCF59ACEC`
+- `src/kernel/scheduler.c`: `90B53B43D53EB53A0BADC97DC5EEF3D2434A32A999F3940B01AE4B0F8129E618`
+- `include/kernel/scheduler.h`: `F1EF9AB65CF95C68872E09CDB91BAAF87F01D8EACC2F86B483577A75C5FCF547`
+
+Accepted runtime architecture:
+
+- one `SCHEDULER_TASK_BLOCKED` state plus explicit deadline metadata;
+- `scheduler_sleep_ms()` and `scheduler_wait_events_timeout()`;
+- SVC 4 timed-block path;
+- existing 1 ms `kernel_ticks` remains clock authority;
+- timeout comparison remains wrap-safe with max horizon `0x7FFFFFFF ms`;
+- event wake versus timeout wake is first atomic `BLOCKED -> READY` transition wins;
+- timeout wake publishes READY then `SEV`;
+- normal production UART wait remains untimed;
+- ring remains payload authority; event remains notification only.
 
 Hardware acceptance:
 
-- boot-adjacent `ping -> PONG` PASS;
-- complete safe production surface `18/18` PASS;
-- invasive scheduler diagnostics `8/8` BUSY PASS;
-- atomic scheduler race regression `4/4 rounds x 32 unpaced ping` PASS;
-- aggregate burst responses `128/128 PONG`;
-- exact RX byte/IRQ delta `200` per burst round;
-- RX drops/errors/final depth = `0 / 0 / 0`;
-- production PSP high-water = `580 / 1024`, free margin `444`, canary intact;
-- final MSP high-water = `320 / 1984`, free margin `1664`, canary intact;
-- final scheduler telemetry: active, cooperative, PSP in range, task 1 UNUSED, fault `0`;
-- final target Flash readback exact accepted candidate;
-- `uiruntime` restored the frozen product UI.
+- timed phases `4/4` PASS;
+- sleep elapsed `50 ms`;
+- timeout elapsed `50 ms`;
+- external UART event wake elapsed `164 ms`, event mask `0x00000001`;
+- timed RX byte/IRQ delta `26/26`;
+- timed host-MSP idle delta `2904`;
+- no double wake;
+- injected ring payload survived and produced exact `PONG`;
+- safe production surface `19/19`;
+- invasive scheduler diagnostics `8/8` exact `SCHED_DIAG_BUSY`;
+- retained race regression `4 x 32`, `128/128 PONG`;
+- RX drops/errors/final depth `0/0/0`;
+- production PSP stack `580 used / 444 margin`, canary intact;
+- MSP `340 used / 1644 margin`, canary intact;
+- final Flash readback exact candidate;
+- automated OLED runtime restore PASS;
+- physical frozen OLED `DEUS OS / BOOT OK / READY` PASS.
 
-Manual physical OLED acceptance:
+Accepted evidence:
 
-- `OLED PASS` confirmed on 2026-09-14;
-- frozen UI visually accepted as `DEUS OS / BOOT OK / READY`.
+- build log SHA-256 `6B523A798B4C801B041D54C039064B8675B7AAD43A1766B6559084B370DF6D84`;
+- build evidence SHA-256 `431B01CD3CBC62E4EB7BD0718CCDFABA90F6B8511DCED3A9EB50069DA39D5199`;
+- hardware log SHA-256 `3B0BC09AA70F58974B77AE03F8AC754C871545E766851C16C1806487810E4769`;
+- hardware evidence SHA-256 `ACF91D141F3789A7F42556046574EA13585A9BC46F50DF95FDD948E5F51D8EF4`;
+- physical OLED token: `OLED PASS`.
 
-The hardware-discovered host-idle race is closed by PRIMASK-atomic READY/BLOCKED/terminal classification. Terminal abort occurs while IRQs remain masked; blocked idle restores PRIMASK before `WFE`, with existing `SEV` semantics preserving wake safety.
+Current gate:
 
-Next execution gates:
+**C3.7 Gate 5 — documentation/evidence finalization complete when this exact
+document set passes its finalization harness.**
 
-1. local acceptance commit;
-2. non-force fast-forward push;
-3. then timer-backed `sleep()` / timed blocking.
+Next:
+
+1. Gate 6 — local acceptance commit;
+2. Gate 7 — non-force fast-forward publication;
+3. after publication: scheduler priorities.
+
+Do not begin priorities before C3.7 publication completes.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.

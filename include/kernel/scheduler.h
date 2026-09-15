@@ -5,6 +5,7 @@
 
 #define SCHEDULER_TASK_COUNT       2u
 #define SCHEDULER_TASK_STACK_WORDS 128u
+#define SCHEDULER_MAX_TIMEOUT_MS    0x7FFFFFFFu
 
 typedef void (*scheduler_task_entry_t)(void *argument);
 
@@ -25,6 +26,8 @@ typedef struct
     volatile scheduler_task_state_t state;
     volatile uint32_t wait_events;
     volatile uint32_t wake_events;
+    volatile uint32_t deadline_ms;
+    volatile uint32_t deadline_active;
 } scheduler_task_t;
 
 int scheduler_init(void);
@@ -57,6 +60,22 @@ uint32_t scheduler_preempt_switch_count_get(void);
 uint32_t scheduler_wait_events(uint32_t events);
 
 /*
+ * Block the current scheduler task until any requested event bit is signaled
+ * or timeout_ms expires. A matching already-pending event is consumed first.
+ * Timeout returns 0. A zero timeout performs a non-blocking event poll.
+ */
+uint32_t scheduler_wait_events_timeout(
+    uint32_t events,
+    uint32_t timeout_ms);
+
+/*
+ * Block the current scheduler task for at least duration_ms scheduler ticks.
+ * A zero duration succeeds immediately. Returns 0 only for an invalid
+ * duration or scheduler failure.
+ */
+int scheduler_sleep_ms(uint32_t duration_ms);
+
+/*
  * Signal event bits to the active scheduler run. All currently blocked
  * matching tasks are made READY; unmatched bits remain pending until a
  * future waiter consumes them. Calls while the scheduler is inactive are
@@ -69,7 +88,7 @@ uint32_t scheduler_idle_wait_count_get(void);
 
 void scheduler_yield(void);
 
-void scheduler_tick(void);
+void scheduler_tick(uint32_t now_ms);
 
 int scheduler_self_test(void);
 

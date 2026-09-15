@@ -1,39 +1,39 @@
 # Roadmap
 
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
-## Current roadmap checkpoint — 2026-09-14
+## Current roadmap checkpoint — 2026-09-15
 
-### C3.6 normal-boot production ownership — ACCEPTED LOCALLY
+### C3.6 normal-boot production ownership — PUBLISHED
 
-Accepted C3.6 candidate:
+- [x] commit `33f15f1d23dfa31fabf9f2c83542a5f34046cde8`;
+- [x] exact parent tree `a5447420a58b0aed7cd541069979fa665df40aa9`;
+- [x] hardware + physical OLED accepted;
+- [x] non-force fast-forward publication complete.
 
-- path: `build\normal_boot_production_ownership_atomic_racefix_v1\os.bin`
-- bytes: `21832`
-- SHA-256: `4E3C82B68C7E5B2D6EEE72BFD12FD282F944A32934FB891E5C24B585FE2695BB`
-- scheduler core: `src/kernel/scheduler.c` SHA-256 `FA649EF24569AEE653A1CA022778237F76FF236A3F0B1B38FDDA8FB06F867649`
-- production ownership source: `src/kernel.c` SHA-256 `FE046521F7A017B3DE204E984ECC392CA471C82824530B00EFCBFDFA433658F1`
+### C3.7 timed blocking / sleep — ACCEPTED, PUBLICATION PENDING
 
-- [x] one cooperative production PSP console/runtime task;
-- [x] slot 0 production, slot 1 UNUSED;
-- [x] 1024-byte production stack;
-- [x] MSP host `WFE` idle;
-- [x] UART IRQ/ring/event ownership preserved;
-- [x] hardware-discovered false-abort race closed atomically under PRIMASK;
-- [x] 18 safe commands PASS;
-- [x] 8 diagnostics BUSY PASS;
-- [x] 4 x 32 burst regression PASS, 128/128 PONG;
-- [x] RX drops/errors/depth zero;
-- [x] stack/MSP margins accepted;
-- [x] OLED automated + physical acceptance PASS;
+- [x] architecture and acceptance planning;
+- [x] TCB deadline metadata;
+- [x] `scheduler_sleep_ms()`;
+- [x] `scheduler_wait_events_timeout()`;
+- [x] SVC 4 timed block;
+- [x] SysTick -> `scheduler_tick(now_ms)` deadline service;
+- [x] event/timeout first-transition-wins arbitration;
+- [x] safe production `schedtimed`;
+- [x] fresh GNU validation;
+- [x] hardware timed regression;
+- [x] physical OLED regression;
+- [x] docs/evidence finalization;
 - [ ] local acceptance commit;
-- [ ] non-force push.
+- [ ] non-force publication.
 
-### Next scheduler sequence
+Accepted candidate: `22900` bytes / `366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A`.
 
-1. timer-backed `sleep()` / timed blocking;
-2. scheduler priorities after timed blocking stabilizes;
-3. only then consider additional production tasks / IPC ownership.
+### Sequence after C3.7 publication
 
+1. scheduler priorities;
+2. only then consider additional production tasks / IPC ownership;
+3. generic timer callbacks only when a real consumer requires them.
 ## Phase 0 - Boot baseline
 
 - [x] ARM GNU toolchain
@@ -71,7 +71,7 @@ Accepted C3.6 candidate:
 - [x] PendSV context switch
 - [x] Command-gated SysTick preemption proof
 - [x] Task stack budget / high-water validation for the accepted command-gated frozen OLED workload
-- [ ] Normal boot task migration
+- [x] Normal boot task migration
 - [ ] `sleep()`
 - [ ] Priorities
 

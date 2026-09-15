@@ -1,77 +1,84 @@
 > [!IMPORTANT]
 
 <!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
-## Current accepted execution state — 2026-09-14
+## Current execution state — 2026-09-15
 
-This section is authoritative for the current execution boundary and supersedes stale historical rows below.
+This section is authoritative.
 
 ### Published baseline
 
-- [x] Published `main` remains `bfed76e0de1c52bf65e60f66c029cc41710fabd0`.
-- [x] Published subject remains `feat: add scheduler steady-state wait/wake foundation`.
-- [x] Current migration is accepted locally but not yet committed/pushed.
+- [x] `main` / `origin/main` / remote `main` = `33f15f1d23dfa31fabf9f2c83542a5f34046cde8`.
+- [x] parent tree = `a5447420a58b0aed7cd541069979fa665df40aa9`.
+- [x] parent subject = `feat: migrate normal boot to production scheduler ownership`.
 
-### Normal-boot production ownership — HARDWARE + PHYSICAL ACCEPTED
+### C3.7 — timed blocking / sleep foundation
 
-Accepted C3.6 candidate:
+Gate order:
 
-- path: `build\normal_boot_production_ownership_atomic_racefix_v1\os.bin`
-- bytes: `21832`
-- SHA-256: `4E3C82B68C7E5B2D6EEE72BFD12FD282F944A32934FB891E5C24B585FE2695BB`
-- scheduler core: `src/kernel/scheduler.c` SHA-256 `FA649EF24569AEE653A1CA022778237F76FF236A3F0B1B38FDDA8FB06F867649`
-- production ownership source: `src/kernel.c` SHA-256 `FE046521F7A017B3DE204E984ECC392CA471C82824530B00EFCBFDFA433658F1`
-
-- [x] one cooperative production console/runtime task;
-- [x] slot 0 production console, slot 1 `UNUSED`;
-- [x] 1024-byte production PSP stack;
-- [x] MSP bootstrap -> scheduler host/idle + exceptions;
-- [x] host `WFE` idle;
-- [x] UART IRQ sole DR reader / ring producer;
-- [x] drain-first / wait-second event consumption;
-- [x] runtime OLED/I2C ownership on PSP;
-- [x] eight invasive scheduler diagnostics blocked with `SCHED_DIAG_BUSY`;
-- [x] unexpected scheduler return fail-closed.
-
-### Scheduler race closure
-
-- [x] hardware v1 reproduced false host abort under burst pressure;
-- [x] first unlocked READY re-check was rejected by static review as incomplete;
-- [x] final fix uses PRIMASK-atomic READY/BLOCKED/terminal classification;
-- [x] linked CFG proof confirms terminal abort before PRIMASK restore;
-- [x] linked blocked path restores PRIMASK before `WFE`.
-
-### Acceptance gates
-
-- [x] Gate 0 planning synchronization.
-- [x] Gate 1A production ownership source implementation.
-- [x] Gate 2A initial GNU build.
-- [x] Gate 3A hardware discovery of real scheduler race.
-- [x] Gate 0R scope reclassification.
-- [x] Gate 1B / 2B first-pass fix + build; rejected before hardware after static review.
-- [x] Gate 0C atomic replan.
-- [x] Gate 1C atomic scheduler source fix.
-- [x] Gate 2C fresh GNU build + CFG-aware linked proof.
-- [x] Gate 3C atomic hardware race regression acceptance.
+- [x] Gate 0 planning/docs synchronization.
+- [x] Gate 1 source implementation.
+- [x] Gate 2 fresh GNU build.
+- [x] Gate 3 hardware timed-blocking + retained scheduler regression.
 - [x] Gate 4 manual physical OLED acceptance (`OLED PASS`).
-- [x] Gate 5 documentation finalization + temporary-index commit-candidate check.
+- [x] Gate 5 documentation finalization + temporary-index commit-candidate check — this exact final document set.
 - [ ] Gate 6 local acceptance commit.
 - [ ] Gate 7 non-force fast-forward push.
 
-### Accepted hardware facts
+Accepted candidate:
 
-- [x] safe production commands: `18/18`.
-- [x] invasive scheduler diagnostics: `8/8` BUSY.
-- [x] burst regression: `4/4 x 32 ping`, total `128/128 PONG`.
-- [x] RX drops/errors/depth: `0/0/0`.
-- [x] production stack: `580 used`, `444 margin`, canary intact.
-- [x] MSP: `320 used`, `1664 margin`, canary intact.
-- [x] final target readback matches candidate.
-- [x] automated OLED runtime restore PASS.
-- [x] physical OLED PASS.
+```text
+build\scheduler_timed_blocking_v1\os.bin
+bytes  = 22900
+SHA256 = 366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A
+```
 
-### Next boundary after publication
+Accepted source identities:
 
-Timer-backed `sleep()` / timed blocking built on the accepted event model. Scheduler priorities remain after timed blocking stabilizes.
+```text
+include/kernel/scheduler.h = F1EF9AB65CF95C68872E09CDB91BAAF87F01D8EACC2F86B483577A75C5FCF547
+src/kernel/scheduler.c     = 90B53B43D53EB53A0BADC97DC5EEF3D2434A32A999F3940B01AE4B0F8129E618
+src/kernel.c               = 44056ABC0371E75DA242D68FBB530B90C56512C11916533982BD543BCF59ACEC
+```
+
+Accepted invariants:
+
+- [x] one `SCHEDULER_TASK_BLOCKED`; no `SLEEPING` state.
+- [x] explicit `deadline_ms` + `deadline_active`.
+- [x] existing `kernel_ticks` is the only clock authority.
+- [x] scheduler receives `scheduler_tick(now_ms)`.
+- [x] scheduler time snapshot is not independently incremented/reset.
+- [x] max timeout horizon `0x7FFFFFFF ms`.
+- [x] `scheduler_sleep_ms()`.
+- [x] `scheduler_wait_events_timeout()`.
+- [x] SVC 4 timed block; SVC 0..3 retained.
+- [x] event wake cancels deadline atomically.
+- [x] timeout wake clears event wait atomically.
+- [x] first atomic BLOCKED->READY transition wins.
+- [x] timeout wake publishes READY before `SEV`.
+- [x] normal production console remains untimed drain-first wait.
+- [x] production-safe `schedtimed`.
+- [x] timed phases `4/4` hardware PASS.
+- [x] safe production commands `19/19`.
+- [x] invasive diagnostics `8/8` BUSY.
+- [x] retained `4 x 32` / `128/128 PONG` regression.
+- [x] RX drops/errors/depth `0/0/0`.
+- [x] production margin `444`, MSP margin `1644`.
+- [x] final Flash identity exact.
+- [x] automated OLED restore + physical OLED PASS.
+- [x] priorities remain out of scope until publication.
+
+Accepted evidence:
+
+```text
+build log      6B523A798B4C801B041D54C039064B8675B7AAD43A1766B6559084B370DF6D84
+build evidence 431B01CD3CBC62E4EB7BD0718CCDFABA90F6B8511DCED3A9EB50069DA39D5199
+hardware log   3B0BC09AA70F58974B77AE03F8AC754C871545E766851C16C1806487810E4769
+hardware ev    ACF91D141F3789A7F42556046574EA13585A9BC46F50DF95FDD948E5F51D8EF4
+```
+
+Next gate:
+
+**C3.7 Gate 6 — local acceptance commit.**
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

@@ -3,6 +3,54 @@
 <!-- BEGIN STM32_OS_CHANGELOG_2026_09_13 -->
 ## 2026-09-14
 
+### Accepted — C3.7 SysTick-backed timed blocking / sleep foundation
+
+Accepted candidate:
+
+- `build\scheduler_timed_blocking_v1\os.bin`
+- `22900` bytes
+- SHA-256 `366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A`
+- `src/kernel.c` `44056ABC0371E75DA242D68FBB530B90C56512C11916533982BD543BCF59ACEC`
+- `src/kernel/scheduler.c` `90B53B43D53EB53A0BADC97DC5EEF3D2434A32A999F3940B01AE4B0F8129E618`
+- `include/kernel/scheduler.h` `F1EF9AB65CF95C68872E09CDB91BAAF87F01D8EACC2F86B483577A75C5FCF547`
+
+Architecture accepted:
+
+- one existing `BLOCKED` state with deadline metadata; no sleeping state;
+- `scheduler_sleep_ms()` and `scheduler_wait_events_timeout()`;
+- SVC 4 timed blocking;
+- `kernel_ticks` remains time authority;
+- wrap-safe signed-delta expiry with maximum timeout `0x7FFFFFFF ms`;
+- event/timeout arbitration is first atomic `BLOCKED -> READY` transition wins;
+- timeout wake publishes READY before `SEV`;
+- production UART wait remains untimed;
+- ring is payload; event is notification.
+
+Hardware accepted:
+
+- `schedtimed` `4/4` phases;
+- sleep `50 ms`, timeout `50 ms`;
+- external UART event wake `164 ms`, event `0x00000001`;
+- timed RX delta `26`, host idle delta `2904`;
+- no double wake; injected `ping` survives in ring and yields `PONG`;
+- safe surface `19/19`;
+- invasive scheduler diagnostics `8/8` BUSY;
+- retained `4 x 32` burst regression, `128/128 PONG`;
+- RX drops/errors/depth `0/0/0`;
+- production stack `580 used / 444 margin`;
+- MSP `340 used / 1644 margin`;
+- final Flash exact;
+- OLED runtime restore PASS;
+- physical OLED PASS.
+
+Evidence:
+
+- build log `6B523A798B4C801B041D54C039064B8675B7AAD43A1766B6559084B370DF6D84`;
+- build evidence `431B01CD3CBC62E4EB7BD0718CCDFABA90F6B8511DCED3A9EB50069DA39D5199`;
+- hardware log `3B0BC09AA70F58974B77AE03F8AC754C871545E766851C16C1806487810E4769`;
+- hardware evidence `ACF91D141F3789A7F42556046574EA13585A9BC46F50DF95FDD948E5F51D8EF4`.
+
+Publication is intentionally still pending Gate 6 local commit and Gate 7 non-force push.
 ### Accepted — normal-boot production task ownership + atomic host-idle race closure
 
 Accepted C3.6 candidate:

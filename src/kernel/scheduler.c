@@ -16,6 +16,7 @@
 #define SCHEDULER_SVC_YIELD 1u
 #define SCHEDULER_SVC_EXIT        2u
 #define SCHEDULER_SVC_WAIT_EVENTS 3u
+#define SCHEDULER_SVC_TIMED_BLOCK 4u
 
 #define SCHEDULER_PREEMPT_SPIN_LIMIT 5000000u
 
@@ -47,6 +48,7 @@ static volatile uint32_t scheduler_preempt_enabled;
 static volatile uint32_t scheduler_preempt_switch_count;
 static volatile uint32_t scheduler_pending_events;
 static volatile uint32_t scheduler_idle_wait_count;
+static volatile uint32_t scheduler_now_ms;
 
 static volatile uint32_t scheduler_coop_sequence[4];
 static volatile uint32_t scheduler_coop_sequence_count;
@@ -227,6 +229,13 @@ static void scheduler_irq_restore(uint32_t primask)
         :
         : "r" (primask)
         : "memory");
+}
+
+static int scheduler_time_reached(
+    uint32_t now_ms,
+    uint32_t deadline_ms)
+{
+    return (int32_t)(now_ms - deadline_ms) >= 0;
 }
 
 static uint32_t scheduler_decode_svc_number(
@@ -479,6 +488,8 @@ int scheduler_init(void)
         task->state = SCHEDULER_TASK_UNUSED;
         task->wait_events = 0u;
         task->wake_events = 0u;
+        task->deadline_ms = 0u;
+        task->deadline_active = 0u;
 
         for (word_index = 0u;
              word_index < SCHEDULER_TASK_STACK_WORDS;
@@ -538,6 +549,8 @@ int scheduler_task_stack_bind(
     task->stack_words = stack_words;
     task->wait_events = 0u;
     task->wake_events = 0u;
+    task->deadline_ms = 0u;
+    task->deadline_active = 0u;
 
     for (word_index = 0u;
          word_index < stack_words;
@@ -619,6 +632,8 @@ int scheduler_task_prepare(
     task->state = SCHEDULER_TASK_READY;
     task->wait_events = 0u;
     task->wake_events = 0u;
+    task->deadline_ms = 0u;
+    task->deadline_active = 0u;
 
     return 1;
 }
@@ -653,7 +668,10 @@ static int scheduler_validate_prepared_task(
         (scheduler_frame_pointer_valid(
             task,
             task->saved_sp) == 0) ||
-        (task->stack_low[0] != SCHEDULER_STACK_FILL)
+        (task->stack_low[0] != SCHEDULER_STACK_FILL) ||
+        (task->wait_events != 0u) ||
+        (task->wake_events != 0u) ||
+        (task->deadline_active != 0u)
     ) {
         return 0;
     }
@@ -768,6 +786,8 @@ uint32_t *scheduler_svc_dispatch(
         current_task->state = SCHEDULER_TASK_DONE;
         current_task->wait_events = 0u;
         current_task->wake_events = 0u;
+        current_task->deadline_ms = 0u;
+        current_task->deadline_active = 0u;
         ++scheduler_completed_count;
     }
     else if (svc_number == SCHEDULER_SVC_WAIT_EVENTS)
@@ -799,6 +819,8 @@ uint32_t *scheduler_svc_dispatch(
             current_task->wait_events = 0u;
             current_task->wake_events =
                 matched_events;
+            current_task->deadline_ms = 0u;
+            current_task->deadline_active = 0u;
 
             saved_sp[8] = matched_events;
 
@@ -810,6 +832,81 @@ uint32_t *scheduler_svc_dispatch(
         current_task->wait_events =
             requested_events;
         current_task->wake_events = 0u;
+        current_task->deadline_ms = 0u;
+        current_task->deadline_active = 0u;
+        current_task->state = SCHEDULER_TASK_BLOCKED;
+
+        scheduler_irq_restore(primask);
+    }
+    else if (svc_number == SCHEDULER_SVC_TIMED_BLOCK)
+    {
+        uint32_t requested_events = saved_sp[8];
+        uint32_t timeout_ms = saved_sp[9];
+        uint32_t matched_events = 0u;
+        uint32_t primask;
+
+        current_task->saved_sp = saved_sp;
+        scheduler_stack_record(scheduler_current_index);
+
+        primask = scheduler_irq_save();
+
+        if (requested_events != 0u)
+        {
+            matched_events =
+                scheduler_pending_events &
+                requested_events;
+        }
+
+        if (matched_events != 0u)
+        {
+            scheduler_pending_events &=
+                ~matched_events;
+
+            current_task->wait_events = 0u;
+            current_task->wake_events =
+                matched_events;
+            current_task->deadline_ms = 0u;
+            current_task->deadline_active = 0u;
+
+            saved_sp[8] = matched_events;
+
+            scheduler_irq_restore(primask);
+
+            return current_task->saved_sp;
+        }
+
+        if (timeout_ms == 0u)
+        {
+            current_task->wait_events = 0u;
+            current_task->wake_events = 0u;
+            current_task->deadline_ms = 0u;
+            current_task->deadline_active = 0u;
+            saved_sp[8] =
+                (requested_events == 0u) ? 1u : 0u;
+
+            scheduler_irq_restore(primask);
+
+            return current_task->saved_sp;
+        }
+
+        if (timeout_ms > SCHEDULER_MAX_TIMEOUT_MS)
+        {
+            current_task->wait_events = 0u;
+            current_task->wake_events = 0u;
+            current_task->deadline_ms = 0u;
+            current_task->deadline_active = 0u;
+            saved_sp[8] = 0u;
+
+            scheduler_irq_restore(primask);
+
+            return current_task->saved_sp;
+        }
+
+        current_task->wait_events = requested_events;
+        current_task->wake_events = 0u;
+        current_task->deadline_ms =
+            scheduler_now_ms + timeout_ms;
+        current_task->deadline_active = 1u;
         current_task->state = SCHEDULER_TASK_BLOCKED;
 
         scheduler_irq_restore(primask);
@@ -1144,6 +1241,53 @@ uint32_t scheduler_wait_events(uint32_t events)
     return result;
 }
 
+uint32_t scheduler_wait_events_timeout(
+    uint32_t events,
+    uint32_t timeout_ms)
+{
+    register uint32_t result __asm("r0") = events;
+    register uint32_t timeout __asm("r1") = timeout_ms;
+
+    if (
+        (events == 0u) ||
+        (timeout_ms > SCHEDULER_MAX_TIMEOUT_MS)
+    ) {
+        return 0u;
+    }
+
+    __asm volatile (
+        "svc #4"
+        : "+r" (result)
+        : "r" (timeout)
+        : "memory");
+
+    return result;
+}
+
+int scheduler_sleep_ms(uint32_t duration_ms)
+{
+    register uint32_t result __asm("r0") = 0u;
+    register uint32_t timeout __asm("r1") = duration_ms;
+
+    if (duration_ms == 0u)
+    {
+        return 1;
+    }
+
+    if (duration_ms > SCHEDULER_MAX_TIMEOUT_MS)
+    {
+        return 0;
+    }
+
+    __asm volatile (
+        "svc #4"
+        : "+r" (result)
+        : "r" (timeout)
+        : "memory");
+
+    return (result != 0u) ? 1 : 0;
+}
+
 void scheduler_event_signal(uint32_t events)
 {
     uint32_t index;
@@ -1183,6 +1327,8 @@ void scheduler_event_signal(uint32_t events)
             {
                 task->wait_events = 0u;
                 task->wake_events = matched_events;
+                task->deadline_ms = 0u;
+                task->deadline_active = 0u;
                 task->saved_sp[8] = matched_events;
                 task->state = SCHEDULER_TASK_READY;
 
@@ -1230,8 +1376,53 @@ void scheduler_yield(void)
     __asm volatile ("svc #1" ::: "memory");
 }
 
-void scheduler_tick(void)
+void scheduler_tick(uint32_t now_ms)
 {
+    uint32_t index;
+    uint32_t woke_task = 0u;
+    uint32_t primask;
+
+    /*
+     * This is a snapshot of the existing kernel timebase, not an
+     * independently advanced scheduler clock. scheduler_init() deliberately
+     * does not reset it.
+     */
+    scheduler_now_ms = now_ms;
+
+    if (scheduler_active != 0u)
+    {
+        primask = scheduler_irq_save();
+
+        for (index = 0u;
+             index < SCHEDULER_TASK_COUNT;
+             ++index)
+        {
+            scheduler_task_t *task =
+                &scheduler_tasks[index];
+
+            if (
+                (task->state == SCHEDULER_TASK_BLOCKED) &&
+                (task->deadline_active != 0u) &&
+                (scheduler_time_reached(
+                    now_ms,
+                    task->deadline_ms) != 0)
+            ) {
+                uint32_t sleep_wait =
+                    (task->wait_events == 0u) ? 1u : 0u;
+
+                task->wait_events = 0u;
+                task->wake_events = 0u;
+                task->deadline_ms = 0u;
+                task->deadline_active = 0u;
+                task->saved_sp[8] = sleep_wait;
+                task->state = SCHEDULER_TASK_READY;
+                woke_task = 1u;
+            }
+        }
+
+        scheduler_irq_restore(primask);
+    }
+
     if (
         (scheduler_active != 0u) &&
         (scheduler_preempt_enabled != 0u) &&
@@ -1242,6 +1433,13 @@ void scheduler_tick(void)
         __asm volatile (
             "dsb\n"
             "isb\n"
+            ::: "memory");
+    }
+
+    if (woke_task != 0u)
+    {
+        __asm volatile (
+            "sev\n"
             ::: "memory");
     }
 }

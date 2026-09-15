@@ -118,6 +118,9 @@
 #define SCHED_ISOLATION_DIAGNOSTIC_COUNT 7u
 #define PRODUCTION_UART_RX_EVENT         (1u << 0)
 #define SCHED_WAIT_WAKE_SENTINEL         0x57u
+#define SCHED_TIMED_SLEEP_MS             50u
+#define SCHED_TIMED_TIMEOUT_MS           50u
+#define SCHED_TIMED_EVENT_TIMEOUT_MS     500u
 
 /*
  * PCLK2 = 72 MHz.
@@ -259,6 +262,7 @@ static void console_production_scheduler_stats(void);
 static void console_scheduler_console_probe_test(void);
 static void console_scheduler_isolation_test(void);
 static void console_scheduler_wait_wake_test(void);
+static void console_scheduler_timed_test(void);
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -2863,6 +2867,127 @@ static void console_production_scheduler_stats(void)
     }
 }
 
+static void console_scheduler_timed_test(void)
+{
+    kernel_time_ms_t start;
+    kernel_time_ms_t elapsed;
+    uint32_t events;
+    int passed = 1;
+
+    if (scheduler_sleep_ms(0u) != 0)
+    {
+        uart_write_line("SCHED_TIMED_ZERO_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_TIMED_ZERO_ERR");
+        passed = 0;
+    }
+
+    start = kernel_time_now();
+
+    if (scheduler_sleep_ms(SCHED_TIMED_SLEEP_MS) == 0)
+    {
+        uart_write_line("SCHED_TIMED_SLEEP_ERR");
+        passed = 0;
+    }
+
+    elapsed =
+        (kernel_time_ms_t)(kernel_time_now() - start);
+
+    uart_write("SCHED_TIMED_SLEEP_ELAPSED=");
+    uart_write_hex32(elapsed);
+    uart_write("\r\n");
+
+    if (elapsed >= SCHED_TIMED_SLEEP_MS)
+    {
+        uart_write_line("SCHED_TIMED_SLEEP_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_TIMED_SLEEP_ERR");
+        passed = 0;
+    }
+
+    /*
+     * Consume a stale notification from the command line that started this
+     * diagnostic. The UART ring remains authoritative payload storage.
+     */
+    (void)scheduler_wait_events_timeout(
+        PRODUCTION_UART_RX_EVENT,
+        0u);
+
+    start = kernel_time_now();
+
+    events =
+        scheduler_wait_events_timeout(
+            PRODUCTION_UART_RX_EVENT,
+            SCHED_TIMED_TIMEOUT_MS);
+
+    elapsed =
+        (kernel_time_ms_t)(kernel_time_now() - start);
+
+    uart_write("SCHED_TIMED_TIMEOUT_ELAPSED=");
+    uart_write_hex32(elapsed);
+    uart_write("\r\n");
+
+    if (
+        (events == 0u) &&
+        (elapsed >= SCHED_TIMED_TIMEOUT_MS)
+    ) {
+        uart_write_line("SCHED_TIMED_TIMEOUT_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_TIMED_TIMEOUT_ERR");
+        passed = 0;
+    }
+
+    (void)scheduler_wait_events_timeout(
+        PRODUCTION_UART_RX_EVENT,
+        0u);
+
+    uart_write_line("SCHED_TIMED_EVENT_ARMED");
+    start = kernel_time_now();
+
+    events =
+        scheduler_wait_events_timeout(
+            PRODUCTION_UART_RX_EVENT,
+            SCHED_TIMED_EVENT_TIMEOUT_MS);
+
+    elapsed =
+        (kernel_time_ms_t)(kernel_time_now() - start);
+
+    uart_write("SCHED_TIMED_EVENT_EVENTS=");
+    uart_write_hex32(events);
+    uart_write("\r\n");
+
+    uart_write("SCHED_TIMED_EVENT_ELAPSED=");
+    uart_write_hex32(elapsed);
+    uart_write("\r\n");
+
+    if (
+        (events == PRODUCTION_UART_RX_EVENT) &&
+        (elapsed < SCHED_TIMED_EVENT_TIMEOUT_MS)
+    ) {
+        uart_write_line("SCHED_TIMED_EVENT_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_TIMED_EVENT_ERR");
+        passed = 0;
+    }
+
+    if (passed != 0)
+    {
+        uart_write_line("SCHED_TIMED_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_TIMED_ERR");
+    }
+}
+
 static int console_execute_safe_named(const char *command)
 {
     if (text_equals(command, "ping") != 0)
@@ -2894,6 +3019,10 @@ static int console_execute_safe_named(const char *command)
     else if (text_equals(command, "schedprod") != 0)
     {
         console_production_scheduler_stats();
+    }
+    else if (text_equals(command, "schedtimed") != 0)
+    {
+        console_scheduler_timed_test();
     }
     else if (text_equals(command, "fault") != 0)
     {
@@ -3244,7 +3373,7 @@ void SysTick_Handler(void)
     ++kernel_ticks;
     ++led_ticks;
 
-    scheduler_tick();
+    scheduler_tick(kernel_ticks);
 
     if (led_ticks >= 500u)
     {

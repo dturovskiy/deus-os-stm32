@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **current architecture through published wait/wake baseline `bfed76e0de1c52bf65e60f66c029cc41710fabd0`**
+Status: **published parent `33f15f1d23dfa31fabf9f2c83542a5f34046cde8` plus hardware-accepted C3.7 timed blocking candidate awaiting commit/publication**
 
 ## 1. Boot flow
 
@@ -54,23 +54,29 @@ Accepted task-stack policy before normal-boot migration:
 - external console PSP sizing allocation: `1024 bytes`;
 - production migration reuses that 1024-byte allocation for the production console task.
 
-## 3. Published baseline vs accepted normal boot
+## 3. Published normal-boot ownership
 
-Current published runtime ownership is still:
+Published C3.6 ownership is:
 
 ```text
-kernel_main / Thread/MSP
+kernel_main / Thread/MSP bootstrap
     |
-    +-- initialize clocks/GPIO/UART/I2C/OLED/faults/SysTick
-    +-- boot banner
+    +-- clocks/GPIO/UART/I2C/OLED/faults/SysTick
     +-- frozen OLED runtime UI
+    +-- scheduler init / bind / prepare
     |
-    +-- forever:
-          console_poll()
-          WFI
+    v
+scheduler_start()
+    |
+    +-- task 0: production console/runtime on Thread/PSP
+    +-- task 1: UNUSED
+    +-- host Thread/MSP: WFE idle when no task is READY
 ```
 
-This is the exact ownership model being replaced by the next slice.
+Published commit: `33f15f1d23dfa31fabf9f2c83542a5f34046cde8`.
+
+USART1 IRQ remains the sole DR reader. The RX ring is payload authority and the
+scheduler event is notification only.
 
 ## 4. Published scheduler architecture
 
@@ -360,3 +366,102 @@ After production ownership migration:
 6. networking later.
 
 Do not create parallel blocking, idle, or ownership mechanisms.
+
+
+## C3.7 accepted timed-blocking architecture
+
+C3.7 extends the existing BLOCKED state; it does not add a sleeping state.
+
+```text
+BLOCKED
+ |
+ +-- wait_events != 0, deadline inactive
+ |      untimed event wait
+ |
+ +-- wait_events != 0, deadline active
+ |      timed event wait
+ |
+ +-- wait_events == 0, deadline active
+        sleep
+```
+
+Deadline metadata:
+
+```text
+deadline_ms
+deadline_active
+```
+
+Time authority remains the existing 1 ms `kernel_ticks`. `SysTick_Handler()`
+increments `kernel_ticks` and passes the resulting time to
+`scheduler_tick(now_ms)`. Scheduler-local `scheduler_now_ms` is only a latch of
+that supplied value; it is neither independently incremented nor reset by
+`scheduler_init()`.
+
+Wrap-safe expiry:
+
+```c
+(int32_t)(now - deadline) >= 0
+```
+
+Maximum accepted timeout horizon is `0x7FFFFFFF ms`.
+
+SVC ownership:
+
+```text
+0 start
+1 yield
+2 exit
+3 untimed event wait
+4 timed block
+```
+
+Wake arbitration is state-based and atomic:
+
+```text
+event wins:
+    clear deadline
+    BLOCKED -> READY
+    return event mask
+
+timeout wins:
+    clear event wait
+    BLOCKED -> READY
+    return timeout result
+```
+
+The second contender observes a non-BLOCKED task and cannot wake it again.
+Hardware `schedtimed` acceptance proved no duplicate timed result.
+
+Host idle remains MSP `WFE`. Timeout wake publishes READY before `SEV`. The
+PRIMASK-atomic READY/BLOCKED/terminal host classification accepted in C3.6 is
+retained.
+
+Normal production console waiting remains untimed and drain-first. UART ring
+data remains payload authority; scheduler event remains notification only.
+
+Accepted hardware candidate:
+
+```text
+22900 bytes
+366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A
+```
+
+Acceptance:
+
+- timed phases `4/4`;
+- 50 ms sleep;
+- 50 ms timeout;
+- external UART event at 164 ms with mask 1;
+- injected `ping` survives in the ring and yields exact `PONG`;
+- `19/19` safe surface;
+- `8/8` invasive diagnostics BUSY;
+- retained `4 x 32`, `128/128 PONG`;
+- RX `0/0/0`;
+- production `580 used / 444 margin`;
+- MSP `340 used / 1644 margin`;
+- final Flash exact;
+- automated + physical OLED PASS.
+
+Priorities, generic timer callbacks, tickless idle, timer task and additional
+production tasks remain outside C3.7.
