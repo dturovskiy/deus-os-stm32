@@ -7,79 +7,82 @@
 
 `main`, `origin/main` and remote `main` remain synchronized at:
 
-`33f15f1d23dfa31fabf9f2c83542a5f34046cde8` — `feat: migrate normal boot to production scheduler ownership`
+`90df6a690230c9800c0d8497d5597f87a5ae0409` — `feat: add scheduler timed blocking foundation`
 
-Tree: `a5447420a58b0aed7cd541069979fa665df40aa9`.
+Tree: `c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`.
 
-C3.7 is accepted in the working tree but is **not yet committed or published**.
+C3.8 is accepted in the working tree but is **not yet committed or published**.
 
-### Accepted C3.7 candidate
+### Accepted C3.8 candidate
 
 ```text
-build\scheduler_timed_blocking_v1\os.bin
-22900 bytes
-366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A
+build\scheduler_fixed_priority_v1\os.bin
+23792 bytes
+492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F
 ```
 
 Source:
 
 ```text
-include/kernel/scheduler.h F1EF9AB65CF95C68872E09CDB91BAAF87F01D8EACC2F86B483577A75C5FCF547
-src/kernel/scheduler.c     90B53B43D53EB53A0BADC97DC5EEF3D2434A32A999F3940B01AE4B0F8129E618
-src/kernel.c               44056ABC0371E75DA242D68FBB530B90C56512C11916533982BD543BCF59ACEC
+include/kernel/scheduler.h A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841
+src/kernel/scheduler.c     B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88
+src/kernel.c               235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D
 ```
 
-### Accepted architecture
+### Accepted priority architecture
 
-- production task 0 remains cooperative Thread/PSP owner;
-- task 1 remains UNUSED;
-- host MSP remains WFE idle + exception stack;
-- one BLOCKED state plus deadline metadata;
-- `scheduler_sleep_ms()` + `scheduler_wait_events_timeout()`;
-- SVC 4 timed block;
-- `kernel_ticks` remains clock authority;
-- event/timeout first atomic transition wins;
-- timeout publishes READY then `SEV`;
-- production UART wait remains untimed;
-- ring is payload; event is notification;
-- priorities remain deferred.
+```text
+0   highest
+128 default
+255 lowest
+```
+
+- lower numeric value wins;
+- priority is static while scheduler active;
+- one shared READY selector;
+- equal priority retains round-robin tie order;
+- cooperative production remains non-preemptive;
+- task0 = production console/runtime at 128;
+- task1 = UNUSED;
+- no new SVC;
+- timed/event/WFE/PRIMASK semantics unchanged.
 
 ### Accepted hardware
 
 ```text
-timed phases        4/4
-sleep elapsed       50 ms
-timeout elapsed     50 ms
-event elapsed       164 ms
-event mask          0x00000001
-timed RX delta      26
-timed idle delta    2904
-safe surface        19/19
-diagnostic BUSY     8/8
-burst regression    4 x 32 = 128/128 PONG
-production stack    580 used / 444 margin
-MSP                 340 used / 1644 margin
-RX drop/error/depth 0/0/0
-final Flash         exact
-OLED runtime        PASS
-physical OLED       PASS
+priority phase        1/1
+selector self-test    0x0000003F
+task0 priority        128 -> 128
+preempt switches      0
+safe surface          20/20
+timed phases          4/4
+sleep / timeout       50 / 50 ms
+event wake            171 ms / mask 1
+diagnostic BUSY       8/8
+burst regression      4 x 32 = 128/128 PONG
+production stack      580 used / 444 margin
+MSP                   340 used / 1644 margin
+RX drop/error/depth   0/0/0
+final Flash           exact
+OLED runtime          PASS
+OLED Gate 4           N/A unchanged-source policy
 ```
 
 Evidence:
 
 ```text
-build log      6B523A798B4C801B041D54C039064B8675B7AAD43A1766B6559084B370DF6D84
-build evidence 431B01CD3CBC62E4EB7BD0718CCDFABA90F6B8511DCED3A9EB50069DA39D5199
-hardware log   3B0BC09AA70F58974B77AE03F8AC754C871545E766851C16C1806487810E4769
-hardware ev    ACF91D141F3789A7F42556046574EA13585A9BC46F50DF95FDD948E5F51D8EF4
+build log      306AC5D97125F5BEFB4B2DB95E602ED8F6541E32CF364AA61ACD3D93A0E946D0
+build evidence 33E699282A456B79A0F15C8B2B6DF756BAD5979867091863599575A851CEA000
+hardware log   005D646FD613506896BC1A3961DDA752D9D424AD7F4AD0CFAAEE377C50E05222
+hardware ev    41665A892477FB195D00DD722A093F69B09AB2A66669EB872DDB7A3518EACC6C
 ```
 
 ### Exact next gate
 
-**C3.7 Gate 6 — local acceptance commit.**
+**C3.8 Gate 6 — local acceptance commit.**
 
-Do not rebuild or reflash for Gate 6. Do not start priorities. After the local
-commit passes, Gate 7 is a plain non-force fast-forward push.
+Do not rebuild or reflash for Gate 6. Gate 7 is a plain non-force
+fast-forward push after local commit verification.
 ## Project identity
 
 ```text

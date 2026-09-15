@@ -3,63 +3,63 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Current implementation checkpoint — 2026-09-15
 
-### Stage C3.6 — normal-boot production ownership — PUBLISHED
+### Stage C3.7 — SysTick-backed timed blocking — PUBLISHED
 
-Published commit: `33f15f1d23dfa31fabf9f2c83542a5f34046cde8`.
+Published commit: `90df6a690230c9800c0d8497d5597f87a5ae0409`.
 
-Published tree: `a5447420a58b0aed7cd541069979fa665df40aa9`.
+Published tree: `c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`.
 
-### Stage C3.7 — SysTick-backed timed blocking — HARDWARE + OLED ACCEPTED
+### Stage C3.8 — static fixed-priority scheduling — HARDWARE ACCEPTED
 
 Accepted firmware:
 
-- `22900` bytes;
-- SHA-256 `366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A`;
-- BSS `5352`;
-- RAM gap below MSP `15128`.
+- `23792` bytes;
+- SHA-256 `492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F`;
+- text `23792`;
+- data `0`;
+- BSS `5360`;
+- RAM gap below MSP `15120`.
 
-Accepted source delta:
+Accepted source:
 
-- `include/kernel/scheduler.h` `F1EF9AB65CF95C68872E09CDB91BAAF87F01D8EACC2F86B483577A75C5FCF547`;
-- `src/kernel/scheduler.c` `90B53B43D53EB53A0BADC97DC5EEF3D2434A32A999F3940B01AE4B0F8129E618`;
-- `src/kernel.c` `44056ABC0371E75DA242D68FBB530B90C56512C11916533982BD543BCF59ACEC`.
+- `include/kernel/scheduler.h` `A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841`;
+- `src/kernel/scheduler.c` `B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88`;
+- `src/kernel.c` `235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D`.
 
-Implemented model:
+Accepted model:
 
-- one `BLOCKED` state covers untimed event wait, timed event wait and sleep;
-- explicit deadline metadata;
-- `scheduler_sleep_ms()`;
-- `scheduler_wait_events_timeout()`;
-- SVC 4 timed block;
-- existing `kernel_ticks` clock authority;
-- `scheduler_tick(now_ms)` deadline service;
-- wrap-safe signed-delta expiry;
-- first atomic event/timeout transition wins;
-- timeout wake READY then `SEV`;
-- host MSP remains WFE idle;
-- production UART loop remains untimed;
-- safe `schedtimed` probe.
+- static priority `0..255`, default `128`;
+- lower numeric value wins;
+- inactive-only priority setter;
+- one shared READY selector;
+- equal-priority round-robin tie behavior;
+- no new SVC;
+- cooperative production unchanged;
+- task0 DEFAULT, task1 UNUSED;
+- safe `schedprio` self-test `0x3F`;
+- timed/event architecture retained.
 
-Hardware facts:
+Hardware:
 
-- timed `4/4`: zero, sleep, timeout-wins, external UART event-wins;
-- sleep/timeout `50/50 ms`;
-- external event `164 ms`, mask `1`;
-- safe `19/19`;
+- priority runtime `1/1`;
+- active mutation rejection PASS;
+- safe `20/20`;
+- timed `4/4`;
 - diagnostics `8/8` BUSY;
-- retained race regression `4 x 32`, `128/128 PONG`;
-- production `580 used / 444 margin`;
+- retained `4 x 32 = 128/128 PONG`;
+- PSP `580 used / 444 margin`;
 - MSP `340 used / 1644 margin`;
-- RX drops/errors/depth `0/0/0`;
+- RX `0/0/0`;
 - final Flash exact;
-- automated + physical OLED PASS.
+- automated OLED restore PASS.
 
-C3.7 publication steps remaining:
+OLED Gate 4:
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+
+Remaining:
 
 1. local acceptance commit;
 2. non-force fast-forward push.
-
-Only after publication does implementation advance to scheduler priorities.
 ## Objective
 
 Build a small, understandable, fast bare-metal operating system for STM32F103-class Cortex-M3 hardware while learning ARM/Thumb assembly, exception mechanics, scheduling, memory layout, drivers, and low-level performance.

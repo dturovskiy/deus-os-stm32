@@ -170,9 +170,19 @@ static void scheduler_stack_record(uint32_t index)
     }
 }
 
-static uint32_t scheduler_find_next_ready(uint32_t after_index)
+static uint32_t scheduler_select_next_ready(
+    const scheduler_task_t *tasks,
+    uint32_t after_index)
 {
     uint32_t offset;
+    uint32_t selected_index = SCHEDULER_NO_TASK;
+    uint32_t selected_priority =
+        SCHEDULER_PRIORITY_LOWEST + 1u;
+
+    if (tasks == (const scheduler_task_t *)0)
+    {
+        return SCHEDULER_NO_TASK;
+    }
 
     for (offset = 1u;
          offset <= SCHEDULER_TASK_COUNT;
@@ -182,13 +192,23 @@ static uint32_t scheduler_find_next_ready(uint32_t after_index)
             (after_index + offset) %
             SCHEDULER_TASK_COUNT;
 
-        if (scheduler_tasks[index].state == SCHEDULER_TASK_READY)
-        {
-            return index;
+        if (
+            (tasks[index].state == SCHEDULER_TASK_READY) &&
+            (tasks[index].priority < selected_priority)
+        ) {
+            selected_index = index;
+            selected_priority = tasks[index].priority;
         }
     }
 
-    return SCHEDULER_NO_TASK;
+    return selected_index;
+}
+
+static uint32_t scheduler_find_next_ready(uint32_t after_index)
+{
+    return scheduler_select_next_ready(
+        scheduler_tasks,
+        after_index);
 }
 
 static int scheduler_has_blocked_tasks(void)
@@ -486,6 +506,7 @@ int scheduler_init(void)
         task->saved_sp = task->stack_high;
         task->stack_words = SCHEDULER_TASK_STACK_WORDS;
         task->state = SCHEDULER_TASK_UNUSED;
+        task->priority = SCHEDULER_PRIORITY_DEFAULT;
         task->wait_events = 0u;
         task->wake_events = 0u;
         task->deadline_ms = 0u;
@@ -507,6 +528,23 @@ int scheduler_init(void)
 int scheduler_is_active(void)
 {
     return (scheduler_active != 0u) ? 1 : 0;
+}
+
+int scheduler_task_priority_set(
+    uint32_t index,
+    uint32_t priority)
+{
+    if (
+        (index >= SCHEDULER_TASK_COUNT) ||
+        (priority > SCHEDULER_PRIORITY_LOWEST) ||
+        (scheduler_active != 0u)
+    ) {
+        return 0;
+    }
+
+    scheduler_tasks[index].priority = priority;
+
+    return 1;
 }
 
 int scheduler_task_stack_bind(
@@ -671,7 +709,8 @@ static int scheduler_validate_prepared_task(
         (task->stack_low[0] != SCHEDULER_STACK_FILL) ||
         (task->wait_events != 0u) ||
         (task->wake_events != 0u) ||
-        (task->deadline_active != 0u)
+        (task->deadline_active != 0u) ||
+        (task->priority > SCHEDULER_PRIORITY_LOWEST)
     ) {
         return 0;
     }
@@ -1444,6 +1483,68 @@ void scheduler_tick(uint32_t now_ms)
     }
 }
 
+uint32_t scheduler_priority_self_test(void)
+{
+    scheduler_task_t tasks[SCHEDULER_TASK_COUNT];
+    uint32_t result = 0u;
+
+    tasks[0].state = SCHEDULER_TASK_READY;
+    tasks[0].priority = SCHEDULER_PRIORITY_DEFAULT;
+    tasks[1].state = SCHEDULER_TASK_READY;
+    tasks[1].priority = SCHEDULER_PRIORITY_HIGHEST;
+
+    if (
+        scheduler_select_next_ready(
+            tasks,
+            SCHEDULER_TASK_COUNT - 1u) == 1u
+    ) {
+        result |= (1u << 0);
+    }
+
+    tasks[0].priority = SCHEDULER_PRIORITY_HIGHEST;
+    tasks[1].priority = SCHEDULER_PRIORITY_LOWEST;
+
+    if (scheduler_select_next_ready(tasks, 0u) == 0u)
+    {
+        result |= (1u << 1);
+    }
+
+    tasks[0].priority = SCHEDULER_PRIORITY_DEFAULT;
+    tasks[1].priority = SCHEDULER_PRIORITY_DEFAULT;
+
+    if (scheduler_select_next_ready(tasks, 0u) == 1u)
+    {
+        result |= (1u << 2);
+    }
+
+    if (scheduler_select_next_ready(tasks, 1u) == 0u)
+    {
+        result |= (1u << 3);
+    }
+
+    tasks[0].state = SCHEDULER_TASK_BLOCKED;
+    tasks[0].priority = SCHEDULER_PRIORITY_HIGHEST;
+    tasks[1].state = SCHEDULER_TASK_READY;
+    tasks[1].priority = SCHEDULER_PRIORITY_DEFAULT;
+
+    if (scheduler_select_next_ready(tasks, 1u) == 1u)
+    {
+        result |= (1u << 4);
+    }
+
+    tasks[0].state = SCHEDULER_TASK_READY;
+    tasks[0].priority = SCHEDULER_PRIORITY_HIGHEST;
+    tasks[1].state = SCHEDULER_TASK_READY;
+    tasks[1].priority = SCHEDULER_PRIORITY_LOWEST;
+
+    if (scheduler_select_next_ready(tasks, 0u) == 0u)
+    {
+        result |= (1u << 5);
+    }
+
+    return result;
+}
+
 uint32_t scheduler_stack_high_water_bytes(uint32_t index)
 {
     if (index >= SCHEDULER_TASK_COUNT)
@@ -1503,6 +1604,8 @@ int scheduler_self_test(void)
     if (
         (task0->state != SCHEDULER_TASK_UNUSED) ||
         (task1->state != SCHEDULER_TASK_UNUSED) ||
+        (task0->priority != SCHEDULER_PRIORITY_DEFAULT) ||
+        (task1->priority != SCHEDULER_PRIORITY_DEFAULT) ||
         (task0->stack_words != SCHEDULER_TASK_STACK_WORDS) ||
         (task1->stack_words != SCHEDULER_TASK_STACK_WORDS) ||
         (task0->saved_sp != task0->stack_high) ||
@@ -1514,6 +1617,30 @@ int scheduler_self_test(void)
         ((((uintptr_t)task0->stack_low) & (uintptr_t)0x7u) != 0u) ||
         ((((uintptr_t)task1->stack_low) & (uintptr_t)0x7u) != 0u) ||
         (task0->stack_high != task1->stack_low)
+    ) {
+        return 0;
+    }
+
+    if (
+        (scheduler_task_priority_set(
+            SCHEDULER_TASK_COUNT,
+            SCHEDULER_PRIORITY_DEFAULT) != 0) ||
+        (scheduler_task_priority_set(
+            0u,
+            SCHEDULER_PRIORITY_LOWEST + 1u) != 0) ||
+        (scheduler_task_priority_set(
+            0u,
+            SCHEDULER_PRIORITY_HIGHEST) == 0) ||
+        (scheduler_task_priority_set(
+            1u,
+            SCHEDULER_PRIORITY_LOWEST) == 0)
+    ) {
+        return 0;
+    }
+
+    if (
+        (task0->priority != SCHEDULER_PRIORITY_HIGHEST) ||
+        (task1->priority != SCHEDULER_PRIORITY_LOWEST)
     ) {
         return 0;
     }
@@ -1532,6 +1659,13 @@ int scheduler_self_test(void)
             1u,
             scheduler_self_test_entry,
             (void *)task1) == 0
+    ) {
+        return 0;
+    }
+
+    if (
+        (task0->priority != SCHEDULER_PRIORITY_HIGHEST) ||
+        (task1->priority != SCHEDULER_PRIORITY_LOWEST)
     ) {
         return 0;
     }
@@ -1567,7 +1701,9 @@ int scheduler_self_test(void)
         (task0->wait_events == 0u) &&
         (task1->wait_events == 0u) &&
         (task0->wake_events == 0u) &&
-        (task1->wake_events == 0u);
+        (task1->wake_events == 0u) &&
+        (task0->priority == SCHEDULER_PRIORITY_DEFAULT) &&
+        (task1->priority == SCHEDULER_PRIORITY_DEFAULT);
 }
 
 int scheduler_cooperative_self_test(void)

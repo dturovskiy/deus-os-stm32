@@ -6,6 +6,9 @@
 #define SCHEDULER_TASK_COUNT       2u
 #define SCHEDULER_TASK_STACK_WORDS 128u
 #define SCHEDULER_MAX_TIMEOUT_MS    0x7FFFFFFFu
+#define SCHEDULER_PRIORITY_HIGHEST  0u
+#define SCHEDULER_PRIORITY_DEFAULT  128u
+#define SCHEDULER_PRIORITY_LOWEST   255u
 
 typedef void (*scheduler_task_entry_t)(void *argument);
 
@@ -24,6 +27,7 @@ typedef struct
     uint32_t *stack_high;
     uint32_t stack_words;
     volatile scheduler_task_state_t state;
+    volatile uint32_t priority;
     volatile uint32_t wait_events;
     volatile uint32_t wake_events;
     volatile uint32_t deadline_ms;
@@ -33,6 +37,10 @@ typedef struct
 int scheduler_init(void);
 
 int scheduler_is_active(void);
+
+int scheduler_task_priority_set(
+    uint32_t index,
+    uint32_t priority);
 
 int scheduler_task_stack_bind(
     uint32_t index,
@@ -95,6 +103,8 @@ int scheduler_self_test(void);
 int scheduler_cooperative_self_test(void);
 
 int scheduler_preemptive_self_test(void);
+
+uint32_t scheduler_priority_self_test(void);
 
 uint32_t scheduler_stack_high_water_bytes(uint32_t index);
 

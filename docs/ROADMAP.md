@@ -3,36 +3,37 @@
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 ## Current roadmap checkpoint — 2026-09-15
 
-### C3.6 normal-boot production ownership — PUBLISHED
+### C3.7 timed blocking / sleep — PUBLISHED
 
-- [x] commit `33f15f1d23dfa31fabf9f2c83542a5f34046cde8`;
-- [x] exact parent tree `a5447420a58b0aed7cd541069979fa665df40aa9`;
-- [x] hardware + physical OLED accepted;
-- [x] non-force fast-forward publication complete.
+- [x] commit `90df6a690230c9800c0d8497d5597f87a5ae0409`;
+- [x] tree `c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`;
+- [x] hardware + OLED accepted;
+- [x] non-force publication complete.
 
-### C3.7 timed blocking / sleep — ACCEPTED, PUBLICATION PENDING
+### C3.8 fixed-priority scheduling — ACCEPTED, PUBLICATION PENDING
 
 - [x] architecture and acceptance planning;
-- [x] TCB deadline metadata;
-- [x] `scheduler_sleep_ms()`;
-- [x] `scheduler_wait_events_timeout()`;
-- [x] SVC 4 timed block;
-- [x] SysTick -> `scheduler_tick(now_ms)` deadline service;
-- [x] event/timeout first-transition-wins arbitration;
-- [x] safe production `schedtimed`;
+- [x] static TCB priority;
+- [x] inactive-only priority setter;
+- [x] priority-aware shared READY selector;
+- [x] equal-priority round-robin preservation;
+- [x] cooperative priority semantics;
+- [x] preemptive selector integration;
+- [x] production task0 DEFAULT priority telemetry;
+- [x] safe `schedprio` selector self-test;
 - [x] fresh GNU validation;
-- [x] hardware timed regression;
-- [x] physical OLED regression;
+- [x] hardware priority + retained C3.7 regression;
+- [x] Gate 4 OLED conditional N/A;
 - [x] docs/evidence finalization;
 - [ ] local acceptance commit;
 - [ ] non-force publication.
 
-Accepted candidate: `22900` bytes / `366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A`.
+Accepted candidate: `23792` bytes / `492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F`.
 
-### Sequence after C3.7 publication
+### Sequence after C3.8 publication
 
-1. scheduler priorities;
-2. only then consider additional production tasks / IPC ownership;
+1. additional production tasks only when an independent responsibility exists;
+2. message queues/synchronization only when shared ownership actually exists;
 3. generic timer callbacks only when a real consumer requires them.
 ## Phase 0 - Boot baseline
 
@@ -72,8 +73,8 @@ Accepted candidate: `22900` bytes / `366D92BB36E021A3595ED5F35F78ADA05CA7989E11E
 - [x] Command-gated SysTick preemption proof
 - [x] Task stack budget / high-water validation for the accepted command-gated frozen OLED workload
 - [x] Normal boot task migration
-- [ ] `sleep()`
-- [ ] Priorities
+- [x] `sleep()`
+- [x] Priorities
 
 ## Phase 4 - Kernel services
 

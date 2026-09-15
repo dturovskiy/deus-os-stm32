@@ -1,6 +1,53 @@
-# Changelog
+## 2026-09-15
 
-<!-- BEGIN STM32_OS_CHANGELOG_2026_09_13 -->
+### Accepted — C3.8 static fixed-priority scheduling
+
+Accepted candidate:
+
+- `build\scheduler_fixed_priority_v1\os.bin`
+- `23792` bytes
+- SHA-256 `492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F`
+- `src/kernel.c` `235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D`
+- `src/kernel/scheduler.c` `B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88`
+- `include/kernel/scheduler.h` `A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841`
+
+Architecture accepted:
+
+- static priority range `0..255`, default `128`;
+- lower value = higher priority;
+- inactive-only `scheduler_task_priority_set()`;
+- one shared priority-aware READY selector;
+- equal priorities retain round-robin tie behavior;
+- cooperative production remains cooperative;
+- task0 DEFAULT, task1 UNUSED;
+- no new SVC;
+- timed/event/WFE/PRIMASK architecture retained.
+
+Hardware accepted:
+
+- `schedprio` `1/1`;
+- selector self-test `0x0000003F`;
+- active mutation rejected and task0 remains `128`;
+- safe surface `20/20`;
+- timed blocking `4/4`;
+- `8/8` invasive diagnostics BUSY;
+- retained `4 x 32`, `128/128 PONG`;
+- RX drops/errors/depth `0/0/0`;
+- production stack `580 used / 444 margin`;
+- MSP `340 used / 1644 margin`;
+- final Flash exact.
+
+OLED Gate 4:
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+
+Evidence:
+
+- build log `306AC5D97125F5BEFB4B2DB95E602ED8F6541E32CF364AA61ACD3D93A0E946D0`;
+- build evidence `33E699282A456B79A0F15C8B2B6DF756BAD5979867091863599575A851CEA000`;
+- hardware log `005D646FD613506896BC1A3961DDA752D9D424AD7F4AD0CFAAEE377C50E05222`;
+- hardware evidence `41665A892477FB195D00DD722A093F69B09AB2A66669EB872DDB7A3518EACC6C`.
+
+Publication remains pending Gate 6 local commit and Gate 7 non-force push.
 ## 2026-09-14
 
 ### Accepted — C3.7 SysTick-backed timed blocking / sleep foundation
@@ -50,7 +97,7 @@ Evidence:
 - hardware log `3B0BC09AA70F58974B77AE03F8AC754C871545E766851C16C1806487810E4769`;
 - hardware evidence `ACF91D141F3789A7F42556046574EA13585A9BC46F50DF95FDD948E5F51D8EF4`.
 
-Publication is intentionally still pending Gate 6 local commit and Gate 7 non-force push.
+Published as `90df6a690230c9800c0d8497d5597f87a5ae0409` (`feat: add scheduler timed blocking foundation`).
 ### Accepted — normal-boot production task ownership + atomic host-idle race closure
 
 Accepted C3.6 candidate:

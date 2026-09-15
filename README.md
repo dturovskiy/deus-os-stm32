@@ -3,77 +3,81 @@
 <!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 ## Accepted project state — 2026-09-15
 
-Current published parent remains:
+Published parent remains:
 
-`33f15f1d23dfa31fabf9f2c83542a5f34046cde8` — `feat: migrate normal boot to production scheduler ownership`
+`90df6a690230c9800c0d8497d5597f87a5ae0409` — `feat: add scheduler timed blocking foundation`
 
 Published parent tree:
 
-`a5447420a58b0aed7cd541069979fa665df40aa9`
+`c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`
 
-C3.7 timed blocking is **hardware + physical OLED accepted and awaiting local acceptance commit / publication**.
+C3.8 static fixed-priority scheduling is **hardware accepted and awaiting local
+acceptance commit / publication**.
 
-Accepted C3.7 firmware:
+Accepted C3.8 firmware:
 
-- path: `build\scheduler_timed_blocking_v1\os.bin`
-- bytes: `22900`
-- SHA-256: `366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A`
-- `src/kernel.c`: `44056ABC0371E75DA242D68FBB530B90C56512C11916533982BD543BCF59ACEC`
-- `src/kernel/scheduler.c`: `90B53B43D53EB53A0BADC97DC5EEF3D2434A32A999F3940B01AE4B0F8129E618`
-- `include/kernel/scheduler.h`: `F1EF9AB65CF95C68872E09CDB91BAAF87F01D8EACC2F86B483577A75C5FCF547`
+- path: `build\scheduler_fixed_priority_v1\os.bin`
+- bytes: `23792`
+- SHA-256: `492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F`
+- `src/kernel.c`: `235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D`
+- `src/kernel/scheduler.c`: `B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88`
+- `include/kernel/scheduler.h`: `A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841`
 
-Accepted runtime architecture:
+Accepted priority architecture:
 
-- one `SCHEDULER_TASK_BLOCKED` state plus explicit deadline metadata;
-- `scheduler_sleep_ms()` and `scheduler_wait_events_timeout()`;
-- SVC 4 timed-block path;
-- existing 1 ms `kernel_ticks` remains clock authority;
-- timeout comparison remains wrap-safe with max horizon `0x7FFFFFFF ms`;
-- event wake versus timeout wake is first atomic `BLOCKED -> READY` transition wins;
-- timeout wake publishes READY then `SEV`;
-- normal production UART wait remains untimed;
-- ring remains payload authority; event remains notification only.
+- static task priority range `0..255`;
+- lower numeric value means higher priority;
+- default priority `128`;
+- priority mutation is rejected while scheduler is active;
+- one shared READY selector owns SVC/cooperative/host/PendSV choice;
+- equal priorities retain round-robin tie order;
+- cooperative production mode remains non-preemptive;
+- task 0 remains production console/runtime at priority `128`;
+- task 1 remains UNUSED;
+- no new SVC;
+- timed/event blocking semantics remain unchanged.
 
 Hardware acceptance:
 
-- timed phases `4/4` PASS;
-- sleep elapsed `50 ms`;
-- timeout elapsed `50 ms`;
-- external UART event wake elapsed `164 ms`, event mask `0x00000001`;
-- timed RX byte/IRQ delta `26/26`;
-- timed host-MSP idle delta `2904`;
-- no double wake;
-- injected ring payload survived and produced exact `PONG`;
-- safe production surface `19/19`;
+- `schedprio` phase `1/1` PASS;
+- selector self-test exact `0x0000003F`;
+- task0 priority `128 -> 128` across rejected live mutation;
+- cooperative preempt-switch count `0`;
+- safe production surface `20/20`;
+- timed phases `4/4`;
+- sleep `50 ms`, timeout `50 ms`;
+- external UART event wake `171 ms`, event mask `0x00000001`;
+- timed RX delta `26`, timed host-idle delta `3004`;
 - invasive scheduler diagnostics `8/8` exact `SCHED_DIAG_BUSY`;
 - retained race regression `4 x 32`, `128/128 PONG`;
 - RX drops/errors/final depth `0/0/0`;
-- production PSP stack `580 used / 444 margin`, canary intact;
-- MSP `340 used / 1644 margin`, canary intact;
+- production PSP stack `580 used / 444 margin`;
+- MSP `340 used / 1644 margin`;
 - final Flash readback exact candidate;
-- automated OLED runtime restore PASS;
-- physical frozen OLED `DEUS OS / BOOT OK / READY` PASS.
+- automated OLED runtime restore PASS.
+
+Gate 4 physical OLED disposition:
+
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+
+OLED/gfx sources are byte-identical to C3.7 and no display behavior was changed.
 
 Accepted evidence:
 
-- build log SHA-256 `6B523A798B4C801B041D54C039064B8675B7AAD43A1766B6559084B370DF6D84`;
-- build evidence SHA-256 `431B01CD3CBC62E4EB7BD0718CCDFABA90F6B8511DCED3A9EB50069DA39D5199`;
-- hardware log SHA-256 `3B0BC09AA70F58974B77AE03F8AC754C871545E766851C16C1806487810E4769`;
-- hardware evidence SHA-256 `ACF91D141F3789A7F42556046574EA13585A9BC46F50DF95FDD948E5F51D8EF4`;
-- physical OLED token: `OLED PASS`.
+- build log SHA-256 `306AC5D97125F5BEFB4B2DB95E602ED8F6541E32CF364AA61ACD3D93A0E946D0`;
+- build evidence SHA-256 `33E699282A456B79A0F15C8B2B6DF756BAD5979867091863599575A851CEA000`;
+- hardware log SHA-256 `005D646FD613506896BC1A3961DDA752D9D424AD7F4AD0CFAAEE377C50E05222`;
+- hardware evidence SHA-256 `41665A892477FB195D00DD722A093F69B09AB2A66669EB872DDB7A3518EACC6C`.
 
 Current gate:
 
-**C3.7 Gate 5 — documentation/evidence finalization complete when this exact
+**C3.8 Gate 5 — documentation/evidence finalization complete when this exact
 document set passes its finalization harness.**
 
 Next:
 
 1. Gate 6 — local acceptance commit;
-2. Gate 7 — non-force fast-forward publication;
-3. after publication: scheduler priorities.
-
-Do not begin priorities before C3.7 publication completes.
+2. Gate 7 — ordinary non-force fast-forward publication.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.

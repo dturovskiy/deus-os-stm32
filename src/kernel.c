@@ -263,6 +263,7 @@ static void console_scheduler_console_probe_test(void);
 static void console_scheduler_isolation_test(void);
 static void console_scheduler_wait_wake_test(void);
 static void console_scheduler_timed_test(void);
+static void console_scheduler_priority_test(void);
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -2729,6 +2730,7 @@ static void console_production_scheduler_stats(void)
         scheduler_preempt_switch_count_get();
     uint32_t psp_in_range = 0u;
     uint32_t task0_state = 0xFFFFFFFFu;
+    uint32_t task0_priority = 0xFFFFFFFFu;
     uint32_t task0_wait_events = 0u;
     uint32_t task0_wake_events = 0u;
     uint32_t task1_state = 0xFFFFFFFFu;
@@ -2742,6 +2744,7 @@ static void console_production_scheduler_stats(void)
             (uint32_t)(uintptr_t)task0->stack_high;
 
         task0_state = (uint32_t)task0->state;
+        task0_priority = task0->priority;
         task0_wait_events = task0->wait_events;
         task0_wake_events = task0->wake_events;
 
@@ -2780,6 +2783,10 @@ static void console_production_scheduler_stats(void)
 
     uart_write("SCHED_PROD_TASK0_STATE=");
     uart_write_hex32(task0_state);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PROD_TASK0_PRIORITY=");
+    uart_write_hex32(task0_priority);
     uart_write("\r\n");
 
     uart_write("SCHED_PROD_TASK0_WAIT_EVENTS=");
@@ -2850,6 +2857,7 @@ static void console_production_scheduler_stats(void)
         (task0 != (const scheduler_task_t *)0) &&
         (task1 != (const scheduler_task_t *)0) &&
         (task0->state == SCHEDULER_TASK_READY) &&
+        (task0->priority == SCHEDULER_PRIORITY_DEFAULT) &&
         (task1->state == SCHEDULER_TASK_UNUSED) &&
         (capacity == PRODUCTION_CONSOLE_STACK_BYTES) &&
         (margin >= PRODUCTION_CONSOLE_MIN_MARGIN_BYTES) &&
@@ -2864,6 +2872,87 @@ static void console_production_scheduler_stats(void)
     else
     {
         uart_write_line("SCHED_PROD_ERR");
+    }
+}
+
+static void console_scheduler_priority_test(void)
+{
+    const scheduler_task_t *task0 = scheduler_task_get(0u);
+    uint32_t priority_before = 0xFFFFFFFFu;
+    uint32_t priority_after = 0xFFFFFFFFu;
+    uint32_t self_test;
+    int active_set_result;
+    int passed = 1;
+
+    if (task0 != (const scheduler_task_t *)0)
+    {
+        priority_before = task0->priority;
+    }
+
+    self_test = scheduler_priority_self_test();
+
+    active_set_result =
+        scheduler_task_priority_set(
+            0u,
+            SCHEDULER_PRIORITY_HIGHEST);
+
+    task0 = scheduler_task_get(0u);
+
+    if (task0 != (const scheduler_task_t *)0)
+    {
+        priority_after = task0->priority;
+    }
+
+    uart_write_line("SCHED_PRIO_POLICY=LOWER_VALUE_HIGHER");
+
+    uart_write("SCHED_PRIO_HIGHEST=");
+    uart_write_hex32(SCHEDULER_PRIORITY_HIGHEST);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PRIO_DEFAULT=");
+    uart_write_hex32(SCHEDULER_PRIORITY_DEFAULT);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PRIO_LOWEST=");
+    uart_write_hex32(SCHEDULER_PRIORITY_LOWEST);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PRIO_TASK0=");
+    uart_write_hex32(priority_after);
+    uart_write("\r\n");
+
+    uart_write("SCHED_PRIO_SELFTEST=");
+    uart_write_hex32(self_test);
+    uart_write("\r\n");
+
+    if (
+        (scheduler_is_active() != 0) &&
+        (active_set_result == 0) &&
+        (priority_before == SCHEDULER_PRIORITY_DEFAULT) &&
+        (priority_after == priority_before)
+    ) {
+        uart_write_line("SCHED_PRIO_ACTIVE_SET_REJECT_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_PRIO_ACTIVE_SET_REJECT_ERR");
+        passed = 0;
+    }
+
+    if (
+        (priority_after != SCHEDULER_PRIORITY_DEFAULT) ||
+        (self_test != 0x0000003Fu)
+    ) {
+        passed = 0;
+    }
+
+    if (passed != 0)
+    {
+        uart_write_line("SCHED_PRIO_OK");
+    }
+    else
+    {
+        uart_write_line("SCHED_PRIO_ERR");
     }
 }
 
@@ -3023,6 +3112,10 @@ static int console_execute_safe_named(const char *command)
     else if (text_equals(command, "schedtimed") != 0)
     {
         console_scheduler_timed_test();
+    }
+    else if (text_equals(command, "schedprio") != 0)
+    {
+        console_scheduler_priority_test();
     }
     else if (text_equals(command, "fault") != 0)
     {
@@ -3394,8 +3487,10 @@ void SysTick_Handler(void)
 void kernel_main(void)
 {
     const uint32_t core_clock_hz = clock_init();
+    const scheduler_task_t *task0;
     const scheduler_task_t *task1;
     int bind_result;
+    int priority_result;
     int prepare_result;
     int start_result;
 
@@ -3452,18 +3547,27 @@ void kernel_main(void)
             production_console_stack,
             PRODUCTION_CONSOLE_STACK_WORDS);
 
+    priority_result =
+        scheduler_task_priority_set(
+            0u,
+            SCHEDULER_PRIORITY_DEFAULT);
+
     prepare_result =
         scheduler_task_prepare(
             0u,
             production_console_task,
             (void *)&production_console_task_cookie);
 
+    task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
     if (
         (bind_result == 0) ||
+        (priority_result == 0) ||
         (prepare_result == 0) ||
+        (task0 == (const scheduler_task_t *)0) ||
         (task1 == (const scheduler_task_t *)0) ||
+        (task0->priority != SCHEDULER_PRIORITY_DEFAULT) ||
         (task1->state != SCHEDULER_TASK_UNUSED)
     ) {
         production_fail_closed(

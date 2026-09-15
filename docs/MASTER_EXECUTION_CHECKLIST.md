@@ -7,78 +7,76 @@ This section is authoritative.
 
 ### Published baseline
 
-- [x] `main` / `origin/main` / remote `main` = `33f15f1d23dfa31fabf9f2c83542a5f34046cde8`.
-- [x] parent tree = `a5447420a58b0aed7cd541069979fa665df40aa9`.
-- [x] parent subject = `feat: migrate normal boot to production scheduler ownership`.
+- [x] `main` / `origin/main` / remote `main` = `90df6a690230c9800c0d8497d5597f87a5ae0409`.
+- [x] parent tree = `c9e8cfd4bfa1dbbcc6d4d907b9c601c0d70fec59`.
+- [x] parent subject = `feat: add scheduler timed blocking foundation`.
 
-### C3.7 — timed blocking / sleep foundation
+### C3.8 — static fixed-priority scheduling
 
 Gate order:
 
 - [x] Gate 0 planning/docs synchronization.
 - [x] Gate 1 source implementation.
 - [x] Gate 2 fresh GNU build.
-- [x] Gate 3 hardware timed-blocking + retained scheduler regression.
-- [x] Gate 4 manual physical OLED acceptance (`OLED PASS`).
-- [x] Gate 5 documentation finalization + temporary-index commit-candidate check — this exact final document set.
+- [x] Gate 3 hardware priority + retained C3.7 regression.
+- [x] Gate 4 physical OLED = conditional N/A because UI source hashes are unchanged and automated restore passed.
+- [x] Gate 5 documentation/evidence finalization + temporary-index commit-candidate check — this exact final document set.
 - [ ] Gate 6 local acceptance commit.
 - [ ] Gate 7 non-force fast-forward push.
 
 Accepted candidate:
 
 ```text
-build\scheduler_timed_blocking_v1\os.bin
-bytes  = 22900
-SHA256 = 366D92BB36E021A3595ED5F35F78ADA05CA7989E11E295D60B126758801B5D3A
+build\scheduler_fixed_priority_v1\os.bin
+bytes  = 23792
+SHA256 = 492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F
 ```
 
 Accepted source identities:
 
 ```text
-include/kernel/scheduler.h = F1EF9AB65CF95C68872E09CDB91BAAF87F01D8EACC2F86B483577A75C5FCF547
-src/kernel/scheduler.c     = 90B53B43D53EB53A0BADC97DC5EEF3D2434A32A999F3940B01AE4B0F8129E618
-src/kernel.c               = 44056ABC0371E75DA242D68FBB530B90C56512C11916533982BD543BCF59ACEC
+include/kernel/scheduler.h = A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841
+src/kernel/scheduler.c     = B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88
+src/kernel.c               = 235813864C83E7E813A31288DBE45635AF9948213CC3352A039FC4AC31D82A8D
 ```
 
 Accepted invariants:
 
-- [x] one `SCHEDULER_TASK_BLOCKED`; no `SLEEPING` state.
-- [x] explicit `deadline_ms` + `deadline_active`.
-- [x] existing `kernel_ticks` is the only clock authority.
-- [x] scheduler receives `scheduler_tick(now_ms)`.
-- [x] scheduler time snapshot is not independently incremented/reset.
-- [x] max timeout horizon `0x7FFFFFFF ms`.
-- [x] `scheduler_sleep_ms()`.
-- [x] `scheduler_wait_events_timeout()`.
-- [x] SVC 4 timed block; SVC 0..3 retained.
-- [x] event wake cancels deadline atomically.
-- [x] timeout wake clears event wait atomically.
-- [x] first atomic BLOCKED->READY transition wins.
-- [x] timeout wake publishes READY before `SEV`.
-- [x] normal production console remains untimed drain-first wait.
-- [x] production-safe `schedtimed`.
-- [x] timed phases `4/4` hardware PASS.
-- [x] safe production commands `19/19`.
+- [x] static priority range `0..255`.
+- [x] lower numeric value means higher priority.
+- [x] default priority `128`.
+- [x] priority mutation rejected while scheduler active.
+- [x] stack bind/prepare preserve assigned priority.
+- [x] one shared READY selector owns all dispatch paths.
+- [x] equal-priority tie retains round-robin order.
+- [x] SVC0/cooperative/host/PendSV paths use shared policy.
+- [x] no new SVC; SVC 0..4 retained.
+- [x] cooperative production remains non-preemptive.
+- [x] task0 priority `128`; task1 UNUSED.
+- [x] `schedprio` self-test exact `0x0000003F`.
+- [x] active priority-set rejection hardware PASS.
+- [x] safe production commands `20/20`.
+- [x] timed blocking `4/4` retained.
 - [x] invasive diagnostics `8/8` BUSY.
-- [x] retained `4 x 32` / `128/128 PONG` regression.
+- [x] retained `4 x 32` / `128/128 PONG`.
 - [x] RX drops/errors/depth `0/0/0`.
 - [x] production margin `444`, MSP margin `1644`.
 - [x] final Flash identity exact.
-- [x] automated OLED restore + physical OLED PASS.
-- [x] priorities remain out of scope until publication.
+- [x] OLED runtime restore PASS.
+- [x] physical OLED Gate 4 = N/A by unchanged-source policy.
 
 Accepted evidence:
 
 ```text
-build log      6B523A798B4C801B041D54C039064B8675B7AAD43A1766B6559084B370DF6D84
-build evidence 431B01CD3CBC62E4EB7BD0718CCDFABA90F6B8511DCED3A9EB50069DA39D5199
-hardware log   3B0BC09AA70F58974B77AE03F8AC754C871545E766851C16C1806487810E4769
-hardware ev    ACF91D141F3789A7F42556046574EA13585A9BC46F50DF95FDD948E5F51D8EF4
+build log      306AC5D97125F5BEFB4B2DB95E602ED8F6541E32CF364AA61ACD3D93A0E946D0
+build evidence 33E699282A456B79A0F15C8B2B6DF756BAD5979867091863599575A851CEA000
+hardware log   005D646FD613506896BC1A3961DDA752D9D424AD7F4AD0CFAAEE377C50E05222
+hardware ev    41665A892477FB195D00DD722A093F69B09AB2A66669EB872DDB7A3518EACC6C
 ```
 
 Next gate:
 
-**C3.7 Gate 6 — local acceptance commit.**
+**C3.8 Gate 6 — local acceptance commit.**
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

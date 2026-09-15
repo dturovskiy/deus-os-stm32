@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **published parent `33f15f1d23dfa31fabf9f2c83542a5f34046cde8` plus hardware-accepted C3.7 timed blocking candidate awaiting commit/publication**
+Status: **published parent `90df6a690230c9800c0d8497d5597f87a5ae0409` plus hardware-accepted C3.8 fixed-priority candidate awaiting commit/publication**
 
 ## 1. Boot flow
 
@@ -465,3 +465,76 @@ Acceptance:
 
 Priorities, generic timer callbacks, tickless idle, timer task and additional
 production tasks remain outside C3.7.
+
+## C3.8 accepted fixed-priority architecture
+
+C3.8 changes READY selection only.
+
+```text
+READY set
+   |
+   +-- choose numerically smallest priority
+   |
+   +-- equal priority: round-robin order after previous task
+```
+
+Priority namespace:
+
+```text
+0   highest
+128 default
+255 lowest
+```
+
+Priority is a static TCB attribute. `scheduler_task_priority_set()` rejects
+mutation while the scheduler is active.
+
+The same selector remains authoritative for:
+
+- initial SVC0 task entry;
+- cooperative SVC scheduling;
+- host-MSP re-entry;
+- PendSV dispatch.
+
+Cooperative mode remains cooperative. Priority affects the next scheduling
+point; it does not create an asynchronous preemption point.
+
+Equal priorities preserve round-robin tie behavior. The existing diagnostic
+preemptive path also uses the same selector.
+
+Priority does not alter event delivery, deadline expiry, BLOCKED semantics,
+WFE idle, PRIMASK classification or task completion.
+
+Production topology remains slot0 console/runtime at priority 128 and slot1
+UNUSED.
+
+Accepted hardware candidate:
+
+```text
+23792 bytes
+492F149551F2E638801F8AF31B1B1C1F6723082FE6032E79F6C1CEDE7E79228F
+```
+
+Acceptance:
+
+- `schedprio` runtime phase `1/1`;
+- selector self-test `0x0000003F`;
+- active priority mutation rejected;
+- task0 priority unchanged `128 -> 128`;
+- cooperative preempt switches `0`;
+- safe surface `20/20`;
+- timed blocking `4/4`;
+- `8/8` invasive diagnostics BUSY;
+- retained `4 x 32`, `128/128 PONG`;
+- RX `0/0/0`;
+- production `580 used / 444 margin`;
+- MSP `340 used / 1644 margin`;
+- final Flash exact.
+
+OLED/gfx implementation is unchanged from C3.7 and automated runtime restore
+passed, therefore Gate 4 is recorded as:
+
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+
+Dynamic priority mutation, inheritance, aging, deadline scheduling and
+additional production tasks remain outside C3.8.
