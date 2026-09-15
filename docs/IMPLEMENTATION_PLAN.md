@@ -3,48 +3,51 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Current implementation checkpoint — 2026-09-15
 
-### Stage C3.8 — static fixed-priority scheduling — PUBLISHED
+### Stage C3.9 — production heartbeat task ownership — PUBLISHED
 
-Published commit: `0312bb376c365c0235b9cafe22e927254528f2c4`.
+Published commit:
 
-### Stage C3.9 — production heartbeat task ownership — HARDWARE ACCEPTED
+`39ea5b3d1b72fca8d15e22e7544870ab0704c274`
 
-Candidate:
+Published tree:
 
-`build\production_heartbeat_task_v1\os.bin`
+`c4016135374c8c6726a66736943d117f4583066e`
 
-`24648` bytes / `4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`.
+### Stage C4.0 — IWDG production liveness foundation — GATES 0–5 ACCEPTED
 
-Implemented:
+Accepted source candidate tree:
 
-```text
-task0  console/runtime  priority 128  stack 1024 B
-task1  PC13 heartbeat   priority 255  stack  512 B
-```
+`f8e879f815051d300eec728f2afe03c39222ca47`
 
-Task1 blocks through `scheduler_sleep_ms(500)`. SysTick now owns only
-`kernel_ticks` and `scheduler_tick()`. No IPC and no new SVC were added.
+Accepted firmware:
+
+`25192` bytes /
+`4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D`.
+
+Permanent accepted rules:
+
+- IWDG `/256`, reload `1249`, nominal approximately `8 s`;
+- sequence `START -> unlock -> PR/RLR -> wait PVU/RVU -> reload`;
+- no reload from SysTick, USART IRQ, any Handler path, or faults;
+- normal reloads only after concrete production Thread/PSP progress;
+- reset cause captured before reset flags are cleared;
+- destructive `wdogtrip` causes a real watchdog reboot;
+- no scheduler-core changes, no new SVC, no IPC, no OLED/status-bar changes.
 
 Hardware acceptance:
 
-- heartbeat count delta `7`;
-- PC13 transitions `5`, both ODR states;
-- heartbeat stack usage `80`, margin `432`;
-- console stack usage `616`, margin `408`;
-- priority self-test `0x0000003F`;
-- `20/20` safe commands;
-- timed blocking `4/4`;
-- `8/8` invasive commands blocked;
-- `128/128 PONG`;
-- RX `0/0/0`;
-- MSP margin `1644`;
-- final Flash exact.
+- normal reload `39 -> 50`;
+- watchdog reboot `7294 ms`;
+- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
+- post-reset heartbeat delta `3`;
+- safe `20/20`, timed `4/4`, BUSY `8/8`, UART `128/128`;
+- final Flash exact;
+- OLED Gate 4 conditional N/A.
 
-Gate 4:
+Next:
 
-`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
-
-Gate 6 local acceptance commit is next.
+**C4.0 Gate 6 — local acceptance commit.**
+<!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 
 Build a small, understandable, fast bare-metal operating system for STM32F103-class Cortex-M3 hardware while learning ARM/Thumb assembly, exception mechanics, scheduling, memory layout, drivers, and low-level performance.

@@ -1,6 +1,64 @@
 ## 2026-09-15
 
-### Accepted — C3.9 production heartbeat task ownership
+
+### Accepted — C4.0 IWDG production liveness foundation — publication pending
+
+Boundary:
+`IWDG_LIVENESS_FOUNDATION_C4_0`
+
+Published parent:
+`39ea5b3d1b72fca8d15e22e7544870ab0704c274` (`feat: add production heartbeat task`)
+
+Accepted candidate:
+
+```text
+build\iwdg_liveness_foundation_v2\os.bin
+25192 bytes
+4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D
+```
+
+Accepted architecture:
+
+- register-level STM32F103 IWDG on independent LSI;
+- prescaler `/256` (code `6`), reload `1249`, nominal approximately `8 s`;
+- repaired sequence `START -> unlock -> PR/RLR -> wait PVU/RVU -> reload`;
+- reset cause captured before reset flags are cleared;
+- watchdog starts immediately before normal scheduler ownership;
+- reload only from concrete Thread/PSP production progress;
+- SysTick/USART IRQ/Handler/fault paths never reload;
+- destructive `wdogtrip` never reloads;
+- no scheduler-core change, no new SVC, no IPC, no OLED/gfx/status-bar edit.
+
+Hardware proof:
+
+- normal reload count `39 -> 50`;
+- real IWDG reboot after `7294 ms`;
+- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
+- post-reset heartbeat delta `3`;
+- safe `20/20`, timed `4/4`, diagnostics `8/8 BUSY`;
+- UART race `128/128 PONG`;
+- task0 stack `604 used / 420 margin`;
+- task1 stack `80 used / 432 margin`;
+- MSP `348 used / 1636 margin`;
+- RX drop/error/depth `0/0/0`;
+- final Flash exact.
+
+OLED Gate 4:
+
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+
+Evidence:
+
+- build log `D7034BB4597EEF3C5CF1CA6025BAA148BCAD1F21D9534009EF242EAD334A0421`;
+- build evidence `96773CADE1440BA844FE1455E049109C4099318F57A8F906D7F28148471E5709`;
+- hardware log `6C613D31AEF61968021288F41EED3D28EE8B14DBB8C7A129B21636858676B2D9`;
+- hardware evidence `08410EF7BC5F330CF2D18BD7CEDF5E85D83FCD4A825C3D5BD0D0C1E4F7D24F66`;
+- Gate 4 disposition `3B69B950D80AB8402D873E02567BEF4976E846CC585EE680CCD852B4E96778AE`.
+
+Gates 0–5 are accepted. Next: Gate 6 local acceptance commit, then Gate 7
+ordinary non-force publication.
+
+### Published — C3.9 production heartbeat task ownership
 
 Status: hardware accepted; local acceptance commit and publication pending.
 

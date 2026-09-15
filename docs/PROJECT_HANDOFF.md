@@ -7,70 +7,91 @@
 
 `main`, `origin/main` and remote `main` remain synchronized at:
 
-`0312bb376c365c0235b9cafe22e927254528f2c4` — `feat: add fixed-priority scheduler policy`
+`39ea5b3d1b72fca8d15e22e7544870ab0704c274` — `feat: add production heartbeat task`
 
-Tree: `4789d9f4e2712fb3c0d7c9f926cd8b853c818e32`.
+Tree:
 
-### C3.9 accepted candidate
+`c4016135374c8c6726a66736943d117f4583066e`
 
-```text
-build\production_heartbeat_task_v1\os.bin
-24648 bytes
-4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86
-```
+C3.9 publication is complete.
 
-C3.9 Gates 0–5 are accepted.
+### C4.0 IWDG production liveness — GATES 0–5 ACCEPTED
 
-Production topology:
+Accepted source candidate tree:
 
-```text
-slot0  console/runtime   priority 128  PSP stack 1024 B
-slot1  PC13 heartbeat    priority 255  PSP stack  512 B
-host   Thread/MSP WFE when production tasks are blocked
-```
+`f8e879f815051d300eec728f2afe03c39222ca47`
 
-Ownership:
+Accepted firmware:
 
 ```text
-USART1 RX DR   USART1 IRQ only
-UART ring      IRQ producer / task0 consumer
-UART TX        task0 only
-OLED + I2C     task0 only
-PC13 runtime   task1 only
-kernel time    SysTick authority
-fatal PC13     out-of-band fault diagnostic only
+build\iwdg_liveness_foundation_v2\os.bin
+25192 bytes
+4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D
 ```
 
-Acceptance:
+Accepted watchdog policy:
 
 ```text
-heartbeat count       3 -> 10 (delta 7)
-PC13 transitions      5, both states
-task1 stack           80 used / 432 margin
-task0 stack           616 used / 408 margin
-priority self-test    0x0000003F
-task0 priority        128 -> 128
-task1 priority        255 -> 255
-preempt switches      0
-safe surface          20/20
-timed blocking        4/4
-diagnostic BUSY       8/8
-UART burst            4 x 32 = 128/128 PONG
-RX drop/error/depth   0/0/0
-MSP                    340 used / 1644 margin
-OLED Gate 4           N/A unchanged-source policy
-final Flash            exact
+IWDG clock                       independent LSI
+prescaler / reload               /256 / 1249
+nominal timeout                  approximately 8 s
+configuration order              START -> unlock -> PR/RLR -> wait -> reload
+SysTick / IRQ / Handler mode     never reload
+task0 Thread/PSP progress        may reload
+task1 heartbeat progress         may reload
+fatal fault                      never reload
+wdogtrip destructive loop        never reload
 ```
 
-OLED Gate 4:
+Hardware acceptance:
+
+```text
+normal reload                    39 -> 50
+wdogtrip reboot                  7294 ms
+post-reset flags                 0x24000000
+post-reset IWDG_RESET            1
+post-reset heartbeat             delta 3
+safe surface                     20/20
+timed blocking                   4/4
+diagnostic BUSY                  8/8
+UART race                        128/128 PONG
+task0 stack                      604 used / 420 margin
+task1 stack                      80 used / 432 margin
+MSP                              348 used / 1636 margin
+RX drop/error/depth              0/0/0
+final Flash                      exact
+OLED Gate 4                      N/A unchanged-source policy
+```
+
+Gate 4 exact disposition:
 
 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
-No IPC/synchronization primitive was introduced in C3.9.
+Evidence:
+
+```text
+build log      D7034BB4597EEF3C5CF1CA6025BAA148BCAD1F21D9534009EF242EAD334A0421
+build evidence 96773CADE1440BA844FE1455E049109C4099318F57A8F906D7F28148471E5709
+hardware log   6C613D31AEF61968021288F41EED3D28EE8B14DBB8C7A129B21636858676B2D9
+hardware ev    08410EF7BC5F330CF2D18BD7CEDF5E85D83FCD4A825C3D5BD0D0C1E4F7D24F66
+OLED Gate 4    3B69B950D80AB8402D873E02567BEF4976E846CC585EE680CCD852B4E96778AE
+```
+
+Source scope remains exactly:
+
+```text
+M  src/kernel.c
+A  src/drivers/iwdg.c
+A  include/drivers/iwdg.h
+```
+
+Scheduler core/header, time API, startup, linker and OLED/gfx/status-bar remain
+exact guards.
 
 Exact next gate:
 
-**C3.9 Gate 6 — local acceptance commit.**
+**C4.0 Gate 6 — local acceptance commit.**
+<!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 
 ```text

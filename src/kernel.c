@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "kernel/time.h"
 #include "drivers/ssd1306.h"
+#include "drivers/iwdg.h"
 #include "gfx/mono_fb.h"
 #include "gfx/font5x7.h"
 #include "gfx/text_renderer.h"
@@ -23,6 +24,7 @@
 #define RCC_APB2ENR     REG32(0x40021018u)
 #define RCC_APB1RSTR     REG32(0x40021010u)
 #define RCC_APB1ENR      REG32(0x4002101Cu)
+#define RCC_CSR          REG32(0x40021024u)
 
 #define RCC_HSEON       (1u << 16)
 #define RCC_HSERDY      (1u << 17)
@@ -41,6 +43,8 @@
 #define RCC_IOPAEN      (1u << 2)
 #define RCC_IOPCEN      (1u << 4)
 #define RCC_USART1EN    (1u << 14)
+#define RCC_CSR_RMVF     (1u << 24)
+#define RCC_CSR_IWDGRSTF (1u << 29)
 
 /* GPIOA / GPIOC */
 #define GPIOA_CRH       REG32(0x40010804u)
@@ -119,6 +123,9 @@
     (PRODUCTION_HEARTBEAT_STACK_WORDS * 4u)
 #define PRODUCTION_HEARTBEAT_MIN_MARGIN_BYTES 256u
 #define PRODUCTION_HEARTBEAT_PERIOD_MS 500u
+#define PRODUCTION_IWDG_PRESCALER IWDG_PRESCALER_DIV256
+#define PRODUCTION_IWDG_RELOAD 1249u
+#define PRODUCTION_IWDG_SPIN_LIMIT 1000000u
 #define SCHED_CONSOLE_PROBE_COMMAND_COUNT 17u
 #define SCHED_ISOLATION_DIAGNOSTIC_COUNT 7u
 #define PRODUCTION_UART_RX_EVENT         (1u << 0)
@@ -246,6 +253,10 @@ static volatile uint32_t production_heartbeat_task_started;
 static volatile uint32_t production_heartbeat_count;
 static volatile uint32_t production_heartbeat_led_on;
 static volatile uint32_t production_heartbeat_fault;
+static volatile uint32_t production_watchdog_active;
+static volatile uint32_t production_watchdog_reload_count;
+static uint32_t production_reset_flags;
+static uint32_t production_iwdg_reset;
 
 static volatile uint32_t scheduler_console_probe_task_started;
 static volatile uint32_t scheduler_console_probe_task_done;
@@ -293,6 +304,24 @@ int kernel_time_reached(kernel_time_ms_t now, kernel_time_ms_t deadline)
 int kernel_time_elapsed(kernel_time_ms_t start, kernel_time_ms_t duration)
 {
     return (kernel_time_ms_t)(kernel_time_now() - start) >= duration;
+}
+
+static void production_reset_cause_capture(void)
+{
+    production_reset_flags = RCC_CSR;
+    production_iwdg_reset =
+        ((production_reset_flags & RCC_CSR_IWDGRSTF) != 0u) ? 1u : 0u;
+
+    RCC_CSR |= RCC_CSR_RMVF;
+}
+
+static void production_watchdog_reload(void)
+{
+    if (production_watchdog_active != 0u)
+    {
+        iwdg_reload();
+        ++production_watchdog_reload_count;
+    }
 }
 
 static uint32_t clock_init(void)
@@ -3199,6 +3228,14 @@ static int console_execute_safe_named(const char *command)
         uart_write_hex32(kernel_time_now());
         uart_write(" PC13=");
         uart_write_hex32((GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
+        uart_write(" WDOG_ACTIVE=");
+        uart_write_hex32(production_watchdog_active);
+        uart_write(" WDOG_RELOAD_COUNT=");
+        uart_write_hex32(production_watchdog_reload_count);
+        uart_write(" RESET_FLAGS=");
+        uart_write_hex32(production_reset_flags);
+        uart_write(" IWDG_RESET=");
+        uart_write_hex32(production_iwdg_reset);
         uart_write("\r\n");
     }
     else if (text_equals(command, "rxstat") != 0)
@@ -3356,8 +3393,30 @@ static int console_execute_scheduler_diagnostic(const char *command)
     return 1;
 }
 
+static void console_watchdog_trip(void)
+{
+    if (production_watchdog_active == 0u)
+    {
+        uart_write_line("WDOG_TRIP_ERR_INACTIVE");
+        return;
+    }
+
+    uart_write_line("WDOG_TRIP_ARMED");
+
+    for (;;)
+    {
+        __asm volatile ("nop");
+    }
+}
+
 static void console_execute_named(const char *command)
 {
+    if (text_equals(command, "wdogtrip") != 0)
+    {
+        console_watchdog_trip();
+        return;
+    }
+
     if (console_execute_scheduler_diagnostic(command) != 0)
     {
         return;
@@ -3438,6 +3497,7 @@ static void production_console_task(void *argument)
     for (;;)
     {
         console_drain_rx();
+        production_watchdog_reload();
 
         ++production_console_wait_count;
 
@@ -3488,6 +3548,7 @@ static void production_heartbeat_task(void *argument)
         }
 
         ++production_heartbeat_count;
+        production_watchdog_reload();
     }
 }
 
@@ -3605,7 +3666,7 @@ void SysTick_Handler(void)
 
 void kernel_main(void)
 {
-    const uint32_t core_clock_hz = clock_init();
+    uint32_t core_clock_hz;
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
     int task0_bind_result;
@@ -3614,7 +3675,11 @@ void kernel_main(void)
     int task1_bind_result;
     int task1_priority_result;
     int task1_prepare_result;
+    int iwdg_start_result;
     int start_result;
+
+    production_reset_cause_capture();
+    core_clock_hz = clock_init();
 
     gpio_init();
     uart_init();
@@ -3675,6 +3740,9 @@ void kernel_main(void)
     production_heartbeat_led_on = 0u;
     production_heartbeat_fault = 0u;
 
+    production_watchdog_active = 0u;
+    production_watchdog_reload_count = 0u;
+
     task0_bind_result =
         scheduler_task_stack_bind(
             0u,
@@ -3730,6 +3798,22 @@ void kernel_main(void)
             "SCHED_PROD_PREPARE_ERR");
     }
 
+    iwdg_debug_freeze_enable();
+
+    iwdg_start_result =
+        iwdg_start(
+            PRODUCTION_IWDG_PRESCALER,
+            PRODUCTION_IWDG_RELOAD,
+            PRODUCTION_IWDG_SPIN_LIMIT);
+
+    if (iwdg_start_result == 0)
+    {
+        production_fail_closed(
+            "IWDG_START_ERR");
+    }
+
+    production_watchdog_active = 1u;
+    uart_write_line("IWDG_ACTIVE");
     uart_write_line("SCHED_PROD_PREPARE_OK");
     uart_write_line("SCHED_PROD_START");
 

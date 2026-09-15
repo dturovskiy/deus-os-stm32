@@ -3,48 +3,55 @@
 <!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 ## Accepted project state — 2026-09-15
 
-Published parent:
+Published baseline remains:
 
-`0312bb376c365c0235b9cafe22e927254528f2c4` — `feat: add fixed-priority scheduler policy`
+`39ea5b3d1b72fca8d15e22e7544870ab0704c274` — `feat: add production heartbeat task`
 
-C3.9 production heartbeat task ownership is **hardware accepted and awaiting local acceptance commit**.
+Published tree remains:
+
+`c4016135374c8c6726a66736943d117f4583066e`
+
+C4.0 — IWDG production liveness foundation — **GATES 0–5 ACCEPTED, PUBLICATION PENDING**
 
 Accepted candidate:
 
-- path: `build\production_heartbeat_task_v1\os.bin`
-- bytes: `24648`
-- SHA-256: `4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`
-- task0: console/runtime, priority `128`, stack `1024 B`
-- task1: PC13 heartbeat, priority `255`, stack `512 B`
-- heartbeat wait: `scheduler_sleep_ms(500)`
-- SysTick: kernel tick + `scheduler_tick()` only
-- IPC: none
-- new SVC: none
-
-Hardware acceptance:
-
-- heartbeat count `3 -> 10`, delta `7`
-- PC13 hardware transitions `5`, both ODR states observed
-- heartbeat task stack `80 used / 432 margin`, canary healthy
-- console task stack `616 used / 408 margin`, canary healthy
-- fixed-priority selector self-test exact `0x0000003F`
-- task0 priority `128 -> 128`
-- task1 priority `255 -> 255`
-- cooperative preempt switches `0`
-- safe production surface `20/20`
-- timed blocking `4/4`
-- invasive diagnostics `8/8 SCHED_DIAG_BUSY`
-- retained UART race regression `4 x 32 = 128/128 PONG`
-- RX drops/errors/depth `0/0/0`, high-water `7`
-- MSP `340 used / 1644 margin`, canary healthy
-- final Flash readback exact candidate
+- path: `build\iwdg_liveness_foundation_v2\os.bin`
+- bytes: `25192`
+- SHA-256: `4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D`
+- accepted source candidate tree: `f8e879f815051d300eec728f2afe03c39222ca47`
+- IWDG: STM32F103 independent watchdog / LSI
+- configuration: `/256`, reload `1249`, nominal approximately `8 s`
+- sequence: `START -> unlock -> PR/RLR -> wait -> reload`
+- reload policy: concrete Thread/PSP production progress only
+- Handler/SysTick/USART/fault reload: none
+- normal reload count: `39 -> 50`
+- deliberate watchdog reboot: `7294 ms`
+- post-reset flags: `0x24000000`
+- post-reset `IWDG_RESET=1`
+- post-reset heartbeat delta: `3`
+- safe surface: `20/20`
+- timed blocking: `4/4`
+- diagnostic BUSY: `8/8`
+- retained UART regression: `128/128 PONG`
+- task0 stack: `604 used / 420 margin`
+- task1 stack: `80 used / 432 margin`
+- MSP: `348 used / 1636 margin`
+- final Flash: exact
 - OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
-Gates 0–5 are accepted.
+The frozen OLED/status-bar UI remains byte-identical.
 
-Next gate:
+Canonical design:
 
-**C3.9 Gate 6 — local acceptance commit.**
+`docs/IWDG_LIVENESS_FOUNDATION_PLAN.md`
+
+Canonical acceptance plan:
+
+`docs/IWDG_LIVENESS_FOUNDATION_ACCEPTANCE_PLAN.md`
+
+Current gate:
+
+**C4.0 Gate 6 — local acceptance commit.**
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.

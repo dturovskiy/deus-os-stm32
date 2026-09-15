@@ -5,64 +5,77 @@
 
 This section is authoritative.
 
-### Published baseline — C3.8
+### Published baseline — C3.9
 
-- [x] `main` / `origin/main` / remote `main` = `0312bb376c365c0235b9cafe22e927254528f2c4`.
-- [x] published tree = `4789d9f4e2712fb3c0d7c9f926cd8b853c818e32`.
-- [x] subject = `feat: add fixed-priority scheduler policy`.
+- [x] `main` / `origin/main` / remote `main` = `39ea5b3d1b72fca8d15e22e7544870ab0704c274`.
+- [x] published tree = `c4016135374c8c6726a66736943d117f4583066e`.
+- [x] subject = `feat: add production heartbeat task`.
+- [x] C3.9 is fully published.
 
-### C3.9 — production heartbeat task ownership — GATES 0–5 ACCEPTED
+### C4.0 — IWDG production liveness foundation — GATES 0–5 ACCEPTED
 
 Boundary ID:
 
-`PRODUCTION_HEARTBEAT_TASK_OWNERSHIP_C3_9`
+`IWDG_LIVENESS_FOUNDATION_C4_0`
 
 Accepted candidate:
 
-`24648` bytes / `4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`.
+```text
+build\iwdg_liveness_foundation_v2\os.bin
+25192 bytes
+4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D
+```
 
-Gate status:
+Accepted source candidate tree:
+
+`f8e879f815051d300eec728f2afe03c39222ca47`
+
+Gate order:
 
 - [x] Gate 0 planning/docs synchronization.
-- [x] Gate 1 source implementation (`src/kernel.c` only).
+- [x] Gate 1 IWDG driver + production integration source.
 - [x] Gate 2 fresh GNU build validation.
-- [x] Gate 3 hardware two-production-task acceptance.
-- [x] Gate 4 physical OLED = conditional N/A.
+- [x] Gate 3 real hardware watchdog acceptance including deliberate reset.
+- [x] Gate 4 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
 - [x] Gate 5 documentation/evidence finalization.
-- [ ] Gate 6 local acceptance commit.
-- [ ] Gate 7 non-force fast-forward push.
+- [ ] Gate 6 local acceptance commit — **NEXT**.
+- [ ] Gate 7 ordinary non-force publication.
 
-Accepted runtime:
+Accepted architecture:
 
-- task0 console/runtime, priority `128`, stack `1024 B`;
-- task1 PC13 heartbeat, priority `255`, stack `512 B`;
-- task1 waits through `scheduler_sleep_ms(500)`;
-- normal-runtime PC13 owner = task1;
-- SysTick = kernel tick + `scheduler_tick()` only;
-- cooperative production, preempt switches `0`;
-- no IPC, no new SVC.
+- STM32F103 IWDG / independent LSI;
+- prescaler `/256` code `6`, reload `1249`, nominal approximately `8 s`;
+- `START -> unlock -> PR/RLR -> wait PVU/RVU -> reload`;
+- reset cause captured before reset flags are cleared;
+- reload only from task0/task1 Thread/PSP progress;
+- no Handler/SysTick/USART/fault reload;
+- safe surface remains `20`;
+- scheduler BUSY diagnostics remain `8`;
+- scheduler task count, priorities, SVC `0..4`, timed blocking and cooperative
+  production remain unchanged;
+- OLED/gfx/status-bar remain frozen.
 
-Acceptance record:
+Accepted hardware proof:
 
-- heartbeat count `3 -> 10`, delta `7`;
-- PC13 hardware transitions `5`, both ODR states;
-- heartbeat stack `80/512 used`, margin `432`;
-- console stack `616/1024 used`, margin `408`;
-- `schedprio` self-test exact `0x0000003F`;
-- task0 priority `128 -> 128`;
-- task1 priority `255 -> 255`;
-- safe surface `20/20`;
-- timed blocking `4/4`;
-- invasive diagnostics `8/8 BUSY`;
-- retained UART regression `4 x 32 = 128/128 PONG`;
-- RX drops/errors/depth `0/0/0`;
-- MSP `340 used / 1644 margin`;
-- final Flash exact;
-- OLED Gate 4 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+- normal IWDG reload `39 -> 50`;
+- destructive reboot after `7294 ms`;
+- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
+- post-reset heartbeat delta `3`;
+- safe `20/20`;
+- timed `4/4`;
+- BUSY `8/8`;
+- UART `128/128 PONG`;
+- priority self-test `0x0000003F`;
+- task0 stack `604 used / 420 margin`;
+- task1 stack `80 used / 432 margin`;
+- MSP `348 used / 1636 margin`;
+- final Flash exact.
 
-Exact next gate:
+Canonical design:
+`docs/IWDG_LIVENESS_FOUNDATION_PLAN.md`
 
-**C3.9 Gate 6 — local acceptance commit.**
+Canonical acceptance plan:
+`docs/IWDG_LIVENESS_FOUNDATION_ACCEPTANCE_PLAN.md`
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

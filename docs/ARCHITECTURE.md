@@ -1,6 +1,40 @@
 # Architecture
 
-Status: **published through C3.8 `0312bb376c365c0235b9cafe22e927254528f2c4`; C3.9 production heartbeat task hardware accepted, publication pending**
+Status: **published through C3.9 `39ea5b3d1b72fca8d15e22e7544870ab0704c274`; C4.0 IWDG liveness Gates 0–5 accepted, local commit next**
+
+## C4.0 accepted IWDG liveness record
+
+C4.0 acceptance record — Gates 0–5 accepted on 2026-09-15
+
+- boundary: `IWDG_LIVENESS_FOUNDATION_C4_0`;
+- published parent remains `39ea5b3d1b72fca8d15e22e7544870ab0704c274` until Gate 6/7;
+- accepted source candidate tree: `f8e879f815051d300eec728f2afe03c39222ca47`;
+- accepted firmware: `build\iwdg_liveness_foundation_v2\os.bin`,
+  `25192` bytes,
+  SHA-256 `4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D`;
+- STM32F103 IWDG uses LSI, prescaler `/256` (code `6`), reload `1249`,
+  nominal approximately `8 s` at 40 kHz;
+- repaired hardware sequence is `START -> unlock -> PR/RLR -> wait PVU/RVU -> reload`;
+- normal watchdog reload count progressed `39 -> 50`;
+- deliberate `wdogtrip` armed exactly and produced a real reboot after `7294 ms`;
+- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
+- post-reset heartbeat delta `3`;
+- safe production surface `20/20`;
+- scheduler BUSY diagnostics `8/8`;
+- retained UART race regression `4 x 32 = 128/128 PONG`;
+- fixed-priority self-test `0x0000003F`, task0 `128`, task1 `255`;
+- timed blocking remains `4/4`;
+- final production stack `604 used / 420 margin`;
+- heartbeat stack `80 used / 432 margin`;
+- MSP `348 used / 1636 margin`;
+- RX drop/error/depth `0/0/0`;
+- final Flash readback exactly matches the accepted candidate;
+- OLED/gfx/status-bar hashes remain unchanged and automated UI regression passes;
+- Gate 4:
+  `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
+- Gate 5 documentation/evidence finalization is accepted;
+- next gate: **C4.0 Gate 6 — local acceptance commit**.
+
 
 ## 1. Boot flow
 
@@ -642,3 +676,60 @@ OLED Gate 4 is:
 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
 The next repository mutation after Gate 5 is one local C3.9 acceptance commit.
+
+
+## C4.0 planned IWDG production liveness architecture
+
+C4.0 adds a hardware-independent-clock watchdog without changing scheduler
+policy or task topology.
+
+```text
+                      +---------------------+
+task0 progress ------>|                     |
+                      | liveness reload     |----> IWDG reload key
+task1 heartbeat ----->| policy (Thread/PSP) |
+                      +---------------------+
+                                |
+                                X  never from Handler mode
+
+SysTick -------------------------------> kernel time / scheduler tick only
+USART1 IRQ ----------------------------> RX ring / event only
+fault path ----------------------------> no watchdog reload
+wdogtrip task0 loop -------------------> no watchdog reload -> IWDG reset
+```
+
+The watchdog uses STM32F103 IWDG and its independent LSI clock domain. It does
+not use `kernel_ticks` as watchdog clock authority and it does not create a
+kernel timer callback.
+
+Normal reload policy is intentionally simple for the first watchdog slice:
+
+- task0 may reload after a confirmed production console/runtime progress point;
+- task1 may reload after a successful 500 ms sleep and heartbeat transition;
+- no interrupt, exception, SysTick, fault path, or idle loop reloads IWDG.
+
+This creates a system-execution watchdog. If production Thread/PSP execution
+stops making progress, IWDG is allowed to expire.
+
+A failure of one task while another continues is still diagnosed by existing
+task-specific production telemetry; C4.0 does not claim per-task quorum
+watchdog semantics.
+
+Boot/reset ownership:
+
+1. capture RCC reset flags before clearing them;
+2. retain the captured flags in normal initialized kernel state;
+3. clear hardware reset flags for the next reset cycle;
+4. expose reset evidence through existing `health`;
+5. start IWDG only after production tasks are configured and immediately before
+   steady-state scheduler start.
+
+A destructive `wdogtrip` diagnostic intentionally parks task0 without further
+reload. In cooperative production this prevents task1 from running, so the
+hardware watchdog must reset the MCU. After reboot, `health` must report that
+the captured reset cause contains the IWDG reset flag.
+
+The existing 20-command safe surface is unchanged. `wdogtrip` is destructive
+and outside that safe set.
+
+OLED/status-bar ownership and geometry remain frozen.

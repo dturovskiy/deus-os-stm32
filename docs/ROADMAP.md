@@ -3,41 +3,46 @@
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 ## Current roadmap checkpoint — 2026-09-15
 
-### C3.8 fixed-priority scheduling — PUBLISHED
+### C3.9 production heartbeat task ownership — PUBLISHED
 
-- [x] `0312bb376c365c0235b9cafe22e927254528f2c4` published and synchronized.
+- [x] commit `39ea5b3d1b72fca8d15e22e7544870ab0704c274`;
+- [x] tree `c4016135374c8c6726a66736943d117f4583066e`;
+- [x] ordinary non-force publication complete.
 
-### C3.9 production heartbeat task ownership — ACCEPTED, PUBLICATION PENDING
+### C4.0 IWDG production liveness foundation — ACCEPTED, PUBLICATION PENDING
 
 - [x] planning/docs synchronization;
-- [x] `src/kernel.c` implementation only;
-- [x] task1 stack `512 B`, priority `255`;
-- [x] heartbeat moved from SysTick to `scheduler_sleep_ms(500)` task;
-- [x] SysTick heartbeat GPIO policy removed;
-- [x] production telemetry extended;
+- [x] minimal register-level IWDG driver;
+- [x] boot reset-cause capture before reset-flag clear;
+- [x] prescaler `/256`, reload `1249`, nominal approximately `8 s`;
+- [x] corrected `START -> unlock -> PR/RLR -> wait -> reload` sequence;
+- [x] Thread/PSP-only reload policy;
+- [x] no SysTick/IRQ/fault reload path;
+- [x] existing `health` watchdog/reset telemetry;
+- [x] destructive `wdogtrip` real hardware reset proof;
+- [x] safe surface remains `20/20`;
+- [x] scheduler BUSY diagnostics remain `8/8`;
 - [x] fresh GNU validation;
-- [x] real two-task hardware acceptance;
-- [x] heartbeat count delta `7`;
-- [x] PC13 hardware transitions `5`, both ODR states;
-- [x] safe `20/20`, timed `4/4`, BUSY `8/8`, `128/128 PONG`;
+- [x] real watchdog-expiry/reboot hardware acceptance;
+- [x] retained scheduler/UART/timed/OLED regression;
 - [x] OLED Gate 4 conditional N/A;
-- [x] documentation/evidence finalization;
-- [ ] local acceptance commit;
+- [x] docs/evidence finalization;
+- [ ] local acceptance commit — **NEXT**;
 - [ ] ordinary non-force publication.
 
 Accepted candidate:
 
-`24648` bytes /
-`4DA8EBCA998D81F4AA2BDAB9990AB5A62A9A83D8B2081940E701E94D10932A86`.
+`25192` bytes /
+`4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D`.
 
-### Sequence after C3.9 publication
+### Phase 4 ordering constraint
 
-1. keep the current stable status-bar/UI frozen until its dedicated UI slice;
-2. introduce IPC only when a later responsibility actually requires cross-task
-   data ownership;
-3. consider a dedicated display task only with an explicit OLED/I2C ownership
-   and message model;
-4. generic timer callbacks only when a real consumer requires them.
+Generic timer callbacks remain deferred until a real consumer requires them.
+Message queues and synchronization remain deferred until a real cross-task
+ownership boundary requires them. Runtime statistics remain a later
+observability slice. The frozen OLED/status-bar remains unchanged until its
+dedicated UI slice.
+
 ## Phase 0 - Boot baseline
 
 - [x] ARM GNU toolchain
@@ -84,7 +89,7 @@ Accepted candidate:
 - [ ] Timers
 - [ ] Message queues
 - [ ] Synchronization primitives
-- [ ] Watchdog integration
+- [x] Watchdog integration
 - [ ] Runtime statistics
 
 ## Phase 5 - Networking
