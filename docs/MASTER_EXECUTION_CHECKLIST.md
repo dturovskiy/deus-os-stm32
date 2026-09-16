@@ -1,81 +1,72 @@
 > [!IMPORTANT]
 
 <!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
-## Current execution state — 2026-09-15
+## Current execution state — 2026-09-16
 
 This section is authoritative.
 
-### Published baseline — C3.9
+### Published baseline — C4.0
 
-- [x] `main` / `origin/main` / remote `main` = `39ea5b3d1b72fca8d15e22e7544870ab0704c274`.
-- [x] published tree = `c4016135374c8c6726a66736943d117f4583066e`.
-- [x] subject = `feat: add production heartbeat task`.
-- [x] C3.9 is fully published.
+- [x] `main` / `origin/main` / remote `main` = `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`.
+- [x] published tree = `e024d425e97f878c170ccfc41f0505dce79277a3`.
+- [x] subject = `feat: add IWDG liveness foundation`.
+- [x] final published repo state = clean, ahead/behind `0/0`.
 
-### C4.0 — IWDG production liveness foundation — GATES 0–5 ACCEPTED
+### Current boundary — Native USB Device core foundation
 
 Boundary ID:
 
-`IWDG_LIVENESS_FOUNDATION_C4_0`
+`NATIVE_USB_DEVICE_CORE_FOUNDATION`
 
 Accepted candidate:
 
-```text
-build\iwdg_liveness_foundation_v2\os.bin
-25192 bytes
-4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D
-```
+- tree `4b798382ef843ef8f488115624d48c0cd1506c75`;
+- `43812` bytes;
+- SHA-256 `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`.
 
-Accepted source candidate tree:
+Accepted hardware facts:
 
-`f8e879f815051d300eec728f2afe03c39222ca47`
+- USB identity `1209:000A`, private development/testing only;
+- exact device/configuration descriptors through host EP0 control transfers;
+- addressed state proven on initial enumeration and after reconnect;
+- physical disconnect/reconnect recovers without reflashing;
+- destructive IWDG reboot recovers UART and USB;
+- safe surface `20/20` before and after IWDG;
+- timed event path PASS with controlled UART RX event;
+- scheduler invasive diagnostics `8/8 BUSY`;
+- UART race `128/128 PONG`;
+- final Flash exact;
+- OLED Gate 4 = `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
 
 Gate order:
 
 - [x] Gate 0 planning/docs synchronization.
-- [x] Gate 1 IWDG driver + production integration source.
-- [x] Gate 2 fresh GNU build validation.
-- [x] Gate 3 real hardware watchdog acceptance including deliberate reset.
-- [x] Gate 4 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
-- [x] Gate 5 documentation/evidence finalization.
-- [ ] Gate 6 local acceptance commit — **NEXT**.
+- [x] Gate 1 source implementation and USB identity policy.
+- [x] Gate 2 fresh GNU build/link validation.
+- [x] Gate 3 real USB hardware/enumeration acceptance.
+- [x] Gate 4 OLED conditional N/A review.
+- [x] Gate 5 docs/evidence finalization.
+- [ ] Gate 6 local acceptance commit — **CURRENT**.
 - [ ] Gate 7 ordinary non-force publication.
 
-Accepted architecture:
+Permanent constraints retained:
 
-- STM32F103 IWDG / independent LSI;
-- prescaler `/256` code `6`, reload `1249`, nominal approximately `8 s`;
-- `START -> unlock -> PR/RLR -> wait PVU/RVU -> reload`;
-- reset cause captured before reset flags are cleared;
-- reload only from task0/task1 Thread/PSP progress;
-- no Handler/SysTick/USART/fault reload;
-- safe surface remains `20`;
-- scheduler BUSY diagnostics remain `8`;
-- scheduler task count, priorities, SVC `0..4`, timed blocking and cooperative
-  production remain unchanged;
+- direct-register bare metal; no HAL/Arduino/FreeRTOS;
+- CDC ACM is not part of this core boundary;
+- UART remains emergency diagnostics;
+- ST-LINK remains recovery/debug;
+- no dual ST-LINK 3.3 V + micro-USB VBUS powering;
+- IWDG reload remains Thread/PSP production-progress owned;
+- generic timers, IPC/queues/synchronization and runtime statistics remain deferred;
 - OLED/gfx/status-bar remain frozen.
 
-Accepted hardware proof:
-
-- normal IWDG reload `39 -> 50`;
-- destructive reboot after `7294 ms`;
-- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
-- post-reset heartbeat delta `3`;
-- safe `20/20`;
-- timed `4/4`;
-- BUSY `8/8`;
-- UART `128/128 PONG`;
-- priority self-test `0x0000003F`;
-- task0 stack `604 used / 420 margin`;
-- task1 stack `80 used / 432 margin`;
-- MSP `348 used / 1636 margin`;
-- final Flash exact.
-
 Canonical design:
-`docs/IWDG_LIVENESS_FOUNDATION_PLAN.md`
+`docs/NATIVE_USB_DEVICE_CORE_PLAN.md`
 
 Canonical acceptance plan:
-`docs/IWDG_LIVENESS_FOUNDATION_ACCEPTANCE_PLAN.md`
+`docs/NATIVE_USB_DEVICE_CORE_ACCEPTANCE_PLAN.md`
+
+After Gate 7 publication, the next architecture boundary is the **USB CDC ACM diagnostic/command console**.
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

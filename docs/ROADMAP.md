@@ -1,39 +1,45 @@
 # Roadmap
 
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
-## Current roadmap checkpoint — 2026-09-15
+## Current roadmap checkpoint — 2026-09-16
 
-### C3.9 production heartbeat task ownership — PUBLISHED
+### C4.0 IWDG production liveness foundation — PUBLISHED
 
-- [x] commit `39ea5b3d1b72fca8d15e22e7544870ab0704c274`;
-- [x] tree `c4016135374c8c6726a66736943d117f4583066e`;
-- [x] ordinary non-force publication complete.
+- [x] commit `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`;
+- [x] tree `e024d425e97f878c170ccfc41f0505dce79277a3`;
+- [x] ordinary non-force publication complete;
+- [x] local/remote ahead-behind `0/0`.
 
-### C4.0 IWDG production liveness foundation — ACCEPTED, PUBLICATION PENDING
+### Native USB Device core foundation — GATES 0–5 ACCEPTED
 
-- [x] planning/docs synchronization;
-- [x] minimal register-level IWDG driver;
-- [x] boot reset-cause capture before reset-flag clear;
-- [x] prescaler `/256`, reload `1249`, nominal approximately `8 s`;
-- [x] corrected `START -> unlock -> PR/RLR -> wait -> reload` sequence;
-- [x] Thread/PSP-only reload policy;
-- [x] no SysTick/IRQ/fault reload path;
-- [x] existing `health` watchdog/reset telemetry;
-- [x] destructive `wdogtrip` real hardware reset proof;
-- [x] safe surface remains `20/20`;
-- [x] scheduler BUSY diagnostics remain `8/8`;
-- [x] fresh GNU validation;
-- [x] real watchdog-expiry/reboot hardware acceptance;
-- [x] retained scheduler/UART/timed/OLED regression;
+Boundary:
+
+`NATIVE_USB_DEVICE_CORE_FOUNDATION`
+
+Roadmap target:
+
+- [x] minimal STM32F103 USB Device core on PA11/PA12, direct-register, no HAL;
+- [x] valid 48 MHz USB clock with accepted 72 MHz SYSCLK preserved;
+- [x] USB reset / low-priority IRQ ownership;
+- [x] PMA / BTABLE ownership;
+- [x] endpoint 0 control-transfer state machine;
+- [x] centralized private-development descriptor identity `1209:000A`;
+- [x] minimal host enumeration/address proof;
+- [x] physical disconnect/reconnect recovery without reflashing;
+- [x] retained UART/ST-LINK recovery paths;
+- [x] retained IWDG/scheduler/timed/priority/heartbeat regression;
 - [x] OLED Gate 4 conditional N/A;
 - [x] docs/evidence finalization;
-- [ ] local acceptance commit — **NEXT**;
+- [ ] local acceptance commit — **CURRENT**;
 - [ ] ordinary non-force publication.
 
 Accepted candidate:
 
-`25192` bytes /
-`4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D`.
+`43812` bytes /
+`1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6` /
+tree `4b798382ef843ef8f488115624d48c0cd1506c75`.
+
+CDC ACM remains the **next USB class/transport slice after this core is published**.
 
 ### Phase 4 ordering constraint
 

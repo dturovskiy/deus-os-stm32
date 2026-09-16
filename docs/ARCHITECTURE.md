@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **published through C3.9 `39ea5b3d1b72fca8d15e22e7544870ab0704c274`; C4.0 IWDG liveness Gates 0–5 accepted, local commit next**
+Status: **published through C4.0 `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`; native USB Device core Gates 0–5 accepted, local acceptance commit pending**
 
 ## C4.0 accepted IWDG liveness record
 
@@ -33,8 +33,83 @@ C4.0 acceptance record — Gates 0–5 accepted on 2026-09-15
 - Gate 4:
   `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
 - Gate 5 documentation/evidence finalization is accepted;
-- next gate: **C4.0 Gate 6 — local acceptance commit**.
+- C4.0 publication is complete; next boundary: **`NATIVE_USB_DEVICE_CORE_FOUNDATION`**.
 
+
+## Native USB Device core foundation — accepted through Gate 5
+
+Boundary:
+`NATIVE_USB_DEVICE_CORE_FOUNDATION`
+
+Accepted candidate:
+
+- source tree `4b798382ef843ef8f488115624d48c0cd1506c75`;
+- binary `43812` bytes;
+- SHA-256 `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`.
+
+Accepted USB architecture and proof:
+
+- direct-register STM32F103 USB FS Device on PA11/PA12;
+- system clock remains 72 MHz; `USBPRE=0` derives 48 MHz USB clock;
+- IRQ20 `USB_LP_CAN1_RX0` owns USB peripheral servicing;
+- BTABLE local `0x000`, EP0 TX `0x040`, EP0 RX `0x080`, MPS `64`;
+- exact device/config descriptors are returned through EP0 control transfers;
+- delayed address programming occurs after SET_ADDRESS status IN;
+- Windows addressed the device (`20`, then `21` after reconnect);
+- configuration `0` is accepted for the vendor-specific/no-client-driver core foundation;
+- three host enumeration/control-transfer proofs completed, including physical reconnect and post-IWDG recovery;
+- development identity `1209:000A` is private-test-only;
+- no CDC ACM/data endpoints, new task, SVC, IPC, generic timer subsystem, runtime-statistics subsystem or OLED edit;
+- retained scheduler/UART/IWDG regressions passed and final Flash identity is exact;
+- OLED Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+
+The roadmap transport sequence is authoritative:
+
+```text
+minimal USB Device core
+    -> CDC ACM console
+    -> shell/RPC
+    -> binary transport
+    -> host control/update tooling
+```
+
+This boundary is the **core only**.
+
+Layering:
+
+```text
+future CDC / transport-neutral services
+                |
+        USB device core policy
+                |
+      EP0 control-transfer state
+                |
+        endpoint / PMA ownership
+                |
+ STM32F103 USB FS peripheral / IRQ
+                |
+        PA11 DM / PA12 DP
+```
+
+Rules:
+
+- direct registers; no HAL/Arduino/FreeRTOS;
+- accepted 72 MHz system clock remains unchanged;
+- USB receives a valid 48 MHz clock derived from the accepted clock tree;
+- USB device IRQ publishes hardware state into the USB core; it does not own
+  unrelated scheduler/application policy;
+- PMA/BTABLE and endpoint ownership are explicit and bounded;
+- endpoint 0 handles standard control requests required for enumeration;
+- USB descriptor identity is centralized;
+- do not embed an arbitrary third-party VID/PID;
+- CDC ACM is a later slice;
+- UART remains emergency diagnostics;
+- ST-LINK remains recovery/debug;
+- IWDG reload ownership stays Thread/PSP-only and is not moved into USB IRQ;
+- OLED/gfx/status-bar remain unchanged.
+
+Power rule:
+when micro-USB VBUS powers the board, ST-LINK 3.3 V supply must be disconnected.
 
 ## 1. Boot flow
 

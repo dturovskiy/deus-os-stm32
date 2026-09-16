@@ -2,6 +2,7 @@
 #include "kernel/time.h"
 #include "drivers/ssd1306.h"
 #include "drivers/iwdg.h"
+#include "drivers/usb_device.h"
 #include "gfx/mono_fb.h"
 #include "gfx/font5x7.h"
 #include "gfx/text_renderer.h"
@@ -39,6 +40,7 @@
 #define RCC_ADCPRE_DIV6 (0x2u << 14)
 #define RCC_PLLSRC_HSE  (1u << 16)
 #define RCC_PLLMUL_X9   (0x7u << 18)
+#define RCC_USBPRE      (1u << 22)
 
 #define RCC_IOPAEN      (1u << 2)
 #define RCC_IOPCEN      (1u << 4)
@@ -348,6 +350,12 @@ static uint32_t clock_init(void)
     while ((RCC_CFGR & RCC_SWS_MASK) != RCC_SWS_PLL)
     {
     }
+
+    /*
+     * STM32F103 USB FS requires 48 MHz. With the accepted 72 MHz PLL,
+     * USBPRE=0 selects PLLCLK/1.5 = 48 MHz before USBEN is asserted.
+     */
+    RCC_CFGR &= ~RCC_USBPRE;
 
     return 72000000u;
 }
@@ -3691,6 +3699,12 @@ void kernel_main(void)
         SSD1306_HEIGHT);
     oled_console_init(&oled_console_state);
     faults_init();
+    if (usb_device_init(core_clock_hz) == 0)
+    {
+        production_fail_closed(
+            "USB_CORE_INIT_ERR");
+    }
+
     systick_init(core_clock_hz);
 
     uart_boot_banner(core_clock_hz);

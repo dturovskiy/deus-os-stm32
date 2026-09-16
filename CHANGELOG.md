@@ -1,5 +1,104 @@
+## 2026-09-16
+
+### Accepted — Native STM32F103 USB Device core foundation — local commit pending
+
+Boundary:
+`NATIVE_USB_DEVICE_CORE_FOUNDATION`
+
+Accepted candidate:
+
+- source tree `4b798382ef843ef8f488115624d48c0cd1506c75`;
+- binary `43812` bytes;
+- SHA-256 `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`.
+
+Accepted architecture:
+
+- direct-register STM32F103 USB FS Device on PA11/PA12;
+- accepted 72 MHz SYSCLK retained; RCC `USBPRE=0` gives 48 MHz USB clock;
+- IRQ20 `USB_LP_CAN1_RX0`;
+- explicit BTABLE/PMA/EP0 ownership;
+- bounded standard-control request engine with delayed `SET_ADDRESS` semantics;
+- development identity `VID 0x1209 / PID 0x000A`, private testing only;
+- minimal vendor-specific interface with no non-control endpoints;
+- no CDC ACM, new task, SVC, IPC, generic timer subsystem, runtime-statistics subsystem or OLED change.
+
+Hardware proof:
+
+- exact device/configuration descriptors read by Windows through EP0 control transfers;
+- initial addressed state `20`, physical reconnect addressed state `21`;
+- physical disconnect/reconnect recovered without reflashing;
+- post-IWDG USB recovery passed;
+- destructive IWDG reboot `8748 ms`, post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
+- safe surface pre/post `20/20`;
+- timed event controlled RX wake `34 ms` pre-IWDG and `35 ms` post-IWDG;
+- invasive scheduler diagnostics `8/8 BUSY`;
+- UART race `128/128 PONG`, zero RX drops/errors;
+- final Flash readback exact.
+
+OLED Gate 4:
+
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+
+Evidence:
+
+- Gate 2 build evidence `5E261F473EA48CAA7ABD2B080E22732D95EEEA24BEA76349A4A10E66088FC81F`;
+- Gate 3 hardware log `F612D710A6029ADACD0AE51BF5F85B2F5983F22003A6C09787C99045C520ECEC`;
+- Gate 3 hardware evidence `14E7751AFBACEED96DF5816B81969AB33C499FAF182F19BBA89A22A21E2C6B43`;
+- Gate 4 disposition `FCC6B971D7CCBDDA7866CBD92B56D33955D328EF1D368690B132E06A6801F676`.
+
+Gates 0–5 are accepted. Next: Gate 6 local acceptance commit, then Gate 7 ordinary non-force publication.
+
 ## 2026-09-15
 
+
+### Published — C4.0 IWDG production liveness foundation
+
+Published commit:
+`3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`
+
+Published tree:
+`e024d425e97f878c170ccfc41f0505dce79277a3`
+
+Subject:
+`feat: add IWDG liveness foundation`
+
+Accepted firmware:
+`25192` bytes /
+`4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D`.
+
+Publication:
+ordinary non-force fast-forward; local/remote ahead-behind `0/0`.
+
+### Planned — Native STM32F103 USB Device core foundation
+
+Boundary:
+`NATIVE_USB_DEVICE_CORE_FOUNDATION`
+
+Roadmap basis:
+
+- minimal STM32F103 USB Device core on PA11/PA12 comes before CDC ACM;
+- CDC ACM remains the next class/transport slice after the core;
+- generic timer callbacks remain deferred until a real consumer;
+- queues/synchronization remain deferred until a real shared-ownership boundary;
+- runtime statistics remain a later observability slice;
+- OLED/status-bar remains frozen.
+
+Initial core scope:
+
+- direct-register USB FS device support, no HAL;
+- preserve 72 MHz SYSCLK and derive the required USB 48 MHz clock;
+- USB reset + low-priority interrupt ownership;
+- PMA/BTABLE foundation;
+- endpoint 0 control-transfer state machine;
+- standard control requests needed for minimal enumeration;
+- centralized USB descriptor identity with no arbitrary third-party VID/PID;
+- UART/ST-LINK recovery paths retained.
+
+Power constraint:
+during native USB hardware testing, do not power the board simultaneously from
+ST-LINK 3.3 V and micro-USB VBUS.
+
+No source implementation is authorized by this planning gate.
 
 ### Accepted — C4.0 IWDG production liveness foundation — publication pending
 

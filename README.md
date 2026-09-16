@@ -1,57 +1,58 @@
 # STM32 OS
 
 <!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_14 -->
-## Accepted project state — 2026-09-15
+## Accepted project state — 2026-09-16
 
 Published baseline remains:
 
-`39ea5b3d1b72fca8d15e22e7544870ab0704c274` — `feat: add production heartbeat task`
+`3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca` — `feat: add IWDG liveness foundation`
 
-Published tree remains:
+Published tree:
 
-`c4016135374c8c6726a66736943d117f4583066e`
+`e024d425e97f878c170ccfc41f0505dce79277a3`
 
-C4.0 — IWDG production liveness foundation — **GATES 0–5 ACCEPTED, PUBLICATION PENDING**
+Native STM32F103 USB Device core foundation — **GATES 0–5 ACCEPTED / LOCAL COMMIT PENDING**
+
+Boundary:
+
+`NATIVE_USB_DEVICE_CORE_FOUNDATION`
 
 Accepted candidate:
 
-- path: `build\iwdg_liveness_foundation_v2\os.bin`
-- bytes: `25192`
-- SHA-256: `4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D`
-- accepted source candidate tree: `f8e879f815051d300eec728f2afe03c39222ca47`
-- IWDG: STM32F103 independent watchdog / LSI
-- configuration: `/256`, reload `1249`, nominal approximately `8 s`
-- sequence: `START -> unlock -> PR/RLR -> wait -> reload`
-- reload policy: concrete Thread/PSP production progress only
-- Handler/SysTick/USART/fault reload: none
-- normal reload count: `39 -> 50`
-- deliberate watchdog reboot: `7294 ms`
-- post-reset flags: `0x24000000`
-- post-reset `IWDG_RESET=1`
-- post-reset heartbeat delta: `3`
-- safe surface: `20/20`
-- timed blocking: `4/4`
-- diagnostic BUSY: `8/8`
-- retained UART regression: `128/128 PONG`
-- task0 stack: `604 used / 420 margin`
-- task1 stack: `80 used / 432 margin`
-- MSP: `348 used / 1636 margin`
-- final Flash: exact
-- OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+- source candidate tree: `4b798382ef843ef8f488115624d48c0cd1506c75`;
+- binary: `43812` bytes;
+- SHA-256: `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`;
+- direct-register STM32F103 USB FS Device core on PA11/PA12;
+- accepted 72 MHz SYSCLK retained, `USBPRE=0` gives 48 MHz USB clock from PLL /1.5;
+- EP0/PMA/BTABLE ownership and delayed `SET_ADDRESS` implemented;
+- development identity: VID `0x1209`, PID `0x000A`, private testing only;
+- no CDC ACM data transport in this boundary.
 
-The frozen OLED/status-bar UI remains byte-identical.
+Hardware acceptance:
 
-Canonical design:
+- host obtained exact device and configuration descriptors through EP0 control transfers;
+- initial enumeration: address `20`, configuration `0`;
+- physical micro-USB disconnect/reconnect recovered without reflashing at address `21`;
+- destructive IWDG reset recovered UART and USB; reboot observed after `8748 ms`;
+- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
+- USB proof completed in three sessions;
+- safe production surface `20/20` before and after IWDG;
+- timed event wake PASS with controlled UART RX event;
+- invasive scheduler diagnostics `8/8` exact BUSY;
+- UART race `128/128 PONG`, zero RX drops/errors;
+- final Flash readback exactly matched the accepted candidate while USB VBUS remained the sole target power source.
 
-`docs/IWDG_LIVENESS_FOUNDATION_PLAN.md`
+OLED Gate 4:
 
-Canonical acceptance plan:
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
-`docs/IWDG_LIVENESS_FOUNDATION_ACCEPTANCE_PLAN.md`
+Gate 5 docs/evidence finalization is accepted. No build/flash/commit/push occurred in Gate 5.
 
-Current gate:
+Next gate:
 
-**C4.0 Gate 6 — local acceptance commit.**
+**Gate 6 — local acceptance commit.**
+
+After publication, the next architecture slice is **USB CDC ACM diagnostic/command console**.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.
@@ -95,7 +96,8 @@ Built locally:
 - [x] `uptime` kernel introspection command
 - [x] `health` automated SysTick/PC13 regression command
 - [x] `fault` read-only fault diagnostics / SCB register dump command
-- [ ] Native USB Device / CDC console
+- [x] Native USB Device core foundation
+- [ ] USB CDC ACM diagnostic/command console
 - [x] I2C1 master + hardware bus scan (B6/B7, 100 kHz, SSD1306 at 0x3C)
 - [x] SSD1306 command transport at 0x3C (`oledping` / NOP transaction)
 - [x] Native 128x32 SSD1306 runtime UI with frozen status bar + retained 21x3 console

@@ -1,52 +1,67 @@
 # STM32 OS — Implementation Plan
 
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
-## Current implementation checkpoint — 2026-09-15
+## Current implementation checkpoint — 2026-09-16
 
-### Stage C3.9 — production heartbeat task ownership — PUBLISHED
+### C4.0 — IWDG production liveness foundation — PUBLISHED
 
-Published commit:
+Published commit/tree remain:
 
-`39ea5b3d1b72fca8d15e22e7544870ab0704c274`
+`3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca` /
+`e024d425e97f878c170ccfc41f0505dce79277a3`.
 
-Published tree:
+### Native USB Device core foundation — GATES 0–5 ACCEPTED
 
-`c4016135374c8c6726a66736943d117f4583066e`
+Boundary:
 
-### Stage C4.0 — IWDG production liveness foundation — GATES 0–5 ACCEPTED
+`NATIVE_USB_DEVICE_CORE_FOUNDATION`
 
 Accepted source candidate tree:
 
-`f8e879f815051d300eec728f2afe03c39222ca47`
+`4b798382ef843ef8f488115624d48c0cd1506c75`
 
 Accepted firmware:
 
-`25192` bytes /
-`4FAAF278A90540931F67F2A70E3354A4A8E78A8E3ACBAED6CAABBDE99E30D74D`.
+`43812` bytes /
+`1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`.
 
-Permanent accepted rules:
+Accepted implementation:
 
-- IWDG `/256`, reload `1249`, nominal approximately `8 s`;
-- sequence `START -> unlock -> PR/RLR -> wait PVU/RVU -> reload`;
-- no reload from SysTick, USART IRQ, any Handler path, or faults;
-- normal reloads only after concrete production Thread/PSP progress;
-- reset cause captured before reset flags are cleared;
-- destructive `wdogtrip` causes a real watchdog reboot;
-- no scheduler-core changes, no new SVC, no IPC, no OLED/status-bar changes.
+- direct-register STM32F103 USB FS Device core; no HAL;
+- PA11 `USB_DM`, PA12 `USB_DP`;
+- accepted 72 MHz system clock retained;
+- RCC `USBPRE=0`, therefore USB clock is 72 MHz / 1.5 = 48 MHz;
+- USB low-priority IRQ20 ownership;
+- explicit BTABLE/PMA ownership and EP0 64-byte control buffers;
+- bounded EP0 standard-request engine;
+- delayed `SET_ADDRESS` application after status IN;
+- development VID/PID `1209:000A`, private testing only;
+- vendor-specific zero-data-endpoint interface for the core-only boundary;
+- no CDC class/data endpoints, new task, SVC, IPC, timer subsystem, runtime-statistics subsystem or OLED edit.
 
 Hardware acceptance:
 
-- normal reload `39 -> 50`;
-- watchdog reboot `7294 ms`;
-- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
-- post-reset heartbeat delta `3`;
-- safe `20/20`, timed `4/4`, BUSY `8/8`, UART `128/128`;
-- final Flash exact;
-- OLED Gate 4 conditional N/A.
+- exact device descriptor and exact configuration descriptor read by Windows through control transfers;
+- nonzero addressed state proven (`20`, then `21` after physical reconnect);
+- configuration `0` accepted for this vendor-specific/no-client-driver foundation;
+- physical disconnect/reconnect recovered without reflashing;
+- destructive IWDG reboot `8748 ms`, post-reset `IWDG_RESET=1`;
+- USB remained recoverable after IWDG reset;
+- safe surface `20/20` pre/post;
+- timed/priority/scheduler BUSY/UART pressure regressions retained;
+- final Flash readback exact.
+
+Gate 4 OLED disposition:
+
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+
+Gate 5 docs/evidence finalization is complete.
 
 Next:
 
-**C4.0 Gate 6 — local acceptance commit.**
+**Gate 6 local acceptance commit, then Gate 7 ordinary non-force publication.**
+
+After publication the next USB slice is **CDC ACM diagnostic/command console**.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

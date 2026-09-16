@@ -15,6 +15,7 @@
 .extern PendSV_Handler
 .extern SysTick_Handler
 .extern USART1_IRQHandler
+.extern USB_LP_CAN1_RX0_IRQHandler
 .extern fault_capture
 .extern _smsp_stack
 .extern _emsp_guard
@@ -39,11 +40,16 @@ g_pfnVectors:
 .word PendSV_Handler       /* PendSV */
 .word SysTick_Handler      /* SysTick */
 
-/* STM32F103 medium-density external IRQs 0..36. */
-.rept 37
+/* STM32F103 medium-density external IRQs 0..18. */
+.rept 19
 .word Default_Handler
 .endr
-.word USART1_IRQHandler    /* IRQ37: USART1 */
+.word Default_Handler             /* IRQ19: USB HP / CAN1 TX, unused here */
+.word USB_LP_CAN1_RX0_IRQHandler  /* IRQ20: USB LP / CAN1 RX0 */
+.rept 16                          /* IRQ21..36 */
+.word Default_Handler
+.endr
+.word USART1_IRQHandler           /* IRQ37: USART1 */
 
 .section .text.Reset_Handler, "ax", %progbits
 .thumb_func
