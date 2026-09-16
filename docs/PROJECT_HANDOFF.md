@@ -5,90 +5,123 @@
 
 ### Published repository baseline
 
-`main`, `origin/main` and remote `main` remain synchronized at:
+`main`, `origin/main` and remote `main` are synchronized at:
 
-`3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca` — `feat: add IWDG liveness foundation`
+`3f55f624b72b4c5266ec0e4b0006839c4478bec8` — `feat: add native USB device core foundation`
 
 Tree:
 
-`e024d425e97f878c170ccfc41f0505dce79277a3`
+`52c2a0efacf9c533d7664316dbfcac344cb2d742`
 
-### Accepted, not yet committed — Native USB Device core foundation
-
-Boundary:
-
-`NATIVE_USB_DEVICE_CORE_FOUNDATION`
-
-Gates 0–5 are accepted.
-
-Accepted candidate:
+Published USB-core candidate:
 
 ```text
-source tree  4b798382ef843ef8f488115624d48c0cd1506c75
-binary       43812 bytes
-SHA-256      1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6
+source candidate tree  4b798382ef843ef8f488115624d48c0cd1506c75
+binary                 43812 bytes
+SHA-256                1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6
+identity               1209:000A / Deus OS USB Core / private test only
 ```
 
-Architecture:
+The native USB Device core foundation is fully accepted and published. Its hardware proof includes exact EP0 descriptors, nonzero addressed state, physical disconnect/reconnect recovery without reflashing, post-IWDG USB recovery, retained UART/scheduler/IWDG regressions, final exact Flash readback, and OLED conditional N/A disposition.
+
+### Current architecture boundary
+
+`USB_CDC_ACM_CONSOLE_FOUNDATION`
+
+Gates 0–5 are accepted. Gate 3 on the first candidate exposed a real post-IWDG `usbser` session-recovery defect; the minimal PA12/D+ disconnect-pulse correction in `src/drivers/usb_device.c` was then rebuilt and fully hardware accepted. The boundary is ready for Gate 6 local acceptance commit.
+
+Gate 1 implemented CDC profile:
 
 ```text
-PA11 USB_DM / PA12 USB_DP
-direct-register STM32F103 USB FS Device
-72 MHz SYSCLK retained
-USBPRE=0 -> 48 MHz USB clock
-IRQ20 USB_LP_CAN1_RX0
-BTABLE 0x000
-EP0 TX PMA 0x040
-EP0 RX PMA 0x080
-EP0 MPS 64
+VID/PID      1209:000B
+product      Deus OS CDC Console
+host driver  Windows inbox usbser.sys
+custom INF   none
+interfaces   0=CDC Control, 1=CDC Data
+EP1          0x81 interrupt IN / notification
+EP2          0x02 bulk OUT / host -> device
+EP3          0x83 bulk IN / device -> host
 ```
 
-Identity:
+Gate 1 implemented PMA ownership:
 
 ```text
-VID        0x1209
-PID        0x000A
-product    Deus OS USB Core
-policy     private development/testing only
+BTABLE   0x000
+EP0 TX   0x040 / 64 B
+EP0 RX   0x080 / 64 B
+EP1 IN   0x0C0 / 16 B
+EP2 OUT  0x100 / 64 B
+EP3 IN   0x140 / 64 B
 ```
 
-Hardware proof:
+Gate 1 source fingerprints:
 
-- initial Windows enumeration: exact descriptors, address `20`, config `0`;
-- physical USB disconnect/reconnect: absence observed, recovery at address `21`, no reflash;
-- three total enumeration/control-transfer proofs;
-- EP0 SETUP proven through exact host `GET_DESCRIPTOR` control transfers;
-- vendor-specific foundation may remain configuration `0` without a compatible client driver; CDC is deliberately not part of this boundary;
-- IWDG normal reload progression retained;
-- deliberate `wdogtrip` reboot: `8748 ms`;
-- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
-- USB and UART recover after IWDG reset;
-- safe surface pre/post `20/20`;
+```text
+include/drivers/usb_device.h  69915DF563CB259830EE2F473764EB32C9AC4BB30E94BB846101914BD76A7FD5
+src/drivers/usb_device.c      A7FE1CCB71EA4C36A306607E4A11AEDEBCA6ABABA3D1356584A61E2EEAFB5AF3
+src/kernel.c                  CB78CBB9AD1CA0513E7673760A9FC3FB4ED5FE7F67847D9F984400E6B17215F7
+```
+
+Gate 1 implemented architectural changes:
+
+- add bounded EP0 OUT data stage for `SET_LINE_CODING`;
+- implement CDC `SET_LINE_CODING`, `GET_LINE_CODING`, `SET_CONTROL_LINE_STATE`;
+- make `SET_CONFIGURATION(1/0)` own real class-endpoint lifecycle;
+- add bounded CDC RX/TX byte-stream buffering;
+- keep USB IRQ bounded and policy-free;
+- keep two-task production topology; task0 waits on UART or CDC RX;
+- split parser state per transport but reuse one command execution path;
+- route responses only to the command's originating transport;
+- CDC line coding never reconfigures USART1;
+- UART remains emergency diagnostics; ST-LINK remains recovery/debug;
+- IWDG Handler/USB-IRQ reload remains forbidden;
+- every USB init now forces a bounded host-visible disconnect by temporarily driving PA12/D+ low open-drain before enabling the USB macrocell, then restores the prior PA12 GPIO configuration; this closes the Gate 3 stale-`usbser` session observed after real IWDG reset;
+- OLED/gfx/status-bar remain frozen.
+
+Canonical design:
+`docs/USB_CDC_ACM_CONSOLE_PLAN.md`
+
+Canonical acceptance:
+`docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
+
+Power rule remains strict: never power the target simultaneously from ST-LINK 3.3 V and micro-USB VBUS. UART adapter VCC remains disconnected.
+
+Accepted corrected candidate:
+
+```text
+tested source tree  d815a8357b9f77850c08ff071f47be8d2b5d4b53
+binary              58548 bytes
+SHA-256             D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE
+Flash used           58548 bytes
+SRAM used            9200 bytes
+```
+
+Gate 3 corrected hardware acceptance:
+
+- automatic host-visible attach after MCU software reset: PASS;
+- Windows `usbser` / dynamic COM open: PASS;
+- CDC class control and `20/20` safe surface pre/post IWDG: PASS;
 - scheduler diagnostics `8/8 BUSY`;
-- UART race `128/128 PONG`, zero RX drops/errors;
-- MSP margin observed `1808` bytes pre-IWDG and `1648` bytes post-IWDG;
-- final Flash readback exact while micro-USB VBUS remained the sole target power source.
+- packet-boundary proof `38/38`;
+- CDC pressure `128/128`, zero drops;
+- UART pressure `128/128`;
+- dual-transport parser/response isolation: PASS;
+- physical micro-USB disconnect/reconnect without reflash: PASS;
+- deliberate IWDG reboot `9028 ms`, automatic post-IWDG CDC reopen: PASS;
+- final Flash readback exact.
 
 Gate 4:
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
 
-`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+Evidence SHA-256:
 
-Evidence fingerprints:
-
-```text
-Gate2 build evidence  5E261F473EA48CAA7ABD2B080E22732D95EEEA24BEA76349A4A10E66088FC81F
-Gate3 hardware log    F612D710A6029ADACD0AE51BF5F85B2F5983F22003A6C09787C99045C520ECEC
-Gate3 hardware ZIP    14E7751AFBACEED96DF5816B81969AB33C499FAF182F19BBA89A22A21E2C6B43
-Gate4 disposition     FCC6B971D7CCBDDA7866CBD92B56D33955D328EF1D368690B132E06A6801F676
-```
-
-Power rule remains strict: never power the target simultaneously from ST-LINK 3.3 V and micro-USB VBUS. UART adapter VCC also remains disconnected.
+- corrected Gate 2: `49AAFBAFEA0B895DFBEBA7311335069EFD512640A13F200D1F3B9D65D6774869`;
+- Gate 3 log: `D009F0D7E12C10C3FBA40037C6EC485E9FA27674901C5C3D6C4AAE72C0D42F35`;
+- Gate 3 evidence: `6035C6FD5C0718252B28AAC07CD67C879AA1F14A639DD9A7854D3B74F54D49CB`.
 
 ### Exact next gate
 
 **Gate 6 — local acceptance commit. No push.**
-
-After Gate 7 ordinary publication, the next architecture boundary is **USB CDC ACM diagnostic/command console**.
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 

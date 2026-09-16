@@ -1,6 +1,6 @@
 # STM32 OS — Native USB Device Core Foundation Plan
 
-Status: **IMPLEMENTED AND HARDWARE ACCEPTED THROUGH GATE 5 — LOCAL COMMIT PENDING**
+Status: **PUBLISHED — commit `3f55f624b72b4c5266ec0e4b0006839c4478bec8` / tree `52c2a0efacf9c533d7664316dbfcac344cb2d742`**
 
 Boundary ID:
 

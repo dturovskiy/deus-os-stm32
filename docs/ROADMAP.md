@@ -3,43 +3,47 @@
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 ## Current roadmap checkpoint — 2026-09-16
 
-### C4.0 IWDG production liveness foundation — PUBLISHED
+### Native USB Device core foundation — PUBLISHED
 
-- [x] commit `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`;
-- [x] tree `e024d425e97f878c170ccfc41f0505dce79277a3`;
+- [x] commit `3f55f624b72b4c5266ec0e4b0006839c4478bec8`;
+- [x] tree `52c2a0efacf9c533d7664316dbfcac344cb2d742`;
+- [x] accepted firmware `43812` bytes / `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`;
 - [x] ordinary non-force publication complete;
 - [x] local/remote ahead-behind `0/0`.
 
-### Native USB Device core foundation — GATES 0–5 ACCEPTED
+### Current boundary — USB CDC ACM diagnostic/command console
 
 Boundary:
 
-`NATIVE_USB_DEVICE_CORE_FOUNDATION`
+`USB_CDC_ACM_CONSOLE_FOUNDATION`
 
 Roadmap target:
 
-- [x] minimal STM32F103 USB Device core on PA11/PA12, direct-register, no HAL;
-- [x] valid 48 MHz USB clock with accepted 72 MHz SYSCLK preserved;
-- [x] USB reset / low-priority IRQ ownership;
-- [x] PMA / BTABLE ownership;
-- [x] endpoint 0 control-transfer state machine;
-- [x] centralized private-development descriptor identity `1209:000A`;
-- [x] minimal host enumeration/address proof;
-- [x] physical disconnect/reconnect recovery without reflashing;
-- [x] retained UART/ST-LINK recovery paths;
-- [x] retained IWDG/scheduler/timed/priority/heartbeat regression;
-- [x] OLED Gate 4 conditional N/A;
+- [x] Gate 0 canonical design/acceptance planning;
+- [x] distinct private-test CDC identity `1209:000B`;
+- [x] Windows inbox `usbser.sys` binding without custom INF;
+- [x] CDC Control interface 0 + CDC Data interface 1;
+- [x] EP1 interrupt IN notification, EP2 bulk OUT, EP3 bulk IN;
+- [x] bounded EP0 OUT data stage and CDC ACM class requests;
+- [x] real configuration-1 endpoint lifecycle;
+- [x] bounded CDC RX/TX rings and backpressure telemetry;
+- [x] existing task0 owns both UART and CDC console work without a new production task;
+- [x] per-transport parser state + shared command execution + origin-bound response routing;
+- [x] CDC safe-surface, BUSY, pressure, physical reconnect and automatic post-IWDG recovery hardware proof;
+- [x] retained UART/ST-LINK recovery paths and UART pressure regression;
+- [x] retained scheduler/IWDG/stack/MSP regressions;
+- [x] OLED Gate 4 conditional N/A with frozen hashes exact and automated UI regression PASS;
 - [x] docs/evidence finalization;
-- [ ] local acceptance commit — **CURRENT**;
+- [ ] local acceptance commit — **NEXT**;
 - [ ] ordinary non-force publication.
 
-Accepted candidate:
+Canonical design:
+`docs/USB_CDC_ACM_CONSOLE_PLAN.md`
 
-`43812` bytes /
-`1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6` /
-tree `4b798382ef843ef8f488115624d48c0cd1506c75`.
+Canonical acceptance:
+`docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
 
-CDC ACM remains the **next USB class/transport slice after this core is published**.
+After CDC publication the next transport boundary remains **transport-neutral shell/RPC**.
 
 ### Phase 4 ordering constraint
 

@@ -3,56 +3,52 @@
 <!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 ## Accepted project state — 2026-09-16
 
-Published baseline remains:
+Published baseline:
 
-`3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca` — `feat: add IWDG liveness foundation`
+`3f55f624b72b4c5266ec0e4b0006839c4478bec8` — `feat: add native USB device core foundation`
 
 Published tree:
 
-`e024d425e97f878c170ccfc41f0505dce79277a3`
+`52c2a0efacf9c533d7664316dbfcac344cb2d742`
 
-Native STM32F103 USB Device core foundation — **GATES 0–5 ACCEPTED / LOCAL COMMIT PENDING**
+Native STM32F103 USB Device core foundation — **PUBLISHED**
 
-Boundary:
-
-`NATIVE_USB_DEVICE_CORE_FOUNDATION`
-
-Accepted candidate:
+Accepted core candidate:
 
 - source candidate tree: `4b798382ef843ef8f488115624d48c0cd1506c75`;
 - binary: `43812` bytes;
 - SHA-256: `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`;
-- direct-register STM32F103 USB FS Device core on PA11/PA12;
-- accepted 72 MHz SYSCLK retained, `USBPRE=0` gives 48 MHz USB clock from PLL /1.5;
-- EP0/PMA/BTABLE ownership and delayed `SET_ADDRESS` implemented;
-- development identity: VID `0x1209`, PID `0x000A`, private testing only;
-- no CDC ACM data transport in this boundary.
+- private-test identity `1209:000A` / `Deus OS USB Core`;
+- exact EP0 enumeration/address proof, reconnect recovery, post-IWDG recovery, retained UART/scheduler/IWDG regressions, final Flash exact;
+- OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
 
-Hardware acceptance:
+Current architecture boundary:
 
-- host obtained exact device and configuration descriptors through EP0 control transfers;
-- initial enumeration: address `20`, configuration `0`;
-- physical micro-USB disconnect/reconnect recovered without reflashing at address `21`;
-- destructive IWDG reset recovered UART and USB; reboot observed after `8748 ms`;
-- post-reset `RESET_FLAGS=0x24000000`, `IWDG_RESET=1`;
-- USB proof completed in three sessions;
-- safe production surface `20/20` before and after IWDG;
-- timed event wake PASS with controlled UART RX event;
-- invasive scheduler diagnostics `8/8` exact BUSY;
-- UART race `128/128 PONG`, zero RX drops/errors;
-- final Flash readback exactly matched the accepted candidate while USB VBUS remained the sole target power source.
+`USB_CDC_ACM_CONSOLE_FOUNDATION` — **GATES 0–5 ACCEPTED / PUBLICATION PENDING**
 
-OLED Gate 4:
+Accepted CDC candidate:
 
-`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+- tested source tree `d815a8357b9f77850c08ff071f47be8d2b5d4b53`;
+- binary `58548` bytes;
+- SHA-256 `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`;
+- private-test identity `1209:000B` / `Deus OS CDC Console`;
+- Windows inbox `usbser.sys`, configuration `1`, no custom INF;
+- CDC Control + CDC Data over EP1 notification, EP2 OUT, EP3 IN;
+- task0 owns both UART and CDC command transport with independent parser state and origin-bound responses;
+- bounded CDC RX/TX rings `1024` / `2048` bytes;
+- automatic USB detach/attach recovery across MCU/IWDG reset via bounded PA12/D+ low pulse;
+- software-reset attach, physical reconnect, post-IWDG CDC reopen, class-control, pressure, scheduler, UART and dual-transport acceptance PASS;
+- final Flash exact;
+- OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
 
-Gate 5 docs/evidence finalization is accepted. No build/flash/commit/push occurred in Gate 5.
+Canonical design/acceptance:
+
+- `docs/USB_CDC_ACM_CONSOLE_PLAN.md`
+- `docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
 
 Next gate:
 
 **Gate 6 — local acceptance commit.**
-
-After publication, the next architecture slice is **USB CDC ACM diagnostic/command console**.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.
@@ -97,7 +93,7 @@ Built locally:
 - [x] `health` automated SysTick/PC13 regression command
 - [x] `fault` read-only fault diagnostics / SCB register dump command
 - [x] Native USB Device core foundation
-- [ ] USB CDC ACM diagnostic/command console
+- [x] USB CDC ACM diagnostic/command console
 - [x] I2C1 master + hardware bus scan (B6/B7, 100 kHz, SSD1306 at 0x3C)
 - [x] SSD1306 command transport at 0x3C (`oledping` / NOP transaction)
 - [x] Native 128x32 SSD1306 runtime UI with frozen status bar + retained 21x3 console

@@ -3,65 +3,68 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Current implementation checkpoint — 2026-09-16
 
-### C4.0 — IWDG production liveness foundation — PUBLISHED
+### Native USB Device core foundation — PUBLISHED
 
-Published commit/tree remain:
+Published commit/tree:
 
-`3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca` /
-`e024d425e97f878c170ccfc41f0505dce79277a3`.
+`3f55f624b72b4c5266ec0e4b0006839c4478bec8` /
+`52c2a0efacf9c533d7664316dbfcac344cb2d742`.
 
-### Native USB Device core foundation — GATES 0–5 ACCEPTED
-
-Boundary:
-
-`NATIVE_USB_DEVICE_CORE_FOUNDATION`
-
-Accepted source candidate tree:
-
-`4b798382ef843ef8f488115624d48c0cd1506c75`
-
-Accepted firmware:
+Published candidate:
 
 `43812` bytes /
 `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`.
 
-Accepted implementation:
+The direct-register USB FS core, EP0 control path, private-test profile `1209:000A`, retained UART/IWDG/scheduler regressions, conditional OLED N/A review, local commit, and ordinary non-force publication are complete.
 
-- direct-register STM32F103 USB FS Device core; no HAL;
-- PA11 `USB_DM`, PA12 `USB_DP`;
-- accepted 72 MHz system clock retained;
-- RCC `USBPRE=0`, therefore USB clock is 72 MHz / 1.5 = 48 MHz;
-- USB low-priority IRQ20 ownership;
-- explicit BTABLE/PMA ownership and EP0 64-byte control buffers;
-- bounded EP0 standard-request engine;
-- delayed `SET_ADDRESS` application after status IN;
-- development VID/PID `1209:000A`, private testing only;
-- vendor-specific zero-data-endpoint interface for the core-only boundary;
-- no CDC class/data endpoints, new task, SVC, IPC, timer subsystem, runtime-statistics subsystem or OLED edit.
+### Current boundary — USB CDC ACM diagnostic/command console — GATES 0–5 ACCEPTED / GATE 6 NEXT
 
-Hardware acceptance:
+Boundary:
 
-- exact device descriptor and exact configuration descriptor read by Windows through control transfers;
-- nonzero addressed state proven (`20`, then `21` after physical reconnect);
-- configuration `0` accepted for this vendor-specific/no-client-driver foundation;
-- physical disconnect/reconnect recovered without reflashing;
-- destructive IWDG reboot `8748 ms`, post-reset `IWDG_RESET=1`;
-- USB remained recoverable after IWDG reset;
-- safe surface `20/20` pre/post;
-- timed/priority/scheduler BUSY/UART pressure regressions retained;
-- final Flash readback exact.
+`USB_CDC_ACM_CONSOLE_FOUNDATION`
 
-Gate 4 OLED disposition:
+Gate 1 implemented source state:
 
-`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
+- private-test identity `1209:000B`, product `Deus OS CDC Console`;
+- Windows inbox `usbser.sys`, no custom INF;
+- Device Descriptor class/subclass `0x02/0x02`;
+- two-interface CDC ACM function: control interface 0, data interface 1;
+- CDC Header, Call Management, ACM, and Union functional descriptors;
+- EP1 `0x81` interrupt IN notification;
+- EP2 `0x02` bulk OUT, 64-byte MPS;
+- EP3 `0x83` bulk IN, 64-byte MPS;
+- explicit non-overlapping PMA map within STM32F103 packet memory;
+- bounded EP0 OUT data stage for `SET_LINE_CODING`;
+- `GET_LINE_CODING` and `SET_CONTROL_LINE_STATE`;
+- real `SET_CONFIGURATION(1/0)` endpoint lifecycle;
+- static CDC RX/TX rings `1024` / `2048` bytes with packet/byte/drop/high-water telemetry;
+- existing task0 extended to wake on UART or CDC RX; no third task;
+- per-transport parser state with shared command execution and response to the originating transport;
+- USART1 remains independently fixed at 115200 8N1 regardless of CDC line coding;
+- no new SVC/IPC/generic timer/runtime-statistics subsystem;
+- no OLED/gfx/status-bar edit;
+- no USB IRQ IWDG reload;
+- Gate 3 proved the CDC data plane, class control, pressure, UART independence, scheduler isolation, and parser isolation, but exposed one real post-IWDG host-session defect: fixed D+ pull-up kept the Windows attachment logically present across MCU reset, leaving `usbser` unable to reopen the COM port;
+- corrective USB init now forces PA12/D+ low as a temporary 2 MHz open-drain GPIO for a bounded >=20 ms disconnect interval before USB macrocell enable, then restores the prior PA12 GPIO configuration so every boot produces a clean host attach.
 
-Gate 5 docs/evidence finalization is complete.
+Canonical design:
+`docs/USB_CDC_ACM_CONSOLE_PLAN.md`
+
+Canonical acceptance:
+`docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
+
+Accepted corrected candidate:
+
+- tested source tree `d815a8357b9f77850c08ff071f47be8d2b5d4b53`;
+- binary `58548` bytes / SHA-256 `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`;
+- Flash `58548` bytes, SRAM `9200` bytes;
+- Gate 3: Windows `usbser`, CDC class/data plane, physical reconnect, `128/128` CDC pressure, `128/128` UART pressure, dual-transport isolation, real IWDG reset and automatic post-IWDG CDC reopen PASS;
+- Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
+- Gate 5 documentation/evidence finalization complete.
 
 Next:
 
-**Gate 6 local acceptance commit, then Gate 7 ordinary non-force publication.**
-
-After publication the next USB slice is **CDC ACM diagnostic/command console**.
+**Gate 6 — local acceptance commit. No push.**
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

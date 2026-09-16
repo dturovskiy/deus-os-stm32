@@ -1,6 +1,6 @@
 # STM32 OS — Native USB Device Core Foundation Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED — LOCAL ACCEPTANCE COMMIT PENDING**
+Status: **COMPLETED / PUBLISHED — commit `3f55f624b72b4c5266ec0e4b0006839c4478bec8`**
 
 Boundary ID:
 
@@ -221,11 +221,16 @@ Gate 4 disposition SHA-256:
 
 `FCC6B971D7CCBDDA7866CBD92B56D33955D328EF1D368690B132E06A6801F676`
 
-Gate 5 docs/evidence finalization is accepted. No build, flash, commit or push was performed by Gate 5.
+Gate 5 docs/evidence finalization is accepted. Gate 6 local acceptance commit and Gate 7 ordinary non-force publication are complete.
 
-Next:
+Published commit/tree:
 
-**Gate 6 — local acceptance commit.**
+`3f55f624b72b4c5266ec0e4b0006839c4478bec8` /
+`52c2a0efacf9c533d7664316dbfcac344cb2d742`.
+
+Next boundary:
+
+**`USB_CDC_ACM_CONSOLE_FOUNDATION` — Gates 0–5 accepted; Gate 6 local acceptance commit next.**
 
 ## Permanent retained constraints
 

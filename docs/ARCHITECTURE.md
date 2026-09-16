@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **published through C4.0 `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`; native USB Device core Gates 0–5 accepted, local acceptance commit pending**
+Status: **native USB Device core published at `3f55f624b72b4c5266ec0e4b0006839c4478bec8`; `USB_CDC_ACM_CONSOLE_FOUNDATION` Gates 0–5 accepted, publication pending**
 
 ## C4.0 accepted IWDG liveness record
 
@@ -36,7 +36,7 @@ C4.0 acceptance record — Gates 0–5 accepted on 2026-09-15
 - C4.0 publication is complete; next boundary: **`NATIVE_USB_DEVICE_CORE_FOUNDATION`**.
 
 
-## Native USB Device core foundation — accepted through Gate 5
+## Native USB Device core foundation — PUBLISHED 2026-09-16
 
 Boundary:
 `NATIVE_USB_DEVICE_CORE_FOUNDATION`
@@ -102,7 +102,7 @@ Rules:
 - endpoint 0 handles standard control requests required for enumeration;
 - USB descriptor identity is centralized;
 - do not embed an arbitrary third-party VID/PID;
-- CDC ACM is a later slice;
+- CDC ACM was deliberately excluded from this published core boundary and is now the current next boundary;
 - UART remains emergency diagnostics;
 - ST-LINK remains recovery/debug;
 - IWDG reload ownership stays Thread/PSP-only and is not moved into USB IRQ;
@@ -110,6 +110,48 @@ Rules:
 
 Power rule:
 when micro-USB VBUS powers the board, ST-LINK 3.3 V supply must be disconnected.
+
+## Accepted architecture — USB CDC ACM console foundation
+
+Boundary: `USB_CDC_ACM_CONSOLE_FOUNDATION`.
+
+The published USB core remains the hardware/protocol substrate. CDC adds one class layer and one additional transport into the existing production console task; it does not create a second command language or a third production task.
+
+```text
+Windows usbser / CDC COM
+          |
+     CDC ACM class
+          |
+  EP2 OUT / EP3 IN
+          |
+ bounded RX/TX rings
+          |
+          +------> task0 console/runtime <------ UART RX ring
+                         |
+                  shared command execution
+                         |
+             response to originating transport
+```
+
+Descriptor topology:
+
+```text
+VID:PID 1209:000B (private test only)
+device class/subclass 02/02
+interface 0 CDC Control + EP1 0x81 interrupt IN
+interface 1 CDC Data    + EP2 0x02 bulk OUT + EP3 0x83 bulk IN
+```
+
+The accepted CDC implementation adds the bounded EP0 OUT data stage required for `SET_LINE_CODING`, plus `GET_LINE_CODING` and `SET_CONTROL_LINE_STATE`. CDC line coding is virtual USB state and never reconfigures USART1.
+
+Accepted PMA ownership extends the published map to EP1 `0x0C0`, EP2 `0x100`, and EP3 `0x140`, all statically bounded below local `0x200`.
+
+Production ownership remains two cooperative PSP tasks. Task0 owns both the USB RX event and UART RX event. USB IRQ owns bounded endpoint/PMA service and state publication only; Thread/PSP owns parsing, command policy, output policy, and watchdog liveness. UART remains an independent emergency console.
+
+Parser state is per transport so UART and CDC streams may interleave without corrupting a shared partial command. Command semantics remain shared and a response is routed only to its originating transport.
+
+Canonical design: `docs/USB_CDC_ACM_CONSOLE_PLAN.md`.
+Canonical acceptance: `docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`.
 
 ## 1. Boot flow
 

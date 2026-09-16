@@ -1,6 +1,6 @@
 ## 2026-09-16
 
-### Accepted — Native STM32F103 USB Device core foundation — local commit pending
+### Published — Native STM32F103 USB Device core foundation
 
 Boundary:
 `NATIVE_USB_DEVICE_CORE_FOUNDATION`
@@ -46,7 +46,45 @@ Evidence:
 - Gate 3 hardware evidence `14E7751AFBACEED96DF5816B81969AB33C499FAF182F19BBA89A22A21E2C6B43`;
 - Gate 4 disposition `FCC6B971D7CCBDDA7866CBD92B56D33955D328EF1D368690B132E06A6801F676`.
 
-Gates 0–5 are accepted. Next: Gate 6 local acceptance commit, then Gate 7 ordinary non-force publication.
+Published commit `3f55f624b72b4c5266ec0e4b0006839c4478bec8`, tree `52c2a0efacf9c533d7664316dbfcac344cb2d742`, subject `feat: add native USB device core foundation`. Ordinary non-force publication complete; local/remote ahead-behind `0/0`.
+
+### Accepted — USB CDC ACM diagnostic/command console — publication pending
+
+Boundary: `USB_CDC_ACM_CONSOLE_FOUNDATION`.
+
+Accepted candidate:
+
+- tested source tree `d815a8357b9f77850c08ff071f47be8d2b5d4b53`;
+- binary `58548` bytes;
+- SHA-256 `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`;
+- Flash used `58548` bytes; SRAM used `9200` bytes.
+
+Accepted architecture and hardware proof:
+
+- private-test identity `1209:000B`, product `Deus OS CDC Console`;
+- Windows inbox `usbser.sys`, no custom INF, configuration `1`;
+- CDC Control interface 0 + CDC Data interface 1;
+- EP1 `0x81` interrupt IN, EP2 `0x02` bulk OUT, EP3 `0x83` bulk IN;
+- bounded EP0 OUT data stage plus `SET_LINE_CODING`, `GET_LINE_CODING`, and `SET_CONTROL_LINE_STATE`;
+- CDC RX/TX rings `1024` / `2048` bytes;
+- task0 owns UART + CDC command work with independent parser state and origin-bound responses; no third task/SVC/IPC;
+- corrected USB init forces a bounded PA12/D+ low disconnect pulse so MCU/IWDG reset produces a fresh host-visible attach;
+- automatic CDC reopen after software reset PASS; physical micro-USB reconnect PASS; post-IWDG automatic `usbser` reopen PASS;
+- CDC safe surface `20/20` pre-IWDG and `20/20` post-IWDG;
+- scheduler diagnostics `8/8 BUSY`, packet-boundary proof `38/38`, CDC pressure `128/128` with zero drops, UART pressure `128/128`, dual-transport parser/response isolation PASS;
+- real IWDG reboot `9028 ms`, post-reset UART + CDC recovery PASS;
+- final Flash readback exact.
+
+Gate 4:
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+
+Evidence:
+
+- corrected Gate 2 evidence `49AAFBAFEA0B895DFBEBA7311335069EFD512640A13F200D1F3B9D65D6774869`;
+- Gate 3 hardware log `D009F0D7E12C10C3FBA40037C6EC485E9FA27674901C5C3D6C4AAE72C0D42F35`;
+- Gate 3 hardware evidence `6035C6FD5C0718252B28AAC07CD67C879AA1F14A639DD9A7854D3B74F54D49CB`.
+
+Gates 0–5 are accepted. Next: Gate 6 local acceptance commit; Gate 7 ordinary non-force publication remains after that.
 
 ## 2026-09-15
 

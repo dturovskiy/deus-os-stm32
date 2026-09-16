@@ -131,6 +131,9 @@
 #define SCHED_CONSOLE_PROBE_COMMAND_COUNT 17u
 #define SCHED_ISOLATION_DIAGNOSTIC_COUNT 7u
 #define PRODUCTION_UART_RX_EVENT         (1u << 0)
+#define PRODUCTION_USB_CDC_RX_EVENT      (1u << 1)
+#define PRODUCTION_CONSOLE_RX_EVENTS     \
+    (PRODUCTION_UART_RX_EVENT | PRODUCTION_USB_CDC_RX_EVENT)
 #define SCHED_WAIT_WAKE_SENTINEL         0x57u
 #define SCHED_TIMED_SLEEP_MS             50u
 #define SCHED_TIMED_TIMEOUT_MS           50u
@@ -223,6 +226,14 @@ static volatile uint32_t uart_rx_byte_count;
 static volatile uint32_t uart_rx_drop_count;
 static volatile uint32_t uart_rx_error_count;
 static volatile uint32_t uart_rx_high_water;
+
+typedef enum
+{
+    CONSOLE_TRANSPORT_UART = 0,
+    CONSOLE_TRANSPORT_USB_CDC = 1
+} console_transport_t;
+
+static console_transport_t console_output_transport = CONSOLE_TRANSPORT_UART;
 
 static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
@@ -425,6 +436,17 @@ static void uart_putc(char c)
     USART1_DR = (uint32_t)(uint8_t)c;
 }
 
+static void console_putc(char c)
+{
+    if (console_output_transport == CONSOLE_TRANSPORT_USB_CDC)
+    {
+        (void)usb_cdc_write_byte((uint8_t)c);
+        return;
+    }
+
+    uart_putc(c);
+}
+
 static int uart_try_getc(char *c)
 {
     const uint32_t tail = uart_rx_tail;
@@ -486,11 +508,16 @@ void USART1_IRQHandler(void)
     }
 }
 
+static void usb_cdc_rx_event_notify(void)
+{
+    scheduler_event_signal(PRODUCTION_USB_CDC_RX_EVENT);
+}
+
 static void uart_write(const char *text)
 {
     while (*text != '\0')
     {
-        uart_putc(*text);
+        console_putc(*text);
         ++text;
     }
 }
@@ -503,7 +530,7 @@ static void uart_write_hex32(uint32_t value)
 
     for (uint32_t shift = 28u;; shift -= 4u)
     {
-        uart_putc(hex[(value >> shift) & 0xFu]);
+        console_putc(hex[(value >> shift) & 0xFu]);
 
         if (shift == 0u)
         {
@@ -536,10 +563,26 @@ static void uart_boot_banner(uint32_t core_clock_hz)
     uart_write("\r\n");
 }
 
-#define UART_COMMAND_CAPACITY 32u
+#define CONSOLE_COMMAND_CAPACITY 32u
 
-static char uart_command[UART_COMMAND_CAPACITY];
-static uint32_t uart_command_length;
+typedef struct
+{
+    char data[CONSOLE_COMMAND_CAPACITY];
+    uint32_t length;
+    console_transport_t transport;
+} console_command_state_t;
+static console_command_state_t uart_command_state =
+{
+    { 0 },
+    0u,
+    CONSOLE_TRANSPORT_UART
+};
+static console_command_state_t usb_cdc_command_state =
+{
+    { 0 },
+    0u,
+    CONSOLE_TRANSPORT_USB_CDC
+};
 
 static int text_equals(const char *a, const char *b)
 {
@@ -2310,7 +2353,8 @@ static void scheduler_wait_wake_task(void *argument)
     scheduler_wait_wake_task_started = 1u;
 
     /*
-     * console_drain_rx() executes a command as soon as it consumes CR or LF.
+     * console_drain_uart_rx() executes a UART command as soon as it consumes
+     * CR or LF.
      * With a normal CRLF host line, the second delimiter can still be queued
      * when this scheduler diagnostic starts. Framing bytes are not payload.
      */
@@ -3099,6 +3143,10 @@ static void console_scheduler_priority_test(void)
 
 static void console_scheduler_timed_test(void)
 {
+    const uint32_t rx_event =
+        (console_output_transport == CONSOLE_TRANSPORT_USB_CDC) ?
+            PRODUCTION_USB_CDC_RX_EVENT :
+            PRODUCTION_UART_RX_EVENT;
     kernel_time_ms_t start;
     kernel_time_ms_t elapsed;
     uint32_t events;
@@ -3139,19 +3187,16 @@ static void console_scheduler_timed_test(void)
         passed = 0;
     }
 
-    /*
-     * Consume a stale notification from the command line that started this
-     * diagnostic. The UART ring remains authoritative payload storage.
-     */
+    /* Consume a stale notification from the transport that started this test. */
     (void)scheduler_wait_events_timeout(
-        PRODUCTION_UART_RX_EVENT,
+        rx_event,
         0u);
 
     start = kernel_time_now();
 
     events =
         scheduler_wait_events_timeout(
-            PRODUCTION_UART_RX_EVENT,
+            rx_event,
             SCHED_TIMED_TIMEOUT_MS);
 
     elapsed =
@@ -3174,7 +3219,7 @@ static void console_scheduler_timed_test(void)
     }
 
     (void)scheduler_wait_events_timeout(
-        PRODUCTION_UART_RX_EVENT,
+        rx_event,
         0u);
 
     uart_write_line("SCHED_TIMED_EVENT_ARMED");
@@ -3182,7 +3227,7 @@ static void console_scheduler_timed_test(void)
 
     events =
         scheduler_wait_events_timeout(
-            PRODUCTION_UART_RX_EVENT,
+            rx_event,
             SCHED_TIMED_EVENT_TIMEOUT_MS);
 
     elapsed =
@@ -3197,7 +3242,7 @@ static void console_scheduler_timed_test(void)
     uart_write("\r\n");
 
     if (
-        (events == PRODUCTION_UART_RX_EVENT) &&
+        (events == rx_event) &&
         (elapsed < SCHED_TIMED_EVENT_TIMEOUT_MS)
     ) {
         uart_write_line("SCHED_TIMED_EVENT_OK");
@@ -3216,6 +3261,41 @@ static void console_scheduler_timed_test(void)
     {
         uart_write_line("SCHED_TIMED_ERR");
     }
+}
+
+static void console_usb_cdc_stats(void)
+{
+    uart_write("USB_CDC_CONFIGURED=");
+    uart_write_hex32(usb_device_diagnostics.cdc_configured);
+    uart_write(" CONFIGURATION=");
+    uart_write_hex32(usb_device_diagnostics.configuration);
+    uart_write(" RX_PACKETS=");
+    uart_write_hex32(usb_device_diagnostics.cdc_rx_packet_count);
+    uart_write(" RX_BYTES=");
+    uart_write_hex32(usb_device_diagnostics.cdc_rx_byte_count);
+    uart_write(" RX_DROPS=");
+    uart_write_hex32(usb_device_diagnostics.cdc_rx_drop_count);
+    uart_write(" RX_HIGH_WATER=");
+    uart_write_hex32(usb_device_diagnostics.cdc_rx_high_water);
+    uart_write(" TX_PACKETS=");
+    uart_write_hex32(usb_device_diagnostics.cdc_tx_packet_count);
+    uart_write(" TX_BYTES=");
+    uart_write_hex32(usb_device_diagnostics.cdc_tx_byte_count);
+    uart_write(" TX_DROPS=");
+    uart_write_hex32(usb_device_diagnostics.cdc_tx_drop_count);
+    uart_write(" TX_HIGH_WATER=");
+    uart_write_hex32(usb_device_diagnostics.cdc_tx_high_water);
+    uart_write(" CONTROL=");
+    uart_write_hex32(usb_device_diagnostics.cdc_control_line_state);
+    uart_write(" BAUD=");
+    uart_write_hex32(usb_device_diagnostics.cdc_line_coding_baud);
+    uart_write(" STOP=");
+    uart_write_hex32(usb_device_diagnostics.cdc_line_coding_stop_bits);
+    uart_write(" PARITY=");
+    uart_write_hex32(usb_device_diagnostics.cdc_line_coding_parity);
+    uart_write(" DATA_BITS=");
+    uart_write_hex32(usb_device_diagnostics.cdc_line_coding_data_bits);
+    uart_write("\r\n");
 }
 
 static int console_execute_safe_named(const char *command)
@@ -3249,6 +3329,10 @@ static int console_execute_safe_named(const char *command)
     else if (text_equals(command, "rxstat") != 0)
     {
         console_uart_rx_stats();
+    }
+    else if (text_equals(command, "cdcstat") != 0)
+    {
+        console_usb_cdc_stats();
     }
     else if (text_equals(command, "mspstat") != 0)
     {
@@ -3436,55 +3520,90 @@ static void console_execute_named(const char *command)
     }
 }
 
-static void console_execute(void)
+static void console_execute_state(console_command_state_t *state)
 {
-    uart_command[uart_command_length] = '\0';
+    const console_transport_t previous_transport = console_output_transport;
+
+    if ((state == (console_command_state_t *)0) || (state->length == 0u))
+    {
+        return;
+    }
+
+    state->data[state->length] = '\0';
+    console_output_transport = state->transport;
 
     if (production_console_task_started != 0u)
     {
         ++production_console_command_count;
     }
 
-    console_execute_named(uart_command);
-    uart_command_length = 0u;
+    console_execute_named(state->data);
+    state->length = 0u;
+    console_output_transport = previous_transport;
 }
 
-static void console_drain_rx(void)
+static void console_feed_char(
+    console_command_state_t *state,
+    char c)
+{
+    if (state == (console_command_state_t *)0)
+    {
+        return;
+    }
+
+    if ((c == '\r') || (c == '\n'))
+    {
+        if (state->length != 0u)
+        {
+            console_execute_state(state);
+        }
+
+        return;
+    }
+
+    if ((c == '\b') || ((uint8_t)c == 0x7Fu))
+    {
+        if (state->length != 0u)
+        {
+            --state->length;
+        }
+
+        return;
+    }
+
+    if (state->length < (CONSOLE_COMMAND_CAPACITY - 1u))
+    {
+        state->data[state->length] = c;
+        ++state->length;
+    }
+    else
+    {
+        const console_transport_t previous_transport = console_output_transport;
+
+        state->length = 0u;
+        console_output_transport = state->transport;
+        uart_write_line("ERR");
+        console_output_transport = previous_transport;
+    }
+}
+
+static void console_drain_uart_rx(void)
 {
     char c;
 
     while (uart_try_getc(&c) != 0)
     {
-        if ((c == '\r') || (c == '\n'))
-        {
-            if (uart_command_length != 0u)
-            {
-                console_execute();
-            }
+        console_feed_char(&uart_command_state, c);
+    }
+}
 
-            continue;
-        }
+static void console_drain_usb_cdc_rx(void)
+{
+    char c;
 
-        if ((c == '\b') || ((uint8_t)c == 0x7Fu))
-        {
-            if (uart_command_length != 0u)
-            {
-                --uart_command_length;
-            }
-
-            continue;
-        }
-
-        if (uart_command_length < (UART_COMMAND_CAPACITY - 1u))
-        {
-            uart_command[uart_command_length] = c;
-            ++uart_command_length;
-        }
-        else
-        {
-            uart_command_length = 0u;
-            uart_write_line("ERR");
-        }
+    while (usb_cdc_try_getc(&c) != 0)
+    {
+        console_feed_char(&usb_cdc_command_state, c);
     }
 }
 
@@ -3504,19 +3623,20 @@ static void production_console_task(void *argument)
 
     for (;;)
     {
-        console_drain_rx();
+        console_drain_uart_rx();
+        console_drain_usb_cdc_rx();
         production_watchdog_reload();
 
         ++production_console_wait_count;
 
         events =
             scheduler_wait_events(
-                PRODUCTION_UART_RX_EVENT);
+                PRODUCTION_CONSOLE_RX_EVENTS);
 
         production_console_wake_events |= events;
         ++production_console_wake_count;
 
-        if ((events & PRODUCTION_UART_RX_EVENT) == 0u)
+        if ((events & PRODUCTION_CONSOLE_RX_EVENTS) == 0u)
         {
             production_console_fault = 1u;
             return;
@@ -3723,8 +3843,10 @@ void kernel_main(void)
      * PSP tasks with disjoint responsibilities.
      *
      * Task 0 owns the production console/runtime path. USART1 IRQ remains the
-     * sole DR reader: it publishes bytes to the RX ring before signalling the
-     * scheduler event. Task 0 drains the authoritative ring before each wait.
+     * sole USART DR reader, while the USB device IRQ owns CDC endpoint/PMA
+     * service. Both IRQ paths publish bytes to independent bounded RX rings
+     * before signalling transport-specific scheduler events. Task 0 drains
+     * both authoritative rings before each combined event wait.
      *
      * Task 1 owns normal-runtime PC13 heartbeat policy. It sleeps on the
      * scheduler clock and performs one short GPIO update per wake. SysTick
@@ -3741,6 +3863,12 @@ void kernel_main(void)
         production_fail_closed(
             "SCHED_PROD_INIT_ERR");
     }
+
+    usb_cdc_set_rx_notify(usb_cdc_rx_event_notify);
+
+    uart_command_state.length = 0u;
+    usb_cdc_command_state.length = 0u;
+    console_output_transport = CONSOLE_TRANSPORT_UART;
 
     production_console_task_started = 0u;
     production_console_wait_count = 0u;
