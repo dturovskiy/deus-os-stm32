@@ -3,62 +3,63 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Current implementation checkpoint — 2026-09-16
 
-### USB CDC ACM console foundation — PUBLISHED
+### Transport-neutral shell/RPC foundation — PUBLISHED
 
 Published commit/tree:
 
-`5a8a45618b87b3069fd7cbac6119035b6ac4ad2c` /
-`bbc6b24e28279075c41410e8abdace89c4b805b7`.
+`0c33304d2db86e54d715905393f49147bb6dd2ea` /
+`19ac9b95caca09e991842f6f9963864934b0a334`.
 
-Published candidate:
+Accepted firmware:
 
-`58548` bytes /
-`D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`.
+`37196` bytes /
+`90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`.
 
-The direct-register native USB stack, CDC ACM class/data plane, Windows `usbser` binding, UART/CDC parser isolation, pressure tests, physical reconnect, automatic software-reset attach, post-IWDG CDC recovery, OLED conditional N/A review, local commit and ordinary non-force publication are complete.
+The static allocation-free 32-method command service, explicit response context, UART/CDC text adapters, argument parser, physical reconnect and post-IWDG CDC recovery are accepted and published.
 
-### Current boundary — transport-neutral shell/RPC foundation — GATES 0–5 ACCEPTED / GATE 6 NEXT
+### Current boundary — binary framed transport foundation — GATES 0–6 ACCEPTED / GATE 7 CURRENT
 
 Boundary:
 
-`SHELL_RPC_FOUNDATION`
+`BINARY_FRAMED_TRANSPORT_FOUNDATION`
 
-Gate 1 source now establishes:
+Gate 0 freezes:
 
-- one static allocation-free command service above UART and USB CDC;
-- deterministic registry metadata: method name, class, argument bounds and an internal dispatch key;
-- explicit execution context carrying a generic response writer, opaque writer context, origin RX-event mask and latched writer-failure state;
-- semantic service statuses `OK / NOT_FOUND / BAD_ARGS / BUSY / INTERNAL_ERROR`;
-- `OK` means service dispatch completed; method-specific operational results remain in the existing payload tokens such as `OLED_*_ERR` or `SCHED_*_ERR`;
-- retained `32`-byte text line capacity and bounded maximum `4` argument tokens;
-- exact legacy command names/output compatibility;
-- new foundation introspection only: `help` and `rpcinfo`;
-- independent UART/CDC parser state retained;
-- normal command responses route only through the explicit originating context; UART-specific boot/fatal output is isolated as an emergency path;
-- no global active-transport selector remains in normal command execution;
-- no binary framing, host application, firmware update, bootloader, heap, new task/SVC/IPC, scheduler-core change, USB-driver change or OLED edit.
+- protocol v1 over the existing USB CDC stream, with UART retained as text-only emergency console;
+- `A5 5A` binary magic and deterministic text/binary demultiplexing;
+- little-endian fixed envelope with request ID, payload length and CRC-16/CCITT-FALSE;
+- stable public RPC IDs `0x0001..0x0020`, independent of internal dispatch enum ordinals;
+- `HELLO`, `RPC_REQUEST`, chunked `RPC_DATA`, final `RPC_END`, and `PROTOCOL_ERROR`;
+- max four arguments / 31 bytes each / 132-byte request payload;
+- 48-byte response chunks so maximum `RPC_DATA` frame is exactly one 64-byte USB FS packet;
+- explicit `ALLOW_DESTRUCTIVE` flag for destructive methods;
+- one narrow nonblocking all-or-none CDC TX-span API for frame atomicity;
+- command execution remains through the published `command_service_execute()` path;
+- no heap, new task/SVC/IPC/timer subsystem, USB descriptor/PMA redesign, OLED edit, host GUI, firmware update or bootloader.
+
+Canonical protocol:
+`docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
+
+Canonical design:
+`docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
+
+Canonical acceptance:
+`docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
 
 Accepted Gate 2/3 candidate:
 
-- tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`;
-- BIN `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
-- Flash `37196` bytes, SRAM `9216` bytes;
-- Gate 3 shared-service proof PASS on UART and CDC, including `help`, `rpcinfo`, argument/editing/overflow handling and origin-only responses;
-- retained CDC safe surface `20/20` pre/post-IWDG, scheduler BUSY `8/8`, packet boundary `38/38`, CDC pressure `128/128`, UART pressure `128/128`;
-- physical reconnect and post-IWDG automatic `usbser` recovery PASS;
+- tested tree `c2c3d9743c23ab02329a9652714862fafb5bb17c`;
+- BIN `40720` bytes / `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`;
+- Flash `40720 / 65536`, SRAM `9752 / 20480`;
+- binary safe surface `21/21`, scheduler BUSY `8/8`, binary pressure `128/128` unique IDs;
+- retained CDC/UART pressure, physical reconnect, deliberate IWDG reboot and post-reset text+binary recovery: PASS;
 - final Flash readback exact;
 - Gate 4 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
-- Gate 5 evidence/docs finalization complete.
-
-Canonical design:
-`docs/SHELL_RPC_FOUNDATION_PLAN.md`
-
-Canonical acceptance:
-`docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
+- Gate 5 documentation/evidence finalization: PASS.
 
 Next:
 
-**Gate 6 — local acceptance commit of the hardware-accepted shell/RPC foundation. No push until the local commit is verified.**
+**Gate 7 — ordinary non-force publication only. No source/build/flash mutation in Gate 7.**
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

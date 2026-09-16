@@ -1774,6 +1774,50 @@ int usb_cdc_write_byte(uint8_t byte)
     return 1;
 }
 
+int usb_cdc_write_span_atomic(const uint8_t *data, uint32_t length)
+{
+    const uint32_t head = usb_cdc_tx_head;
+    const uint32_t depth = head - usb_cdc_tx_tail;
+    uint32_t index;
+    uint32_t next_depth;
+
+    if (length == 0u)
+    {
+        return 1;
+    }
+
+    if ((data == (const uint8_t *)0) ||
+        (usb_cdc_is_configured() == 0) ||
+        (length > USB_CDC_TX_RING_CAPACITY) ||
+        (depth > USB_CDC_TX_RING_CAPACITY) ||
+        (length > (USB_CDC_TX_RING_CAPACITY - depth)))
+    {
+        usb_device_diagnostics.cdc_tx_drop_count += length;
+        return 0;
+    }
+
+    /*
+     * The ring has one Thread-mode producer. Copy the complete span while the
+     * published head remains unchanged; USB IRQ may drain older bytes but
+     * cannot observe any byte from this span until the single head update.
+     */
+    for (index = 0u; index < length; ++index)
+    {
+        usb_cdc_tx_ring[(head + index) & USB_CDC_TX_RING_MASK] = data[index];
+    }
+
+    usb_cdc_tx_head = head + length;
+    next_depth = depth + length;
+
+    if (next_depth > usb_device_diagnostics.cdc_tx_high_water)
+    {
+        usb_device_diagnostics.cdc_tx_high_water = next_depth;
+    }
+
+    usb_cdc_tx_kick();
+    return 1;
+}
+
 void USB_LP_CAN1_RX0_IRQHandler(void)
 {
     uint16_t status = USB_ISTR;

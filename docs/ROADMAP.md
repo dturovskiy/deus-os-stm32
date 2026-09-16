@@ -20,35 +20,50 @@
 - [x] ordinary non-force publication complete;
 - [x] local/remote ahead-behind `0/0`.
 
-### Current boundary — transport-neutral shell/RPC foundation
+### Transport-neutral shell/RPC foundation — PUBLISHED
+
+- [x] commit `0c33304d2db86e54d715905393f49147bb6dd2ea`;
+- [x] tree `19ac9b95caca09e991842f6f9963864934b0a334`;
+- [x] accepted firmware `37196` bytes / `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
+- [x] static allocation-free 32-method command service;
+- [x] UART/CDC shared semantics, parser/origin isolation and retained hardware regressions accepted;
+- [x] ordinary non-force publication complete;
+- [x] local/remote ahead-behind `0/0` before the next boundary.
+
+### Current boundary — binary framed transport foundation
 
 Boundary:
 
-`SHELL_RPC_FOUNDATION`
+`BINARY_FRAMED_TRANSPORT_FOUNDATION`
 
 Roadmap target:
 
-- [x] Gate 0 canonical design/acceptance planning;
-- [x] static allocation-free command-service registry;
-- [x] transport-neutral response writer/context and origin RX-event semantics;
-- [x] semantic service statuses independent of UART/CDC;
-- [x] bounded in-place tokenization, line capacity `32`, maximum `4` args;
-- [x] all legacy command names and output contracts retained;
-- [x] `help` and `rpcinfo` foundation introspection;
-- [x] UART/CDC parser-state and response-origin isolation retained;
-- [x] retained scheduler/IWDG/stack/MSP/pressure/reconnect regressions;
-- [x] OLED Gate 4 conditional N/A with frozen hashes exact and `uiruntime` pre/post-IWDG PASS;
-- [x] docs/evidence finalization;
-- [ ] local acceptance commit — **NEXT**;
-- [ ] ordinary non-force publication.
+- [x] Gate 0 normative protocol/design/acceptance planning;
+- [x] versioned allocation-free binary frame parser/encoder — implemented and accepted;
+- [x] stable public 16-bit RPC IDs separate from internal dispatch enums — implemented and accepted;
+- [x] CDC text/binary coexistence with partial-text-state preservation — implemented and accepted;
+- [x] CRC-16/CCITT-FALSE integrity and bounded recovery — implemented and accepted;
+- [x] HELLO capability negotiation — implemented and accepted;
+- [x] binary RPC argument adaptation into the existing command service — implemented and accepted;
+- [x] chunked binary response writer + structured final service status — implemented and accepted;
+- [x] explicit destructive-request authorization — implemented and accepted;
+- [x] atomic nonblocking all-or-none CDC frame enqueue — implemented and accepted;
+- [x] retained text CDC/UART, scheduler/IWDG/stack/MSP/reconnect regressions — Gate 3 PASS;
+- [x] OLED Gate 4 conditional review — `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
+- [x] docs/evidence finalization — Gate 5 PASS;
+- [x] local acceptance commit — Gate 6 PASS;
+- [ ] ordinary non-force publication — Gate 7 CURRENT.
+
+Canonical protocol:
+`docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
 
 Canonical design:
-`docs/SHELL_RPC_FOUNDATION_PLAN.md`
+`docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
 
 Canonical acceptance:
-`docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
+`docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
 
-After shell/RPC publication the next transport boundary is **binary framed transport**.
+After binary transport publication the next boundary is **host control application foundation**.
 
 ### Phase 4 ordering constraint
 

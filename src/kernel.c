@@ -11,6 +11,8 @@
 #include "kernel/oled_ui_layout.h"
 #include "kernel/scheduler.h"
 #include "kernel/command_service.h"
+#include "kernel/binary_frame.h"
+#include "kernel/binary_rpc.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 #define REG8(addr)  (*(volatile uint8_t *)(addr))
@@ -445,6 +447,27 @@ static int console_usb_cdc_write_byte(void *context, uint8_t byte)
     (void)context;
     return usb_cdc_write_byte(byte);
 }
+
+static int binary_rpc_usb_send_wire(
+    void *context,
+    const uint8_t *data,
+    uint32_t length)
+{
+    (void)context;
+    return usb_cdc_write_span_atomic(data, length);
+}
+
+static binary_frame_parser_t usb_cdc_binary_parser;
+static binary_rpc_state_t usb_cdc_binary_rpc_state;
+
+static const binary_rpc_binding_t usb_cdc_binary_rpc_binding =
+{
+    binary_rpc_usb_send_wire,
+    (void *)0,
+    console_execute_request,
+    (void *)0,
+    PRODUCTION_USB_CDC_RX_EVENT
+};
 
 static void console_write(
     command_service_context_t *context,
@@ -3606,7 +3629,11 @@ static void console_watchdog_trip(command_service_context_t *context)
         return;
     }
 
-    console_write_line(context, "WDOG_TRIP_ARMED");
+    if (command_service_write_line(context, "WDOG_TRIP_ARMED") !=
+        COMMAND_SERVICE_STATUS_OK)
+    {
+        return;
+    }
 
     for (;;)
     {
@@ -3748,7 +3775,31 @@ static void console_drain_usb_cdc_rx(void)
 
     while (usb_cdc_try_getc(&c) != 0)
     {
-        console_feed_char(&usb_cdc_command_state, c);
+        binary_frame_view_t frame;
+        const binary_frame_feed_result_t feed_result =
+            binary_frame_parser_feed(
+                &usb_cdc_binary_parser,
+                (uint8_t)c,
+                &frame);
+
+        if ((feed_result == BINARY_FRAME_FEED_TEXT) ||
+            (feed_result == BINARY_FRAME_FEED_SYNC_ERROR_TEXT))
+        {
+            console_feed_char(&usb_cdc_command_state, c);
+        }
+        else if (feed_result == BINARY_FRAME_FEED_FRAME_READY)
+        {
+            if ((frame.frame_type == BINARY_FRAME_TYPE_RPC_REQUEST) &&
+                (production_console_task_started != 0u))
+            {
+                ++production_console_command_count;
+            }
+
+            (void)binary_rpc_handle_frame(
+                &usb_cdc_binary_rpc_state,
+                &frame,
+                &usb_cdc_binary_rpc_binding);
+        }
     }
 }
 
@@ -4015,6 +4066,8 @@ void kernel_main(void)
     uart_command_state.context.write_failed = 0u;
     usb_cdc_command_state.length = 0u;
     usb_cdc_command_state.context.write_failed = 0u;
+    binary_frame_parser_init(&usb_cdc_binary_parser);
+    binary_rpc_init(&usb_cdc_binary_rpc_state);
 
     production_console_task_started = 0u;
     production_console_wait_count = 0u;

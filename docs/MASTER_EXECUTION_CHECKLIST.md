@@ -5,72 +5,82 @@
 
 This section is authoritative.
 
-### Published baseline — USB CDC ACM console foundation
+### Published baseline — transport-neutral shell/RPC foundation
 
-- [x] `main` / `origin/main` / remote `main` = `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`.
-- [x] published tree = `bbc6b24e28279075c41410e8abdace89c4b805b7`.
-- [x] subject = `feat: add USB CDC ACM console foundation`.
-- [x] published firmware candidate = `58548` bytes / `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`.
-- [x] Windows `usbser`, physical reconnect, software-reset attach and post-IWDG automatic CDC recovery accepted.
+- [x] `main` / `origin/main` / remote `main` = `0c33304d2db86e54d715905393f49147bb6dd2ea`.
+- [x] published tree = `19ac9b95caca09e991842f6f9963864934b0a334`.
+- [x] subject = `feat: add transport-neutral shell RPC foundation`.
+- [x] accepted firmware candidate = `37196` bytes / `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`.
+- [x] candidate source tree = `e136814480ac0760bc5dd62a78ebca4e07f0ba98`.
+- [x] UART/CDC shell, 32-method command service, physical reconnect and post-IWDG automatic CDC recovery accepted.
 - [x] final published repo state = clean, ahead/behind `0/0`.
 
-### Current boundary — transport-neutral shell/RPC foundation
+### Current boundary — binary framed transport foundation
 
 Boundary ID:
 
-`SHELL_RPC_FOUNDATION`
+`BINARY_FRAMED_TRANSPORT_FOUNDATION`
 
 Gate 0 planning decisions:
 
-- [x] preserve UART and USB CDC as transport adapters, not command-policy owners;
-- [x] add one static allocation-free command-service registry;
-- [x] execution context owns generic response writer + opaque context + source RX-event mask;
-- [x] semantic status taxonomy is `OK / NOT_FOUND / BAD_ARGS / BUSY / INTERNAL_ERROR`;
-- [x] retain the existing `32`-byte command line capacity;
-- [x] bounded maximum `4` argument tokens with in-place tokenization;
-- [x] preserve all existing published command names and accepted response tokens;
-- [x] authorize only `help` and `rpcinfo` as new foundation introspection methods;
-- [x] retain independent UART/CDC partial-line parser state;
-- [x] no binary framing, public numeric RPC IDs, host app, firmware update, bootloader, heap, new task/SVC/IPC, scheduler-core change, USB-driver change or OLED change.
+- [x] binary v1 rides over the existing USB CDC byte stream; UART remains text-only emergency diagnostics;
+- [x] text/binary CDC demux reserves magic `A5 5A` and preserves partial text-shell state across complete binary frames;
+- [x] exact versioned envelope uses request IDs, explicit payload length and little-endian integer fields;
+- [x] integrity is CRC-16/CCITT-FALSE (`poly 0x1021`, init `0xFFFF`);
+- [x] stable public 16-bit RPC IDs `0x0001..0x0020` are separate from internal dispatch enum ordinals;
+- [x] max `4` arguments, max `31` bytes each, max RPC request payload `132` bytes;
+- [x] response output is chunked; max data chunk `48` bytes gives an exact `64`-byte maximum RPC_DATA wire frame;
+- [x] `HELLO_REQUEST/RESPONSE`, `RPC_REQUEST`, `RPC_DATA`, `RPC_END`, `PROTOCOL_ERROR` are the only v1 frame types;
+- [x] destructive RPC requires explicit `ALLOW_DESTRUCTIVE` request flag;
+- [x] binary frame TX requires nonblocking all-or-none CDC ring enqueue; no indefinite busy wait;
+- [x] command semantics remain owned by the published command service; binary adapter must reuse `command_service_execute()`;
+- [x] no heap, new task, SVC, IPC/timer subsystem, USB descriptor/PMA redesign, firmware update, bootloader, host GUI or OLED change.
 
 Gate order:
 
-- [x] Gate 0 planning/docs synchronization — **PASS**.
-- [x] Gate 1 exact source investigation + command-service implementation — **PASS / SOURCE FINALIZED**.
-- [x] Gate 2 fresh GNU build/link/static validation — **PASS**; candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`, BIN `37196` bytes / `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`.
-- [x] Gate 3 UART + CDC shell/RPC hardware acceptance and retained regressions — **PASS**.
-- [x] Gate 4 OLED conditional review — `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+- [x] Gate 0 planning + normative protocol/docs synchronization — **PASS**.
+- [x] Gate 1 exact source investigation + binary framing/RPC implementation — **PASS / SOURCE IMPLEMENTED**.
+- [x] Gate 2 fresh GNU build/link/static validation — **PASS**.
+- [x] Gate 3 USB CDC binary + retained text/UART hardware acceptance — **PASS**.
+- [x] Gate 4 OLED conditional review — **PASS / `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`**.
 - [x] Gate 5 docs/evidence finalization — **PASS**.
-- [ ] Gate 6 local acceptance commit — **CURRENT / NEXT**.
-- [ ] Gate 7 ordinary non-force publication.
+- [x] Gate 6 local acceptance commit — **PASS**.
+- [ ] Gate 7 ordinary non-force publication — **CURRENT**.
 
-Accepted candidate/evidence:
+Accepted Gate 2/3 candidate and evidence:
 
-- [x] candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`;
-- [x] BIN `37196` bytes / `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
-- [x] Flash `37196` bytes / SRAM `9216` bytes;
-- [x] Gate 2 evidence `34FB1B6D368A29AF5460174BBDA6AE81E479E5D11FBC0E25FDAC01617105BEA3`;
-- [x] Gate 3 evidence `0EE7342129866C86A1AAFBA42E942E2097C78BFDF3CF50D0C93F3A6B71E9A4E9`;
-- [x] Gate 3 final Flash readback exact; IWDG reboot/recovery `9042 ms`.
+- [x] tested candidate tree `c2c3d9743c23ab02329a9652714862fafb5bb17c`;
+- [x] BIN `40720` bytes / `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`;
+- [x] ELF `65876` bytes / `4DAFEF92ED58F72BF2C4A29B8E3B1131579BD9ADC4002DB2EAB0F1387BFF634B`;
+- [x] Flash `40720 / 65536`, SRAM `9752 / 20480`;
+- [x] binary safe surface `21/21`, binary scheduler BUSY `8/8`, binary pressure `128/128` unique IDs;
+- [x] retained CDC pressure `128/128`, UART race `128/128`, physical reconnect PASS, post-IWDG text+binary recovery PASS;
+- [x] final Flash readback exact;
+- [x] Gate 2 evidence `D1EAB3470A88A802314B9F9A735CA49799FBD0F30D0413CA99F8698503CF8E3A`;
+- [x] Gate 3 log `F8DE91AE43AA2731C26828FF4A993597E4FD940794D0BEE03D661B0DB771758B`;
+- [x] Gate 3 evidence `8A38E6E60A3B6B2EAE0F35835E6BBE06AF5E38513A492BA2184662243E1B6565`.
 
 Permanent constraints retained:
 
 - direct-register bare metal; no HAL/Arduino/FreeRTOS;
-- UART remains emergency diagnostics;
+- UART remains text emergency diagnostics;
 - ST-LINK remains recovery/debug;
 - no dual ST-LINK 3.3 V + micro-USB VBUS powering;
 - UART adapter VCC remains disconnected;
 - IWDG reload remains Thread/PSP production-progress owned and forbidden from USB/UART IRQ/Handler;
 - existing two-task production topology remains authoritative;
+- USB IRQ remains bounded hardware/ring/event ownership only;
 - generic timers, IPC/queues/synchronization and runtime statistics remain deferred;
-- binary framing remains the next transport boundary after this one;
 - OLED/gfx/status-bar remain frozen.
 
-Canonical design:
-`docs/SHELL_RPC_FOUNDATION_PLAN.md`
+Canonical protocol:
+`docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
 
-Canonical acceptance plan:
-`docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
+Canonical design:
+`docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
+
+Canonical acceptance:
+`docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

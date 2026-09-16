@@ -1,6 +1,6 @@
 # STM32 OS — Transport-Neutral Shell/RPC Foundation Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **COMPLETED / PUBLISHED — commit `0c33304d2db86e54d715905393f49147bb6dd2ea`**
 
 Boundary ID:
 

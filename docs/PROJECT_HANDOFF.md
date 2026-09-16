@@ -5,116 +5,121 @@
 
 ### Published repository baseline
 
-`main`, `origin/main` and remote `main` are synchronized at:
+`main`, `origin/main` and remote `main` were synchronized before this boundary at:
 
-`5a8a45618b87b3069fd7cbac6119035b6ac4ad2c` — `feat: add USB CDC ACM console foundation`
+`0c33304d2db86e54d715905393f49147bb6dd2ea` — `feat: add transport-neutral shell RPC foundation`
 
-Tree:
+Published tree:
 
-`bbc6b24e28279075c41410e8abdace89c4b805b7`
+`19ac9b95caca09e991842f6f9963864934b0a334`
 
-Published CDC candidate:
-
-```text
-tested source tree  d815a8357b9f77850c08ff071f47be8d2b5d4b53
-binary              58548 bytes
-SHA-256             D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE
-identity             1209:000B / Deus OS CDC Console / private test only
-Flash used           58548 bytes
-SRAM used            9200 bytes
-```
-
-The USB CDC ACM console foundation is fully accepted and published. Windows inbox `usbser` binding, automatic attach after software reset, physical micro-USB reconnect, `128/128` CDC pressure with zero drops, retained `128/128` UART pressure, dual-transport isolation, real IWDG reset with automatic CDC reopen, exact final Flash readback, and OLED conditional N/A disposition all passed.
-
-### Current architecture boundary
-
-`SHELL_RPC_FOUNDATION`
-
-Gates 0–5 are accepted. Gate 2 built the exact candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`; Gate 3 hardware acceptance passed on UART and CDC, including parser/editing/origin isolation, retained pressure/scheduler/IWDG/USB recovery regressions, physical reconnect and final exact Flash readback. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`. Gate 5 documentation/evidence finalization is complete. Gate 6 local acceptance commit is next.
-
-Current Gate 1 command path:
+Published shell/RPC candidate:
 
 ```text
-UART RX ring ----> independent 32-byte text parser --+
-                                                    |
-USB CDC RX ring -> independent 32-byte text parser --+--> command_service_parse_line()
-                                                           |
-                                                           +--> command_service_execute()
-                                                                   |
-                                                                   +--> explicit execution context
-                                                                   +--> internal method dispatch
-                                                                   +--> originating response writer
-```
-
-Current source facts:
-
-- `include/kernel/command_service.h` and `src/kernel/command_service.c` define one static, allocation-free command service;
-- the registry contains every published legacy method plus only `help` and `rpcinfo` as new foundation methods;
-- method descriptors carry method identity, SAFE/DIAGNOSTIC/DESTRUCTIVE class, bounded argument counts and an internal dispatch key;
-- command line capacity remains exactly `32` bytes per transport and maximum argument count is `4`;
-- UART and CDC retain independent partial-line state; CR/LF termination, backspace/DEL editing and source-local overflow recovery remain intact;
-- repeated ASCII spaces/tabs collapse during bounded in-place tokenization;
-- execution context explicitly carries response writer, opaque writer context, source RX-event mask and latched writer-failure state;
-- normal command execution has no `console_active_context`, `console_output_transport`, `CONSOLE_TRANSPORT_*`, or equivalent global active-transport selector;
-- `schedtimed` reads its wake event directly from the explicit originating execution context;
-- response writer failure is promoted to service `INTERNAL_ERROR` instead of being silently discarded;
-- service status `OK` means dispatch/execution completed; method-specific hardware/self-test success or failure remains represented by existing payload tokens such as `OLED_*_OK/ERR` and `SCHED_*_OK/ERR`;
-- UART-specific boot/fatal/recovery output is isolated in `uart_emergency_write*()` and is outside normal command-service response routing;
-- all normal command execution remains serialized in production task0 / Thread-PSP;
-- UART IRQ and USB IRQ only publish bytes/events and never execute command policy or reload IWDG;
-- scheduler core, USB driver/class, startup, linker, IWDG driver and frozen OLED/gfx/status-bar sources remain outside Gate 1 mutation scope;
-- binary framing/public numeric method IDs, host app, firmware update and bootloader remain later boundaries.
-
-Published source guards before Gate 1:
-
-```text
-src/kernel.c                    CB78CBB9AD1CA0513E7673760A9FC3FB4ED5FE7F67847D9F984400E6B17215F7
-src/drivers/usb_device.c        A7FE1CCB71EA4C36A306607E4A11AEDEBCA6ABABA3D1356584A61E2EEAFB5AF3
-include/drivers/usb_device.h    69915DF563CB259830EE2F473764EB32C9AC4BB30E94BB846101914BD76A7FD5
-src/kernel/scheduler.c          B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88
-include/kernel/scheduler.h      A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841
-src/startup.s                   B72063BD58EE01FC6EE42D10C765EAC9B47381E18D01051E1557C7FDA80D6461
-src/drivers/iwdg.c              DFBCC9479135064B778F952B9E9ADCE370AFFD870B5BE44EA6AF3B4D0ECEE3C0
-```
-
-Gate 1 finalized source fingerprints before Gate 2:
-
-```text
-include/kernel/command_service.h D317E48ACE3AADE5E37335DC26683B3F41B2CCDFFD52D59A9AC6BB485707D364
-src/kernel/command_service.c     E90EA2F4B5C4C3FDED071D2BA9FE349CACB59010B266A06E3A72A850ACE95E76
-src/kernel.c                     F84D88FC7F8001732507FD85D0CDB4CEC0A1F32CD59604CA1FE64D0BB295CD0A
-```
-
-Retained guards rechecked before Gate 2 remain exact, including USB, scheduler, startup, IWDG, frozen OLED/gfx/status-bar sources and `linker/stm32f103c8.ld`. `git diff --check` is clean.
-
-Accepted shell/RPC candidate and evidence:
-
-```text
-candidate tree        e136814480ac0760bc5dd62a78ebca4e07f0ba98
-BIN                   37196 bytes
-BIN SHA-256           90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60
+candidate tree       e136814480ac0760bc5dd62a78ebca4e07f0ba98
+binary               37196 bytes
+SHA-256              90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60
 ELF                   64816 bytes
 ELF SHA-256           D95F9798612E3F7A03EF27F138DA8DBCA7B956F2B4AAF5D0CEE8179308EEBCBA
 Flash used            37196 bytes
 SRAM used             9216 bytes
+```
+
+The transport-neutral shell/RPC foundation is fully accepted and published. The 32-method allocation-free command service is shared by UART and USB CDC text adapters; parser/editing/origin isolation, pressure, physical reconnect, real IWDG reset with automatic CDC reopen, exact final Flash readback and OLED conditional N/A disposition all passed.
+
+### Current architecture boundary
+
+`BINARY_FRAMED_TRANSPORT_FOUNDATION`
+
+Gates 0–6 are accepted; Gate 7 ordinary non-force publication is current. The v1 implementation includes the bounded binary frame parser/encoder, stable public RPC-ID lookup, binary RPC request/response adapter, explicit destructive authorization, CDC text/binary demultiplexing in task0, and one narrowly scoped nonblocking all-or-none CDC TX-span primitive. Scheduler/watchdog/OLED ownership remains unchanged, and Gate 3 hardware acceptance proved the exact Gate 2 candidate end-to-end.
+
+Published command-service path inherited by this boundary:
+
+```text
+UART RX ring ----> independent text parser --------+
+                                                     |
+USB CDC RX ring -> text parser ---------------------+--> command_service_execute()
+                                                     |
+CDC binary parser -----------------------------------+
+                                                             |
+                                                             +--> explicit execution context
+                                                             +--> shared method registry/handlers
+                                                             +--> originating response adapter
+```
+
+Published source facts inherited unchanged at Gate 0:
+
+- `include/kernel/command_service.h` and `src/kernel/command_service.c` define one static allocation-free command service;
+- registry count is exactly `32`, with SAFE/DIAGNOSTIC/DESTRUCTIVE classification and max `4` args;
+- command execution remains serialized in production task0 / Thread-PSP;
+- UART/USB IRQs publish hardware bytes/events only and never execute command policy or reload IWDG;
+- UART boot/fatal/recovery output remains an explicit emergency path;
+- USB CDC RX/TX rings remain `1024` / `2048` bytes;
+- at the Gate 0 baseline, the CDC TX API was byte-at-a-time and could partially enqueue a larger logical message before ring-full failure; Gate 1 therefore added one nonblocking all-or-none bounded span enqueue;
+- USB descriptors, PMA map, endpoint lifecycle, scheduler, startup, linker, IWDG and frozen OLED/gfx/status-bar are otherwise guarded.
+
+Normative binary v1 contract:
+
+- magic `A5 5A` with CDC text/binary coexistence;
+- version `1`, explicit frame type/flags/request ID/payload length;
+- little-endian multi-byte fields;
+- CRC-16/CCITT-FALSE (`poly 0x1021`, init `0xFFFF`);
+- stable public RPC IDs `0x0001..0x0020`, separate from internal C enum ordinals;
+- request ID `0` reserved; host requests use `1..65535`;
+- max `4` args, max `31` bytes per arg, max request payload `132` bytes;
+- response chunks max `48` command-output bytes, yielding a maximum `RPC_DATA` frame of exactly `64` wire bytes;
+- explicit `ALLOW_DESTRUCTIVE` flag for destructive RPC;
+- bad CRC executes no command;
+- no heap/new task/SVC/IPC/timer subsystem/vendor-specific USB interface/firmware update/bootloader in this boundary.
+
+Accepted binary transport candidate and evidence:
+
+```text
+tested candidate tree c2c3d9743c23ab02329a9652714862fafb5bb17c
+binary                40720 bytes
+BIN SHA-256            AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022
+ELF                    65876 bytes
+ELF SHA-256            4DAFEF92ED58F72BF2C4A29B8E3B1131579BD9ADC4002DB2EAB0F1387BFF634B
+MAP SHA-256            6A71B9E6F8FAB93870C95B967448FEEE6D1656DF1098A63DB90D122125609FD6
+Flash used             40720 / 65536
+SRAM used              9752 / 20480
+Gate 2 evidence        D1EAB3470A88A802314B9F9A735CA49799FBD0F30D0413CA99F8698503CF8E3A
+Gate 3 log             F8DE91AE43AA2731C26828FF4A993597E4FD940794D0BEE03D661B0DB771758B
+Gate 3 evidence        8A38E6E60A3B6B2EAE0F35835E6BBE06AF5E38513A492BA2184662243E1B6565
+Gate 4                 PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS
+```
+
+Gate 3 proved HELLO/request-ID correlation, all `21/21` binary safe methods, `8/8` live scheduler diagnostics as BUSY, malformed/CRC/oversize recovery, exact `help` chunk sequencing/accounting, partial-text preservation, `128/128` unique-ID binary pressure, retained CDC/UART pressure, physical reconnect, authorized binary watchdog trip, automatic post-IWDG UART/CDC text+binary recovery, and final exact Flash identity.
+
+Gate 5 finalized documentation/evidence only; no source/build/flash/commit/push was performed by Gate 5.
+
+Published shell/RPC evidence retained:
+
+```text
 Gate 2 evidence       34FB1B6D368A29AF5460174BBDA6AE81E479E5D11FBC0E25FDAC01617105BEA3
 Gate 3 log            0DCECB16F505C60A07AC73790DFAE4D7BFDFAEE56B6154DC503A5AF17B989E70
 Gate 3 evidence       0EE7342129866C86A1AAFBA42E942E2097C78BFDF3CF50D0C93F3A6B71E9A4E9
+Gate 4                PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS
 ```
 
-Gate 3 accepted `32` deterministic methods, exact `help`/`help ping`/`rpcinfo`, legacy `ERR` on originating transport for unknown/bad args, tabs/backspace/DEL/overflow recovery, origin-bound UART/CDC responses, controlled `schedtimed` wake on both transports, CDC safe surface `20/20` pre/post-IWDG, scheduler diagnostics `8/8 BUSY`, packet-boundary proof `38/38`, CDC pressure `128/128` with zero drops, UART pressure `128/128`, physical USB reconnect, real IWDG reboot in `9042 ms` with automatic `usbser` reopen, and final exact Flash readback. Frozen OLED/gfx/status-bar hashes remained exact and `uiruntime` passed before and after IWDG, so Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
-
-Canonical design:
+Published shell/RPC design/acceptance:
 `docs/SHELL_RPC_FOUNDATION_PLAN.md`
-
-Canonical acceptance:
 `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Power rule remains: micro-USB is the normal target power source during USB runtime; ST-LINK 3.3 V and UART adapter VCC remain disconnected. Signal wiring need not be removed.
+Current binary protocol:
+`docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
+
+Current binary design:
+`docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
+
+Current binary acceptance:
+`docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
+
+Power rule remains: micro-USB is the normal target power source during USB runtime; ST-LINK 3.3 V and UART adapter VCC remain disconnected. UART TX/RX, SWDIO/SWCLK and grounds remain connected.
 
 ### Exact next gate
 
-**Gate 6 — local acceptance commit of the exact hardware-accepted `SHELL_RPC_FOUNDATION` path set. Gate 7 ordinary non-force publication follows only after local commit verification.**
+**Gate 7 — ordinary non-force publication for `BINARY_FRAMED_TRANSPORT_FOUNDATION`. Require the exact accepted local commit, clean repo, remote still at the published parent, fast-forward ancestry, and one ordinary `git push origin main:main`.**
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 

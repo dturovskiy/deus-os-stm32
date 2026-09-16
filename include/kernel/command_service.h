@@ -25,6 +25,42 @@ typedef enum
 
 typedef enum
 {
+    COMMAND_SERVICE_RPC_PING = 0x0001u,
+    COMMAND_SERVICE_RPC_UPTIME = 0x0002u,
+    COMMAND_SERVICE_RPC_HEALTH = 0x0003u,
+    COMMAND_SERVICE_RPC_RXSTAT = 0x0004u,
+    COMMAND_SERVICE_RPC_CDCSTAT = 0x0005u,
+    COMMAND_SERVICE_RPC_MSPSTAT = 0x0006u,
+    COMMAND_SERVICE_RPC_SCHEDPROD = 0x0007u,
+    COMMAND_SERVICE_RPC_SCHEDTIMED = 0x0008u,
+    COMMAND_SERVICE_RPC_SCHEDPRIO = 0x0009u,
+    COMMAND_SERVICE_RPC_FAULT = 0x000Au,
+    COMMAND_SERVICE_RPC_I2CSCAN = 0x000Bu,
+    COMMAND_SERVICE_RPC_OLEDPING = 0x000Cu,
+    COMMAND_SERVICE_RPC_OLEDTEST = 0x000Du,
+    COMMAND_SERVICE_RPC_OLEDTEXT = 0x000Eu,
+    COMMAND_SERVICE_RPC_OLEDRENDER = 0x000Fu,
+    COMMAND_SERVICE_RPC_OLEDCONSOLE = 0x0010u,
+    COMMAND_SERVICE_RPC_OLEDSCROLL = 0x0011u,
+    COMMAND_SERVICE_RPC_OLEDDIRTY = 0x0012u,
+    COMMAND_SERVICE_RPC_OLEDUIUPDATE = 0x0013u,
+    COMMAND_SERVICE_RPC_UIRUNTIME = 0x0014u,
+    COMMAND_SERVICE_RPC_OLEDSTATUS = 0x0015u,
+    COMMAND_SERVICE_RPC_SCHEDTEST = 0x0016u,
+    COMMAND_SERVICE_RPC_SCHEDCOOP = 0x0017u,
+    COMMAND_SERVICE_RPC_SCHEDPREEMPT = 0x0018u,
+    COMMAND_SERVICE_RPC_SCHEDSTACK = 0x0019u,
+    COMMAND_SERVICE_RPC_SCHEDWORKLOAD = 0x001Au,
+    COMMAND_SERVICE_RPC_SCHEDCONSOLEPROBE = 0x001Bu,
+    COMMAND_SERVICE_RPC_SCHEDWAITWAKE = 0x001Cu,
+    COMMAND_SERVICE_RPC_SCHEDISOLATE = 0x001Du,
+    COMMAND_SERVICE_RPC_WDOGTRIP = 0x001Eu,
+    COMMAND_SERVICE_RPC_HELP = 0x001Fu,
+    COMMAND_SERVICE_RPC_RPCINFO = 0x0020u
+} command_service_rpc_id_t;
+
+typedef enum
+{
     COMMAND_SERVICE_METHOD_PING = 0,
     COMMAND_SERVICE_METHOD_UPTIME,
     COMMAND_SERVICE_METHOD_HEALTH,
@@ -73,6 +109,7 @@ typedef struct
 typedef struct
 {
     const char *name;
+    uint16_t rpc_id;
     command_service_method_id_t method_id;
     command_service_class_t command_class;
     uint8_t min_args;
@@ -94,6 +131,7 @@ typedef command_service_status_t (*command_service_handler_t)(
 uint32_t command_service_registry_count(void);
 const command_service_descriptor_t *command_service_registry_at(uint32_t index);
 const command_service_descriptor_t *command_service_find(const char *name);
+const command_service_descriptor_t *command_service_find_rpc_id(uint16_t rpc_id);
 const char *command_service_class_name(command_service_class_t command_class);
 command_service_status_t command_service_parse_line(
     char *line,

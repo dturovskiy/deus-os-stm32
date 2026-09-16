@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **USB CDC ACM console published at `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`; `SHELL_RPC_FOUNDATION` Gates 0–5 accepted / Gate 6 next**
+Status: **transport-neutral shell/RPC remains the published remote baseline at `0c33304d2db86e54d715905393f49147bb6dd2ea`; `BINARY_FRAMED_TRANSPORT_FOUNDATION` Gates 0–6 accepted / Gate 7 ordinary non-force publication current**
 
 ## C4.0 accepted IWDG liveness record
 
@@ -153,7 +153,7 @@ Parser state is per transport so UART and CDC streams may interleave without cor
 Canonical design: `docs/USB_CDC_ACM_CONSOLE_PLAN.md`.
 Canonical acceptance: `docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`.
 
-## Accepted architecture candidate — transport-neutral shell/RPC foundation — GATES 0–5 PASS
+## Accepted architecture — transport-neutral shell/RPC foundation — PUBLISHED `0c33304d2db86e54d715905393f49147bb6dd2ea`
 
 Boundary: `SHELL_RPC_FOUNDATION`.
 
@@ -190,6 +190,62 @@ Implemented service invariants:
 
 Canonical design: `docs/SHELL_RPC_FOUNDATION_PLAN.md`.
 Canonical acceptance: `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`.
+
+## Accepted architecture — binary framed transport foundation — GATES 0–5 ACCEPTED
+
+Boundary: `BINARY_FRAMED_TRANSPORT_FOUNDATION`.
+
+The binary transport is an adapter above the published USB CDC byte stream and below the same command service already used by the text shell. It does not create a second command language.
+
+```text
+Windows/Linux host
+        |
+     USB CDC
+        |
+text/binary demultiplexer
+   |              |
+text parser    binary frame parser
+   |              |
+   +-------> command service <-------+
+                  |
+               handlers
+                  |
+         originating response adapter
+```
+
+Protocol v1 architecture:
+
+- binary sync magic is `A5 5A`; a complete binary frame is isolated from the text parser;
+- existing partial CDC text-line state survives an intervening binary frame;
+- all multi-byte wire fields are little-endian;
+- CRC-16/CCITT-FALSE protects version/type/flags/reserved/request-ID/length/payload;
+- stable public 16-bit method IDs are explicit protocol ABI and are never inferred from the internal C dispatch enum;
+- host request ID `0` is reserved; requests `1..65535` are echoed by responses;
+- request argument adaptation is bounded to four arguments of at most 31 bytes each;
+- command output is streamed as bounded `RPC_DATA` frames rather than buffered wholesale;
+- 48 command-output bytes per data chunk produce an exact 64-byte maximum `RPC_DATA` wire frame;
+- returning commands finish with structured `RPC_END` status while preserving existing method-specific diagnostic payload bytes;
+- destructive methods require an explicit request flag; CRC integrity alone is not destructive authorization;
+- binary TX requires a nonblocking all-or-none bounded CDC span enqueue so a ring-full condition cannot publish a partial frame;
+- USB IRQ remains endpoint/PMA/ring/event ownership only; parsing, CRC, RPC dispatch and response framing remain task0 / Thread-PSP work;
+- UART remains the independent text emergency console;
+- no heap, new task, SVC, IPC/timer subsystem, USB descriptor/PMA redesign or OLED change is introduced by the foundation.
+
+Canonical wire contract: `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`.
+Canonical design: `docs/BINARY_FRAMED_TRANSPORT_PLAN.md`.
+Canonical acceptance: `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`.
+
+Accepted binary transport proof — 2026-09-16:
+
+- tested source candidate tree `c2c3d9743c23ab02329a9652714862fafb5bb17c`;
+- BIN `40720` bytes / SHA-256 `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`;
+- Flash `40720 / 65536`, SRAM `9752 / 20480`;
+- fresh `16 C + 1 ASM` `-Wall -Wextra -Werror` build, exact `32` public RPC IDs and CRC KAT accepted;
+- hardware: binary safe surface `21/21`, scheduler BUSY `8/8`, binary pressure `128/128` unique IDs, retained CDC/UART pressure, physical reconnect, destructive binary IWDG proof, automatic post-reset text+binary recovery and exact final Flash readback all PASS;
+- frozen OLED/gfx/status-bar remained exact; Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
+- Gate 5 documentation/evidence finalization is accepted; no source/build/flash/commit/push occurred in Gate 5.
+
+Gate 6 local acceptance commit is accepted. Gate 7 ordinary non-force publication is current; after publication, the next architecture boundary is **host control application foundation**.
 
 ## 1. Boot flow
 

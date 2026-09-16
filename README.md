@@ -5,66 +5,43 @@
 
 Published baseline:
 
-`5a8a45618b87b3069fd7cbac6119035b6ac4ad2c` — `feat: add USB CDC ACM console foundation`
+`0c33304d2db86e54d715905393f49147bb6dd2ea` — `feat: add transport-neutral shell RPC foundation`
 
 Published tree:
 
-`bbc6b24e28279075c41410e8abdace89c4b805b7`
+`19ac9b95caca09e991842f6f9963864934b0a334`
 
-USB CDC ACM diagnostic/command console foundation — **PUBLISHED**
+Transport-neutral shell/RPC foundation — **PUBLISHED**
 
-Accepted core candidate:
+Accepted shell/RPC firmware:
 
-- source candidate tree: `4b798382ef843ef8f488115624d48c0cd1506c75`;
-- binary: `43812` bytes;
-- SHA-256: `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`;
-- private-test identity `1209:000A` / `Deus OS USB Core`;
-- exact EP0 enumeration/address proof, reconnect recovery, post-IWDG recovery, retained UART/scheduler/IWDG regressions, final Flash exact;
+- candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`;
+- binary `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
+- Flash `37196` bytes, SRAM `9216` bytes;
+- static allocation-free registry with `32` methods;
+- explicit transport-neutral execution context and response writer;
+- `help`, `help ping`, `rpcinfo`, bounded `4` args and `32`-byte text line capacity;
+- UART/CDC parser isolation, editing, origin-bound responses, pressure and IWDG/reconnect regressions hardware accepted;
+- final Flash readback exact;
 - OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
 
 Current architecture boundary:
 
-`SHELL_RPC_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**
+`BINARY_FRAMED_TRANSPORT_FOUNDATION` — **GATES 0–6 ACCEPTED / GATE 7 ORDINARY NON-FORCE PUBLICATION CURRENT**
 
-Accepted CDC candidate:
+Protocol v1 is implemented and hardware accepted over the existing USB CDC byte stream while retaining the human text shell and UART emergency console. The accepted contract uses `A5 5A` framing magic, request IDs, little-endian fields, CRC-16/CCITT-FALSE, stable 16-bit RPC method IDs, bounded arguments, 48-byte response chunks, explicit destructive-request authorization and no heap/new task/SVC/USB descriptor change.
 
-- tested source tree `d815a8357b9f77850c08ff071f47be8d2b5d4b53`;
-- binary `58548` bytes;
-- SHA-256 `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`;
-- private-test identity `1209:000B` / `Deus OS CDC Console`;
-- Windows inbox `usbser.sys`, configuration `1`, no custom INF;
-- CDC Control + CDC Data over EP1 notification, EP2 OUT, EP3 IN;
-- task0 owns both UART and CDC command transport with independent parser state and origin-bound responses;
-- bounded CDC RX/TX rings `1024` / `2048` bytes;
-- automatic USB detach/attach recovery across MCU/IWDG reset via bounded PA12/D+ low pulse;
-- software-reset attach, physical reconnect, post-IWDG CDC reopen, class-control, pressure, scheduler, UART and dual-transport acceptance PASS;
-- final Flash exact;
-- OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+Accepted tested candidate: tree `c2c3d9743c23ab02329a9652714862fafb5bb17c`, BIN `40720` bytes / `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`, Flash `40720 / 65536`, SRAM `9752 / 20480`. Gate 3 proved `21/21` binary safe methods, `8/8` scheduler BUSY diagnostics, `128/128` unique-ID binary pressure, retained CDC/UART pressure, physical reconnect, deliberate IWDG reset with automatic text+binary recovery, and final exact Flash readback. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`; Gate 5 documentation/evidence finalization is accepted.
 
-Canonical design/acceptance:
+Canonical binary transport docs:
 
-- `docs/USB_CDC_ACM_CONSOLE_PLAN.md`
-- `docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
-
-Accepted shell/RPC candidate:
-
-- candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`;
-- binary `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
-- static allocation-free registry with `32` methods;
-- transport-neutral execution context and response writer;
-- `help` / `help ping` / `rpcinfo`, bounded `4` args and `32`-byte line capacity;
-- UART/CDC editing, parser isolation, origin-bound responses and retained pressure/scheduler/IWDG regressions hardware accepted;
-- physical USB reconnect, post-IWDG automatic CDC recovery and final exact Flash readback PASS;
-- OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+- `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
+- `docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
+- `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
 
 Next gate:
 
-**Gate 6 — local acceptance commit of the accepted shell/RPC foundation.**
-
-Canonical planning:
-
-- `docs/SHELL_RPC_FOUNDATION_PLAN.md`
-- `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
+**Gate 7 — ordinary non-force publication only. Require exact local acceptance commit, clean repo, remote still at the published parent, and fast-forward ancestry before push.**
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.

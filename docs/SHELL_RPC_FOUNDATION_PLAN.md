@@ -1,6 +1,6 @@
 # STM32 OS — Transport-Neutral Shell/RPC Foundation Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **COMPLETED / PUBLISHED — commit `0c33304d2db86e54d715905393f49147bb6dd2ea`**
 
 Boundary ID:
 
@@ -266,7 +266,7 @@ Not in this boundary:
 
 ## Accepted implementation record — 2026-09-16
 
-Gate 1 produced the explicit-context allocation-free command service described above. Gate 2 accepted candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`, BIN `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`, with Flash `37196` bytes and SRAM `9216` bytes. Gate 3 accepted the full UART/CDC shared-service contract and retained scheduler/watchdog/USB regressions, including physical reconnect and automatic post-IWDG `usbser` recovery. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`; Gate 5 docs/evidence finalization is complete. Gate 6 local acceptance commit is next.
+Gate 1 produced the explicit-context allocation-free command service described above. Gate 2 accepted candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`, BIN `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`, with Flash `37196` bytes and SRAM `9216` bytes. Gate 3 accepted the full UART/CDC shared-service contract and retained scheduler/watchdog/USB regressions, including physical reconnect and automatic post-IWDG `usbser` recovery. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`; Gates 5–7 are complete. Published commit `0c33304d2db86e54d715905393f49147bb6dd2ea`, tree `19ac9b95caca09e991842f6f9963864934b0a334`; next boundary is `BINARY_FRAMED_TRANSPORT_FOUNDATION`.
 
 ## 15. Gate order
 

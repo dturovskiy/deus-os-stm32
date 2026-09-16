@@ -86,7 +86,7 @@ Evidence:
 
 Published commit `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`, tree `bbc6b24e28279075c41410e8abdace89c4b805b7`, subject `feat: add USB CDC ACM console foundation`. Ordinary non-force publication complete; local/remote ahead-behind `0/0`.
 
-### Accepted — transport-neutral shell/RPC foundation — publication pending
+### Published — transport-neutral shell/RPC foundation
 
 Boundary: `SHELL_RPC_FOUNDATION`.
 
@@ -94,7 +94,44 @@ Gate 0 establishes a static allocation-free command service above the already ac
 
 Canonical planning: `docs/SHELL_RPC_FOUNDATION_PLAN.md` and `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
-Gates 0–5 are accepted. Gate 2 produced candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`, BIN `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`, Flash `37196` bytes and SRAM `9216` bytes. Gate 3 proved the shared command service over both UART and CDC: deterministic 32-method registry, `help`, `help ping`, `rpcinfo`, exact legacy `ERR` behavior, tabs/backspace/DEL/overflow recovery, origin-bound replies, UART+CDC `schedtimed`, retained `20/20` CDC safe surface pre/post IWDG, `8/8` scheduler BUSY, `38/38` packet-boundary PONG, `128/128` CDC pressure, `128/128` UART pressure, physical USB reconnect, real IWDG reboot with automatic CDC reopen, and final exact Flash readback. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`; Gate 5 docs/evidence finalization is complete. Next: Gate 6 local acceptance commit; Gate 7 ordinary non-force publication.
+Gates 0–7 are accepted and published. Gate 2 produced candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`, BIN `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`, Flash `37196` bytes and SRAM `9216` bytes. Gate 3 proved the shared command service over both UART and CDC: deterministic 32-method registry, `help`, `help ping`, `rpcinfo`, exact legacy `ERR` behavior, tabs/backspace/DEL/overflow recovery, origin-bound replies, UART+CDC `schedtimed`, retained `20/20` CDC safe surface pre/post IWDG, `8/8` scheduler BUSY, `38/38` packet-boundary PONG, `128/128` CDC pressure, `128/128` UART pressure, physical USB reconnect, real IWDG reboot with automatic CDC reopen, and final exact Flash readback. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`. Published commit `0c33304d2db86e54d715905393f49147bb6dd2ea`, tree `19ac9b95caca09e991842f6f9963864934b0a334`, subject `feat: add transport-neutral shell RPC foundation`; local/remote ahead-behind `0/0`.
+
+### Accepted through Gate 5 — binary framed transport foundation
+
+Boundary: `BINARY_FRAMED_TRANSPORT_FOUNDATION`.
+
+Gates 0–6 are accepted; Gate 7 ordinary non-force publication is current. Protocol v1 runs over the existing USB CDC stream with `A5 5A` magic, little-endian fields, request-ID correlation, CRC-16/CCITT-FALSE, stable explicit 16-bit RPC IDs for all 32 command-service methods, bounded four-argument adaptation, 48-byte response-data chunks, structured final status, explicit destructive authorization, deterministic text/binary coexistence, and nonblocking all-or-none CDC frame enqueue.
+
+Accepted tested candidate:
+
+- source candidate tree `c2c3d9743c23ab02329a9652714862fafb5bb17c`;
+- BIN `40720` bytes / SHA-256 `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`;
+- ELF `65876` bytes / SHA-256 `4DAFEF92ED58F72BF2C4A29B8E3B1131579BD9ADC4002DB2EAB0F1387BFF634B`;
+- Flash `40720 / 65536`, SRAM `9752 / 20480`.
+
+Gate 3 hardware proof:
+
+- Windows `usbser` and retained CDC class controls PASS;
+- binary HELLO/request-ID echo and exact `help` chunking/accounting PASS;
+- binary safe core `21/21`, scheduler diagnostics `8/8 BUSY`;
+- unknown ID, BAD_ARGS, destructive deny/allow, bad CRC, oversize resync and arbitrary split writes PASS;
+- partial text preservation and binary/text parser isolation PASS;
+- binary pressure `128/128` unique IDs with zero CDC drops;
+- retained CDC pressure `128/128`, UART race `128/128`;
+- physical micro-USB reconnect restores text + binary without reflash;
+- authorized binary `wdogtrip` produced a real IWDG reboot in `7433 ms`; post-reset UART + CDC text + binary recovered automatically;
+- final Flash readback exactly matched the Gate 2 candidate.
+
+Gate 4:
+`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+
+Evidence:
+
+- Gate 2 evidence `D1EAB3470A88A802314B9F9A735CA49799FBD0F30D0413CA99F8698503CF8E3A`;
+- Gate 3 hardware log `F8DE91AE43AA2731C26828FF4A993597E4FD940794D0BEE03D661B0DB771758B`;
+- Gate 3 hardware evidence `8A38E6E60A3B6B2EAE0F35835E6BBE06AF5E38513A492BA2184662243E1B6565`.
+
+Gate 5 documentation/evidence finalization is accepted. No build, flash, commit or push is part of Gate 5. Canonical protocol/design/acceptance: `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`, `docs/BINARY_FRAMED_TRANSPORT_PLAN.md`, and `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`.
 
 ## 2026-09-15
 

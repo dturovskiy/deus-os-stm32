@@ -50,6 +50,7 @@ void usb_cdc_set_rx_notify(usb_cdc_rx_notify_t notify);
 int usb_cdc_is_configured(void);
 int usb_cdc_try_getc(char *c);
 int usb_cdc_write_byte(uint8_t byte);
+int usb_cdc_write_span_atomic(const uint8_t *data, uint32_t length);
 void USB_LP_CAN1_RX0_IRQHandler(void);
 
 #endif

@@ -230,7 +230,7 @@ Published commit/tree:
 
 Next boundary:
 
-**`USB_CDC_ACM_CONSOLE_FOUNDATION` is published at `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`; current boundary is `SHELL_RPC_FOUNDATION` Gate 0 planning/docs synchronization.**
+**`USB_CDC_ACM_CONSOLE_FOUNDATION` is published at `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`; `SHELL_RPC_FOUNDATION` is published at `0c33304d2db86e54d715905393f49147bb6dd2ea`; current boundary is `BINARY_FRAMED_TRANSPORT_FOUNDATION`.**
 
 ## Permanent retained constraints
 
