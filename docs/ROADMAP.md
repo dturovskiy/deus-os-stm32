@@ -11,39 +11,44 @@
 - [x] ordinary non-force publication complete;
 - [x] local/remote ahead-behind `0/0`.
 
-### Current boundary — USB CDC ACM diagnostic/command console
+### USB CDC ACM diagnostic/command console — PUBLISHED
+
+- [x] commit `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`;
+- [x] tree `bbc6b24e28279075c41410e8abdace89c4b805b7`;
+- [x] accepted firmware `58548` bytes / `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`;
+- [x] Windows `usbser` CDC, physical reconnect, automatic software-reset/post-IWDG attach and retained regressions accepted;
+- [x] ordinary non-force publication complete;
+- [x] local/remote ahead-behind `0/0`.
+
+### Current boundary — transport-neutral shell/RPC foundation
 
 Boundary:
 
-`USB_CDC_ACM_CONSOLE_FOUNDATION`
+`SHELL_RPC_FOUNDATION`
 
 Roadmap target:
 
 - [x] Gate 0 canonical design/acceptance planning;
-- [x] distinct private-test CDC identity `1209:000B`;
-- [x] Windows inbox `usbser.sys` binding without custom INF;
-- [x] CDC Control interface 0 + CDC Data interface 1;
-- [x] EP1 interrupt IN notification, EP2 bulk OUT, EP3 bulk IN;
-- [x] bounded EP0 OUT data stage and CDC ACM class requests;
-- [x] real configuration-1 endpoint lifecycle;
-- [x] bounded CDC RX/TX rings and backpressure telemetry;
-- [x] existing task0 owns both UART and CDC console work without a new production task;
-- [x] per-transport parser state + shared command execution + origin-bound response routing;
-- [x] CDC safe-surface, BUSY, pressure, physical reconnect and automatic post-IWDG recovery hardware proof;
-- [x] retained UART/ST-LINK recovery paths and UART pressure regression;
-- [x] retained scheduler/IWDG/stack/MSP regressions;
-- [x] OLED Gate 4 conditional N/A with frozen hashes exact and automated UI regression PASS;
+- [x] static allocation-free command-service registry;
+- [x] transport-neutral response writer/context and origin RX-event semantics;
+- [x] semantic service statuses independent of UART/CDC;
+- [x] bounded in-place tokenization, line capacity `32`, maximum `4` args;
+- [x] all legacy command names and output contracts retained;
+- [x] `help` and `rpcinfo` foundation introspection;
+- [x] UART/CDC parser-state and response-origin isolation retained;
+- [x] retained scheduler/IWDG/stack/MSP/pressure/reconnect regressions;
+- [x] OLED Gate 4 conditional N/A with frozen hashes exact and `uiruntime` pre/post-IWDG PASS;
 - [x] docs/evidence finalization;
 - [ ] local acceptance commit — **NEXT**;
 - [ ] ordinary non-force publication.
 
 Canonical design:
-`docs/USB_CDC_ACM_CONSOLE_PLAN.md`
+`docs/SHELL_RPC_FOUNDATION_PLAN.md`
 
 Canonical acceptance:
-`docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
+`docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-After CDC publication the next transport boundary remains **transport-neutral shell/RPC**.
+After shell/RPC publication the next transport boundary is **binary framed transport**.
 
 ### Phase 4 ordering constraint
 

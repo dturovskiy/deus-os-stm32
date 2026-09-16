@@ -5,13 +5,13 @@
 
 Published baseline:
 
-`3f55f624b72b4c5266ec0e4b0006839c4478bec8` — `feat: add native USB device core foundation`
+`5a8a45618b87b3069fd7cbac6119035b6ac4ad2c` — `feat: add USB CDC ACM console foundation`
 
 Published tree:
 
-`52c2a0efacf9c533d7664316dbfcac344cb2d742`
+`bbc6b24e28279075c41410e8abdace89c4b805b7`
 
-Native STM32F103 USB Device core foundation — **PUBLISHED**
+USB CDC ACM diagnostic/command console foundation — **PUBLISHED**
 
 Accepted core candidate:
 
@@ -24,7 +24,7 @@ Accepted core candidate:
 
 Current architecture boundary:
 
-`USB_CDC_ACM_CONSOLE_FOUNDATION` — **GATES 0–5 ACCEPTED / PUBLICATION PENDING**
+`SHELL_RPC_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**
 
 Accepted CDC candidate:
 
@@ -46,9 +46,25 @@ Canonical design/acceptance:
 - `docs/USB_CDC_ACM_CONSOLE_PLAN.md`
 - `docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
 
+Accepted shell/RPC candidate:
+
+- candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`;
+- binary `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
+- static allocation-free registry with `32` methods;
+- transport-neutral execution context and response writer;
+- `help` / `help ping` / `rpcinfo`, bounded `4` args and `32`-byte line capacity;
+- UART/CDC editing, parser isolation, origin-bound responses and retained pressure/scheduler/IWDG regressions hardware accepted;
+- physical USB reconnect, post-IWDG automatic CDC recovery and final exact Flash readback PASS;
+- OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+
 Next gate:
 
-**Gate 6 — local acceptance commit.**
+**Gate 6 — local acceptance commit of the accepted shell/RPC foundation.**
+
+Canonical planning:
+
+- `docs/SHELL_RPC_FOUNDATION_PLAN.md`
+- `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.
@@ -94,6 +110,7 @@ Built locally:
 - [x] `fault` read-only fault diagnostics / SCB register dump command
 - [x] Native USB Device core foundation
 - [x] USB CDC ACM diagnostic/command console
+- [x] Transport-neutral shell/RPC command-service foundation
 - [x] I2C1 master + hardware bus scan (B6/B7, 100 kHz, SSD1306 at 0x3C)
 - [x] SSD1306 command transport at 0x3C (`oledping` / NOP transaction)
 - [x] Native 128x32 SSD1306 runtime UI with frozen status bar + retained 21x3 console

@@ -5,60 +5,53 @@
 
 This section is authoritative.
 
-### Published baseline — Native USB Device core foundation
+### Published baseline — USB CDC ACM console foundation
 
-- [x] `main` / `origin/main` / remote `main` = `3f55f624b72b4c5266ec0e4b0006839c4478bec8`.
-- [x] published tree = `52c2a0efacf9c533d7664316dbfcac344cb2d742`.
-- [x] subject = `feat: add native USB device core foundation`.
-- [x] published firmware candidate = `43812` bytes / `1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`.
+- [x] `main` / `origin/main` / remote `main` = `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`.
+- [x] published tree = `bbc6b24e28279075c41410e8abdace89c4b805b7`.
+- [x] subject = `feat: add USB CDC ACM console foundation`.
+- [x] published firmware candidate = `58548` bytes / `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`.
+- [x] Windows `usbser`, physical reconnect, software-reset attach and post-IWDG automatic CDC recovery accepted.
 - [x] final published repo state = clean, ahead/behind `0/0`.
 
-### Current boundary — USB CDC ACM diagnostic/command console
+### Current boundary — transport-neutral shell/RPC foundation
 
 Boundary ID:
 
-`USB_CDC_ACM_CONSOLE_FOUNDATION`
+`SHELL_RPC_FOUNDATION`
 
 Gate 0 planning decisions:
 
-- [x] private-test identity `1209:000B`, product `Deus OS CDC Console`;
-- [x] Windows inbox `usbser.sys`, no custom INF;
-- [x] Device Descriptor class/subclass `0x02/0x02`;
-- [x] interface 0 CDC Control + interface 1 CDC Data;
-- [x] EP1 `0x81` interrupt IN, EP2 `0x02` bulk OUT, EP3 `0x83` bulk IN;
-- [x] explicit PMA ownership through local `0x17F` maximum;
-- [x] bounded EP0 OUT data stage required for `SET_LINE_CODING`;
-- [x] no new production task, SVC, or IPC;
-- [x] one shared command language with per-transport parser/output ownership;
-- [x] UART remains independent emergency console; ST-LINK remains recovery/debug;
-- [x] OLED/gfx/status-bar remain frozen.
-
-Gate 1 implemented source state:
-
-- [x] source scope is exactly `include/drivers/usb_device.h`, `src/drivers/usb_device.c`, `src/kernel.c`;
-- [x] configuration tree is `67` bytes with CDC Control interface 0 and CDC Data interface 1;
-- [x] PMA remains static: EP1 TX `0x0C0`, EP2 RX `0x100`, EP3 TX `0x140`;
-- [x] EP0 supports bounded CDC OUT data for `SET_LINE_CODING` plus `GET_LINE_CODING` and `SET_CONTROL_LINE_STATE`;
-- [x] `SET_CONFIGURATION(1/0)` owns endpoint activation/deactivation and DATA-toggle reset semantics;
-- [x] CDC RX/TX rings are static `1024` / `2048` bytes with packet/byte/drop/high-water telemetry;
-- [x] task0 waits on the combined UART/CDC RX event mask; no scheduler-core change or third task;
-- [x] UART and CDC have independent parser state and origin-bound response routing;
-- [x] `cdcstat` exposes CDC transport diagnostics;
-- [x] scheduler/startup guards remain exact;
-- [x] first Gate 2 candidate built and Gate 3 proved CDC enumeration/class/data-plane/pressure/dual-transport behavior;
-- [x] Gate 3 exposed a real post-IWDG host-session defect: fixed D+ pull-up kept the host attachment asserted across MCU reset, so `usbser` could not reopen despite exact EP0/configuration recovery;
-- [x] corrective source now forces a bounded PA12/D+ low open-drain disconnect before every USB init, then restores PA12 before normal USB macrocell startup.
+- [x] preserve UART and USB CDC as transport adapters, not command-policy owners;
+- [x] add one static allocation-free command-service registry;
+- [x] execution context owns generic response writer + opaque context + source RX-event mask;
+- [x] semantic status taxonomy is `OK / NOT_FOUND / BAD_ARGS / BUSY / INTERNAL_ERROR`;
+- [x] retain the existing `32`-byte command line capacity;
+- [x] bounded maximum `4` argument tokens with in-place tokenization;
+- [x] preserve all existing published command names and accepted response tokens;
+- [x] authorize only `help` and `rpcinfo` as new foundation introspection methods;
+- [x] retain independent UART/CDC partial-line parser state;
+- [x] no binary framing, public numeric RPC IDs, host app, firmware update, bootloader, heap, new task/SVC/IPC, scheduler-core change, USB-driver change or OLED change.
 
 Gate order:
 
-- [x] Gate 0 planning/docs synchronization.
-- [x] Gate 1 exact source investigation + CDC implementation.
-- [x] Gate 2 fresh GNU build/link/static revalidation of corrected USB init — candidate `58548` bytes / `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`.
-- [x] Gate 3 real Windows `usbser`/COM + dual-transport hardware acceptance — corrected candidate PASS.
+- [x] Gate 0 planning/docs synchronization — **PASS**.
+- [x] Gate 1 exact source investigation + command-service implementation — **PASS / SOURCE FINALIZED**.
+- [x] Gate 2 fresh GNU build/link/static validation — **PASS**; candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`, BIN `37196` bytes / `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`.
+- [x] Gate 3 UART + CDC shell/RPC hardware acceptance and retained regressions — **PASS**.
 - [x] Gate 4 OLED conditional review — `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
-- [x] Gate 5 docs/evidence finalization.
+- [x] Gate 5 docs/evidence finalization — **PASS**.
 - [ ] Gate 6 local acceptance commit — **CURRENT / NEXT**.
 - [ ] Gate 7 ordinary non-force publication.
+
+Accepted candidate/evidence:
+
+- [x] candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`;
+- [x] BIN `37196` bytes / `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
+- [x] Flash `37196` bytes / SRAM `9216` bytes;
+- [x] Gate 2 evidence `34FB1B6D368A29AF5460174BBDA6AE81E479E5D11FBC0E25FDAC01617105BEA3`;
+- [x] Gate 3 evidence `0EE7342129866C86A1AAFBA42E942E2097C78BFDF3CF50D0C93F3A6B71E9A4E9`;
+- [x] Gate 3 final Flash readback exact; IWDG reboot/recovery `9042 ms`.
 
 Permanent constraints retained:
 
@@ -67,16 +60,17 @@ Permanent constraints retained:
 - ST-LINK remains recovery/debug;
 - no dual ST-LINK 3.3 V + micro-USB VBUS powering;
 - UART adapter VCC remains disconnected;
-- IWDG reload remains Thread/PSP production-progress owned and forbidden from USB IRQ/Handler;
+- IWDG reload remains Thread/PSP production-progress owned and forbidden from USB/UART IRQ/Handler;
 - existing two-task production topology remains authoritative;
-- generic timers, IPC/queues/synchronization, runtime statistics, shell/RPC, and binary transport remain deferred;
+- generic timers, IPC/queues/synchronization and runtime statistics remain deferred;
+- binary framing remains the next transport boundary after this one;
 - OLED/gfx/status-bar remain frozen.
 
 Canonical design:
-`docs/USB_CDC_ACM_CONSOLE_PLAN.md`
+`docs/SHELL_RPC_FOUNDATION_PLAN.md`
 
 Canonical acceptance plan:
-`docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
+`docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
 > **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**

@@ -21,7 +21,7 @@ Boundary  USB_CDC_ACM_CONSOLE_FOUNDATION
 VID       0x1209
 PID       0x000B
 Product   Deus OS CDC Console
-Status    hardware accepted CDC profile / publication pending
+Status    published CDC profile / private-test identity
 ```
 
 Both `0x000A` and `0x000B` are pid.codes private **Test PID** allocations under VID `0x1209`. They may be used for private testing only; they must not be used for redistributed, sold, or manufactured devices and are not globally unique product identities.

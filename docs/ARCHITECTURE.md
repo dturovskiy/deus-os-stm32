@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **native USB Device core published at `3f55f624b72b4c5266ec0e4b0006839c4478bec8`; `USB_CDC_ACM_CONSOLE_FOUNDATION` Gates 0–5 accepted, publication pending**
+Status: **USB CDC ACM console published at `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`; `SHELL_RPC_FOUNDATION` Gates 0–5 accepted / Gate 6 next**
 
 ## C4.0 accepted IWDG liveness record
 
@@ -102,7 +102,7 @@ Rules:
 - endpoint 0 handles standard control requests required for enumeration;
 - USB descriptor identity is centralized;
 - do not embed an arbitrary third-party VID/PID;
-- CDC ACM was deliberately excluded from this published core boundary and is now the current next boundary;
+- CDC ACM was deliberately excluded from this historical core boundary and was later accepted/published as its own boundary;
 - UART remains emergency diagnostics;
 - ST-LINK remains recovery/debug;
 - IWDG reload ownership stays Thread/PSP-only and is not moved into USB IRQ;
@@ -111,7 +111,7 @@ Rules:
 Power rule:
 when micro-USB VBUS powers the board, ST-LINK 3.3 V supply must be disconnected.
 
-## Accepted architecture — USB CDC ACM console foundation
+## Accepted architecture — USB CDC ACM console foundation — PUBLISHED `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`
 
 Boundary: `USB_CDC_ACM_CONSOLE_FOUNDATION`.
 
@@ -152,6 +152,44 @@ Parser state is per transport so UART and CDC streams may interleave without cor
 
 Canonical design: `docs/USB_CDC_ACM_CONSOLE_PLAN.md`.
 Canonical acceptance: `docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`.
+
+## Accepted architecture candidate — transport-neutral shell/RPC foundation — GATES 0–5 PASS
+
+Boundary: `SHELL_RPC_FOUNDATION`.
+
+The accepted UART and USB CDC byte transports remain unchanged. This boundary separates command semantics from text framing and physical transport identity so future binary RPC can reuse exactly the same command service.
+
+```text
+UART RX ring -> text shell parser ---+
+                                     |
+USB CDC RX -> text shell parser -----+--> static command registry/service
+                                     |          |
+future binary RPC adapter -----------+          +--> handler
+                                                +--> generic response writer
+```
+
+The Gate 1 candidate now replaces the old string-chain/global transport coupling with `command_service_parse_line()` plus `command_service_execute()`. The execution context is explicit at every normal command-dispatch boundary and contains a generic response writer, opaque writer context, source RX-event mask, and latched writer-failure state. There is no global active UART/CDC selector in the normal command path.
+
+Implemented service invariants:
+
+- no heap; static registry and fixed bounds only;
+- text line capacity remains `32` bytes;
+- maximum `4` argument tokens;
+- method lookup and argument validation are transport-neutral;
+- semantic service statuses are `OK`, `NOT_FOUND`, `BAD_ARGS`, `BUSY`, `INTERNAL_ERROR`;
+- `OK` denotes completed service dispatch, while method-specific operational success/failure remains encoded by established payload tokens such as `OLED_*_OK/ERR` and `SCHED_*_OK/ERR`;
+- response-writer failure is latched in the execution context and promoted to `INTERNAL_ERROR`;
+- legacy text responses remain compatible (`ERR`, `SCHED_DIAG_BUSY`, existing success/error tokens);
+- `help` and `rpcinfo` are the only new foundation introspection methods;
+- `schedtimed` consumes the source RX-event mask from the explicit originating context;
+- UART-specific boot/fatal/recovery output remains intentionally outside the command service as an emergency path;
+- task0 remains the only normal command executor in Thread/PSP;
+- UART/USB IRQs remain bounded data/event publishers only;
+- no new task, SVC, scheduler state, IPC, timer subsystem, heap, USB class change, or OLED change;
+- binary wire framing and public numeric RPC method IDs remain the next independent transport boundary.
+
+Canonical design: `docs/SHELL_RPC_FOUNDATION_PLAN.md`.
+Canonical acceptance: `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
 ## 1. Boot flow
 

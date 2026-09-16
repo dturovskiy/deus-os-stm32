@@ -230,7 +230,7 @@ Published commit/tree:
 
 Next boundary:
 
-**`USB_CDC_ACM_CONSOLE_FOUNDATION` — Gates 0–5 accepted; Gate 6 local acceptance commit next.**
+**`USB_CDC_ACM_CONSOLE_FOUNDATION` is published at `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`; current boundary is `SHELL_RPC_FOUNDATION` Gate 0 planning/docs synchronization.**
 
 ## Permanent retained constraints
 

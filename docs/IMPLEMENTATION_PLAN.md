@@ -3,68 +3,62 @@
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Current implementation checkpoint — 2026-09-16
 
-### Native USB Device core foundation — PUBLISHED
+### USB CDC ACM console foundation — PUBLISHED
 
 Published commit/tree:
 
-`3f55f624b72b4c5266ec0e4b0006839c4478bec8` /
-`52c2a0efacf9c533d7664316dbfcac344cb2d742`.
+`5a8a45618b87b3069fd7cbac6119035b6ac4ad2c` /
+`bbc6b24e28279075c41410e8abdace89c4b805b7`.
 
 Published candidate:
 
-`43812` bytes /
-`1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6`.
+`58548` bytes /
+`D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`.
 
-The direct-register USB FS core, EP0 control path, private-test profile `1209:000A`, retained UART/IWDG/scheduler regressions, conditional OLED N/A review, local commit, and ordinary non-force publication are complete.
+The direct-register native USB stack, CDC ACM class/data plane, Windows `usbser` binding, UART/CDC parser isolation, pressure tests, physical reconnect, automatic software-reset attach, post-IWDG CDC recovery, OLED conditional N/A review, local commit and ordinary non-force publication are complete.
 
-### Current boundary — USB CDC ACM diagnostic/command console — GATES 0–5 ACCEPTED / GATE 6 NEXT
+### Current boundary — transport-neutral shell/RPC foundation — GATES 0–5 ACCEPTED / GATE 6 NEXT
 
 Boundary:
 
-`USB_CDC_ACM_CONSOLE_FOUNDATION`
+`SHELL_RPC_FOUNDATION`
 
-Gate 1 implemented source state:
+Gate 1 source now establishes:
 
-- private-test identity `1209:000B`, product `Deus OS CDC Console`;
-- Windows inbox `usbser.sys`, no custom INF;
-- Device Descriptor class/subclass `0x02/0x02`;
-- two-interface CDC ACM function: control interface 0, data interface 1;
-- CDC Header, Call Management, ACM, and Union functional descriptors;
-- EP1 `0x81` interrupt IN notification;
-- EP2 `0x02` bulk OUT, 64-byte MPS;
-- EP3 `0x83` bulk IN, 64-byte MPS;
-- explicit non-overlapping PMA map within STM32F103 packet memory;
-- bounded EP0 OUT data stage for `SET_LINE_CODING`;
-- `GET_LINE_CODING` and `SET_CONTROL_LINE_STATE`;
-- real `SET_CONFIGURATION(1/0)` endpoint lifecycle;
-- static CDC RX/TX rings `1024` / `2048` bytes with packet/byte/drop/high-water telemetry;
-- existing task0 extended to wake on UART or CDC RX; no third task;
-- per-transport parser state with shared command execution and response to the originating transport;
-- USART1 remains independently fixed at 115200 8N1 regardless of CDC line coding;
-- no new SVC/IPC/generic timer/runtime-statistics subsystem;
-- no OLED/gfx/status-bar edit;
-- no USB IRQ IWDG reload;
-- Gate 3 proved the CDC data plane, class control, pressure, UART independence, scheduler isolation, and parser isolation, but exposed one real post-IWDG host-session defect: fixed D+ pull-up kept the Windows attachment logically present across MCU reset, leaving `usbser` unable to reopen the COM port;
-- corrective USB init now forces PA12/D+ low as a temporary 2 MHz open-drain GPIO for a bounded >=20 ms disconnect interval before USB macrocell enable, then restores the prior PA12 GPIO configuration so every boot produces a clean host attach.
+- one static allocation-free command service above UART and USB CDC;
+- deterministic registry metadata: method name, class, argument bounds and an internal dispatch key;
+- explicit execution context carrying a generic response writer, opaque writer context, origin RX-event mask and latched writer-failure state;
+- semantic service statuses `OK / NOT_FOUND / BAD_ARGS / BUSY / INTERNAL_ERROR`;
+- `OK` means service dispatch completed; method-specific operational results remain in the existing payload tokens such as `OLED_*_ERR` or `SCHED_*_ERR`;
+- retained `32`-byte text line capacity and bounded maximum `4` argument tokens;
+- exact legacy command names/output compatibility;
+- new foundation introspection only: `help` and `rpcinfo`;
+- independent UART/CDC parser state retained;
+- normal command responses route only through the explicit originating context; UART-specific boot/fatal output is isolated as an emergency path;
+- no global active-transport selector remains in normal command execution;
+- no binary framing, host application, firmware update, bootloader, heap, new task/SVC/IPC, scheduler-core change, USB-driver change or OLED edit.
+
+Accepted Gate 2/3 candidate:
+
+- tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`;
+- BIN `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
+- Flash `37196` bytes, SRAM `9216` bytes;
+- Gate 3 shared-service proof PASS on UART and CDC, including `help`, `rpcinfo`, argument/editing/overflow handling and origin-only responses;
+- retained CDC safe surface `20/20` pre/post-IWDG, scheduler BUSY `8/8`, packet boundary `38/38`, CDC pressure `128/128`, UART pressure `128/128`;
+- physical reconnect and post-IWDG automatic `usbser` recovery PASS;
+- final Flash readback exact;
+- Gate 4 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
+- Gate 5 evidence/docs finalization complete.
 
 Canonical design:
-`docs/USB_CDC_ACM_CONSOLE_PLAN.md`
+`docs/SHELL_RPC_FOUNDATION_PLAN.md`
 
 Canonical acceptance:
-`docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
-
-Accepted corrected candidate:
-
-- tested source tree `d815a8357b9f77850c08ff071f47be8d2b5d4b53`;
-- binary `58548` bytes / SHA-256 `D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE`;
-- Flash `58548` bytes, SRAM `9200` bytes;
-- Gate 3: Windows `usbser`, CDC class/data plane, physical reconnect, `128/128` CDC pressure, `128/128` UART pressure, dual-transport isolation, real IWDG reset and automatic post-IWDG CDC reopen PASS;
-- Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
-- Gate 5 documentation/evidence finalization complete.
+`docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
 
 Next:
 
-**Gate 6 — local acceptance commit. No push.**
+**Gate 6 — local acceptance commit of the hardware-accepted shell/RPC foundation. No push until the local commit is verified.**
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

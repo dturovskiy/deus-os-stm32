@@ -48,7 +48,7 @@ Evidence:
 
 Published commit `3f55f624b72b4c5266ec0e4b0006839c4478bec8`, tree `52c2a0efacf9c533d7664316dbfcac344cb2d742`, subject `feat: add native USB device core foundation`. Ordinary non-force publication complete; local/remote ahead-behind `0/0`.
 
-### Accepted — USB CDC ACM diagnostic/command console — publication pending
+### Published — USB CDC ACM diagnostic/command console
 
 Boundary: `USB_CDC_ACM_CONSOLE_FOUNDATION`.
 
@@ -84,7 +84,17 @@ Evidence:
 - Gate 3 hardware log `D009F0D7E12C10C3FBA40037C6EC485E9FA27674901C5C3D6C4AAE72C0D42F35`;
 - Gate 3 hardware evidence `6035C6FD5C0718252B28AAC07CD67C879AA1F14A639DD9A7854D3B74F54D49CB`.
 
-Gates 0–5 are accepted. Next: Gate 6 local acceptance commit; Gate 7 ordinary non-force publication remains after that.
+Published commit `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`, tree `bbc6b24e28279075c41410e8abdace89c4b805b7`, subject `feat: add USB CDC ACM console foundation`. Ordinary non-force publication complete; local/remote ahead-behind `0/0`.
+
+### Accepted — transport-neutral shell/RPC foundation — publication pending
+
+Boundary: `SHELL_RPC_FOUNDATION`.
+
+Gate 0 establishes a static allocation-free command service above the already accepted UART and USB CDC transports: one deterministic registry, semantic status codes, generic response sink/context, bounded argument tokenization, exact legacy command compatibility, and `help`/`rpcinfo` introspection. Binary framing, host control application, firmware update, bootloader, new tasks/SVC/IPC, and OLED changes remain out of scope.
+
+Canonical planning: `docs/SHELL_RPC_FOUNDATION_PLAN.md` and `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`.
+
+Gates 0–5 are accepted. Gate 2 produced candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`, BIN `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`, Flash `37196` bytes and SRAM `9216` bytes. Gate 3 proved the shared command service over both UART and CDC: deterministic 32-method registry, `help`, `help ping`, `rpcinfo`, exact legacy `ERR` behavior, tabs/backspace/DEL/overflow recovery, origin-bound replies, UART+CDC `schedtimed`, retained `20/20` CDC safe surface pre/post IWDG, `8/8` scheduler BUSY, `38/38` packet-boundary PONG, `128/128` CDC pressure, `128/128` UART pressure, physical USB reconnect, real IWDG reboot with automatic CDC reopen, and final exact Flash readback. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`; Gate 5 docs/evidence finalization is complete. Next: Gate 6 local acceptance commit; Gate 7 ordinary non-force publication.
 
 ## 2026-09-15
 

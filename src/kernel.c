@@ -10,6 +10,7 @@
 #include "kernel/oled_status_bar.h"
 #include "kernel/oled_ui_layout.h"
 #include "kernel/scheduler.h"
+#include "kernel/command_service.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 #define REG8(addr)  (*(volatile uint8_t *)(addr))
@@ -227,14 +228,6 @@ static volatile uint32_t uart_rx_drop_count;
 static volatile uint32_t uart_rx_error_count;
 static volatile uint32_t uart_rx_high_water;
 
-typedef enum
-{
-    CONSOLE_TRANSPORT_UART = 0,
-    CONSOLE_TRANSPORT_USB_CDC = 1
-} console_transport_t;
-
-static console_transport_t console_output_transport = CONSOLE_TRANSPORT_UART;
-
 static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
 static oled_console_t oled_console_state;
@@ -294,15 +287,19 @@ static volatile uint32_t scheduler_wait_wake_byte;
 static volatile uint32_t scheduler_wait_wake_byte_ok;
 static volatile uint32_t scheduler_wait_wake_framing_bytes;
 
-static int console_execute_safe_named(const char *command);
-static int console_execute_scheduler_diagnostic(const char *command);
-static void console_execute_named(const char *command);
-static void console_production_scheduler_stats(void);
-static void console_scheduler_console_probe_test(void);
-static void console_scheduler_isolation_test(void);
-static void console_scheduler_wait_wake_test(void);
-static void console_scheduler_timed_test(void);
-static void console_scheduler_priority_test(void);
+static command_service_status_t console_execute_request(
+    const command_service_request_t *request,
+    command_service_context_t *context,
+    void *handler_context);
+static command_service_status_t console_execute_scheduler_diagnostic(
+    const command_service_request_t *request,
+    command_service_context_t *context);
+static void console_production_scheduler_stats(command_service_context_t *context);
+static void console_scheduler_console_probe_test(command_service_context_t *context);
+static void console_scheduler_isolation_test(command_service_context_t *context);
+static void console_scheduler_wait_wake_test(command_service_context_t *context);
+static void console_scheduler_timed_test(command_service_context_t *context);
+static void console_scheduler_priority_test(command_service_context_t *context);
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -436,15 +433,38 @@ static void uart_putc(char c)
     USART1_DR = (uint32_t)(uint8_t)c;
 }
 
-static void console_putc(char c)
+static int console_uart_write_byte(void *context, uint8_t byte)
 {
-    if (console_output_transport == CONSOLE_TRANSPORT_USB_CDC)
-    {
-        (void)usb_cdc_write_byte((uint8_t)c);
-        return;
-    }
+    (void)context;
+    uart_putc((char)byte);
+    return 1;
+}
 
-    uart_putc(c);
+static int console_usb_cdc_write_byte(void *context, uint8_t byte)
+{
+    (void)context;
+    return usb_cdc_write_byte(byte);
+}
+
+static void console_write(
+    command_service_context_t *context,
+    const char *text)
+{
+    (void)command_service_write(context, text);
+}
+
+static void console_write_line(
+    command_service_context_t *context,
+    const char *text)
+{
+    (void)command_service_write_line(context, text);
+}
+
+static void console_write_hex32(
+    command_service_context_t *context,
+    uint32_t value)
+{
+    (void)command_service_write_hex32(context, value);
 }
 
 static int uart_try_getc(char *c)
@@ -513,24 +533,24 @@ static void usb_cdc_rx_event_notify(void)
     scheduler_event_signal(PRODUCTION_USB_CDC_RX_EVENT);
 }
 
-static void uart_write(const char *text)
+static void uart_emergency_write(const char *text)
 {
     while (*text != '\0')
     {
-        console_putc(*text);
+        uart_putc(*text);
         ++text;
     }
 }
 
-static void uart_write_hex32(uint32_t value)
+static void uart_emergency_write_hex32(uint32_t value)
 {
     static const char hex[] = "0123456789ABCDEF";
 
-    uart_write("0x");
+    uart_emergency_write("0x");
 
     for (uint32_t shift = 28u;; shift -= 4u)
     {
-        console_putc(hex[(value >> shift) & 0xFu]);
+        uart_putc(hex[(value >> shift) & 0xFu]);
 
         if (shift == 0u)
         {
@@ -539,66 +559,60 @@ static void uart_write_hex32(uint32_t value)
     }
 }
 
-static void uart_write_line(const char *text)
+static void uart_emergency_write_line(const char *text)
 {
-    uart_write(text);
-    uart_write("\r\n");
+    uart_emergency_write(text);
+    uart_emergency_write("\r\n");
 }
 
 static void uart_boot_banner(uint32_t core_clock_hz)
 {
-    uart_write_line("STM32 OS");
-    uart_write_line("BOOT OK");
+    uart_emergency_write_line("STM32 OS");
+    uart_emergency_write_line("BOOT OK");
 
-    uart_write("SYSCLK=");
-    uart_write_hex32(core_clock_hz);
-    uart_write("\r\n");
+    uart_emergency_write("SYSCLK=");
+    uart_emergency_write_hex32(core_clock_hz);
+    uart_emergency_write("\r\n");
 
-    uart_write("TICK_HZ=");
-    uart_write_hex32(1000u);
-    uart_write("\r\n");
+    uart_emergency_write("TICK_HZ=");
+    uart_emergency_write_hex32(1000u);
+    uart_emergency_write("\r\n");
 
-    uart_write("FAULTREC=");
-    uart_write_hex32((uint32_t)&fault_record);
-    uart_write("\r\n");
+    uart_emergency_write("FAULTREC=");
+    uart_emergency_write_hex32((uint32_t)&fault_record);
+    uart_emergency_write("\r\n");
 }
-
-#define CONSOLE_COMMAND_CAPACITY 32u
 
 typedef struct
 {
-    char data[CONSOLE_COMMAND_CAPACITY];
+    char data[COMMAND_SERVICE_LINE_CAPACITY];
     uint32_t length;
-    console_transport_t transport;
+    command_service_context_t context;
 } console_command_state_t;
+
 static console_command_state_t uart_command_state =
 {
     { 0 },
     0u,
-    CONSOLE_TRANSPORT_UART
+    {
+        console_uart_write_byte,
+        (void *)0,
+        PRODUCTION_UART_RX_EVENT,
+        0u
+    }
 };
+
 static console_command_state_t usb_cdc_command_state =
 {
     { 0 },
     0u,
-    CONSOLE_TRANSPORT_USB_CDC
-};
-
-static int text_equals(const char *a, const char *b)
-{
-    while ((*a != '\0') && (*b != '\0'))
     {
-        if (*a != *b)
-        {
-            return 0;
-        }
-
-        ++a;
-        ++b;
+        console_usb_cdc_write_byte,
+        (void *)0,
+        PRODUCTION_USB_CDC_RX_EVENT,
+        0u
     }
-
-    return (*a == '\0') && (*b == '\0');
-}
+};
 
 static void i2c1_init(void)
 {
@@ -891,15 +905,15 @@ static int ssd1306_show_text_demo(void)
     return ssd1306_display_on();
 }
 
-static void console_oled_text(void)
+static void console_oled_text(command_service_context_t *context)
 {
     if (ssd1306_show_text_demo() != 0)
     {
-        uart_write_line("OLED_TEXT_OK");
+        console_write_line(context, "OLED_TEXT_OK");
     }
     else
     {
-        uart_write_line("OLED_TEXT_ERR");
+        console_write_line(context, "OLED_TEXT_ERR");
     }
 }
 
@@ -984,23 +998,23 @@ static int ssd1306_show_generic_renderer_test(void)
     return ssd1306_display_on();
 }
 
-static void console_oled_render(void)
+static void console_oled_render(command_service_context_t *context)
 {
     if (text_renderer_fast_path_self_test() == 0)
     {
-        uart_write_line("OLED_RENDER_EQ_ERR");
+        console_write_line(context, "OLED_RENDER_EQ_ERR");
         return;
     }
 
-    uart_write_line("OLED_RENDER_EQ_OK");
+    console_write_line(context, "OLED_RENDER_EQ_OK");
 
     if (ssd1306_show_generic_renderer_test() != 0)
     {
-        uart_write_line("OLED_RENDER_OK");
+        console_write_line(context, "OLED_RENDER_OK");
     }
     else
     {
-        uart_write_line("OLED_RENDER_ERR");
+        console_write_line(context, "OLED_RENDER_ERR");
     }
 }
 
@@ -1148,24 +1162,24 @@ static int ssd1306_show_scroll_test(void)
     return ssd1306_display_on();
 }
 
-static void console_oled_scroll(void)
+static void console_oled_scroll(command_service_context_t *context)
 {
     if (oled_console_scroll_self_test() == 0)
     {
-        uart_write_line("OLED_SCROLL_STATE_ERR");
-        uart_write_line("OLED_SCROLL_ERR");
+        console_write_line(context, "OLED_SCROLL_STATE_ERR");
+        console_write_line(context, "OLED_SCROLL_ERR");
         return;
     }
 
-    uart_write_line("OLED_SCROLL_STATE_OK");
+    console_write_line(context, "OLED_SCROLL_STATE_OK");
 
     if (ssd1306_show_scroll_test() != 0)
     {
-        uart_write_line("OLED_SCROLL_OK");
+        console_write_line(context, "OLED_SCROLL_OK");
     }
     else
     {
-        uart_write_line("OLED_SCROLL_ERR");
+        console_write_line(context, "OLED_SCROLL_ERR");
     }
 }
 
@@ -1253,18 +1267,18 @@ static int ssd1306_show_dirty_present_test(void)
     return ssd1306_display_on();
 }
 
-static void console_oled_dirty(void)
+static void console_oled_dirty(command_service_context_t *context)
 {
     if (ssd1306_show_dirty_present_test() != 0)
     {
-        uart_write_line("OLED_DIRTY_MASK_OK");
-        uart_write_line("OLED_DIRTY_CLEAR_OK");
-        uart_write_line("OLED_DIRTY_IDLE_OK");
-        uart_write_line("OLED_DIRTY_OK");
+        console_write_line(context, "OLED_DIRTY_MASK_OK");
+        console_write_line(context, "OLED_DIRTY_CLEAR_OK");
+        console_write_line(context, "OLED_DIRTY_IDLE_OK");
+        console_write_line(context, "OLED_DIRTY_OK");
     }
     else
     {
-        uart_write_line("OLED_DIRTY_ERR");
+        console_write_line(context, "OLED_DIRTY_ERR");
     }
 }
 
@@ -1369,18 +1383,18 @@ static void scheduler_workload_cpu_peer_task(void *argument)
 }
 
 
-static void console_oled_runtime(void)
+static void console_oled_runtime(command_service_context_t *context)
 {
     if (oled_runtime_ui_show() != 0)
     {
-        uart_write_line("OLED_RUNTIME_UI_OK");
+        console_write_line(context, "OLED_RUNTIME_UI_OK");
     }
     else
     {
-        uart_write_line("OLED_RUNTIME_UI_ERR");
+        console_write_line(context, "OLED_RUNTIME_UI_ERR");
     }
 }
-static void console_oled_ui_update(void)
+static void console_oled_ui_update(command_service_context_t *context)
 {
     const oled_ui_layout_t *layout;
     oled_status_bar_t status;
@@ -1393,13 +1407,13 @@ static void console_oled_ui_update(void)
         (layout == (const oled_ui_layout_t *)0) ||
         (oled_ui_layout_validate(layout) == 0)
     ) {
-        uart_write_line("OLED_UI_LAYOUT_PATH_ERR");
+        console_write_line(context, "OLED_UI_LAYOUT_PATH_ERR");
         return;
     }
 
     if (ssd1306_init() == 0)
     {
-        uart_write_line("OLED_UI_INIT_ERR");
+        console_write_line(context, "OLED_UI_INIT_ERR");
         return;
     }
 
@@ -1437,29 +1451,29 @@ static void console_oled_ui_update(void)
 
     if (oled_console_state.dirty_rows != 0u)
     {
-        uart_write_line("OLED_UI_BASE_CONSOLE_DIRTY_ERR");
+        console_write_line(context, "OLED_UI_BASE_CONSOLE_DIRTY_ERR");
         goto display_on;
     }
 
     if (mono_fb_dirty_pages(&oled_surface) != 0x0Fu)
     {
-        uart_write("OLED_UI_BASE_MASK=");
-        uart_write_hex32(
+        console_write(context, "OLED_UI_BASE_MASK=");
+        console_write_hex32(context,
             (uint32_t)mono_fb_dirty_pages(&oled_surface));
-        uart_write_line("");
-        uart_write_line("OLED_UI_BASE_MASK_ERR");
+        console_write_line(context, "");
+        console_write_line(context, "OLED_UI_BASE_MASK_ERR");
         goto display_on;
     }
 
     if (ssd1306_present(&oled_surface) == 0)
     {
-        uart_write_line("OLED_UI_BASE_PRESENT_ERR");
+        console_write_line(context, "OLED_UI_BASE_PRESENT_ERR");
         goto display_on;
     }
 
     if (mono_fb_dirty_pages(&oled_surface) != 0u)
     {
-        uart_write_line("OLED_UI_BASE_CLEAR_ERR");
+        console_write_line(context, "OLED_UI_BASE_CLEAR_ERR");
         goto display_on;
     }
 
@@ -1472,11 +1486,11 @@ static void console_oled_ui_update(void)
 
     if (oled_console_state.dirty_rows != 0x02u)
     {
-        uart_write("OLED_UI_CONSOLE_MASK=");
-        uart_write_hex32(
+        console_write(context, "OLED_UI_CONSOLE_MASK=");
+        console_write_hex32(context,
             (uint32_t)oled_console_state.dirty_rows);
-        uart_write_line("");
-        uart_write_line("OLED_UI_CONSOLE_MASK_ERR");
+        console_write_line(context, "");
+        console_write_line(context, "OLED_UI_CONSOLE_MASK_ERR");
         goto display_on;
     }
 
@@ -1487,17 +1501,17 @@ static void console_oled_ui_update(void)
 
     if (oled_console_state.dirty_rows != 0u)
     {
-        uart_write_line("OLED_UI_CONSOLE_CONSUME_ERR");
+        console_write_line(context, "OLED_UI_CONSOLE_CONSUME_ERR");
         goto display_on;
     }
 
-    uart_write_line("OLED_UI_CONSOLE_DIRTY_OK");
+    console_write_line(context, "OLED_UI_CONSOLE_DIRTY_OK");
 
     row_mask = mono_fb_dirty_pages(&oled_surface);
 
-    uart_write("OLED_UI_ROW_MASK=");
-    uart_write_hex32((uint32_t)row_mask);
-    uart_write_line("");
+    console_write(context, "OLED_UI_ROW_MASK=");
+    console_write_hex32(context, (uint32_t)row_mask);
+    console_write_line(context, "");
 
     /*
      * Present the actual dirty set before validating it. Even if a future
@@ -1505,55 +1519,55 @@ static void console_oled_ui_update(void)
      */
     if (ssd1306_present(&oled_surface) == 0)
     {
-        uart_write_line("OLED_UI_ROW_PRESENT_ERR");
+        console_write_line(context, "OLED_UI_ROW_PRESENT_ERR");
         goto display_on;
     }
 
     if (mono_fb_dirty_pages(&oled_surface) != 0u)
     {
-        uart_write_line("OLED_UI_ROW_CLEAR_ERR");
+        console_write_line(context, "OLED_UI_ROW_CLEAR_ERR");
         goto display_on;
     }
 
-    uart_write_line("OLED_UI_DIRTY_PRESENT_OK");
+    console_write_line(context, "OLED_UI_DIRTY_PRESENT_OK");
 
     if (row_mask != 0x04u)
     {
-        uart_write_line("OLED_UI_DIRTY_RENDER_ERR");
+        console_write_line(context, "OLED_UI_DIRTY_RENDER_ERR");
         goto display_on;
     }
 
-    uart_write_line("OLED_UI_DIRTY_RENDER_OK");
+    console_write_line(context, "OLED_UI_DIRTY_RENDER_OK");
     proof_ok = 1;
 
 display_on:
     if (ssd1306_display_on() == 0)
     {
-        uart_write_line("OLED_UI_DISPLAY_ON_ERR");
+        console_write_line(context, "OLED_UI_DISPLAY_ON_ERR");
         return;
     }
 
-    uart_write_line("OLED_UI_DISPLAY_ON_OK");
+    console_write_line(context, "OLED_UI_DISPLAY_ON_OK");
 
     if (proof_ok != 0)
     {
-        uart_write_line("OLED_UI_UPDATE_OK");
+        console_write_line(context, "OLED_UI_UPDATE_OK");
     }
     else
     {
-        uart_write_line("OLED_UI_UPDATE_ERR");
+        console_write_line(context, "OLED_UI_UPDATE_ERR");
     }
 }
 
-static void console_oled_console(void)
+static void console_oled_console(command_service_context_t *context)
 {
     if (ssd1306_show_console_test() != 0)
     {
-        uart_write_line("OLED_CONSOLE_OK");
+        console_write_line(context, "OLED_CONSOLE_OK");
     }
     else
     {
-        uart_write_line("OLED_CONSOLE_ERR");
+        console_write_line(context, "OLED_CONSOLE_ERR");
     }
 }
 
@@ -1563,33 +1577,33 @@ static int ssd1306_show_status_test(void)
         oled_ui_layout_default());
 }
 
-static void console_oled_status(void)
+static void console_oled_status(command_service_context_t *context)
 {
     if (oled_ui_layout_self_test() == 0)
     {
-        uart_write_line("OLED_UI_LAYOUT_ERR");
-        uart_write_line("OLED_STATUS_ERR");
+        console_write_line(context, "OLED_UI_LAYOUT_ERR");
+        console_write_line(context, "OLED_STATUS_ERR");
         return;
     }
 
-    uart_write_line("OLED_UI_LAYOUT_OK");
+    console_write_line(context, "OLED_UI_LAYOUT_OK");
 
     if (oled_status_bar_self_test() == 0)
     {
-        uart_write_line("OLED_STATUS_REFERENCE_ERR");
-        uart_write_line("OLED_STATUS_ERR");
+        console_write_line(context, "OLED_STATUS_REFERENCE_ERR");
+        console_write_line(context, "OLED_STATUS_ERR");
         return;
     }
 
-    uart_write_line("OLED_STATUS_REFERENCE_OK");
+    console_write_line(context, "OLED_STATUS_REFERENCE_OK");
 
     if (ssd1306_show_status_test() != 0)
     {
-        uart_write_line("OLED_STATUS_OK");
+        console_write_line(context, "OLED_STATUS_OK");
     }
     else
     {
-        uart_write_line("OLED_STATUS_ERR");
+        console_write_line(context, "OLED_STATUS_ERR");
     }
 }
 
@@ -1599,36 +1613,36 @@ static void console_oled_status(void)
 
 
 
-static void console_oled_test(void)
+static void console_oled_test(command_service_context_t *context)
 {
     if (ssd1306_show_checkerboard() != 0)
     {
-        uart_write_line("OLED_TEST_OK");
+        console_write_line(context, "OLED_TEST_OK");
     }
     else
     {
-        uart_write_line("OLED_TEST_ERR");
+        console_write_line(context, "OLED_TEST_ERR");
     }
 }
 
-static void console_oled_ping(void)
+static void console_oled_ping(command_service_context_t *context)
 {
     if (ssd1306_ping() != 0)
     {
-        uart_write_line("OLED_CMD_OK");
+        console_write_line(context, "OLED_CMD_OK");
     }
     else
     {
-        uart_write_line("OLED_CMD_ERR");
+        console_write_line(context, "OLED_CMD_ERR");
     }
 }
 
-static void console_i2c_scan(void)
+static void console_i2c_scan(command_service_context_t *context)
 {
     uint32_t address;
     uint32_t count = 0u;
 
-    uart_write_line("I2C_SCAN");
+    console_write_line(context, "I2C_SCAN");
 
     for (address = 0x08u; address <= 0x77u; ++address)
     {
@@ -1636,94 +1650,94 @@ static void console_i2c_scan(void)
 
         if (result < 0)
         {
-            uart_write_line("I2C_BUS_ERR");
+            console_write_line(context, "I2C_BUS_ERR");
             return;
         }
 
         if (result != 0)
         {
-            uart_write("ADDR=");
-            uart_write_hex32(address);
-            uart_write("\r\n");
+            console_write(context, "ADDR=");
+            console_write_hex32(context, address);
+            console_write(context, "\r\n");
             ++count;
         }
     }
 
-    uart_write("COUNT=");
-    uart_write_hex32(count);
-    uart_write("\r\n");
+    console_write(context, "COUNT=");
+    console_write_hex32(context, count);
+    console_write(context, "\r\n");
 }
 
-static void console_write_fault(void)
+static void console_write_fault(command_service_context_t *context)
 {
-    uart_write("FAULTREC=");
-    uart_write_hex32((uint32_t)&fault_record);
-    uart_write("\r\n");
+    console_write(context, "FAULTREC=");
+    console_write_hex32(context, (uint32_t)&fault_record);
+    console_write(context, "\r\n");
 
-    uart_write("MAGIC=");
-    uart_write_hex32(fault_record.magic);
-    uart_write(" EXC=");
-    uart_write_hex32(fault_record.exception_number);
-    uart_write("\r\n");
+    console_write(context, "MAGIC=");
+    console_write_hex32(context, fault_record.magic);
+    console_write(context, " EXC=");
+    console_write_hex32(context, fault_record.exception_number);
+    console_write(context, "\r\n");
 
-    uart_write("SP=");
-    uart_write_hex32(fault_record.stacked_sp);
-    uart_write(" VALID=");
-    uart_write_hex32(fault_record.stack_valid);
-    uart_write("\r\n");
+    console_write(context, "SP=");
+    console_write_hex32(context, fault_record.stacked_sp);
+    console_write(context, " VALID=");
+    console_write_hex32(context, fault_record.stack_valid);
+    console_write(context, "\r\n");
 
-    uart_write("PC=");
-    uart_write_hex32(fault_record.pc);
-    uart_write(" LR=");
-    uart_write_hex32(fault_record.lr);
-    uart_write("\r\n");
+    console_write(context, "PC=");
+    console_write_hex32(context, fault_record.pc);
+    console_write(context, " LR=");
+    console_write_hex32(context, fault_record.lr);
+    console_write(context, "\r\n");
 
-    uart_write("CFSR=");
-    uart_write_hex32(SCB_CFSR);
-    uart_write(" HFSR=");
-    uart_write_hex32(SCB_HFSR);
-    uart_write(" SHCSR=");
-    uart_write_hex32(SCB_SHCSR);
-    uart_write("\r\n");
+    console_write(context, "CFSR=");
+    console_write_hex32(context, SCB_CFSR);
+    console_write(context, " HFSR=");
+    console_write_hex32(context, SCB_HFSR);
+    console_write(context, " SHCSR=");
+    console_write_hex32(context, SCB_SHCSR);
+    console_write(context, "\r\n");
 }
 
-static void console_scheduler_test(void)
+static void console_scheduler_test(command_service_context_t *context)
 {
     if (scheduler_self_test() != 0)
     {
-        uart_write_line("SCHED_FOUNDATION_OK");
+        console_write_line(context, "SCHED_FOUNDATION_OK");
     }
     else
     {
-        uart_write_line("SCHED_FOUNDATION_ERR");
+        console_write_line(context, "SCHED_FOUNDATION_ERR");
     }
 }
 
-static void console_scheduler_cooperative_test(void)
+static void console_scheduler_cooperative_test(command_service_context_t *context)
 {
     if (scheduler_cooperative_self_test() != 0)
     {
-        uart_write_line("SCHED_COOP_OK");
+        console_write_line(context, "SCHED_COOP_OK");
     }
     else
     {
-        uart_write_line("SCHED_COOP_ERR");
+        console_write_line(context, "SCHED_COOP_ERR");
     }
 }
 
-static void console_scheduler_preemptive_test(void)
+static void console_scheduler_preemptive_test(command_service_context_t *context)
 {
     if (scheduler_preemptive_self_test() != 0)
     {
-        uart_write_line("SCHED_PREEMPT_OK");
+        console_write_line(context, "SCHED_PREEMPT_OK");
     }
     else
     {
-        uart_write_line("SCHED_PREEMPT_ERR");
+        console_write_line(context, "SCHED_PREEMPT_ERR");
     }
 }
 
-static void console_scheduler_stack_water_test(void)
+static void console_scheduler_stack_water_test(command_service_context_t *context)
 {
     uint32_t coop_used0;
     uint32_t coop_used1;
@@ -1754,25 +1768,25 @@ static void console_scheduler_stack_water_test(void)
     capacity0 = scheduler_stack_capacity_bytes(0u);
     capacity1 = scheduler_stack_capacity_bytes(1u);
 
-    uart_write("STACK_CAPACITY=");
-    uart_write_hex32(capacity0);
-    uart_write("\r\n");
+    console_write(context, "STACK_CAPACITY=");
+    console_write_hex32(context, capacity0);
+    console_write(context, "\r\n");
 
-    uart_write("STACK_COOP_T0_USED=");
-    uart_write_hex32(coop_used0);
-    uart_write("\r\n");
+    console_write(context, "STACK_COOP_T0_USED=");
+    console_write_hex32(context, coop_used0);
+    console_write(context, "\r\n");
 
-    uart_write("STACK_COOP_T1_USED=");
-    uart_write_hex32(coop_used1);
-    uart_write("\r\n");
+    console_write(context, "STACK_COOP_T1_USED=");
+    console_write_hex32(context, coop_used1);
+    console_write(context, "\r\n");
 
-    uart_write("STACK_PREEMPT_T0_USED=");
-    uart_write_hex32(preempt_used0);
-    uart_write("\r\n");
+    console_write(context, "STACK_PREEMPT_T0_USED=");
+    console_write_hex32(context, preempt_used0);
+    console_write(context, "\r\n");
 
-    uart_write("STACK_PREEMPT_T1_USED=");
-    uart_write_hex32(preempt_used1);
-    uart_write("\r\n");
+    console_write(context, "STACK_PREEMPT_T1_USED=");
+    console_write_hex32(context, preempt_used1);
+    console_write(context, "\r\n");
 
     passed =
         (coop_result != 0) &&
@@ -1794,15 +1808,15 @@ static void console_scheduler_stack_water_test(void)
 
     if (passed != 0)
     {
-        uart_write_line("SCHED_STACK_WATER_OK");
+        console_write_line(context, "SCHED_STACK_WATER_OK");
     }
     else
     {
-        uart_write_line("SCHED_STACK_WATER_ERR");
+        console_write_line(context, "SCHED_STACK_WATER_ERR");
     }
 }
 
-static void console_scheduler_workload_test(void)
+static void console_scheduler_workload_test(command_service_context_t *context)
 {
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
@@ -1818,7 +1832,7 @@ static void console_scheduler_workload_test(void)
 
     if (scheduler_init() == 0)
     {
-        uart_write_line("SCHED_WORKLOAD_PREPARE_ERR");
+        console_write_line(context, "SCHED_WORKLOAD_PREPARE_ERR");
         return;
     }
 
@@ -1834,7 +1848,7 @@ static void console_scheduler_workload_test(void)
             scheduler_workload_oled_task,
             (void *)0) == 0
     ) {
-        uart_write_line("SCHED_WORKLOAD_PREPARE_ERR");
+        console_write_line(context, "SCHED_WORKLOAD_PREPARE_ERR");
         return;
     }
 
@@ -1844,7 +1858,7 @@ static void console_scheduler_workload_test(void)
             scheduler_workload_cpu_peer_task,
             (void *)0) == 0
     ) {
-        uart_write_line("SCHED_WORKLOAD_PREPARE_ERR");
+        console_write_line(context, "SCHED_WORKLOAD_PREPARE_ERR");
         return;
     }
 
@@ -1861,37 +1875,37 @@ static void console_scheduler_workload_test(void)
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
-    uart_write("WORKLOAD_CAPACITY=");
-    uart_write_hex32(capacity0);
-    uart_write("\r\n");
+    console_write(context, "WORKLOAD_CAPACITY=");
+    console_write_hex32(context, capacity0);
+    console_write(context, "\r\n");
 
-    uart_write("WORKLOAD_T0_USED=");
-    uart_write_hex32(used0);
-    uart_write("\r\n");
+    console_write(context, "WORKLOAD_T0_USED=");
+    console_write_hex32(context, used0);
+    console_write(context, "\r\n");
 
-    uart_write("WORKLOAD_T1_USED=");
-    uart_write_hex32(used1);
-    uart_write("\r\n");
+    console_write(context, "WORKLOAD_T1_USED=");
+    console_write_hex32(context, used1);
+    console_write(context, "\r\n");
 
-    uart_write("WORKLOAD_SWITCHES=");
-    uart_write_hex32(switches);
-    uart_write("\r\n");
+    console_write(context, "WORKLOAD_SWITCHES=");
+    console_write_hex32(context, switches);
+    console_write(context, "\r\n");
 
-    uart_write("WORKLOAD_UI_RESULT=");
-    uart_write_hex32(scheduler_workload_ui_result);
-    uart_write("\r\n");
+    console_write(context, "WORKLOAD_UI_RESULT=");
+    console_write_hex32(context, scheduler_workload_ui_result);
+    console_write(context, "\r\n");
 
-    uart_write("WORKLOAD_PEER_OVERLAP=");
-    uart_write_hex32(scheduler_workload_peer_overlap);
-    uart_write("\r\n");
+    console_write(context, "WORKLOAD_PEER_OVERLAP=");
+    console_write_hex32(context, scheduler_workload_peer_overlap);
+    console_write(context, "\r\n");
 
-    uart_write("WORKLOAD_CANARY_T0=");
-    uart_write_hex32((canary0 != 0) ? 1u : 0u);
-    uart_write("\r\n");
+    console_write(context, "WORKLOAD_CANARY_T0=");
+    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
+    console_write(context, "\r\n");
 
-    uart_write("WORKLOAD_CANARY_T1=");
-    uart_write_hex32((canary1 != 0) ? 1u : 0u);
-    uart_write("\r\n");
+    console_write(context, "WORKLOAD_CANARY_T1=");
+    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
+    console_write(context, "\r\n");
 
     passed =
         (start_result != 0) &&
@@ -1916,15 +1930,15 @@ static void console_scheduler_workload_test(void)
 
     if (passed != 0)
     {
-        uart_write_line("SCHED_WORKLOAD_OK");
+        console_write_line(context, "SCHED_WORKLOAD_OK");
     }
     else
     {
-        uart_write_line("SCHED_WORKLOAD_ERR");
+        console_write_line(context, "SCHED_WORKLOAD_ERR");
     }
 }
 
-static void console_uart_rx_stats(void)
+static void console_uart_rx_stats(command_service_context_t *context)
 {
     const uint32_t head = uart_rx_head;
     const uint32_t tail = uart_rx_tail;
@@ -1935,33 +1949,33 @@ static void console_uart_rx_stats(void)
     const uint32_t error_count = uart_rx_error_count;
     const uint32_t high_water = uart_rx_high_water;
 
-    uart_write("RX_CAPACITY=");
-    uart_write_hex32(UART_RX_RING_CAPACITY);
-    uart_write("\r\n");
+    console_write(context, "RX_CAPACITY=");
+    console_write_hex32(context, UART_RX_RING_CAPACITY);
+    console_write(context, "\r\n");
 
-    uart_write("RX_IRQ_COUNT=");
-    uart_write_hex32(irq_count);
-    uart_write("\r\n");
+    console_write(context, "RX_IRQ_COUNT=");
+    console_write_hex32(context, irq_count);
+    console_write(context, "\r\n");
 
-    uart_write("RX_BYTE_COUNT=");
-    uart_write_hex32(byte_count);
-    uart_write("\r\n");
+    console_write(context, "RX_BYTE_COUNT=");
+    console_write_hex32(context, byte_count);
+    console_write(context, "\r\n");
 
-    uart_write("RX_DROP_COUNT=");
-    uart_write_hex32(drop_count);
-    uart_write("\r\n");
+    console_write(context, "RX_DROP_COUNT=");
+    console_write_hex32(context, drop_count);
+    console_write(context, "\r\n");
 
-    uart_write("RX_ERROR_COUNT=");
-    uart_write_hex32(error_count);
-    uart_write("\r\n");
+    console_write(context, "RX_ERROR_COUNT=");
+    console_write_hex32(context, error_count);
+    console_write(context, "\r\n");
 
-    uart_write("RX_HIGH_WATER=");
-    uart_write_hex32(high_water);
-    uart_write("\r\n");
+    console_write(context, "RX_HIGH_WATER=");
+    console_write_hex32(context, high_water);
+    console_write(context, "\r\n");
 
-    uart_write("RX_DEPTH=");
-    uart_write_hex32(depth);
-    uart_write("\r\n");
+    console_write(context, "RX_DEPTH=");
+    console_write_hex32(context, depth);
+    console_write(context, "\r\n");
 
     if (
         (irq_count != 0u) &&
@@ -1972,11 +1986,11 @@ static void console_uart_rx_stats(void)
         (high_water <= UART_RX_RING_CAPACITY) &&
         (depth <= UART_RX_RING_CAPACITY))
     {
-        uart_write_line("RX_IRQ_RING_OK");
+        console_write_line(context, "RX_IRQ_RING_OK");
     }
     else
     {
-        uart_write_line("RX_IRQ_RING_ERR");
+        console_write_line(context, "RX_IRQ_RING_ERR");
     }
 }
 
@@ -2052,7 +2066,7 @@ static uint32_t msp_stack_current_used_bytes(void)
         (uintptr_t)current_msp);
 }
 
-static void console_msp_stack_stats(void)
+static void console_msp_stack_stats(command_service_context_t *context)
 {
     const uint32_t reserved = msp_stack_reserved_bytes();
     const uint32_t capacity = msp_stack_capacity_bytes();
@@ -2061,33 +2075,33 @@ static void console_msp_stack_stats(void)
     const uint32_t margin = (used < capacity) ? (capacity - used) : 0u;
     const uint32_t canary = (msp_stack_canary_intact() != 0) ? 1u : 0u;
 
-    uart_write("MSP_RESERVED=");
-    uart_write_hex32(reserved);
-    uart_write("\r\n");
+    console_write(context, "MSP_RESERVED=");
+    console_write_hex32(context, reserved);
+    console_write(context, "\r\n");
 
-    uart_write("MSP_GUARD=");
-    uart_write_hex32(MSP_STACK_GUARD_BYTES);
-    uart_write("\r\n");
+    console_write(context, "MSP_GUARD=");
+    console_write_hex32(context, MSP_STACK_GUARD_BYTES);
+    console_write(context, "\r\n");
 
-    uart_write("MSP_CAPACITY=");
-    uart_write_hex32(capacity);
-    uart_write("\r\n");
+    console_write(context, "MSP_CAPACITY=");
+    console_write_hex32(context, capacity);
+    console_write(context, "\r\n");
 
-    uart_write("MSP_USED=");
-    uart_write_hex32(used);
-    uart_write("\r\n");
+    console_write(context, "MSP_USED=");
+    console_write_hex32(context, used);
+    console_write(context, "\r\n");
 
-    uart_write("MSP_MARGIN=");
-    uart_write_hex32(margin);
-    uart_write("\r\n");
+    console_write(context, "MSP_MARGIN=");
+    console_write_hex32(context, margin);
+    console_write(context, "\r\n");
 
-    uart_write("MSP_CURRENT=");
-    uart_write_hex32(current);
-    uart_write("\r\n");
+    console_write(context, "MSP_CURRENT=");
+    console_write_hex32(context, current);
+    console_write(context, "\r\n");
 
-    uart_write("MSP_CANARY=");
-    uart_write_hex32(canary);
-    uart_write("\r\n");
+    console_write(context, "MSP_CANARY=");
+    console_write_hex32(context, canary);
+    console_write(context, "\r\n");
 
     if (
         (reserved == MSP_STACK_RESERVED_BYTES) &&
@@ -2098,11 +2112,11 @@ static void console_msp_stack_stats(void)
         (current < capacity) &&
         (canary != 0u))
     {
-        uart_write_line("MSP_STACK_OK");
+        console_write_line(context, "MSP_STACK_OK");
     }
     else
     {
-        uart_write_line("MSP_STACK_ERR");
+        console_write_line(context, "MSP_STACK_ERR");
     }
 }
 
@@ -2130,9 +2144,11 @@ static const char * const scheduler_console_probe_commands
 
 static void scheduler_console_probe_task(void *argument)
 {
+    command_service_context_t *context =
+        (command_service_context_t *)argument;
     uint32_t index;
 
-    if (argument != (void *)scheduler_console_probe_commands)
+    if (context == (command_service_context_t *)0)
     {
         scheduler_console_probe_task_done = 1u;
         return;
@@ -2144,9 +2160,17 @@ static void scheduler_console_probe_task(void *argument)
          index < SCHED_CONSOLE_PROBE_COMMAND_COUNT;
          ++index)
     {
+        command_service_request_t request =
+        {
+            command_service_find(scheduler_console_probe_commands[index]),
+            0u,
+            { (const char *)0 }
+        };
+
         if (
-            console_execute_safe_named(
-                scheduler_console_probe_commands[index]) != 0
+            (request.descriptor != (const command_service_descriptor_t *)0) &&
+            (console_execute_request(&request, context, (void *)0) ==
+                COMMAND_SERVICE_STATUS_OK)
         ) {
             ++scheduler_console_probe_completed_count;
         }
@@ -2185,7 +2209,7 @@ static void scheduler_console_probe_peer_task(void *argument)
     scheduler_console_probe_peer_done = 1u;
 }
 
-static void console_scheduler_console_probe_test(void)
+static void console_scheduler_console_probe_test(command_service_context_t *context)
 {
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
@@ -2205,7 +2229,7 @@ static void console_scheduler_console_probe_test(void)
 
     if (scheduler_init() == 0)
     {
-        uart_write_line("SCHED_CONSOLE_PROBE_PREPARE_ERR");
+        console_write_line(context, "SCHED_CONSOLE_PROBE_PREPARE_ERR");
         return;
     }
 
@@ -2226,7 +2250,7 @@ static void console_scheduler_console_probe_test(void)
         scheduler_task_prepare(
             0u,
             scheduler_console_probe_task,
-            (void *)scheduler_console_probe_commands);
+            (void *)context);
 
     prepare1 =
         scheduler_task_prepare(
@@ -2239,7 +2263,7 @@ static void console_scheduler_console_probe_test(void)
         (prepare0 == 0) ||
         (prepare1 == 0)
     ) {
-        uart_write_line("SCHED_CONSOLE_PROBE_PREPARE_ERR");
+        console_write_line(context, "SCHED_CONSOLE_PROBE_PREPARE_ERR");
         return;
     }
 
@@ -2257,53 +2281,53 @@ static void console_scheduler_console_probe_test(void)
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
-    uart_write("CONSOLE_PROBE_CAPACITY=");
-    uart_write_hex32(capacity0);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_CAPACITY=");
+    console_write_hex32(context, capacity0);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_USED=");
-    uart_write_hex32(used0);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_USED=");
+    console_write_hex32(context, used0);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_MARGIN=");
-    uart_write_hex32(margin0);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_MARGIN=");
+    console_write_hex32(context, margin0);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_PEER_CAPACITY=");
-    uart_write_hex32(capacity1);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_PEER_CAPACITY=");
+    console_write_hex32(context, capacity1);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_PEER_USED=");
-    uart_write_hex32(used1);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_PEER_USED=");
+    console_write_hex32(context, used1);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_SWITCHES=");
-    uart_write_hex32(switches);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_SWITCHES=");
+    console_write_hex32(context, switches);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_OVERLAP=");
-    uart_write_hex32(scheduler_console_probe_peer_overlap);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_OVERLAP=");
+    console_write_hex32(context, scheduler_console_probe_peer_overlap);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_SURFACE_COUNT=");
-    uart_write_hex32(SCHED_CONSOLE_PROBE_COMMAND_COUNT);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_SURFACE_COUNT=");
+    console_write_hex32(context, SCHED_CONSOLE_PROBE_COMMAND_COUNT);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_COMPLETED=");
-    uart_write_hex32(scheduler_console_probe_completed_count);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_COMPLETED=");
+    console_write_hex32(context, scheduler_console_probe_completed_count);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_UI_RESTORE=");
-    uart_write_hex32(scheduler_console_probe_ui_restore_result);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_UI_RESTORE=");
+    console_write_hex32(context, scheduler_console_probe_ui_restore_result);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_CANARY=");
-    uart_write_hex32((canary0 != 0) ? 1u : 0u);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_CANARY=");
+    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
+    console_write(context, "\r\n");
 
-    uart_write("CONSOLE_PROBE_PEER_CANARY=");
-    uart_write_hex32((canary1 != 0) ? 1u : 0u);
-    uart_write("\r\n");
+    console_write(context, "CONSOLE_PROBE_PEER_CANARY=");
+    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
+    console_write(context, "\r\n");
 
     passed =
         (start_result != 0) &&
@@ -2331,20 +2355,22 @@ static void console_scheduler_console_probe_test(void)
 
     if (passed != 0)
     {
-        uart_write_line("SCHED_CONSOLE_PROBE_OK");
+        console_write_line(context, "SCHED_CONSOLE_PROBE_OK");
     }
     else
     {
-        uart_write_line("SCHED_CONSOLE_PROBE_ERR");
+        console_write_line(context, "SCHED_CONSOLE_PROBE_ERR");
     }
 }
 
 static void scheduler_wait_wake_task(void *argument)
 {
+    command_service_context_t *context =
+        (command_service_context_t *)argument;
     uint32_t events;
     char byte = 0;
 
-    if (argument != (void *)0)
+    if (context == (command_service_context_t *)0)
     {
         scheduler_wait_wake_task_resumed = 1u;
         return;
@@ -2377,7 +2403,7 @@ static void scheduler_wait_wake_task(void *argument)
      * has reached the wait protocol. A UART event racing with the following
      * SVC is safely latched by scheduler_event_signal().
      */
-    uart_write_line("SCHED_WAIT_WAKE_ARMED");
+    console_write_line(context, "SCHED_WAIT_WAKE_ARMED");
 
     for (;;)
     {
@@ -2426,7 +2452,7 @@ static void scheduler_wait_wake_peer_task(void *argument)
     }
 }
 
-static void console_scheduler_wait_wake_test(void)
+static void console_scheduler_wait_wake_test(command_service_context_t *context)
 {
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
@@ -2444,7 +2470,7 @@ static void console_scheduler_wait_wake_test(void)
 
     if (scheduler_init() == 0)
     {
-        uart_write_line("SCHED_WAIT_WAKE_PREPARE_ERR");
+        console_write_line(context, "SCHED_WAIT_WAKE_PREPARE_ERR");
         return;
     }
 
@@ -2460,7 +2486,7 @@ static void console_scheduler_wait_wake_test(void)
         scheduler_task_prepare(
             0u,
             scheduler_wait_wake_task,
-            (void *)0);
+            (void *)context);
 
     prepare1 =
         scheduler_task_prepare(
@@ -2470,7 +2496,7 @@ static void console_scheduler_wait_wake_test(void)
 
     if ((prepare0 == 0) || (prepare1 == 0))
     {
-        uart_write_line("SCHED_WAIT_WAKE_PREPARE_ERR");
+        console_write_line(context, "SCHED_WAIT_WAKE_PREPARE_ERR");
         return;
     }
 
@@ -2487,37 +2513,37 @@ static void console_scheduler_wait_wake_test(void)
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
-    uart_write("SCHED_WAIT_WAKE_EVENTS=");
-    uart_write_hex32(scheduler_wait_wake_events);
-    uart_write("\r\n");
+    console_write(context, "SCHED_WAIT_WAKE_EVENTS=");
+    console_write_hex32(context, scheduler_wait_wake_events);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_WAIT_WAKE_BYTE=");
-    uart_write_hex32(scheduler_wait_wake_byte);
-    uart_write("\r\n");
+    console_write(context, "SCHED_WAIT_WAKE_BYTE=");
+    console_write_hex32(context, scheduler_wait_wake_byte);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_WAIT_WAKE_FRAMING_BYTES=");
-    uart_write_hex32(scheduler_wait_wake_framing_bytes);
-    uart_write("\r\n");
+    console_write(context, "SCHED_WAIT_WAKE_FRAMING_BYTES=");
+    console_write_hex32(context, scheduler_wait_wake_framing_bytes);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_WAIT_WAKE_IDLE_WAITS=");
-    uart_write_hex32(idle_waits);
-    uart_write("\r\n");
+    console_write(context, "SCHED_WAIT_WAKE_IDLE_WAITS=");
+    console_write_hex32(context, idle_waits);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_WAIT_WAKE_USED_T0=");
-    uart_write_hex32(used0);
-    uart_write("\r\n");
+    console_write(context, "SCHED_WAIT_WAKE_USED_T0=");
+    console_write_hex32(context, used0);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_WAIT_WAKE_USED_T1=");
-    uart_write_hex32(used1);
-    uart_write("\r\n");
+    console_write(context, "SCHED_WAIT_WAKE_USED_T1=");
+    console_write_hex32(context, used1);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_WAIT_WAKE_CANARY_T0=");
-    uart_write_hex32((canary0 != 0) ? 1u : 0u);
-    uart_write("\r\n");
+    console_write(context, "SCHED_WAIT_WAKE_CANARY_T0=");
+    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_WAIT_WAKE_CANARY_T1=");
-    uart_write_hex32((canary1 != 0) ? 1u : 0u);
-    uart_write("\r\n");
+    console_write(context, "SCHED_WAIT_WAKE_CANARY_T1=");
+    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
+    console_write(context, "\r\n");
 
     passed =
         (start_result != 0) &&
@@ -2546,11 +2572,11 @@ static void console_scheduler_wait_wake_test(void)
 
     if (passed != 0)
     {
-        uart_write_line("SCHED_WAIT_WAKE_OK");
+        console_write_line(context, "SCHED_WAIT_WAKE_OK");
     }
     else
     {
-        uart_write_line("SCHED_WAIT_WAKE_ERR");
+        console_write_line(context, "SCHED_WAIT_WAKE_ERR");
     }
 }
 
@@ -2568,9 +2594,11 @@ static const char * const scheduler_isolation_diagnostic_commands
 
 static void scheduler_isolation_task(void *argument)
 {
+    command_service_context_t *context =
+        (command_service_context_t *)argument;
     uint32_t index;
 
-    if (argument != (void *)scheduler_isolation_diagnostic_commands)
+    if (context == (command_service_context_t *)0)
     {
         scheduler_isolation_active_preserved = 0u;
         scheduler_isolation_task_done = 1u;
@@ -2593,9 +2621,17 @@ static void scheduler_isolation_task(void *argument)
          index < SCHED_ISOLATION_DIAGNOSTIC_COUNT;
          ++index)
     {
+        command_service_request_t request =
+        {
+            command_service_find(scheduler_isolation_diagnostic_commands[index]),
+            0u,
+            { (const char *)0 }
+        };
+
         if (
-            console_execute_scheduler_diagnostic(
-                scheduler_isolation_diagnostic_commands[index]) == 0
+            (request.descriptor == (const command_service_descriptor_t *)0) ||
+            (console_execute_scheduler_diagnostic(&request, context) !=
+                COMMAND_SERVICE_STATUS_BUSY)
         ) {
             scheduler_isolation_active_preserved = 0u;
         }
@@ -2636,7 +2672,7 @@ static void scheduler_isolation_peer_task(void *argument)
     scheduler_isolation_peer_done = 1u;
 }
 
-static void console_scheduler_isolation_test(void)
+static void console_scheduler_isolation_test(command_service_context_t *context)
 {
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
@@ -2654,7 +2690,7 @@ static void console_scheduler_isolation_test(void)
 
     if (scheduler_init() == 0)
     {
-        uart_write_line("SCHED_ISOLATE_PREPARE_ERR");
+        console_write_line(context, "SCHED_ISOLATE_PREPARE_ERR");
         return;
     }
 
@@ -2670,7 +2706,7 @@ static void console_scheduler_isolation_test(void)
         scheduler_task_prepare(
             0u,
             scheduler_isolation_task,
-            (void *)scheduler_isolation_diagnostic_commands);
+            (void *)context);
 
     prepare1 =
         scheduler_task_prepare(
@@ -2680,7 +2716,7 @@ static void console_scheduler_isolation_test(void)
 
     if ((prepare0 == 0) || (prepare1 == 0))
     {
-        uart_write_line("SCHED_ISOLATE_PREPARE_ERR");
+        console_write_line(context, "SCHED_ISOLATE_PREPARE_ERR");
         return;
     }
 
@@ -2697,49 +2733,49 @@ static void console_scheduler_isolation_test(void)
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
-    uart_write("SCHED_ISOLATE_CAPACITY_T0=");
-    uart_write_hex32(capacity0);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_CAPACITY_T0=");
+    console_write_hex32(context, capacity0);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_USED_T0=");
-    uart_write_hex32(used0);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_USED_T0=");
+    console_write_hex32(context, used0);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_CAPACITY_T1=");
-    uart_write_hex32(capacity1);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_CAPACITY_T1=");
+    console_write_hex32(context, capacity1);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_USED_T1=");
-    uart_write_hex32(used1);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_USED_T1=");
+    console_write_hex32(context, used1);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_SWITCHES=");
-    uart_write_hex32(switches);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_SWITCHES=");
+    console_write_hex32(context, switches);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_INIT_REJECT=");
-    uart_write_hex32(scheduler_isolation_init_reject);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_INIT_REJECT=");
+    console_write_hex32(context, scheduler_isolation_init_reject);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_BLOCKED_DIAGNOSTICS=");
-    uart_write_hex32(scheduler_diagnostic_busy_count);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_BLOCKED_DIAGNOSTICS=");
+    console_write_hex32(context, scheduler_diagnostic_busy_count);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_ACTIVE_PRESERVED=");
-    uart_write_hex32(scheduler_isolation_active_preserved);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_ACTIVE_PRESERVED=");
+    console_write_hex32(context, scheduler_isolation_active_preserved);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_OVERLAP=");
-    uart_write_hex32(scheduler_isolation_peer_overlap);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_OVERLAP=");
+    console_write_hex32(context, scheduler_isolation_peer_overlap);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_CANARY_T0=");
-    uart_write_hex32((canary0 != 0) ? 1u : 0u);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_CANARY_T0=");
+    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_ISOLATE_CANARY_T1=");
-    uart_write_hex32((canary1 != 0) ? 1u : 0u);
-    uart_write("\r\n");
+    console_write(context, "SCHED_ISOLATE_CANARY_T1=");
+    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
+    console_write(context, "\r\n");
 
     passed =
         (start_result != 0) &&
@@ -2768,11 +2804,11 @@ static void console_scheduler_isolation_test(void)
 
     if (passed != 0)
     {
-        uart_write_line("SCHED_ISOLATE_OK");
+        console_write_line(context, "SCHED_ISOLATE_OK");
     }
     else
     {
-        uart_write_line("SCHED_ISOLATE_ERR");
+        console_write_line(context, "SCHED_ISOLATE_ERR");
     }
 }
 
@@ -2800,7 +2836,7 @@ static uint32_t cpu_psp_get(void)
     return value;
 }
 
-static void console_production_scheduler_stats(void)
+static void console_production_scheduler_stats(command_service_context_t *context)
 {
     const scheduler_task_t *task0 = scheduler_task_get(0u);
     const scheduler_task_t *task1 = scheduler_task_get(1u);
@@ -2871,131 +2907,131 @@ static void console_production_scheduler_stats(void)
         task1_priority = task1->priority;
     }
 
-    uart_write("SCHED_PROD_ACTIVE=");
-    uart_write_hex32(active);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_ACTIVE=");
+    console_write_hex32(context, active);
+    console_write(context, "\r\n");
 
-    uart_write_line("SCHED_PROD_MODE=COOPERATIVE");
+    console_write_line(context, "SCHED_PROD_MODE=COOPERATIVE");
 
-    uart_write("SCHED_PROD_THREAD_PSP=");
-    uart_write_hex32(thread_psp);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_THREAD_PSP=");
+    console_write_hex32(context, thread_psp);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_CONTROL=");
-    uart_write_hex32(control);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_CONTROL=");
+    console_write_hex32(context, control);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_PSP=");
-    uart_write_hex32(psp);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_PSP=");
+    console_write_hex32(context, psp);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_PSP_IN_RANGE=");
-    uart_write_hex32(psp_in_range);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_PSP_IN_RANGE=");
+    console_write_hex32(context, psp_in_range);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_TASK0_STATE=");
-    uart_write_hex32(task0_state);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_TASK0_STATE=");
+    console_write_hex32(context, task0_state);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_TASK0_PRIORITY=");
-    uart_write_hex32(task0_priority);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_TASK0_PRIORITY=");
+    console_write_hex32(context, task0_priority);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_TASK0_WAIT_EVENTS=");
-    uart_write_hex32(task0_wait_events);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_TASK0_WAIT_EVENTS=");
+    console_write_hex32(context, task0_wait_events);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_TASK0_WAKE_EVENTS=");
-    uart_write_hex32(task0_wake_events);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_TASK0_WAKE_EVENTS=");
+    console_write_hex32(context, task0_wake_events);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_TASK1_STATE=");
-    uart_write_hex32(task1_state);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_TASK1_STATE=");
+    console_write_hex32(context, task1_state);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_TASK1_PRIORITY=");
-    uart_write_hex32(task1_priority);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_TASK1_PRIORITY=");
+    console_write_hex32(context, task1_priority);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_CONSOLE_CAPACITY=");
-    uart_write_hex32(console_capacity);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_CONSOLE_CAPACITY=");
+    console_write_hex32(context, console_capacity);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_CONSOLE_USED=");
-    uart_write_hex32(console_used);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_CONSOLE_USED=");
+    console_write_hex32(context, console_used);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_CONSOLE_MARGIN=");
-    uart_write_hex32(console_margin);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_CONSOLE_MARGIN=");
+    console_write_hex32(context, console_margin);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_CONSOLE_CANARY=");
-    uart_write_hex32(console_canary);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_CONSOLE_CANARY=");
+    console_write_hex32(context, console_canary);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_HEARTBEAT_STARTED=");
-    uart_write_hex32(production_heartbeat_task_started);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_HEARTBEAT_STARTED=");
+    console_write_hex32(context, production_heartbeat_task_started);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_HEARTBEAT_COUNT=");
-    uart_write_hex32(production_heartbeat_count);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_HEARTBEAT_COUNT=");
+    console_write_hex32(context, production_heartbeat_count);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_HEARTBEAT_LED_ON=");
-    uart_write_hex32(production_heartbeat_led_on);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_HEARTBEAT_LED_ON=");
+    console_write_hex32(context, production_heartbeat_led_on);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_HEARTBEAT_FAULT=");
-    uart_write_hex32(production_heartbeat_fault);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_HEARTBEAT_FAULT=");
+    console_write_hex32(context, production_heartbeat_fault);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_HEARTBEAT_CAPACITY=");
-    uart_write_hex32(heartbeat_capacity);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_HEARTBEAT_CAPACITY=");
+    console_write_hex32(context, heartbeat_capacity);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_HEARTBEAT_USED=");
-    uart_write_hex32(heartbeat_used);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_HEARTBEAT_USED=");
+    console_write_hex32(context, heartbeat_used);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_HEARTBEAT_MARGIN=");
-    uart_write_hex32(heartbeat_margin);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_HEARTBEAT_MARGIN=");
+    console_write_hex32(context, heartbeat_margin);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_HEARTBEAT_CANARY=");
-    uart_write_hex32(heartbeat_canary);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_HEARTBEAT_CANARY=");
+    console_write_hex32(context, heartbeat_canary);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_IDLE_WAITS=");
-    uart_write_hex32(idle_waits);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_IDLE_WAITS=");
+    console_write_hex32(context, idle_waits);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_WAIT_COUNT=");
-    uart_write_hex32(production_console_wait_count);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_WAIT_COUNT=");
+    console_write_hex32(context, production_console_wait_count);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_WAKE_COUNT=");
-    uart_write_hex32(production_console_wake_count);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_WAKE_COUNT=");
+    console_write_hex32(context, production_console_wake_count);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_WAKE_EVENTS=");
-    uart_write_hex32(production_console_wake_events);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_WAKE_EVENTS=");
+    console_write_hex32(context, production_console_wake_events);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_COMMAND_COUNT=");
-    uart_write_hex32(production_console_command_count);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_COMMAND_COUNT=");
+    console_write_hex32(context, production_console_command_count);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_DIAG_BUSY_COUNT=");
-    uart_write_hex32(scheduler_diagnostic_busy_count);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_DIAG_BUSY_COUNT=");
+    console_write_hex32(context, scheduler_diagnostic_busy_count);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_PREEMPT_SWITCHES=");
-    uart_write_hex32(preempt_switches);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_PREEMPT_SWITCHES=");
+    console_write_hex32(context, preempt_switches);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PROD_FAULT=");
-    uart_write_hex32(production_console_fault);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PROD_FAULT=");
+    console_write_hex32(context, production_console_fault);
+    console_write(context, "\r\n");
 
     passed =
         (active != 0u) &&
@@ -3024,15 +3060,15 @@ static void console_production_scheduler_stats(void)
 
     if (passed != 0)
     {
-        uart_write_line("SCHED_PROD_OK");
+        console_write_line(context, "SCHED_PROD_OK");
     }
     else
     {
-        uart_write_line("SCHED_PROD_ERR");
+        console_write_line(context, "SCHED_PROD_ERR");
     }
 }
 
-static void console_scheduler_priority_test(void)
+static void console_scheduler_priority_test(command_service_context_t *context)
 {
     const scheduler_task_t *task0 = scheduler_task_get(0u);
     const scheduler_task_t *task1 = scheduler_task_get(1u);
@@ -3080,31 +3116,31 @@ static void console_scheduler_priority_test(void)
         task1_priority_after = task1->priority;
     }
 
-    uart_write_line("SCHED_PRIO_POLICY=LOWER_VALUE_HIGHER");
+    console_write_line(context, "SCHED_PRIO_POLICY=LOWER_VALUE_HIGHER");
 
-    uart_write("SCHED_PRIO_HIGHEST=");
-    uart_write_hex32(SCHEDULER_PRIORITY_HIGHEST);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PRIO_HIGHEST=");
+    console_write_hex32(context, SCHEDULER_PRIORITY_HIGHEST);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PRIO_DEFAULT=");
-    uart_write_hex32(SCHEDULER_PRIORITY_DEFAULT);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PRIO_DEFAULT=");
+    console_write_hex32(context, SCHEDULER_PRIORITY_DEFAULT);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PRIO_LOWEST=");
-    uart_write_hex32(SCHEDULER_PRIORITY_LOWEST);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PRIO_LOWEST=");
+    console_write_hex32(context, SCHEDULER_PRIORITY_LOWEST);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PRIO_TASK0=");
-    uart_write_hex32(task0_priority_after);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PRIO_TASK0=");
+    console_write_hex32(context, task0_priority_after);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PRIO_TASK1=");
-    uart_write_hex32(task1_priority_after);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PRIO_TASK1=");
+    console_write_hex32(context, task1_priority_after);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_PRIO_SELFTEST=");
-    uart_write_hex32(self_test);
-    uart_write("\r\n");
+    console_write(context, "SCHED_PRIO_SELFTEST=");
+    console_write_hex32(context, self_test);
+    console_write(context, "\r\n");
 
     if (
         (scheduler_is_active() != 0) &&
@@ -3115,11 +3151,11 @@ static void console_scheduler_priority_test(void)
         (task0_priority_after == task0_priority_before) &&
         (task1_priority_after == task1_priority_before)
     ) {
-        uart_write_line("SCHED_PRIO_ACTIVE_SET_REJECT_OK");
+        console_write_line(context, "SCHED_PRIO_ACTIVE_SET_REJECT_OK");
     }
     else
     {
-        uart_write_line("SCHED_PRIO_ACTIVE_SET_REJECT_ERR");
+        console_write_line(context, "SCHED_PRIO_ACTIVE_SET_REJECT_ERR");
         passed = 0;
     }
 
@@ -3133,20 +3169,18 @@ static void console_scheduler_priority_test(void)
 
     if (passed != 0)
     {
-        uart_write_line("SCHED_PRIO_OK");
+        console_write_line(context, "SCHED_PRIO_OK");
     }
     else
     {
-        uart_write_line("SCHED_PRIO_ERR");
+        console_write_line(context, "SCHED_PRIO_ERR");
     }
 }
 
-static void console_scheduler_timed_test(void)
+static void console_scheduler_timed_test(command_service_context_t *context)
 {
     const uint32_t rx_event =
-        (console_output_transport == CONSOLE_TRANSPORT_USB_CDC) ?
-            PRODUCTION_USB_CDC_RX_EVENT :
-            PRODUCTION_UART_RX_EVENT;
+        context->source_rx_event_mask;
     kernel_time_ms_t start;
     kernel_time_ms_t elapsed;
     uint32_t events;
@@ -3154,11 +3188,11 @@ static void console_scheduler_timed_test(void)
 
     if (scheduler_sleep_ms(0u) != 0)
     {
-        uart_write_line("SCHED_TIMED_ZERO_OK");
+        console_write_line(context, "SCHED_TIMED_ZERO_OK");
     }
     else
     {
-        uart_write_line("SCHED_TIMED_ZERO_ERR");
+        console_write_line(context, "SCHED_TIMED_ZERO_ERR");
         passed = 0;
     }
 
@@ -3166,24 +3200,24 @@ static void console_scheduler_timed_test(void)
 
     if (scheduler_sleep_ms(SCHED_TIMED_SLEEP_MS) == 0)
     {
-        uart_write_line("SCHED_TIMED_SLEEP_ERR");
+        console_write_line(context, "SCHED_TIMED_SLEEP_ERR");
         passed = 0;
     }
 
     elapsed =
         (kernel_time_ms_t)(kernel_time_now() - start);
 
-    uart_write("SCHED_TIMED_SLEEP_ELAPSED=");
-    uart_write_hex32(elapsed);
-    uart_write("\r\n");
+    console_write(context, "SCHED_TIMED_SLEEP_ELAPSED=");
+    console_write_hex32(context, elapsed);
+    console_write(context, "\r\n");
 
     if (elapsed >= SCHED_TIMED_SLEEP_MS)
     {
-        uart_write_line("SCHED_TIMED_SLEEP_OK");
+        console_write_line(context, "SCHED_TIMED_SLEEP_OK");
     }
     else
     {
-        uart_write_line("SCHED_TIMED_SLEEP_ERR");
+        console_write_line(context, "SCHED_TIMED_SLEEP_ERR");
         passed = 0;
     }
 
@@ -3202,19 +3236,19 @@ static void console_scheduler_timed_test(void)
     elapsed =
         (kernel_time_ms_t)(kernel_time_now() - start);
 
-    uart_write("SCHED_TIMED_TIMEOUT_ELAPSED=");
-    uart_write_hex32(elapsed);
-    uart_write("\r\n");
+    console_write(context, "SCHED_TIMED_TIMEOUT_ELAPSED=");
+    console_write_hex32(context, elapsed);
+    console_write(context, "\r\n");
 
     if (
         (events == 0u) &&
         (elapsed >= SCHED_TIMED_TIMEOUT_MS)
     ) {
-        uart_write_line("SCHED_TIMED_TIMEOUT_OK");
+        console_write_line(context, "SCHED_TIMED_TIMEOUT_OK");
     }
     else
     {
-        uart_write_line("SCHED_TIMED_TIMEOUT_ERR");
+        console_write_line(context, "SCHED_TIMED_TIMEOUT_ERR");
         passed = 0;
     }
 
@@ -3222,7 +3256,7 @@ static void console_scheduler_timed_test(void)
         rx_event,
         0u);
 
-    uart_write_line("SCHED_TIMED_EVENT_ARMED");
+    console_write_line(context, "SCHED_TIMED_EVENT_ARMED");
     start = kernel_time_now();
 
     events =
@@ -3233,180 +3267,275 @@ static void console_scheduler_timed_test(void)
     elapsed =
         (kernel_time_ms_t)(kernel_time_now() - start);
 
-    uart_write("SCHED_TIMED_EVENT_EVENTS=");
-    uart_write_hex32(events);
-    uart_write("\r\n");
+    console_write(context, "SCHED_TIMED_EVENT_EVENTS=");
+    console_write_hex32(context, events);
+    console_write(context, "\r\n");
 
-    uart_write("SCHED_TIMED_EVENT_ELAPSED=");
-    uart_write_hex32(elapsed);
-    uart_write("\r\n");
+    console_write(context, "SCHED_TIMED_EVENT_ELAPSED=");
+    console_write_hex32(context, elapsed);
+    console_write(context, "\r\n");
 
     if (
         (events == rx_event) &&
         (elapsed < SCHED_TIMED_EVENT_TIMEOUT_MS)
     ) {
-        uart_write_line("SCHED_TIMED_EVENT_OK");
+        console_write_line(context, "SCHED_TIMED_EVENT_OK");
     }
     else
     {
-        uart_write_line("SCHED_TIMED_EVENT_ERR");
+        console_write_line(context, "SCHED_TIMED_EVENT_ERR");
         passed = 0;
     }
 
     if (passed != 0)
     {
-        uart_write_line("SCHED_TIMED_OK");
+        console_write_line(context, "SCHED_TIMED_OK");
     }
     else
     {
-        uart_write_line("SCHED_TIMED_ERR");
+        console_write_line(context, "SCHED_TIMED_ERR");
     }
 }
 
-static void console_usb_cdc_stats(void)
+static void console_usb_cdc_stats(command_service_context_t *context)
 {
-    uart_write("USB_CDC_CONFIGURED=");
-    uart_write_hex32(usb_device_diagnostics.cdc_configured);
-    uart_write(" CONFIGURATION=");
-    uart_write_hex32(usb_device_diagnostics.configuration);
-    uart_write(" RX_PACKETS=");
-    uart_write_hex32(usb_device_diagnostics.cdc_rx_packet_count);
-    uart_write(" RX_BYTES=");
-    uart_write_hex32(usb_device_diagnostics.cdc_rx_byte_count);
-    uart_write(" RX_DROPS=");
-    uart_write_hex32(usb_device_diagnostics.cdc_rx_drop_count);
-    uart_write(" RX_HIGH_WATER=");
-    uart_write_hex32(usb_device_diagnostics.cdc_rx_high_water);
-    uart_write(" TX_PACKETS=");
-    uart_write_hex32(usb_device_diagnostics.cdc_tx_packet_count);
-    uart_write(" TX_BYTES=");
-    uart_write_hex32(usb_device_diagnostics.cdc_tx_byte_count);
-    uart_write(" TX_DROPS=");
-    uart_write_hex32(usb_device_diagnostics.cdc_tx_drop_count);
-    uart_write(" TX_HIGH_WATER=");
-    uart_write_hex32(usb_device_diagnostics.cdc_tx_high_water);
-    uart_write(" CONTROL=");
-    uart_write_hex32(usb_device_diagnostics.cdc_control_line_state);
-    uart_write(" BAUD=");
-    uart_write_hex32(usb_device_diagnostics.cdc_line_coding_baud);
-    uart_write(" STOP=");
-    uart_write_hex32(usb_device_diagnostics.cdc_line_coding_stop_bits);
-    uart_write(" PARITY=");
-    uart_write_hex32(usb_device_diagnostics.cdc_line_coding_parity);
-    uart_write(" DATA_BITS=");
-    uart_write_hex32(usb_device_diagnostics.cdc_line_coding_data_bits);
-    uart_write("\r\n");
+    console_write(context, "USB_CDC_CONFIGURED=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_configured);
+    console_write(context, " CONFIGURATION=");
+    console_write_hex32(context, usb_device_diagnostics.configuration);
+    console_write(context, " RX_PACKETS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_rx_packet_count);
+    console_write(context, " RX_BYTES=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_rx_byte_count);
+    console_write(context, " RX_DROPS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_rx_drop_count);
+    console_write(context, " RX_HIGH_WATER=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_rx_high_water);
+    console_write(context, " TX_PACKETS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_tx_packet_count);
+    console_write(context, " TX_BYTES=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_tx_byte_count);
+    console_write(context, " TX_DROPS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_tx_drop_count);
+    console_write(context, " TX_HIGH_WATER=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_tx_high_water);
+    console_write(context, " CONTROL=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_control_line_state);
+    console_write(context, " BAUD=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_baud);
+    console_write(context, " STOP=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_stop_bits);
+    console_write(context, " PARITY=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_parity);
+    console_write(context, " DATA_BITS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_data_bits);
+    console_write(context, "\r\n");
 }
 
-static int console_execute_safe_named(const char *command)
+static void console_write_command_descriptor(
+    command_service_context_t *context,
+    const command_service_descriptor_t *descriptor)
 {
-    if (text_equals(command, "ping") != 0)
+    if (descriptor == (const command_service_descriptor_t *)0)
     {
-        uart_write_line("PONG");
-    }
-    else if (text_equals(command, "uptime") != 0)
-    {
-        uart_write("UPTIME_MS=");
-        uart_write_hex32(kernel_time_now());
-        uart_write("\r\n");
-    }
-    else if (text_equals(command, "health") != 0)
-    {
-        uart_write("HEALTH TICK=");
-        uart_write_hex32(kernel_time_now());
-        uart_write(" PC13=");
-        uart_write_hex32((GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
-        uart_write(" WDOG_ACTIVE=");
-        uart_write_hex32(production_watchdog_active);
-        uart_write(" WDOG_RELOAD_COUNT=");
-        uart_write_hex32(production_watchdog_reload_count);
-        uart_write(" RESET_FLAGS=");
-        uart_write_hex32(production_reset_flags);
-        uart_write(" IWDG_RESET=");
-        uart_write_hex32(production_iwdg_reset);
-        uart_write("\r\n");
-    }
-    else if (text_equals(command, "rxstat") != 0)
-    {
-        console_uart_rx_stats();
-    }
-    else if (text_equals(command, "cdcstat") != 0)
-    {
-        console_usb_cdc_stats();
-    }
-    else if (text_equals(command, "mspstat") != 0)
-    {
-        console_msp_stack_stats();
-    }
-    else if (text_equals(command, "schedprod") != 0)
-    {
-        console_production_scheduler_stats();
-    }
-    else if (text_equals(command, "schedtimed") != 0)
-    {
-        console_scheduler_timed_test();
-    }
-    else if (text_equals(command, "schedprio") != 0)
-    {
-        console_scheduler_priority_test();
-    }
-    else if (text_equals(command, "fault") != 0)
-    {
-        console_write_fault();
-    }
-    else if (text_equals(command, "i2cscan") != 0)
-    {
-        console_i2c_scan();
-    }
-    else if (text_equals(command, "oledping") != 0)
-    {
-        console_oled_ping();
-    }
-    else if (text_equals(command, "oledtest") != 0)
-    {
-        console_oled_test();
-    }
-    else if (text_equals(command, "oledtext") != 0)
-    {
-        console_oled_text();
-    }
-    else if (text_equals(command, "oledrender") != 0)
-    {
-        console_oled_render();
-    }
-    else if (text_equals(command, "oledconsole") != 0)
-    {
-        console_oled_console();
-    }
-    else if (text_equals(command, "oledscroll") != 0)
-    {
-        console_oled_scroll();
-    }
-    else if (text_equals(command, "oleddirty") != 0)
-    {
-        console_oled_dirty();
-    }
-    else if (text_equals(command, "oleduiupdate") != 0)
-    {
-        console_oled_ui_update();
-    }
-    else if (text_equals(command, "uiruntime") != 0)
-    {
-        console_oled_runtime();
-    }
-    else if (text_equals(command, "oledstatus") != 0)
-    {
-        console_oled_status();
-    }
-    else
-    {
-        return 0;
+        return;
     }
 
-    return 1;
+    console_write(context, "HELP_METHOD=");
+    console_write(context, descriptor->name);
+    console_write(context, " CLASS=");
+    console_write(context, command_service_class_name(descriptor->command_class));
+    console_write(context, " MIN_ARGS=");
+    console_write_hex32(context, descriptor->min_args);
+    console_write(context, " MAX_ARGS=");
+    console_write_hex32(context, descriptor->max_args);
+    console_write(context, "\r\n");
 }
 
-static int console_scheduler_diagnostic_block_if_active(void)
+static command_service_status_t console_command_help(
+    const command_service_request_t *request,
+    command_service_context_t *context)
+{
+    if (request->argc == 0u)
+    {
+        const uint32_t count = command_service_registry_count();
+
+        console_write(context, "HELP_COUNT=");
+        console_write_hex32(context, count);
+        console_write(context, "\r\nHELP_METHODS=");
+
+        for (uint32_t index = 0u; index < count; ++index)
+        {
+            const command_service_descriptor_t *descriptor =
+                command_service_registry_at(index);
+
+            if (descriptor == (const command_service_descriptor_t *)0)
+            {
+                return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+            }
+
+            if (index != 0u)
+            {
+                console_write(context, " ");
+            }
+
+            console_write(context, descriptor->name);
+        }
+
+        console_write(context, "\r\n");
+        return COMMAND_SERVICE_STATUS_OK;
+    }
+
+    if (request->argc == 1u)
+    {
+        const command_service_descriptor_t *descriptor =
+            command_service_find(request->argv[0]);
+
+        if (descriptor == (const command_service_descriptor_t *)0)
+        {
+            return COMMAND_SERVICE_STATUS_NOT_FOUND;
+        }
+
+        console_write_command_descriptor(context, descriptor);
+        return COMMAND_SERVICE_STATUS_OK;
+    }
+
+    return COMMAND_SERVICE_STATUS_BAD_ARGS;
+}
+
+static command_service_status_t console_command_rpcinfo(command_service_context_t *context)
+{
+    console_write(context, "RPC_FOUNDATION_VERSION=");
+    console_write_hex32(context, COMMAND_SERVICE_FOUNDATION_VERSION);
+    console_write(context, " REGISTRY_COUNT=");
+    console_write_hex32(context, command_service_registry_count());
+    console_write(context, " LINE_CAPACITY=");
+    console_write_hex32(context, COMMAND_SERVICE_LINE_CAPACITY);
+    console_write(context, " MAX_ARGS=");
+    console_write_hex32(context, COMMAND_SERVICE_MAX_ARGS);
+    console_write(context, "\r\n");
+
+    return COMMAND_SERVICE_STATUS_OK;
+}
+
+static command_service_status_t console_execute_safe_method(
+    const command_service_request_t *request,
+    command_service_context_t *context)
+{
+    switch (request->descriptor->method_id)
+    {
+        case COMMAND_SERVICE_METHOD_PING:
+            console_write_line(context, "PONG");
+            break;
+
+        case COMMAND_SERVICE_METHOD_UPTIME:
+            console_write(context, "UPTIME_MS=");
+            console_write_hex32(context, kernel_time_now());
+            console_write(context, "\r\n");
+            break;
+
+        case COMMAND_SERVICE_METHOD_HEALTH:
+            console_write(context, "HEALTH TICK=");
+            console_write_hex32(context, kernel_time_now());
+            console_write(context, " PC13=");
+            console_write_hex32(context, (GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
+            console_write(context, " WDOG_ACTIVE=");
+            console_write_hex32(context, production_watchdog_active);
+            console_write(context, " WDOG_RELOAD_COUNT=");
+            console_write_hex32(context, production_watchdog_reload_count);
+            console_write(context, " RESET_FLAGS=");
+            console_write_hex32(context, production_reset_flags);
+            console_write(context, " IWDG_RESET=");
+            console_write_hex32(context, production_iwdg_reset);
+            console_write(context, "\r\n");
+            break;
+
+        case COMMAND_SERVICE_METHOD_RXSTAT:
+            console_uart_rx_stats(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_CDCSTAT:
+            console_usb_cdc_stats(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_MSPSTAT:
+            console_msp_stack_stats(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDPROD:
+            console_production_scheduler_stats(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDTIMED:
+            console_scheduler_timed_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDPRIO:
+            console_scheduler_priority_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_FAULT:
+            console_write_fault(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_I2CSCAN:
+            console_i2c_scan(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDPING:
+            console_oled_ping(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDTEST:
+            console_oled_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDTEXT:
+            console_oled_text(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDRENDER:
+            console_oled_render(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDCONSOLE:
+            console_oled_console(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDSCROLL:
+            console_oled_scroll(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDDIRTY:
+            console_oled_dirty(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDUIUPDATE:
+            console_oled_ui_update(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_UIRUNTIME:
+            console_oled_runtime(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_OLEDSTATUS:
+            console_oled_status(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_HELP:
+            return console_command_help(request, context);
+
+        case COMMAND_SERVICE_METHOD_RPCINFO:
+            return console_command_rpcinfo(context);
+
+        default:
+            return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+    }
+
+    return COMMAND_SERVICE_STATUS_OK;
+}
+
+static int console_scheduler_diagnostic_block_if_active(command_service_context_t *context)
 {
     if (scheduler_is_active() == 0)
     {
@@ -3414,86 +3543,70 @@ static int console_scheduler_diagnostic_block_if_active(void)
     }
 
     ++scheduler_diagnostic_busy_count;
-    uart_write_line("SCHED_DIAG_BUSY");
+    console_write_line(context, "SCHED_DIAG_BUSY");
 
     return 1;
 }
 
-static int console_execute_scheduler_diagnostic(const char *command)
+static command_service_status_t console_execute_scheduler_diagnostic(
+    const command_service_request_t *request,
+    command_service_context_t *context)
 {
-    if (text_equals(command, "schedtest") != 0)
+    if (console_scheduler_diagnostic_block_if_active(context) != 0)
     {
-        if (console_scheduler_diagnostic_block_if_active() == 0)
-        {
-            console_scheduler_test();
-        }
-    }
-    else if (text_equals(command, "schedcoop") != 0)
-    {
-        if (console_scheduler_diagnostic_block_if_active() == 0)
-        {
-            console_scheduler_cooperative_test();
-        }
-    }
-    else if (text_equals(command, "schedpreempt") != 0)
-    {
-        if (console_scheduler_diagnostic_block_if_active() == 0)
-        {
-            console_scheduler_preemptive_test();
-        }
-    }
-    else if (text_equals(command, "schedstack") != 0)
-    {
-        if (console_scheduler_diagnostic_block_if_active() == 0)
-        {
-            console_scheduler_stack_water_test();
-        }
-    }
-    else if (text_equals(command, "schedworkload") != 0)
-    {
-        if (console_scheduler_diagnostic_block_if_active() == 0)
-        {
-            console_scheduler_workload_test();
-        }
-    }
-    else if (text_equals(command, "schedconsoleprobe") != 0)
-    {
-        if (console_scheduler_diagnostic_block_if_active() == 0)
-        {
-            console_scheduler_console_probe_test();
-        }
-    }
-    else if (text_equals(command, "schedwaitwake") != 0)
-    {
-        if (console_scheduler_diagnostic_block_if_active() == 0)
-        {
-            console_scheduler_wait_wake_test();
-        }
-    }
-    else if (text_equals(command, "schedisolate") != 0)
-    {
-        if (console_scheduler_diagnostic_block_if_active() == 0)
-        {
-            console_scheduler_isolation_test();
-        }
-    }
-    else
-    {
-        return 0;
+        return COMMAND_SERVICE_STATUS_BUSY;
     }
 
-    return 1;
+    switch (request->descriptor->method_id)
+    {
+        case COMMAND_SERVICE_METHOD_SCHEDTEST:
+            console_scheduler_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDCOOP:
+            console_scheduler_cooperative_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDPREEMPT:
+            console_scheduler_preemptive_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDSTACK:
+            console_scheduler_stack_water_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDWORKLOAD:
+            console_scheduler_workload_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDCONSOLEPROBE:
+            console_scheduler_console_probe_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDWAITWAKE:
+            console_scheduler_wait_wake_test(context);
+            break;
+
+        case COMMAND_SERVICE_METHOD_SCHEDISOLATE:
+            console_scheduler_isolation_test(context);
+            break;
+
+        default:
+            return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+    }
+
+    return COMMAND_SERVICE_STATUS_OK;
 }
 
-static void console_watchdog_trip(void)
+static void console_watchdog_trip(command_service_context_t *context)
 {
     if (production_watchdog_active == 0u)
     {
-        uart_write_line("WDOG_TRIP_ERR_INACTIVE");
+        console_write_line(context, "WDOG_TRIP_ERR_INACTIVE");
         return;
     }
 
-    uart_write_line("WDOG_TRIP_ARMED");
+    console_write_line(context, "WDOG_TRIP_ARMED");
 
     for (;;)
     {
@@ -3501,28 +3614,45 @@ static void console_watchdog_trip(void)
     }
 }
 
-static void console_execute_named(const char *command)
+static command_service_status_t console_execute_request(
+    const command_service_request_t *request,
+    command_service_context_t *context,
+    void *handler_context)
 {
-    if (text_equals(command, "wdogtrip") != 0)
-    {
-        console_watchdog_trip();
-        return;
+    (void)handler_context;
+    if (
+        (request == (const command_service_request_t *)0) ||
+        (request->descriptor == (const command_service_descriptor_t *)0)
+    ) {
+        return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
     }
 
-    if (console_execute_scheduler_diagnostic(command) != 0)
+    switch (request->descriptor->command_class)
     {
-        return;
-    }
+        case COMMAND_SERVICE_CLASS_SAFE:
+            return console_execute_safe_method(request, context);
 
-    if (console_execute_safe_named(command) == 0)
-    {
-        uart_write_line("ERR");
+        case COMMAND_SERVICE_CLASS_DIAGNOSTIC:
+            return console_execute_scheduler_diagnostic(request, context);
+
+        case COMMAND_SERVICE_CLASS_DESTRUCTIVE:
+            if (request->descriptor->method_id != COMMAND_SERVICE_METHOD_WDOGTRIP)
+            {
+                return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+            }
+
+            console_watchdog_trip(context);
+            return COMMAND_SERVICE_STATUS_OK;
+
+        default:
+            return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
     }
 }
 
 static void console_execute_state(console_command_state_t *state)
 {
-    const console_transport_t previous_transport = console_output_transport;
+    command_service_request_t request;
+    command_service_status_t status;
 
     if ((state == (console_command_state_t *)0) || (state->length == 0u))
     {
@@ -3530,16 +3660,34 @@ static void console_execute_state(console_command_state_t *state)
     }
 
     state->data[state->length] = '\0';
-    console_output_transport = state->transport;
+    state->context.write_failed = 0u;
 
     if (production_console_task_started != 0u)
     {
         ++production_console_command_count;
     }
 
-    console_execute_named(state->data);
+    status = command_service_parse_line(state->data, &request);
+    if (status == COMMAND_SERVICE_STATUS_OK)
+    {
+        status =
+            command_service_execute(
+                &request,
+                &state->context,
+                console_execute_request,
+                (void *)0);
+    }
+
+    if (
+        (status == COMMAND_SERVICE_STATUS_NOT_FOUND) ||
+        (status == COMMAND_SERVICE_STATUS_BAD_ARGS) ||
+        ((status == COMMAND_SERVICE_STATUS_INTERNAL_ERROR) &&
+         (state->context.write_failed == 0u))
+    ) {
+        (void)command_service_write_line(&state->context, "ERR");
+    }
+
     state->length = 0u;
-    console_output_transport = previous_transport;
 }
 
 static void console_feed_char(
@@ -3571,19 +3719,16 @@ static void console_feed_char(
         return;
     }
 
-    if (state->length < (CONSOLE_COMMAND_CAPACITY - 1u))
+    if (state->length < (COMMAND_SERVICE_LINE_CAPACITY - 1u))
     {
         state->data[state->length] = c;
         ++state->length;
     }
     else
     {
-        const console_transport_t previous_transport = console_output_transport;
-
         state->length = 0u;
-        console_output_transport = state->transport;
-        uart_write_line("ERR");
-        console_output_transport = previous_transport;
+        state->context.write_failed = 0u;
+        (void)command_service_write_line(&state->context, "ERR");
     }
 }
 
@@ -3619,7 +3764,7 @@ static void production_console_task(void *argument)
     }
 
     production_console_task_started = 1u;
-    uart_write_line("SCHED_PROD_CONSOLE_ONLINE");
+    uart_emergency_write_line("SCHED_PROD_CONSOLE_ONLINE");
 
     for (;;)
     {
@@ -3684,8 +3829,8 @@ __attribute__((noreturn))
 static void production_fail_closed(
     const char *reason)
 {
-    uart_write_line(reason);
-    uart_write_line("SCHED_PROD_FATAL");
+    uart_emergency_write_line(reason);
+    uart_emergency_write_line("SCHED_PROD_FATAL");
 
     for (;;)
     {
@@ -3831,11 +3976,11 @@ void kernel_main(void)
 
     if (oled_runtime_ui_show() != 0)
     {
-        uart_write_line("OLED_RUNTIME_UI_OK");
+        uart_emergency_write_line("OLED_RUNTIME_UI_OK");
     }
     else
     {
-        uart_write_line("OLED_RUNTIME_UI_ERR");
+        uart_emergency_write_line("OLED_RUNTIME_UI_ERR");
     }
 
     /*
@@ -3867,8 +4012,9 @@ void kernel_main(void)
     usb_cdc_set_rx_notify(usb_cdc_rx_event_notify);
 
     uart_command_state.length = 0u;
+    uart_command_state.context.write_failed = 0u;
     usb_cdc_command_state.length = 0u;
-    console_output_transport = CONSOLE_TRANSPORT_UART;
+    usb_cdc_command_state.context.write_failed = 0u;
 
     production_console_task_started = 0u;
     production_console_wait_count = 0u;
@@ -3955,15 +4101,15 @@ void kernel_main(void)
     }
 
     production_watchdog_active = 1u;
-    uart_write_line("IWDG_ACTIVE");
-    uart_write_line("SCHED_PROD_PREPARE_OK");
-    uart_write_line("SCHED_PROD_START");
+    uart_emergency_write_line("IWDG_ACTIVE");
+    uart_emergency_write_line("SCHED_PROD_PREPARE_OK");
+    uart_emergency_write_line("SCHED_PROD_START");
 
     start_result = scheduler_start();
 
-    uart_write("SCHED_PROD_RETURN=");
-    uart_write_hex32((uint32_t)start_result);
-    uart_write("\r\n");
+    uart_emergency_write("SCHED_PROD_RETURN=");
+    uart_emergency_write_hex32((uint32_t)start_result);
+    uart_emergency_write("\r\n");
 
     production_fail_closed(
         "SCHED_PROD_UNEXPECTED_RETURN");

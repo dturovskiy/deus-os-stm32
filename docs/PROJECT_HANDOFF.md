@@ -7,121 +7,114 @@
 
 `main`, `origin/main` and remote `main` are synchronized at:
 
-`3f55f624b72b4c5266ec0e4b0006839c4478bec8` — `feat: add native USB device core foundation`
+`5a8a45618b87b3069fd7cbac6119035b6ac4ad2c` — `feat: add USB CDC ACM console foundation`
 
 Tree:
 
-`52c2a0efacf9c533d7664316dbfcac344cb2d742`
+`bbc6b24e28279075c41410e8abdace89c4b805b7`
 
-Published USB-core candidate:
-
-```text
-source candidate tree  4b798382ef843ef8f488115624d48c0cd1506c75
-binary                 43812 bytes
-SHA-256                1DD1B1528AFD9CB037AE54B873D6DBEAE94BC04DFA0047037DD6037D0BE7CFA6
-identity               1209:000A / Deus OS USB Core / private test only
-```
-
-The native USB Device core foundation is fully accepted and published. Its hardware proof includes exact EP0 descriptors, nonzero addressed state, physical disconnect/reconnect recovery without reflashing, post-IWDG USB recovery, retained UART/scheduler/IWDG regressions, final exact Flash readback, and OLED conditional N/A disposition.
-
-### Current architecture boundary
-
-`USB_CDC_ACM_CONSOLE_FOUNDATION`
-
-Gates 0–5 are accepted. Gate 3 on the first candidate exposed a real post-IWDG `usbser` session-recovery defect; the minimal PA12/D+ disconnect-pulse correction in `src/drivers/usb_device.c` was then rebuilt and fully hardware accepted. The boundary is ready for Gate 6 local acceptance commit.
-
-Gate 1 implemented CDC profile:
-
-```text
-VID/PID      1209:000B
-product      Deus OS CDC Console
-host driver  Windows inbox usbser.sys
-custom INF   none
-interfaces   0=CDC Control, 1=CDC Data
-EP1          0x81 interrupt IN / notification
-EP2          0x02 bulk OUT / host -> device
-EP3          0x83 bulk IN / device -> host
-```
-
-Gate 1 implemented PMA ownership:
-
-```text
-BTABLE   0x000
-EP0 TX   0x040 / 64 B
-EP0 RX   0x080 / 64 B
-EP1 IN   0x0C0 / 16 B
-EP2 OUT  0x100 / 64 B
-EP3 IN   0x140 / 64 B
-```
-
-Gate 1 source fingerprints:
-
-```text
-include/drivers/usb_device.h  69915DF563CB259830EE2F473764EB32C9AC4BB30E94BB846101914BD76A7FD5
-src/drivers/usb_device.c      A7FE1CCB71EA4C36A306607E4A11AEDEBCA6ABABA3D1356584A61E2EEAFB5AF3
-src/kernel.c                  CB78CBB9AD1CA0513E7673760A9FC3FB4ED5FE7F67847D9F984400E6B17215F7
-```
-
-Gate 1 implemented architectural changes:
-
-- add bounded EP0 OUT data stage for `SET_LINE_CODING`;
-- implement CDC `SET_LINE_CODING`, `GET_LINE_CODING`, `SET_CONTROL_LINE_STATE`;
-- make `SET_CONFIGURATION(1/0)` own real class-endpoint lifecycle;
-- add bounded CDC RX/TX byte-stream buffering;
-- keep USB IRQ bounded and policy-free;
-- keep two-task production topology; task0 waits on UART or CDC RX;
-- split parser state per transport but reuse one command execution path;
-- route responses only to the command's originating transport;
-- CDC line coding never reconfigures USART1;
-- UART remains emergency diagnostics; ST-LINK remains recovery/debug;
-- IWDG Handler/USB-IRQ reload remains forbidden;
-- every USB init now forces a bounded host-visible disconnect by temporarily driving PA12/D+ low open-drain before enabling the USB macrocell, then restores the prior PA12 GPIO configuration; this closes the Gate 3 stale-`usbser` session observed after real IWDG reset;
-- OLED/gfx/status-bar remain frozen.
-
-Canonical design:
-`docs/USB_CDC_ACM_CONSOLE_PLAN.md`
-
-Canonical acceptance:
-`docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md`
-
-Power rule remains strict: never power the target simultaneously from ST-LINK 3.3 V and micro-USB VBUS. UART adapter VCC remains disconnected.
-
-Accepted corrected candidate:
+Published CDC candidate:
 
 ```text
 tested source tree  d815a8357b9f77850c08ff071f47be8d2b5d4b53
 binary              58548 bytes
 SHA-256             D01AC5B281DA4D0E97BB778918F39684C4E8160AD690F04881B45395BDA8F0AE
+identity             1209:000B / Deus OS CDC Console / private test only
 Flash used           58548 bytes
 SRAM used            9200 bytes
 ```
 
-Gate 3 corrected hardware acceptance:
+The USB CDC ACM console foundation is fully accepted and published. Windows inbox `usbser` binding, automatic attach after software reset, physical micro-USB reconnect, `128/128` CDC pressure with zero drops, retained `128/128` UART pressure, dual-transport isolation, real IWDG reset with automatic CDC reopen, exact final Flash readback, and OLED conditional N/A disposition all passed.
 
-- automatic host-visible attach after MCU software reset: PASS;
-- Windows `usbser` / dynamic COM open: PASS;
-- CDC class control and `20/20` safe surface pre/post IWDG: PASS;
-- scheduler diagnostics `8/8 BUSY`;
-- packet-boundary proof `38/38`;
-- CDC pressure `128/128`, zero drops;
-- UART pressure `128/128`;
-- dual-transport parser/response isolation: PASS;
-- physical micro-USB disconnect/reconnect without reflash: PASS;
-- deliberate IWDG reboot `9028 ms`, automatic post-IWDG CDC reopen: PASS;
-- final Flash readback exact.
+### Current architecture boundary
 
-Gate 4:
-`PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+`SHELL_RPC_FOUNDATION`
 
-Evidence SHA-256:
+Gates 0–5 are accepted. Gate 2 built the exact candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`; Gate 3 hardware acceptance passed on UART and CDC, including parser/editing/origin isolation, retained pressure/scheduler/IWDG/USB recovery regressions, physical reconnect and final exact Flash readback. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`. Gate 5 documentation/evidence finalization is complete. Gate 6 local acceptance commit is next.
 
-- corrected Gate 2: `49AAFBAFEA0B895DFBEBA7311335069EFD512640A13F200D1F3B9D65D6774869`;
-- Gate 3 log: `D009F0D7E12C10C3FBA40037C6EC485E9FA27674901C5C3D6C4AAE72C0D42F35`;
-- Gate 3 evidence: `6035C6FD5C0718252B28AAC07CD67C879AA1F14A639DD9A7854D3B74F54D49CB`.
+Current Gate 1 command path:
+
+```text
+UART RX ring ----> independent 32-byte text parser --+
+                                                    |
+USB CDC RX ring -> independent 32-byte text parser --+--> command_service_parse_line()
+                                                           |
+                                                           +--> command_service_execute()
+                                                                   |
+                                                                   +--> explicit execution context
+                                                                   +--> internal method dispatch
+                                                                   +--> originating response writer
+```
+
+Current source facts:
+
+- `include/kernel/command_service.h` and `src/kernel/command_service.c` define one static, allocation-free command service;
+- the registry contains every published legacy method plus only `help` and `rpcinfo` as new foundation methods;
+- method descriptors carry method identity, SAFE/DIAGNOSTIC/DESTRUCTIVE class, bounded argument counts and an internal dispatch key;
+- command line capacity remains exactly `32` bytes per transport and maximum argument count is `4`;
+- UART and CDC retain independent partial-line state; CR/LF termination, backspace/DEL editing and source-local overflow recovery remain intact;
+- repeated ASCII spaces/tabs collapse during bounded in-place tokenization;
+- execution context explicitly carries response writer, opaque writer context, source RX-event mask and latched writer-failure state;
+- normal command execution has no `console_active_context`, `console_output_transport`, `CONSOLE_TRANSPORT_*`, or equivalent global active-transport selector;
+- `schedtimed` reads its wake event directly from the explicit originating execution context;
+- response writer failure is promoted to service `INTERNAL_ERROR` instead of being silently discarded;
+- service status `OK` means dispatch/execution completed; method-specific hardware/self-test success or failure remains represented by existing payload tokens such as `OLED_*_OK/ERR` and `SCHED_*_OK/ERR`;
+- UART-specific boot/fatal/recovery output is isolated in `uart_emergency_write*()` and is outside normal command-service response routing;
+- all normal command execution remains serialized in production task0 / Thread-PSP;
+- UART IRQ and USB IRQ only publish bytes/events and never execute command policy or reload IWDG;
+- scheduler core, USB driver/class, startup, linker, IWDG driver and frozen OLED/gfx/status-bar sources remain outside Gate 1 mutation scope;
+- binary framing/public numeric method IDs, host app, firmware update and bootloader remain later boundaries.
+
+Published source guards before Gate 1:
+
+```text
+src/kernel.c                    CB78CBB9AD1CA0513E7673760A9FC3FB4ED5FE7F67847D9F984400E6B17215F7
+src/drivers/usb_device.c        A7FE1CCB71EA4C36A306607E4A11AEDEBCA6ABABA3D1356584A61E2EEAFB5AF3
+include/drivers/usb_device.h    69915DF563CB259830EE2F473764EB32C9AC4BB30E94BB846101914BD76A7FD5
+src/kernel/scheduler.c          B59B08373662B841C2CC077C92DE18D7FA21DA6DCE4E1DEE435F86AB58566C88
+include/kernel/scheduler.h      A48DCBB90D08FAD03F2D426AA2A129A8D8858204380D4A518D7094A318F5D841
+src/startup.s                   B72063BD58EE01FC6EE42D10C765EAC9B47381E18D01051E1557C7FDA80D6461
+src/drivers/iwdg.c              DFBCC9479135064B778F952B9E9ADCE370AFFD870B5BE44EA6AF3B4D0ECEE3C0
+```
+
+Gate 1 finalized source fingerprints before Gate 2:
+
+```text
+include/kernel/command_service.h D317E48ACE3AADE5E37335DC26683B3F41B2CCDFFD52D59A9AC6BB485707D364
+src/kernel/command_service.c     E90EA2F4B5C4C3FDED071D2BA9FE349CACB59010B266A06E3A72A850ACE95E76
+src/kernel.c                     F84D88FC7F8001732507FD85D0CDB4CEC0A1F32CD59604CA1FE64D0BB295CD0A
+```
+
+Retained guards rechecked before Gate 2 remain exact, including USB, scheduler, startup, IWDG, frozen OLED/gfx/status-bar sources and `linker/stm32f103c8.ld`. `git diff --check` is clean.
+
+Accepted shell/RPC candidate and evidence:
+
+```text
+candidate tree        e136814480ac0760bc5dd62a78ebca4e07f0ba98
+BIN                   37196 bytes
+BIN SHA-256           90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60
+ELF                   64816 bytes
+ELF SHA-256           D95F9798612E3F7A03EF27F138DA8DBCA7B956F2B4AAF5D0CEE8179308EEBCBA
+Flash used            37196 bytes
+SRAM used             9216 bytes
+Gate 2 evidence       34FB1B6D368A29AF5460174BBDA6AE81E479E5D11FBC0E25FDAC01617105BEA3
+Gate 3 log            0DCECB16F505C60A07AC73790DFAE4D7BFDFAEE56B6154DC503A5AF17B989E70
+Gate 3 evidence       0EE7342129866C86A1AAFBA42E942E2097C78BFDF3CF50D0C93F3A6B71E9A4E9
+```
+
+Gate 3 accepted `32` deterministic methods, exact `help`/`help ping`/`rpcinfo`, legacy `ERR` on originating transport for unknown/bad args, tabs/backspace/DEL/overflow recovery, origin-bound UART/CDC responses, controlled `schedtimed` wake on both transports, CDC safe surface `20/20` pre/post-IWDG, scheduler diagnostics `8/8 BUSY`, packet-boundary proof `38/38`, CDC pressure `128/128` with zero drops, UART pressure `128/128`, physical USB reconnect, real IWDG reboot in `9042 ms` with automatic `usbser` reopen, and final exact Flash readback. Frozen OLED/gfx/status-bar hashes remained exact and `uiruntime` passed before and after IWDG, so Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+
+Canonical design:
+`docs/SHELL_RPC_FOUNDATION_PLAN.md`
+
+Canonical acceptance:
+`docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
+
+Power rule remains: micro-USB is the normal target power source during USB runtime; ST-LINK 3.3 V and UART adapter VCC remain disconnected. Signal wiring need not be removed.
 
 ### Exact next gate
 
-**Gate 6 — local acceptance commit. No push.**
+**Gate 6 — local acceptance commit of the exact hardware-accepted `SHELL_RPC_FOUNDATION` path set. Gate 7 ordinary non-force publication follows only after local commit verification.**
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 

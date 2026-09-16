@@ -1,6 +1,6 @@
 # STM32 OS — USB CDC ACM Diagnostic/Command Console Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **COMPLETED / PUBLISHED — commit `5a8a45618b87b3069fd7cbac6119035b6ac4ad2c`**
 
 Boundary ID:
 
