@@ -169,13 +169,31 @@ Publication commit/tree is `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` / `d27cf82
 
 ### Current boundary
 
-**`OLED_DIRTY_REGION_OPTIMIZATION` — Gate 0 accepted; Gate 1 source implementation current. Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`; acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.**
+**`OLED_DIRTY_REGION_OPTIMIZATION` — Gates 0–5 accepted; Gate 6 local acceptance commit is next. Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`; acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`; deferred engineering policy: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`.**
 
-Purpose: keep the single 512-byte framebuffer but make rendering and SSD1306 transfer proportional to actual visible byte changes. Gate 1 is initially limited to exactly eight source paths: `include/gfx/mono_fb.h`, `src/gfx/mono_fb.c`, `src/gfx/text_renderer.c`, `include/drivers/ssd1306.h`, `src/drivers/ssd1306.c`, `include/kernel/oled_status_bar.h`, `src/kernel/oled_status_bar.c`, `src/kernel.c`.
+Accepted candidate/evidence:
 
-Frozen resource/measurement contract: +32 bytes of 16-bit dirty-span metadata in `mono_fb_t`; all persistent optimization metadata <= +64 bytes SRAM; no second framebuffer. Clean present must produce zero I2C traffic; deterministic `00:00 -> 00:01` must be <=11 I2C payload bytes; USB indicator transition <=13 bytes, compared with the current 572-byte four-page semantic-refresh baseline. Status-only updates must not rerasterize console content or clear/recompose the full framebuffer.
+```text
+tested candidate tree  75f05f689970b760604112b30346b0c328bfaff2
+BIN                    44560 bytes
+BIN SHA-256             93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677
+ELF                    71308 bytes
+ELF SHA-256             E0CB04772160A7906E235C7E6C4984E3BACB1C84AB4C39B244A1995DE1B1950C
+MAP SHA-256             00AF5C8ADCC1A824BBD43D61805ADB3024BE9FD4D114C13EC63957F2364A8C09
+Flash used              44560 / 65536
+SRAM used               9848 / 20480
+Gate 2 evidence         FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC
+Gate 3 log              887E0D78E025C0EB44B7C69B8C9E19A81D70EB95D5A76FFEE7C4D88EC04C7EE6
+Gate 3 evidence         76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214
+Gate 4 evidence         1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6
+Gate 4                  PHYSICAL_OLED=PASS
+```
 
-After this boundary, exact next boundary is `APPLICATION_RUNTIME_FOUNDATION`; production Windows USB follows in `USB_MANAGEMENT_DEVICE_FOUNDATION` using vendor-specific WinUSB `Deus OS Device` identity rather than COM-port-first CDC.
+The implementation keeps one 512-byte framebuffer and adds exact per-page X dirty spans. Hardware measured the prior full semantic refresh at `572` payload bytes / `36` writes, clean present at `0`, one-byte update at `9`, minute `00:00 -> 00:01` at `11` over `x=123..125`, and USB indicator transition at `11` over `x=9..11`. Post-`oledstatus` and post-`oleddirty` task margins are task0 `328` bytes / task1 `424` bytes. Final Flash readback is exact; CDC/UART/binary pressure, malformed-frame recovery, physical reconnect and IWDG recovery all pass.
+
+Gate 5 adds the canonical deferred optimization/robustness/observability/storage/test-profile backlog and `.gitattributes` LF policy. It does not change firmware source or the accepted binary. Publication has not occurred yet.
+
+After publication, exact next boundary is `APPLICATION_RUNTIME_FOUNDATION`; production Windows USB follows in `USB_MANAGEMENT_DEVICE_FOUNDATION` using vendor-specific WinUSB `Deus OS Device` identity rather than COM-port-first CDC.
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 

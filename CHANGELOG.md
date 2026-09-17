@@ -16,13 +16,19 @@ Gate 3 hardware acceptance passed on the exact candidate: no reflash was needed 
 
 Gate 4 physical OLED review is `PHYSICAL_OLED=PASS`: displayed digits and text update correctly, no unintended content is drawn, and no flicker/blank pulse/stale-pixel artifact is visible. Gate 5 documentation/evidence finalization changed docs only. Gate 6 committed the accepted 12-path source/docs candidate as `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`, tree `d27cf8246fb7563b2327955ffc06428b9d843b2a`, subject `feat: add boot desktop UI foundation`; Gate 7 published it by ordinary non-force fast-forward and final local/remote ahead-behind is `0/0`.
 
-### Current — OLED dirty-region optimization — Gate 0 accepted / Gate 1 current
+### Accepted through Gate 5 — OLED dirty-region optimization
 
 Boundary: `OLED_DIRTY_REGION_OPTIMIZATION`.
 
-Canonical planning: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md` and `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`. Gate 0 freezes a single 512-byte framebuffer, +32-byte 16-bit dirty X-span metadata in `mono_fb_t`, change-aware framebuffer writes, partial SSD1306 page+column windows, bounded present telemetry, component-dirty status rendering and no full-frame recomposition for normal minute/SYSTEM/USB changes. Incremental static SRAM for optimization metadata is capped at 64 bytes; no shadow framebuffer, heap, DMA, new task/SVC/IPC primitive, geometry change, command/RPC renumbering or USB redesign is authorized.
+The accepted implementation keeps one 512-byte framebuffer, adds bounded 16-bit dirty X spans, uses change-aware framebuffer writes, sends exact SSD1306 page/column windows, records bounded present telemetry and renders status components independently so ordinary minute/SYSTEM/USB changes do not clear/recompose the whole framebuffer or rerasterize console content. No shadow framebuffer, heap, DMA, new task/SVC/IPC primitive, geometry change, command/RPC renumbering or USB redesign was introduced.
 
-Deterministic transfer targets are measured against the current 572-I2C-payload-byte four-page semantic refresh: unchanged present `0` bytes, `00:00 -> 00:01` <= `11` payload bytes, and a USB indicator transition <= `13` payload bytes. `APPLICATION_RUNTIME_FOUNDATION` follows after this optimization. Production Windows USB remains scheduled for `USB_MANAGEMENT_DEVICE_FOUNDATION`, using vendor-specific WinUSB `Deus OS Device` identity above the accepted binary RPC rather than COM-port-first CDC.
+Accepted Gate 2/3 candidate: tree `75f05f689970b760604112b30346b0c328bfaff2`; BIN `44560` bytes / SHA-256 `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`; ELF `71308` bytes / SHA-256 `E0CB04772160A7906E235C7E6C4984E3BACB1C84AB4C39B244A1995DE1B1950C`; MAP SHA-256 `00AF5C8ADCC1A824BBD43D61805ADB3024BE9FD4D114C13EC63957F2364A8C09`; Flash `44560 / 65536`; SRAM `9848 / 20480`; named persistent optimization metadata increment `55` bytes. Gate 2 evidence SHA-256 `FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC`.
+
+Gate 3 hardware acceptance passed on the exact candidate. The historical full semantic refresh measured `572` I2C payload bytes / `36` writes; clean present measured zero traffic; a single changed byte measured `9` payload bytes; deterministic `00:00 -> 00:01` measured span `x=123..125` / `11` payload bytes; USB indicator transition measured `x=9..11` / `11` payload bytes. Task0 margin remained `328` bytes after both `oledstatus` and `oleddirty`; task1 margin remained `424` bytes. CDC/UART/binary pressure `128/128`, malformed-frame recovery, physical USB reconnect, authorized IWDG reboot/recovery and final exact Flash readback all passed. Gate 3 log SHA-256 `887E0D78E025C0EB44B7C69B8C9E19A81D70EB95D5A76FFEE7C4D88EC04C7EE6`; Gate 3 evidence SHA-256 `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`.
+
+Gate 4 is `PHYSICAL_OLED=PASS`: splash/home, real minute rollover, USB indicator transition and `uiruntime` restore were visually accepted with no blank/off pulse, flicker, stale pixels, dirty-span clipping or console corruption. Gate 4 evidence SHA-256 `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`.
+
+Gate 5 finalizes documentation/evidence, adds repository LF policy through `.gitattributes`, and records the deferred measured-optimization / robustness / observability / test-profile / storage policy in `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`. Gate 6 local acceptance commit is next; publication has not occurred yet.
 
 ## 2026-09-16
 

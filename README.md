@@ -54,12 +54,26 @@ Accepted Gate 2/3 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BI
 
 Current implementation boundary:
 
-`OLED_DIRTY_REGION_OPTIMIZATION` — **GATE 0 ACCEPTED / GATE 1 SOURCE IMPLEMENTATION CURRENT**.
+`OLED_DIRTY_REGION_OPTIMIZATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
 
-Canonical design/acceptance:
+Accepted candidate/evidence:
+
+- candidate tree `75f05f689970b760604112b30346b0c328bfaff2`;
+- BIN `44560` bytes / SHA-256 `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`;
+- ELF `71308` bytes / SHA-256 `E0CB04772160A7906E235C7E6C4984E3BACB1C84AB4C39B244A1995DE1B1950C`;
+- Flash `44560 / 65536`, SRAM `9848 / 20480`;
+- Gate 2 evidence `FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC`;
+- Gate 3 evidence `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`;
+- Gate 4 evidence `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`, `PHYSICAL_OLED=PASS`;
+- hardware transfer proof: historical full semantic refresh `572` payload bytes / `36` writes, clean present `0`, one-byte narrow update `9`, minute update `11`, USB update `11`;
+- task0 margin after `oledstatus` and after `oleddirty` = `328` bytes; task1 margin = `424` bytes;
+- Gate 5 documentation/evidence finalization is accepted; no firmware source change occurs in Gate 5.
+
+Canonical design/acceptance/backlog:
 
 - `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`
 - `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`
+- `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
 
 Implementation order:
 
@@ -130,7 +144,7 @@ Built locally:
 - [x] Production scheduler steady-state block/event/wake foundation
 - [x] Normal-boot scheduler ownership migration
 - [x] Boot splash / desktop runtime UI foundation (hardware + physical OLED accepted)
-- [ ] OLED dirty-region transfer optimization
+- [x] OLED dirty-region transfer optimization (Gates 0–5 accepted; publication pending)
 - [ ] IPC primitives
 - [ ] ESP8266 networking
 

@@ -17,6 +17,26 @@
  */
 int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length);
 
+static ssd1306_present_stats_t ssd1306_last_present_stats;
+
+static void ssd1306_present_stats_reset(void)
+{
+    ssd1306_last_present_stats.window_payload_bytes = 0u;
+    ssd1306_last_present_stats.data_payload_bytes = 0u;
+    ssd1306_last_present_stats.i2c_write_count = 0u;
+    ssd1306_last_present_stats.presented_pages = 0u;
+}
+
+void ssd1306_present_stats_get(ssd1306_present_stats_t *stats)
+{
+    if (stats == (ssd1306_present_stats_t *)0)
+    {
+        return;
+    }
+
+    *stats = ssd1306_last_present_stats;
+}
+
 static int ssd1306_command(uint8_t command)
 {
     uint8_t payload[2];
@@ -102,22 +122,33 @@ static int ssd1306_fill_checkerboard(void)
     return 1;
 }
 
-static int ssd1306_set_page_window(uint32_t page)
+static int ssd1306_set_page_window(
+    uint32_t page,
+    uint32_t x0,
+    uint32_t x1)
 {
     uint8_t window_packet[7];
 
-    if (page >= SSD1306_PAGES)
-    {
+    if (
+        (page >= SSD1306_PAGES) ||
+        (x0 >= SSD1306_WIDTH) ||
+        (x1 >= SSD1306_WIDTH) ||
+        (x0 > x1)
+    ) {
         return 0;
     }
 
     window_packet[0] = SSD1306_CONTROL_CMD;
     window_packet[1] = 0x21u;
-    window_packet[2] = 0x00u;
-    window_packet[3] = 0x7Fu;
+    window_packet[2] = (uint8_t)x0;
+    window_packet[3] = (uint8_t)x1;
     window_packet[4] = 0x22u;
     window_packet[5] = (uint8_t)page;
     window_packet[6] = (uint8_t)page;
+
+    ++ssd1306_last_present_stats.i2c_write_count;
+    ssd1306_last_present_stats.window_payload_bytes +=
+        (uint32_t)sizeof(window_packet);
 
     return i2c1_write(
         SSD1306_ADDRESS,
@@ -172,9 +203,15 @@ int ssd1306_present(mono_fb_t *fb)
     uint8_t valid_mask;
     uint8_t page_mask;
     uint32_t page;
+    uint32_t x0;
+    uint32_t x1;
     uint32_t base;
     uint32_t offset;
+    uint32_t chunk;
+    uint32_t remaining;
     uint32_t i;
+
+    ssd1306_present_stats_reset();
 
     if (
         (fb == (mono_fb_t *)0) ||
@@ -210,36 +247,53 @@ int ssd1306_present(mono_fb_t *fb)
             continue;
         }
 
-        if (ssd1306_set_page_window(page) == 0)
+        if (mono_fb_dirty_span(fb, page, &x0, &x1) == 0)
+        {
+            return 0;
+        }
+
+        if (ssd1306_set_page_window(page, x0, x1) == 0)
         {
             return 0;
         }
 
         base = page * SSD1306_WIDTH;
+        offset = x0;
 
-        for (offset = 0u;
-             offset < SSD1306_WIDTH;
-             offset += SSD1306_FLUSH_CHUNK_DATA)
+        while (offset <= x1)
         {
-            for (i = 0u; i < SSD1306_FLUSH_CHUNK_DATA; ++i)
+            remaining = (x1 - offset) + 1u;
+            chunk =
+                (remaining > SSD1306_FLUSH_CHUNK_DATA) ?
+                    SSD1306_FLUSH_CHUNK_DATA :
+                    remaining;
+
+            for (i = 0u; i < chunk; ++i)
             {
                 packet[1u + i] =
                     fb->data[base + offset + i];
             }
 
+            ++ssd1306_last_present_stats.i2c_write_count;
+            ssd1306_last_present_stats.data_payload_bytes += 1u + chunk;
+
             if (i2c1_write(
                     SSD1306_ADDRESS,
                     packet,
-                    (uint32_t)sizeof(packet)) == 0)
+                    1u + chunk) == 0)
             {
                 return 0;
             }
+
+            offset += chunk;
         }
 
+        ++ssd1306_last_present_stats.presented_pages;
+
         /*
-         * Clear only a page that was completely transferred.
-         * On failure, the failed page and every later page remain dirty
-         * and are therefore retryable.
+         * Clear only a page whose exact dirty span was completely transferred.
+         * On failure, the failed page/span and every later dirty page remain
+         * pending and are therefore retryable.
          */
         mono_fb_clear_dirty(fb, page_mask);
     }

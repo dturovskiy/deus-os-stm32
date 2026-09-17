@@ -163,33 +163,42 @@ Boundary ID: `OLED_DIRTY_REGION_OPTIMIZATION`.
 Gate order:
 
 - [x] Gate 0 architecture/source-boundary freeze — **PASS**.
-- [ ] Gate 1 source implementation + deterministic self/static proof — **CURRENT**.
-- [ ] Gate 2 fresh GNU build/link/resource + transfer-metric validation.
-- [ ] Gate 3 retained hardware/runtime + optimized-transfer proof.
-- [ ] Gate 4 physical OLED regression — **MANDATORY `PHYSICAL_OLED=PASS`**.
-- [ ] Gate 5 docs/evidence finalization.
-- [ ] Gate 6 local acceptance commit.
+- [x] Gate 1 source implementation + deterministic self/static proof — **PASS**.
+- [x] Gate 2 fresh GNU build/link/resource + transfer-metric validation — **PASS / V6 CANDIDATE**.
+- [x] Gate 3 retained hardware/runtime + optimized-transfer proof — **PASS / V5 EVIDENCE**.
+- [x] Gate 4 physical OLED regression — **PASS / `PHYSICAL_OLED=PASS`**.
+- [x] Gate 5 docs/evidence finalization — **PASS**.
+- [ ] Gate 6 local acceptance commit — **NEXT**.
 - [ ] Gate 7 ordinary non-force publication.
 
 Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`.
 Canonical acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.
+Canonical deferred backlog: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`.
 
-Gate 0 freezes:
+Accepted Gate 2/3/4 evidence:
 
-- exactly one 512-byte framebuffer; no shadow framebuffer;
-- 16-bit dirty min/max X bounds for each of at most eight framebuffer pages (+32 bytes in `mono_fb_t`);
-- all persistent optimization metadata <= +64 bytes SRAM over the accepted 9792-byte baseline;
-- no-op framebuffer writes remain clean; changed bytes expand only their page span;
-- aligned text fast path uses the same change-aware byte path;
-- `ssd1306_present()` transfers exact dirty page/column spans and preserves retry state on failure;
-- clean present = `0` I2C writes / `0` payload bytes;
-- `00:00 -> 00:01` target <= `11` I2C payload bytes;
-- USB indicator transition target <= `13` I2C payload bytes;
-- current prior four-page semantic-refresh baseline = `572` I2C payload bytes;
-- normal minute/SYSTEM/USB updates do not clear/recompose the full framebuffer or rerasterize console content;
-- no geometry, task/SVC/IPC, command/RPC, USB, IWDG, linker/startup or application-runtime redesign.
+- [x] exact eight-path source candidate tree `75f05f689970b760604112b30346b0c328bfaff2`;
+- [x] BIN `44560` bytes / `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`;
+- [x] ELF `71308` bytes / `E0CB04772160A7906E235C7E6C4984E3BACB1C84AB4C39B244A1995DE1B1950C`;
+- [x] MAP `00AF5C8ADCC1A824BBD43D61805ADB3024BE9FD4D114C13EC63957F2364A8C09`;
+- [x] Flash `44560 / 65536`, SRAM `9848 / 20480`, persistent optimization metadata increment `55` bytes;
+- [x] `oled_status_bar_self_test` GCC stack usage `240` bytes <= `256` frozen diagnostic ceiling;
+- [x] historical four-page semantic refresh `572` payload bytes / `36` writes;
+- [x] clean present `0` writes / `0` payload bytes;
+- [x] one-byte narrow update `9` payload bytes;
+- [x] minute `00:00 -> 00:01` `x=123..125`, `11` payload bytes;
+- [x] USB indicator transition `x=9..11`, `11` payload bytes;
+- [x] task0/task1 margins after `oledstatus` = `328 / 424` bytes;
+- [x] task0/task1 margins after `oleddirty` = `328 / 424` bytes;
+- [x] CDC/UART/binary pressure `128/128`, malformed-frame recovery, USB reconnect and IWDG recovery PASS;
+- [x] final Flash readback exact;
+- [x] Gate 2 evidence `FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC`;
+- [x] Gate 3 log `887E0D78E025C0EB44B7C69B8C9E19A81D70EB95D5A76FFEE7C4D88EC04C7EE6`;
+- [x] Gate 3 evidence `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`;
+- [x] Gate 4 evidence `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`;
+- [x] physical OLED `PHYSICAL_OLED=PASS`: no blank/off pulse, flicker, stale pixels, dirty-span clipping or console corruption.
 
-Initial Gate 1 source boundary is exactly eight paths: `include/gfx/mono_fb.h`, `src/gfx/mono_fb.c`, `src/gfx/text_renderer.c`, `include/drivers/ssd1306.h`, `src/drivers/ssd1306.c`, `include/kernel/oled_status_bar.h`, `src/kernel/oled_status_bar.c`, `src/kernel.c`.
+Gate 5 additionally freezes measured/deferred optimization triggers, latent-bug/soak/fault-injection strategy, bounded binary event-trace policy, external-storage/memory policy, diagnostic build-profile policy and repository EOL policy. `.gitattributes` owns LF for source/docs so Windows line-ending warnings do not remain operator-log noise.
 
 After publication, exact next boundary is `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 

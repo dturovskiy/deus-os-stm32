@@ -5,6 +5,7 @@
 #define OLED_STATUS_REFERENCE_WIDTH  128
 #define OLED_STATUS_REFERENCE_HEIGHT 9
 #define OLED_STATUS_TIME_CHARS       5u
+#define OLED_STATUS_TIME_DIRTY_ALL   0x1Fu
 
 static const uint8_t indicator_filled[5] =
 {
@@ -100,6 +101,18 @@ static void clear_reference_rect(
     }
 }
 
+static void oled_status_time_text(
+    uint8_t hours,
+    uint8_t minutes,
+    char text[OLED_STATUS_TIME_CHARS])
+{
+    text[0] = (char)('0' + (hours / 10u));
+    text[1] = (char)('0' + (hours % 10u));
+    text[2] = ':';
+    text[3] = (char)('0' + (minutes / 10u));
+    text[4] = (char)('0' + (minutes % 10u));
+}
+
 void oled_status_bar_init(
     oled_status_bar_t *status)
 {
@@ -113,7 +126,20 @@ void oled_status_bar_init(
     status->system_indicator = OLED_STATUS_INDICATOR_FILLED;
     status->usb_indicator = OLED_STATUS_INDICATOR_FILLED;
     status->network_indicator = OLED_STATUS_INDICATOR_RING;
-    status->dirty = 1u;
+    status->dirty = OLED_STATUS_DIRTY_ALL;
+    status->time_dirty = OLED_STATUS_TIME_DIRTY_ALL;
+}
+
+void oled_status_bar_mark_all_dirty(
+    oled_status_bar_t *status)
+{
+    if (status == (oled_status_bar_t *)0)
+    {
+        return;
+    }
+
+    status->dirty = OLED_STATUS_DIRTY_ALL;
+    status->time_dirty = OLED_STATUS_TIME_DIRTY_ALL;
 }
 
 void oled_status_bar_set_time(
@@ -121,8 +147,11 @@ void oled_status_bar_set_time(
     uint32_t hours,
     uint32_t minutes)
 {
+    char old_text[OLED_STATUS_TIME_CHARS];
+    char new_text[OLED_STATUS_TIME_CHARS];
     uint8_t new_hours;
     uint8_t new_minutes;
+    uint32_t i;
 
     if (status == (oled_status_bar_t *)0)
     {
@@ -133,12 +162,35 @@ void oled_status_bar_set_time(
     new_minutes = (uint8_t)((minutes > 59u) ? 59u : minutes);
 
     if (
-        (status->hours != new_hours) ||
-        (status->minutes != new_minutes)
+        (status->hours == new_hours) &&
+        (status->minutes == new_minutes)
     ) {
-        status->hours = new_hours;
-        status->minutes = new_minutes;
-        status->dirty = 1u;
+        return;
+    }
+
+    oled_status_time_text(
+        status->hours,
+        status->minutes,
+        old_text);
+    oled_status_time_text(
+        new_hours,
+        new_minutes,
+        new_text);
+
+    for (i = 0u; i < OLED_STATUS_TIME_CHARS; ++i)
+    {
+        if (old_text[i] != new_text[i])
+        {
+            status->time_dirty |= (uint8_t)(1u << i);
+        }
+    }
+
+    status->hours = new_hours;
+    status->minutes = new_minutes;
+
+    if (status->time_dirty != 0u)
+    {
+        status->dirty |= OLED_STATUS_DIRTY_TIME;
     }
 }
 
@@ -172,20 +224,27 @@ void oled_status_bar_set_indicators(
             OLED_STATUS_INDICATOR_FILLED :
             OLED_STATUS_INDICATOR_RING;
 
-    if (
-        (status->system_indicator != new_system) ||
-        (status->usb_indicator != new_usb) ||
-        (status->network_indicator != new_network)
-    ) {
-        status->system_indicator = new_system;
-        status->usb_indicator = new_usb;
-        status->network_indicator = new_network;
-        status->dirty = 1u;
+    if (status->system_indicator != new_system)
+    {
+        status->system_indicator = (uint8_t)new_system;
+        status->dirty |= OLED_STATUS_DIRTY_SYSTEM;
+    }
+
+    if (status->usb_indicator != new_usb)
+    {
+        status->usb_indicator = (uint8_t)new_usb;
+        status->dirty |= OLED_STATUS_DIRTY_USB;
+    }
+
+    if (status->network_indicator != new_network)
+    {
+        status->network_indicator = (uint8_t)new_network;
+        status->dirty |= OLED_STATUS_DIRTY_NETWORK;
     }
 }
 
 void oled_status_bar_render(
-    const oled_status_bar_t *status,
+    oled_status_bar_t *status,
     mono_fb_t *fb,
     mono_rect_t clip)
 {
@@ -204,7 +263,7 @@ void oled_status_bar_render(
     int32_t y;
 
     if (
-        (status == (const oled_status_bar_t *)0) ||
+        (status == (oled_status_bar_t *)0) ||
         (fb == (mono_fb_t *)0) ||
         (clip.width != OLED_STATUS_REFERENCE_WIDTH) ||
         (clip.height != OLED_STATUS_REFERENCE_HEIGHT)
@@ -212,84 +271,109 @@ void oled_status_bar_render(
         return;
     }
 
-    clear_reference_rect(fb, clip);
-
-    mono_fb_hline(
-        fb,
-        clip.x,
-        clip.y,
-        clip.width,
-        1);
-
-    mono_fb_hline(
-        fb,
-        clip.x,
-        clip.y + 8,
-        clip.width,
-        1);
-
-    for (y = clip.y + 1; y <= (clip.y + 7); ++y)
+    if ((status->dirty & OLED_STATUS_DIRTY_FRAME) != 0u)
     {
-        mono_fb_set_pixel(
+        status->dirty |= OLED_STATUS_DIRTY_ALL;
+        status->time_dirty |= OLED_STATUS_TIME_DIRTY_ALL;
+
+        clear_reference_rect(fb, clip);
+
+        mono_fb_hline(
             fb,
             clip.x,
-            y,
+            clip.y,
+            clip.width,
             1);
 
-        mono_fb_set_pixel(
+        mono_fb_hline(
             fb,
-            clip.x + 127,
-            y,
+            clip.x,
+            clip.y + 8,
+            clip.width,
             1);
+
+        for (y = clip.y + 1; y <= (clip.y + 7); ++y)
+        {
+            mono_fb_set_pixel(
+                fb,
+                clip.x,
+                y,
+                1);
+
+            mono_fb_set_pixel(
+                fb,
+                clip.x + 127,
+                y,
+                1);
+        }
     }
 
-    draw_bitmap_5x5(
-        fb,
-        clip.x + 2,
-        clip.y + 2,
-        (status->system_indicator == OLED_STATUS_INDICATOR_FILLED) ?
-            indicator_filled :
-            indicator_ring);
-
-    draw_bitmap_5x5(
-        fb,
-        clip.x + 8,
-        clip.y + 2,
-        (status->usb_indicator == OLED_STATUS_INDICATOR_FILLED) ?
-            indicator_filled :
-            indicator_ring);
-
-    draw_bitmap_5x5(
-        fb,
-        clip.x + 14,
-        clip.y + 2,
-        (status->network_indicator == OLED_STATUS_INDICATOR_FILLED) ?
-            indicator_filled :
-            indicator_ring);
-
-    time_text[0] = (char)('0' + (status->hours / 10u));
-    time_text[1] = (char)('0' + (status->hours % 10u));
-    time_text[2] = ':';
-    time_text[3] = (char)('0' + (status->minutes / 10u));
-    time_text[4] = (char)('0' + (status->minutes % 10u));
-
-    /*
-     * Exact supplied reference:
-     * digit starts x=109,113; colon center x=117;
-     * final digits start x=119,123 and end at x=125.
-     * x=126 is the mandatory blank right inset.
-     * x=127 is the status-frame side.
-     */
-    x = clip.x + 109;
-
-    for (i = 0u; i < OLED_STATUS_TIME_CHARS; ++i)
+    if ((status->dirty & OLED_STATUS_DIRTY_SYSTEM) != 0u)
     {
-        draw_font3x5(
+        draw_bitmap_5x5(
             fb,
-            x + (int32_t)time_x_offsets[i],
+            clip.x + 2,
             clip.y + 2,
-            time_text[i]);
+            (status->system_indicator == OLED_STATUS_INDICATOR_FILLED) ?
+                indicator_filled :
+                indicator_ring);
     }
+
+    if ((status->dirty & OLED_STATUS_DIRTY_USB) != 0u)
+    {
+        draw_bitmap_5x5(
+            fb,
+            clip.x + 8,
+            clip.y + 2,
+            (status->usb_indicator == OLED_STATUS_INDICATOR_FILLED) ?
+                indicator_filled :
+                indicator_ring);
+    }
+
+    if ((status->dirty & OLED_STATUS_DIRTY_NETWORK) != 0u)
+    {
+        draw_bitmap_5x5(
+            fb,
+            clip.x + 14,
+            clip.y + 2,
+            (status->network_indicator == OLED_STATUS_INDICATOR_FILLED) ?
+                indicator_filled :
+                indicator_ring);
+    }
+
+    if ((status->dirty & OLED_STATUS_DIRTY_TIME) != 0u)
+    {
+        oled_status_time_text(
+            status->hours,
+            status->minutes,
+            time_text);
+
+        /*
+         * Exact supplied reference:
+         * digit starts x=109,113; colon center x=117;
+         * final digits start x=119,123 and end at x=125.
+         * x=126 is the mandatory blank right inset.
+         * x=127 is the status-frame side.
+         */
+        x = clip.x + 109;
+
+        for (i = 0u; i < OLED_STATUS_TIME_CHARS; ++i)
+        {
+            if ((status->time_dirty & (uint8_t)(1u << i)) == 0u)
+            {
+                continue;
+            }
+
+            draw_font3x5(
+                fb,
+                x + (int32_t)time_x_offsets[i],
+                clip.y + 2,
+                time_text[i]);
+        }
+    }
+
+    status->dirty = 0u;
+    status->time_dirty = 0u;
 }
 
 static int framebuffer_pixel(
@@ -371,7 +455,7 @@ static int expected_reference_pixel(
 
 int oled_status_bar_self_test(void)
 {
-    uint8_t storage[256];
+    uint8_t storage[128];
     mono_fb_t fb;
     oled_status_bar_t status;
     static const mono_rect_t clip =
@@ -381,18 +465,27 @@ int oled_status_bar_self_test(void)
         128,
         9
     };
+    static const mono_rect_t bottom_row_clip =
+    {
+        0,
+        -8,
+        128,
+        9
+    };
 
     uint32_t i;
     uint32_t y;
     uint32_t x;
+    uint32_t min_x;
+    uint32_t max_x;
 
     mono_fb_init(
         &fb,
         storage,
         128u,
-        16u);
+        8u);
 
-    for (i = 0u; i < 256u; ++i)
+    for (i = 0u; i < 128u; ++i)
     {
         storage[i] = 0u;
     }
@@ -408,7 +501,12 @@ int oled_status_bar_self_test(void)
         &fb,
         clip);
 
-    for (y = 0u; y < 16u; ++y)
+    if ((status.dirty != 0u) || (status.time_dirty != 0u))
+    {
+        return 0;
+    }
+
+    for (y = 0u; y < 8u; ++y)
     {
         for (x = 0u; x < 128u; ++x)
         {
@@ -431,6 +529,54 @@ int oled_status_bar_self_test(void)
         }
     }
 
+    mono_fb_clear_dirty(&fb, 0xFFu);
+
+    oled_status_bar_set_time(&status, 0u, 1u);
+
+    if (
+        (status.dirty != OLED_STATUS_DIRTY_TIME) ||
+        (status.time_dirty != (uint8_t)(1u << 4))
+    ) {
+        return 0;
+    }
+
+    oled_status_bar_render(&status, &fb, clip);
+
+    if (
+        (mono_fb_dirty_pages(&fb) != 0x01u) ||
+        (mono_fb_dirty_span(&fb, 0u, &min_x, &max_x) == 0) ||
+        (min_x < 123u) ||
+        (max_x > 125u)
+    ) {
+        return 0;
+    }
+
+    mono_fb_clear_dirty(&fb, 0xFFu);
+
+    oled_status_bar_set_indicators(
+        &status,
+        OLED_STATUS_INDICATOR_FILLED,
+        OLED_STATUS_INDICATOR_RING,
+        OLED_STATUS_INDICATOR_RING);
+
+    if (status.dirty != OLED_STATUS_DIRTY_USB)
+    {
+        return 0;
+    }
+
+    oled_status_bar_render(&status, &fb, clip);
+
+    if (
+        (mono_fb_dirty_pages(&fb) != 0x01u) ||
+        (mono_fb_dirty_span(&fb, 0u, &min_x, &max_x) == 0) ||
+        (min_x < 8u) ||
+        (max_x > 12u)
+    ) {
+        return 0;
+    }
+
+    mono_fb_clear_dirty(&fb, 0xFFu);
+
     oled_status_bar_set_indicators(
         &status,
         OLED_STATUS_INDICATOR_RING,
@@ -448,6 +594,32 @@ int oled_status_bar_self_test(void)
         (framebuffer_pixel(storage, 128u, 16u, 4u) == 0)
     ) {
         return 0;
+    }
+
+    for (i = 0u; i < 128u; ++i)
+    {
+        storage[i] = 0u;
+    }
+
+    mono_fb_init(
+        &fb,
+        storage,
+        128u,
+        1u);
+    oled_status_bar_init(&status);
+    oled_status_bar_render(
+        &status,
+        &fb,
+        bottom_row_clip);
+
+    for (x = 0u; x < 128u; ++x)
+    {
+        if (
+            framebuffer_pixel(storage, 128u, x, 0u) !=
+            expected_reference_pixel(x, 8u)
+        ) {
+            return 0;
+        }
     }
 
     return 1;

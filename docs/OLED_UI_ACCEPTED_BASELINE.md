@@ -3,7 +3,9 @@
 Status: **ACCEPTED / FROZEN GEOMETRY BASELINE**
 Hardware acceptance date: **2026-09-11**
 
-Post-baseline evolution: `BOOT_DESKTOP_UI_FOUNDATION` is now published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` with real uptime and SYSTEM/USB/NETWORK semantics while preserving this geometry. Current boundary `OLED_DIRTY_REGION_OPTIMIZATION` changes only framebuffer dirty tracking and SSD1306 transfer granularity; it must not alter this visual baseline.
+Post-baseline evolution: `BOOT_DESKTOP_UI_FOUNDATION` is published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` with real uptime and SYSTEM/USB/NETWORK semantics while preserving this geometry. `OLED_DIRTY_REGION_OPTIMIZATION` is accepted through Gate 5 on candidate tree `75f05f689970b760604112b30346b0c328bfaff2`, BIN `44560` bytes / SHA-256 `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`; it changes only framebuffer dirty tracking, status differential rendering and SSD1306 transfer granularity and does not alter this visual baseline. Gate 4 is `PHYSICAL_OLED=PASS`.
+
+Post-baseline optimization proof: the historical four-page semantic refresh is `572` I2C payload bytes / `36` writes; accepted clean present is `0`, one-byte narrow update is `9`, minute `00:00 -> 00:01` is `11` payload bytes over `x=123..125`, and USB indicator transition is `11` payload bytes over `x=9..11`. Visual acceptance found no blank/off pulse, flicker, stale pixels, dirty-span clipping or console corruption. Gate 2/3/4 evidence SHA-256 values are `FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC`, `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`, and `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6` respectively.
 
 This document is the authoritative visual and geometry baseline for the current
 128x32 OLED UI. Earlier layout experiments and configurable-layout plans are retained

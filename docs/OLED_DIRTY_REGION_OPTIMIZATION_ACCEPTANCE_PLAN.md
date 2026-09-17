@@ -1,6 +1,6 @@
 # Deus OS — OLED Dirty-Region Optimization Acceptance Plan
 
-Status: **GATE 0 ACCEPTED — GATE 1 SOURCE IMPLEMENTATION CURRENT**
+Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
 
 Boundary ID:
 
@@ -169,6 +169,24 @@ Synchronize at minimum:
 - `docs/OLED_UI_ACCEPTED_BASELINE.md` with a post-baseline optimization record.
 
 Record exact candidate/resource hashes, transfer metrics before/after, retained hardware regressions and physical OLED disposition.
+
+Acceptance: **PASS**. Gate 5 additionally adds canonical `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md` and repository `.gitattributes` LF policy. No firmware source/build/flash change is part of Gate 5.
+
+Accepted evidence record:
+
+- candidate tree `75f05f689970b760604112b30346b0c328bfaff2`;
+- BIN `44560` bytes / `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`;
+- ELF `71308` bytes / `E0CB04772160A7906E235C7E6C4984E3BACB1C84AB4C39B244A1995DE1B1950C`;
+- MAP `00AF5C8ADCC1A824BBD43D61805ADB3024BE9FD4D114C13EC63957F2364A8C09`;
+- Flash `44560 / 65536`, SRAM `9848 / 20480`;
+- Gate 2 evidence `FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC`;
+- Gate 3 log `887E0D78E025C0EB44B7C69B8C9E19A81D70EB95D5A76FFEE7C4D88EC04C7EE6`;
+- Gate 3 evidence `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`;
+- Gate 4 evidence `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`;
+- Gate 4 `PHYSICAL_OLED=PASS`;
+- full semantic baseline `572` payload bytes / `36` writes; clean `0`; narrow `9`; minute `11`; USB `11`;
+- task0/task1 post-diagnostic margins `328 / 424` bytes;
+- final Flash readback exact and all retained CDC/UART/binary/reconnect/IWDG regressions PASS.
 
 ## Gate 6 — local acceptance commit
 

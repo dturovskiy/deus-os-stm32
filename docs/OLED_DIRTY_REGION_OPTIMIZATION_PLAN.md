@@ -1,6 +1,6 @@
 # Deus OS — OLED Dirty-Region Optimization Plan
 
-Status: **GATE 0 ACCEPTED — GATE 1 SOURCE IMPLEMENTATION CURRENT**
+Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
 
 Boundary ID:
 
@@ -184,17 +184,39 @@ The boundary must not change:
 
 Existing `oleddirty`, `oleduiupdate`, `oledstatus`, `uiruntime` methods may emit additional diagnostic proof tokens but must keep their command IDs and existing success/error tokens compatible.
 
-## 11. Gate order
+## 11. Acceptance record and gate order
+
+Accepted candidate/evidence:
+
+```text
+candidate tree         75f05f689970b760604112b30346b0c328bfaff2
+BIN                    44560 bytes
+BIN SHA-256             93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677
+ELF                    71308 bytes
+ELF SHA-256             E0CB04772160A7906E235C7E6C4984E3BACB1C84AB4C39B244A1995DE1B1950C
+MAP SHA-256             00AF5C8ADCC1A824BBD43D61805ADB3024BE9FD4D114C13EC63957F2364A8C09
+Flash                  44560 / 65536
+SRAM                   9848 / 20480
+Gate 2 evidence        FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC
+Gate 3 log             887E0D78E025C0EB44B7C69B8C9E19A81D70EB95D5A76FFEE7C4D88EC04C7EE6
+Gate 3 evidence        76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214
+Gate 4 evidence        1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6
+Gate 4                 PHYSICAL_OLED=PASS
+```
+
+Measured hardware transfer results are: full semantic baseline `572` payload bytes / `36` writes, clean `0`, one-byte narrow `9`, minute `00:00 -> 00:01` `11` at `x=123..125`, and USB transition `11` at `x=9..11`. Task0/task1 margins remain `328 / 424` bytes after the accepted OLED diagnostics. GCC reports `oled_status_bar_self_test` stack usage `240` bytes against the accepted `256`-byte diagnostic ceiling.
+
+Deferred optimization, robustness, structured-observability, external-storage/memory and diagnostic-build-profile policy is canonical in `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`. Repository EOL policy is frozen through `.gitattributes` with LF for source/docs/linker/assembly text.
 
 ```text
 Gate 0  architecture/source-boundary freeze — PASS
-Gate 1  source implementation + deterministic self/static proof
-Gate 2  fresh GNU build/link/resource + transfer-metric validation
-Gate 3  retained hardware/runtime + optimized-transfer proof
-Gate 4  mandatory physical OLED regression
-Gate 5  docs/evidence finalization
-Gate 6  local acceptance commit
-Gate 7  ordinary non-force publication
+Gate 1  source implementation + deterministic self/static proof — PASS
+Gate 2  fresh GNU build/link/resource + transfer-metric validation — PASS
+Gate 3  retained hardware/runtime + optimized-transfer proof — PASS
+Gate 4  mandatory physical OLED regression — PASS / PHYSICAL_OLED=PASS
+Gate 5  docs/evidence finalization — PASS
+Gate 6  local acceptance commit — NEXT
+Gate 7  ordinary non-force publication — PENDING
 ```
 
 After Gate 7, exact next boundary:

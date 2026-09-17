@@ -144,7 +144,6 @@ static void text_renderer_draw_cell_aligned(
     uint32_t column;
     uint32_t row;
     uint8_t vertical_mask = 0u;
-    int wrote_any_column = 0;
 
     for (row = 0u; row < 8u; ++row)
     {
@@ -168,8 +167,6 @@ static void text_renderer_draw_cell_aligned(
     {
         int32_t px = x + (int32_t)column;
         uint8_t cell_bits;
-        uint32_t index;
-        uint8_t old_value;
 
         if (
             (px < 0) ||
@@ -180,20 +177,13 @@ static void text_renderer_draw_cell_aligned(
         }
 
         cell_bits = (column < 5u) ? glyph[column] : 0u;
-        index = page * fb->width + (uint32_t)px;
-        old_value = fb->data[index];
 
-        fb->data[index] =
-            (uint8_t)(
-                (old_value & (uint8_t)~vertical_mask) |
-                (cell_bits & vertical_mask));
-
-        wrote_any_column = 1;
-    }
-
-    if ((wrote_any_column != 0) && (page < 8u))
-    {
-        fb->dirty_pages |= (uint8_t)(1u << page);
+        (void)mono_fb_write_masked_byte(
+            fb,
+            page,
+            (uint32_t)px,
+            cell_bits,
+            vertical_mask);
     }
 }
 
@@ -281,6 +271,33 @@ static int text_renderer_self_test_equal(
     {
         if (left[i] != right[i])
         {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int text_renderer_self_test_dirty_equal(
+    const mono_fb_t *left,
+    const mono_fb_t *right)
+{
+    uint32_t page;
+
+    if (
+        (left == (const mono_fb_t *)0) ||
+        (right == (const mono_fb_t *)0) ||
+        (left->dirty_pages != right->dirty_pages)
+    ) {
+        return 0;
+    }
+
+    for (page = 0u; page < MONO_FB_MAX_PAGES; ++page)
+    {
+        if (
+            (left->dirty_min_x[page] != right->dirty_min_x[page]) ||
+            (left->dirty_max_x[page] != right->dirty_max_x[page])
+        ) {
             return 0;
         }
     }
@@ -382,7 +399,7 @@ int text_renderer_fast_path_self_test(void)
             return 0;
         }
 
-        if (generic_fb.dirty_pages != fast_fb.dirty_pages)
+        if (text_renderer_self_test_dirty_equal(&generic_fb, &fast_fb) == 0)
         {
             return 0;
         }
@@ -442,7 +459,7 @@ int text_renderer_fast_path_self_test(void)
             return 0;
         }
 
-        if (generic_fb.dirty_pages != fast_fb.dirty_pages)
+        if (text_renderer_self_test_dirty_equal(&generic_fb, &fast_fb) == 0)
         {
             return 0;
         }

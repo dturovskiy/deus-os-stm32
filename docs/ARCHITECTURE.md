@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`BOOT_DESKTOP_UI_FOUNDATION` published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`; `OLED_DIRTY_REGION_OPTIMIZATION` Gate 0 accepted / Gate 1 current**
+Status: **`BOOT_DESKTOP_UI_FOUNDATION` published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`; `OLED_DIRTY_REGION_OPTIMIZATION` Gates 0–5 accepted / Gate 6 next**
 
 ## Current foundation completeness constraints
 
@@ -35,8 +35,15 @@ The boot/desktop boundary is published at commit `d1d2230ef70c3e7ffc6e8e01eec82e
 
 Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`.
 Canonical acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.
+Canonical deferred engineering policy: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`.
 
-`OLED_DIRTY_REGION_OPTIMIZATION` retains one 512-byte framebuffer and adds bounded 16-bit horizontal dirty spans for the existing eight-page maximum. No-op writes do not dirty framebuffer state; the aligned renderer must use the same change-aware byte path; `ssd1306_present()` programs exact page+column windows and transfers only the dirty span. The production `mono_fb_t` growth is 32 bytes; all persistent optimization metadata is capped at +64 bytes static SRAM over the accepted 9792-byte baseline. Normal minute/SYSTEM/USB updates become component-local and must not clear/recompose the whole framebuffer; initial render, splash->home, explicit restore and recovery may still perform full composition. A second framebuffer is forbidden. After this optimization, `APPLICATION_RUNTIME_FOUNDATION` is next; production WinUSB management USB remains a later `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+`OLED_DIRTY_REGION_OPTIMIZATION` is accepted through Gate 5. It retains one 512-byte framebuffer and adds bounded 16-bit horizontal dirty spans for the existing eight-page maximum. No-op writes remain clean; the aligned renderer uses the same change-aware byte path; `ssd1306_present()` programs exact page+column windows and transfers only the dirty span. The production `mono_fb_t` growth is 32 bytes; total named persistent optimization metadata is 55 bytes and accepted static SRAM is `9848 / 20480`, below the frozen `9856` ceiling. Normal minute/SYSTEM/USB updates are component-local and do not clear/recompose the whole framebuffer or rerasterize console content; initial render, splash->home, explicit restore and recovery may still perform full composition. A second framebuffer remains forbidden.
+
+Accepted candidate: tree `75f05f689970b760604112b30346b0c328bfaff2`, BIN `44560` bytes / SHA-256 `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`. Hardware measured the historical four-page semantic refresh at `572` payload bytes / `36` writes, clean present at `0`, one changed byte at `9`, minute `00:00 -> 00:01` at `11`, and USB indicator transition at `11`. Task0 retained `328` bytes margin after both `oledstatus` and `oleddirty`; physical OLED review is `PHYSICAL_OLED=PASS` with no blank pulse, stale pixels, clipping or console corruption.
+
+Deferred performance work is measurement-triggered, not speculative: I2C IRQ/DMA only after observed bus/latency pressure; scheduler ready-set acceleration only after materially larger task counts and measured overhead; CRC acceleration only when streaming cost justifies it; WinUSB/asset/update paths must use bounded batching/minimal-copy/backpressure; tickless/low-power remains deferred until a real power requirement exists. Structured observability should use a bounded binary event ring rather than continuous printf/Flash logging. Heavy acceptance/reference self-tests are candidates for host/build-time or acceptance-only profiles, while the final production binary must receive its own hardware smoke acceptance. External storage policy favors SPI NOR, microSD/FRAM and bounded block-device/filesystem layers; laptop DDR SO-DIMM is not a practical F103 expansion.
+
+Gate 6 local acceptance commit is next. After publication, `APPLICATION_RUNTIME_FOUNDATION` is the exact next implementation boundary; production WinUSB management USB remains a later `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 
 ## C4.0 accepted IWDG liveness record
 

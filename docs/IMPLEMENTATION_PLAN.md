@@ -84,14 +84,29 @@ Canonical acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.
 
 Publication is complete at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` / tree `d27cf8246fb7563b2327955ffc06428b9d843b2a`; ordinary non-force push is complete and local/remote ahead-behind is `0/0`.
 
-### Current boundary — OLED dirty-region optimization — GATE 0 ACCEPTED / GATE 1 CURRENT
+### Current boundary — OLED dirty-region optimization — GATES 0–5 ACCEPTED / GATE 6 NEXT
 
-`OLED_DIRTY_REGION_OPTIMIZATION` is a measured rendering/transport optimization. It keeps one 512-byte framebuffer, adds 16-bit per-page dirty X spans, makes framebuffer byte writes change-aware, updates the aligned text fast path, sends exact SSD1306 page+column windows, records bounded present-transfer metrics and changes runtime status composition so minute/SYSTEM/USB changes do not clear/recompose the full screen. Static optimization metadata is capped at +64 bytes SRAM; no shadow framebuffer, heap, DMA or new RTOS primitive is allowed.
+`OLED_DIRTY_REGION_OPTIMIZATION` is a measured rendering/transport optimization. It keeps one 512-byte framebuffer, adds 16-bit per-page dirty X spans, makes framebuffer byte writes change-aware, updates the aligned text fast path, sends exact SSD1306 page+column windows, records bounded present-transfer metrics and changes runtime status composition so minute/SYSTEM/USB changes do not clear/recompose the full screen. No shadow framebuffer, heap, DMA or new RTOS primitive was introduced.
+
+Accepted candidate/evidence:
+
+- tree `75f05f689970b760604112b30346b0c328bfaff2`;
+- BIN `44560` bytes / `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`;
+- ELF `71308` bytes / `E0CB04772160A7906E235C7E6C4984E3BACB1C84AB4C39B244A1995DE1B1950C`;
+- MAP `00AF5C8ADCC1A824BBD43D61805ADB3024BE9FD4D114C13EC63957F2364A8C09`;
+- Flash `44560 / 65536`, SRAM `9848 / 20480`, named optimization metadata increment `55` bytes;
+- Gate 2 evidence `FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC`;
+- Gate 3 log `887E0D78E025C0EB44B7C69B8C9E19A81D70EB95D5A76FFEE7C4D88EC04C7EE6`;
+- Gate 3 evidence `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`;
+- Gate 4 evidence `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`, `PHYSICAL_OLED=PASS`.
+
+Measured hardware transfer contract: prior full semantic refresh `572` payload bytes / `36` writes; clean present `0`; one-byte change `9`; minute update `11` at `x=123..125`; USB indicator update `11` at `x=9..11`. Post-diagnostic task margins are task0 `328` bytes and task1 `424` bytes. Gate 5 records deferred optimization/robustness/observability/storage/test-profile policy in `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md` and adds repository LF policy through `.gitattributes`.
 
 Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`.
 Canonical acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.
+Canonical deferred backlog: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`.
 
-After its publication, exact next implementation boundary is `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION` before the host control application.
+Gate 6 local acceptance commit is next. After publication, exact next implementation boundary is `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION` before the host control application.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

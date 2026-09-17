@@ -252,6 +252,7 @@ static volatile uint32_t uart_rx_high_water;
 static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
 static oled_console_t oled_console_state;
+static oled_status_bar_t boot_desktop_ui_status;
 
 static volatile uint32_t scheduler_workload_task0_started;
 static volatile uint32_t scheduler_workload_task0_done;
@@ -1112,6 +1113,7 @@ static int ssd1306_show_ui_layout(
     }
 
     mono_fb_clear(&oled_surface);
+    mono_fb_mark_all_dirty(&oled_surface);
 
     oled_status_bar_init(&status);
     oled_status_bar_set_time(
@@ -1186,6 +1188,7 @@ static int ssd1306_show_scroll_test(void)
     }
 
     mono_fb_clear(&oled_surface);
+    mono_fb_mark_all_dirty(&oled_surface);
 
     oled_status_bar_init(&status);
     oled_status_bar_set_time(
@@ -1234,9 +1237,34 @@ static void console_oled_scroll(command_service_context_t *context)
     }
 }
 
-static int ssd1306_show_dirty_present_test(void)
+static int ssd1306_show_dirty_present_test(
+    command_service_context_t *context)
 {
-    uint32_t i;
+    const oled_ui_layout_t *layout;
+    oled_status_bar_t status;
+    ssd1306_present_stats_t stats;
+    uint32_t min_x;
+    uint32_t max_x;
+    uint32_t payload_bytes;
+
+    if (context == (command_service_context_t *)0)
+    {
+        return 0;
+    }
+
+    if (mono_fb_dirty_region_self_test() == 0)
+    {
+        return 0;
+    }
+
+    layout = oled_ui_layout_default();
+
+    if (
+        (layout == (const oled_ui_layout_t *)0) ||
+        (oled_ui_layout_validate(layout) == 0)
+    ) {
+        return 0;
+    }
 
     if (ssd1306_init() == 0)
     {
@@ -1244,11 +1272,11 @@ static int ssd1306_show_dirty_present_test(void)
     }
 
     /*
-     * Establish a known all-black controller image using the new API.
-     * mono_fb_clear() must mark all four pages dirty, and a successful
-     * present must clear the mask.
+     * Full-width compatibility baseline: four pages, each one exact
+     * 0..127 span. This is the historical 572-payload-byte refresh cost.
      */
     mono_fb_clear(&oled_surface);
+    mono_fb_mark_all_dirty(&oled_surface);
 
     if (mono_fb_dirty_pages(&oled_surface) != 0x0Fu)
     {
@@ -1260,35 +1288,66 @@ static int ssd1306_show_dirty_present_test(void)
         return 0;
     }
 
-    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    ssd1306_present_stats_get(&stats);
+    payload_bytes =
+        stats.window_payload_bytes +
+        stats.data_payload_bytes;
+
+    if (
+        (payload_bytes != 572u) ||
+        (stats.window_payload_bytes != 28u) ||
+        (stats.data_payload_bytes != 544u) ||
+        (stats.i2c_write_count != 36u) ||
+        (stats.presented_pages != 4u) ||
+        (mono_fb_dirty_pages(&oled_surface) != 0u)
+    ) {
+        return 0;
+    }
+
+    console_write(context, "OLED_DIRTY_BASELINE_PAYLOAD=");
+    console_write_hex32(context, payload_bytes);
+    console_write(context, "\r\n");
+
+    console_write(context, "OLED_DIRTY_BASELINE_WRITES=");
+    console_write_hex32(context, stats.i2c_write_count);
+    console_write(context, "\r\n");
+
+    /* Clean present must perform no I2C transaction at all. */
+    if (ssd1306_present(&oled_surface) == 0)
     {
         return 0;
     }
 
-    /*
-     * Deliberately make every backing-RAM page white WITHOUT marking any
-     * page dirty. Then mark only physical page 2 dirty. A correct dirty
-     * presenter sends only page 2: the OLED ends with one white 8-pixel
-     * band at y=16..23 while pages 0, 1 and 3 remain black.
-     */
-    for (i = 0u; i < SSD1306_FRAMEBUFFER_BYTES; ++i)
-    {
-        oled_framebuffer[i] = 0xFFu;
-    }
+    ssd1306_present_stats_get(&stats);
 
-    if (mono_fb_dirty_pages(&oled_surface) != 0u)
-    {
+    if (
+        (stats.window_payload_bytes != 0u) ||
+        (stats.data_payload_bytes != 0u) ||
+        (stats.i2c_write_count != 0u) ||
+        (stats.presented_pages != 0u)
+    ) {
         return 0;
     }
 
+    console_write_line(context, "OLED_DIRTY_IDLE_ZERO_IO_OK");
+
+    /* One changed framebuffer byte must transfer one exact column only. */
     mono_fb_set_pixel(
         &oled_surface,
-        0,
+        40,
         16,
         1);
 
-    if (mono_fb_dirty_pages(&oled_surface) != 0x04u)
-    {
+    if (
+        (mono_fb_dirty_pages(&oled_surface) != 0x04u) ||
+        (mono_fb_dirty_span(
+            &oled_surface,
+            2u,
+            &min_x,
+            &max_x) == 0) ||
+        (min_x != 40u) ||
+        (max_x != 40u)
+    ) {
         return 0;
     }
 
@@ -1297,34 +1356,153 @@ static int ssd1306_show_dirty_present_test(void)
         return 0;
     }
 
-    if (mono_fb_dirty_pages(&oled_surface) != 0u)
-    {
+    ssd1306_present_stats_get(&stats);
+    payload_bytes =
+        stats.window_payload_bytes +
+        stats.data_payload_bytes;
+
+    if (
+        (payload_bytes != 9u) ||
+        (stats.i2c_write_count != 2u) ||
+        (stats.presented_pages != 1u) ||
+        (mono_fb_dirty_pages(&oled_surface) != 0u)
+    ) {
         return 0;
     }
+
+    console_write(context, "OLED_DIRTY_NARROW_PAYLOAD=");
+    console_write_hex32(context, payload_bytes);
+    console_write(context, "\r\n");
 
     /*
-     * Zero-dirty present must be a successful no-op.
+     * Establish exact status reference 00:00, then prove 00:00 -> 00:01
+     * touches only the final 3-pixel digit region.
      */
+    mono_fb_clear(&oled_surface);
+    mono_fb_mark_all_dirty(&oled_surface);
+    oled_status_bar_init(&status);
+    oled_status_bar_render(
+        &status,
+        &oled_surface,
+        layout->status_rect);
+
     if (ssd1306_present(&oled_surface) == 0)
     {
         return 0;
     }
 
-    if (mono_fb_dirty_pages(&oled_surface) != 0u)
+    oled_status_bar_set_time(&status, 0u, 1u);
+    oled_status_bar_render(
+        &status,
+        &oled_surface,
+        layout->status_rect);
+
+    if (
+        (mono_fb_dirty_pages(&oled_surface) != 0x01u) ||
+        (mono_fb_dirty_span(
+            &oled_surface,
+            0u,
+            &min_x,
+            &max_x) == 0) ||
+        (min_x < 123u) ||
+        (max_x > 125u)
+    ) {
+        return 0;
+    }
+
+    if (ssd1306_present(&oled_surface) == 0)
     {
         return 0;
     }
+
+    ssd1306_present_stats_get(&stats);
+    payload_bytes =
+        stats.window_payload_bytes +
+        stats.data_payload_bytes;
+
+    if (
+        (payload_bytes > 11u) ||
+        (stats.i2c_write_count != 2u) ||
+        (stats.presented_pages != 1u)
+    ) {
+        return 0;
+    }
+
+    console_write(context, "OLED_DIRTY_TIME_MIN_X=");
+    console_write_hex32(context, min_x);
+    console_write(context, "\r\n");
+    console_write(context, "OLED_DIRTY_TIME_MAX_X=");
+    console_write_hex32(context, max_x);
+    console_write(context, "\r\n");
+    console_write(context, "OLED_DIRTY_TIME_PAYLOAD=");
+    console_write_hex32(context, payload_bytes);
+    console_write(context, "\r\n");
+
+    /* Default reference USB is FILLED; change only USB to RING. */
+    oled_status_bar_set_indicators(
+        &status,
+        OLED_STATUS_INDICATOR_FILLED,
+        OLED_STATUS_INDICATOR_RING,
+        OLED_STATUS_INDICATOR_RING);
+    oled_status_bar_render(
+        &status,
+        &oled_surface,
+        layout->status_rect);
+
+    if (
+        (mono_fb_dirty_pages(&oled_surface) != 0x01u) ||
+        (mono_fb_dirty_span(
+            &oled_surface,
+            0u,
+            &min_x,
+            &max_x) == 0) ||
+        (min_x < 8u) ||
+        (max_x > 12u)
+    ) {
+        return 0;
+    }
+
+    if (ssd1306_present(&oled_surface) == 0)
+    {
+        return 0;
+    }
+
+    ssd1306_present_stats_get(&stats);
+    payload_bytes =
+        stats.window_payload_bytes +
+        stats.data_payload_bytes;
+
+    if (
+        (payload_bytes > 13u) ||
+        (stats.i2c_write_count != 2u) ||
+        (stats.presented_pages != 1u)
+    ) {
+        return 0;
+    }
+
+    console_write(context, "OLED_DIRTY_USB_MIN_X=");
+    console_write_hex32(context, min_x);
+    console_write(context, "\r\n");
+    console_write(context, "OLED_DIRTY_USB_MAX_X=");
+    console_write_hex32(context, max_x);
+    console_write(context, "\r\n");
+    console_write(context, "OLED_DIRTY_USB_PAYLOAD=");
+    console_write_hex32(context, payload_bytes);
+    console_write(context, "\r\n");
 
     return ssd1306_display_on();
 }
 
 static void console_oled_dirty(command_service_context_t *context)
 {
-    if (ssd1306_show_dirty_present_test() != 0)
+    if (ssd1306_show_dirty_present_test(context) != 0)
     {
         console_write_line(context, "OLED_DIRTY_MASK_OK");
         console_write_line(context, "OLED_DIRTY_CLEAR_OK");
         console_write_line(context, "OLED_DIRTY_IDLE_OK");
+        console_write_line(context, "OLED_DIRTY_REGION_OK");
+        console_write_line(context, "OLED_DIRTY_TIME_OK");
+        console_write_line(context, "OLED_DIRTY_USB_OK");
         console_write_line(context, "OLED_DIRTY_OK");
     }
     else
@@ -1352,6 +1530,7 @@ static void boot_desktop_ui_initialize(void)
     boot_desktop_ui_uptime_saturated = 0u;
     boot_desktop_ui_snapshot_valid = 0u;
     boot_desktop_ui_panel_initialized = 0u;
+    oled_status_bar_init(&boot_desktop_ui_status);
     boot_desktop_ui_initialized = 1u;
 }
 
@@ -1430,11 +1609,11 @@ static int boot_desktop_ui_snapshot_equal(
 static int boot_desktop_ui_render(int force)
 {
     const oled_ui_layout_t *layout;
-    oled_status_bar_t status;
     boot_desktop_ui_snapshot_t snapshot;
     uint32_t hours;
     uint32_t minutes;
     uint32_t display_enable_required = 0u;
+    uint32_t full_compose = 0u;
 
     if (boot_desktop_ui_initialized == 0u)
     {
@@ -1454,8 +1633,6 @@ static int boot_desktop_ui_render(int force)
         return 1;
     }
 
-    boot_desktop_ui_snapshot_valid = 0u;
-
     layout = oled_ui_layout_default();
 
     if (
@@ -1474,72 +1651,94 @@ static int boot_desktop_ui_render(int force)
 
         boot_desktop_ui_panel_initialized = 1u;
         display_enable_required = 1u;
+        full_compose = 1u;
     }
 
-    mono_fb_clear(&oled_surface);
+    if (
+        (force != 0) ||
+        (boot_desktop_ui_snapshot_valid == 0u) ||
+        (
+            (boot_desktop_ui_snapshot_valid != 0u) &&
+            (snapshot.state != boot_desktop_ui_last_snapshot.state)
+        )
+    ) {
+        full_compose = 1u;
+    }
 
     hours = snapshot.total_minutes / 60u;
     minutes = snapshot.total_minutes % 60u;
 
-    oled_status_bar_init(&status);
     oled_status_bar_set_indicators(
-        &status,
+        &boot_desktop_ui_status,
         snapshot.system_indicator,
         snapshot.usb_indicator,
         snapshot.network_indicator);
     oled_status_bar_set_time(
-        &status,
+        &boot_desktop_ui_status,
         hours,
         minutes);
 
+    if (full_compose != 0u)
+    {
+        mono_fb_clear(&oled_surface);
+        mono_fb_mark_all_dirty(&oled_surface);
+        oled_status_bar_mark_all_dirty(&boot_desktop_ui_status);
+    }
+
     oled_status_bar_render(
-        &status,
+        &boot_desktop_ui_status,
         &oled_surface,
         layout->status_rect);
 
-    oled_console_clear(&oled_console_state);
-
-    oled_console_write_line(
-        &oled_console_state,
-        "DEUS OS");
-
-    if (snapshot.state == BOOT_DESKTOP_UI_SPLASH)
+    if (full_compose != 0u)
     {
+        oled_console_clear(&oled_console_state);
+
         oled_console_write_line(
             &oled_console_state,
-            "STARTING");
-        oled_console_write(
-            &oled_console_state,
-            "PLEASE WAIT");
-    }
-    else
-    {
-        oled_console_write_line(
-            &oled_console_state,
-            "DESKTOP");
-        oled_console_write(
-            &oled_console_state,
-            "READY");
-    }
+            "DEUS OS");
 
-    oled_console_render(
-        &oled_console_state,
-        &oled_surface,
-        layout->console_rect);
+        if (snapshot.state == BOOT_DESKTOP_UI_SPLASH)
+        {
+            oled_console_write_line(
+                &oled_console_state,
+                "STARTING");
+            oled_console_write(
+                &oled_console_state,
+                "PLEASE WAIT");
+        }
+        else
+        {
+            oled_console_write_line(
+                &oled_console_state,
+                "DESKTOP");
+            oled_console_write(
+                &oled_console_state,
+                "READY");
+        }
 
-    if (oled_console_state.dirty_rows != 0u)
-    {
-        return 0;
+        oled_console_render(
+            &oled_console_state,
+            &oled_surface,
+            layout->console_rect);
+
+        if (oled_console_state.dirty_rows != 0u)
+        {
+            boot_desktop_ui_snapshot_valid = 0u;
+            return 0;
+        }
     }
 
     if (ssd1306_present(&oled_surface) == 0)
     {
         boot_desktop_ui_panel_initialized = 0u;
+        boot_desktop_ui_snapshot_valid = 0u;
         return 0;
     }
 
     if (mono_fb_dirty_pages(&oled_surface) != 0u)
     {
+        boot_desktop_ui_snapshot_valid = 0u;
         return 0;
     }
 
@@ -1548,6 +1747,7 @@ static int boot_desktop_ui_render(int force)
         (ssd1306_display_on() == 0)
     ) {
         boot_desktop_ui_panel_initialized = 0u;
+        boot_desktop_ui_snapshot_valid = 0u;
         return 0;
     }
 
@@ -1642,6 +1842,7 @@ static void console_oled_ui_update(command_service_context_t *context)
     }
 
     mono_fb_clear(&oled_surface);
+    mono_fb_mark_all_dirty(&oled_surface);
 
     oled_status_bar_init(&status);
     oled_status_bar_set_time(
