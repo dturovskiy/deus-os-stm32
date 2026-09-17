@@ -156,7 +156,7 @@ Accepted Gate 2/3/4 evidence:
 
 Publication commit/tree: `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` / `d27cf8246fb7563b2327955ffc06428b9d843b2a`; ordinary non-force push complete; final repository ahead/behind `0/0`.
 
-### Current boundary — OLED dirty-region optimization
+### Published boundary — OLED dirty-region optimization
 
 Boundary ID: `OLED_DIRTY_REGION_OPTIMIZATION`.
 
@@ -168,8 +168,8 @@ Gate order:
 - [x] Gate 3 retained hardware/runtime + optimized-transfer proof — **PASS / V5 EVIDENCE**.
 - [x] Gate 4 physical OLED regression — **PASS / `PHYSICAL_OLED=PASS`**.
 - [x] Gate 5 docs/evidence finalization — **PASS**.
-- [ ] Gate 6 local acceptance commit — **NEXT**.
-- [ ] Gate 7 ordinary non-force publication.
+- [x] Gate 6 local acceptance commit — **PASS / `39690c9ef103cbcf93272df8bad0359a934b7dc1`**.
+- [x] Gate 7 ordinary non-force publication — **PASS / PUBLISHED**.
 
 Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`.
 Canonical acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.
@@ -196,11 +196,50 @@ Accepted Gate 2/3/4 evidence:
 - [x] Gate 3 log `887E0D78E025C0EB44B7C69B8C9E19A81D70EB95D5A76FFEE7C4D88EC04C7EE6`;
 - [x] Gate 3 evidence `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`;
 - [x] Gate 4 evidence `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`;
-- [x] physical OLED `PHYSICAL_OLED=PASS`: no blank/off pulse, flicker, stale pixels, dirty-span clipping or console corruption.
+- [x] physical OLED `PHYSICAL_OLED=PASS`: no blank/off pulse, flicker, stale pixels, dirty-span clipping or console corruption;
+- [x] Gate 5 evidence `7DAB43E97E238DA35894B767AD1403064905E64D9326F8B4E002AE0816AB6436`;
+- [x] Gate 6 evidence `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`;
+- [x] Gate 7 evidence `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
 
-Gate 5 additionally freezes measured/deferred optimization triggers, latent-bug/soak/fault-injection strategy, bounded binary event-trace policy, external-storage/memory policy, diagnostic build-profile policy and repository EOL policy. `.gitattributes` owns LF for source/docs so Windows line-ending warnings do not remain operator-log noise.
+Publication commit/tree: `39690c9ef103cbcf93272df8bad0359a934b7dc1` / `f195fac5ce733c36a1d955e0fbe687ee6c83b605`; ordinary non-force push complete; final repository ahead/behind `0/0`.
 
-After publication, exact next boundary is `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+Gate 5 additionally froze measured/deferred optimization triggers, latent-bug/soak/fault-injection strategy, bounded binary event-trace policy, external-storage/memory policy, diagnostic build-profile policy and repository EOL policy. `.gitattributes` owns LF for source/docs so Windows line-ending warnings do not remain operator-log noise.
+
+### Current boundary — Application runtime foundation
+
+Boundary ID: `APPLICATION_RUNTIME_FOUNDATION`.
+
+Gate order:
+
+- [x] Gate 0 application-runtime architecture/source-boundary freeze — **PASS**.
+- [ ] Gate 1 source implementation + deterministic/static proof — **NEXT**.
+- [ ] Gate 2 fresh GNU build/link/resource/stack validation.
+- [ ] Gate 3 retained hardware/runtime + application lifecycle/event proof.
+- [ ] Gate 4 physical OLED application-view regression.
+- [ ] Gate 5 docs/evidence finalization.
+- [ ] Gate 6 local acceptance commit.
+- [ ] Gate 7 ordinary non-force publication.
+
+Canonical design: `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`.
+Canonical acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.
+
+Gate 0 freeze:
+
+- [x] static apps `system.home=0x0001`, `device.info=0x0002`;
+- [x] one foreground application and explicit `REGISTERED=0 / STOPPED=1 / STARTING=2 / RUNNING=3 / BLOCKED=4 / STOPPING=5 / FAILED=6` lifecycle; `BLOCKED` is reserved in the initial ABI and never aliases scheduler task state;
+- [x] task0 / Thread-PSP only application callback/event dispatch;
+- [x] fixed pointer-free semantic application events separate from scheduler wake bits;
+- [x] bounded system/time/USB/network service snapshot;
+- [x] exactly three application content rows; status bar remains system-owned;
+- [x] `system.home` preserves `DEUS OS / DESKTOP / READY`;
+- [x] `device.info` view is `DEUS OS / DEVICE INFO / STM32F103`;
+- [x] existing RPC IDs `0x0001..0x0020` frozen; append only `applist=0x0021`, `appstart=0x0022`, `appstop=0x0023`;
+- [x] command-service foundation version advances to `2`; binary frame protocol remains v1;
+- [x] initial source boundary exactly five paths: two new application-runtime files plus command-service header/source and `src/kernel.c`;
+- [x] no heap, queue, mutex, generic timer, new task/SVC, dynamic loader, filesystem or USB redesign;
+- [x] Gate 2 budgets frozen at Flash <= `48656`, SRAM <= `10104`, task stacks exactly `1024 / 512`, runtime margins >= `256` bytes.
+
+After publication, exact next boundary is `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 
 Permanent constraints retained:
 

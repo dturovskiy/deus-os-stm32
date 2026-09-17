@@ -86,28 +86,39 @@ Canonical design/acceptance:
 `docs/BOOT_DESKTOP_UI_PLAN.md`
 `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`
 
-### Current implementation boundary — OLED dirty-region optimization
+### Published implementation boundary — OLED dirty-region optimization
 
-`OLED_DIRTY_REGION_OPTIMIZATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
+`OLED_DIRTY_REGION_OPTIMIZATION` — **GATES 0–7 ACCEPTED / PUBLISHED `39690c9ef103cbcf93272df8bad0359a934b7dc1`**.
 
 Accepted candidate: tree `75f05f689970b760604112b30346b0c328bfaff2`, BIN `44560` bytes / `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`, Flash `44560 / 65536`, SRAM `9848 / 20480`. Hardware accepted exact dirty-region transfers: historical full semantic refresh `572` payload bytes / `36` writes, clean `0`, one-byte narrow `9`, minute `11`, USB indicator `11`. Task0/task1 post-diagnostic margins remain `328 / 424` bytes. Gate 4 is `PHYSICAL_OLED=PASS`.
 
 Evidence: Gate 2 `FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC`; Gate 3 `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`; Gate 4 `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`.
+
+Publication commit/tree: `39690c9ef103cbcf93272df8bad0359a934b7dc1` / `f195fac5ce733c36a1d955e0fbe687ee6c83b605`; ordinary non-force publication complete; final ahead/behind `0/0`. Gate 6 evidence `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`; Gate 7 evidence `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
 
 Canonical design/acceptance/backlog:
 `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`
 `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`
 `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
 
+### Current implementation boundary — Application runtime foundation
+
+`APPLICATION_RUNTIME_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 NEXT**.
+
+Gate 0 freezes a static two-application v1 runtime: `system.home=0x0001` and `device.info=0x0002`, one foreground application, explicit lifecycle state, task0-only callback/event dispatch, fixed pointer-free semantic events, a bounded system-state snapshot and a three-row application view under the existing system-owned status bar. Existing RPC IDs `0x0001..0x0020` remain stable; `applist/appstart/appstop` append exactly `0x0021..0x0023`. No heap, queue, new task/SVC, dynamic loader, filesystem or USB redesign is introduced.
+
+Canonical design/acceptance:
+`docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`
+`docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`
+
 Implementation order:
 
-1. `OLED_DIRTY_REGION_OPTIMIZATION` — acceptance complete through Gate 5; local commit/publication pending;
-2. `APPLICATION_RUNTIME_FOUNDATION`;
-3. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
-4. `HOST_CONTROL_APPLICATION_FOUNDATION`;
-5. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
-6. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-7. networking/service extensions.
+1. `APPLICATION_RUNTIME_FOUNDATION` — Gate 0 accepted; Gate 1 source implementation next;
+2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
+3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
+4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
+5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+6. networking/service extensions.
 
 Deferred optimization/robustness items are trigger-driven, not new immediate roadmap boundaries: I2C IRQ/DMA only after measured bus pressure; scheduler ready-set acceleration only after materially larger task count and measured overhead; CRC acceleration only for measured streaming cost; bounded minimal-copy/backpressure for WinUSB and transfer paths; tickless only for a real power requirement; structured binary event tracing rather than printf-heavy logging; bounded storage/block-device layers when a consumer exists.
 
@@ -192,8 +203,8 @@ Target progression:
 4. Binary framed RPC transport with CRC/request correlation — published; v1 is control/RPC only, not file transfer or firmware update.
 5. Deus OS product/application/UI model freeze — published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`.
 6. Boot/desktop UI foundation — published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`.
-7. OLED dirty-region optimization — Gates 0–5 accepted; local commit/publication pending, transferring only real changed page/column spans while retaining one 512-byte framebuffer.
-8. Static application runtime foundation.
+7. OLED dirty-region optimization — published at `39690c9ef103cbcf93272df8bad0359a934b7dc1`; exact changed page/column spans retained with one 512-byte framebuffer.
+8. Static application runtime foundation — Gate 0 accepted; Gate 1 next.
 9. Production USB management-device foundation: vendor-specific WinUSB `Deus OS Device`, Microsoft OS descriptors, stable interface GUID and the accepted binary RPC above transport; CDC becomes debug/recovery rather than the primary production API.
 10. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); it manages the stable firmware runtime rather than defining it.
 11. Add bounded versioned asset/configuration transfer for non-executable packages.

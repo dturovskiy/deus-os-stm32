@@ -16,7 +16,7 @@ Gate 3 hardware acceptance passed on the exact candidate: no reflash was needed 
 
 Gate 4 physical OLED review is `PHYSICAL_OLED=PASS`: displayed digits and text update correctly, no unintended content is drawn, and no flicker/blank pulse/stale-pixel artifact is visible. Gate 5 documentation/evidence finalization changed docs only. Gate 6 committed the accepted 12-path source/docs candidate as `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`, tree `d27cf8246fb7563b2327955ffc06428b9d843b2a`, subject `feat: add boot desktop UI foundation`; Gate 7 published it by ordinary non-force fast-forward and final local/remote ahead-behind is `0/0`.
 
-### Accepted through Gate 5 — OLED dirty-region optimization
+### Published — OLED dirty-region optimization — Gates 0–7 accepted
 
 Boundary: `OLED_DIRTY_REGION_OPTIMIZATION`.
 
@@ -28,7 +28,15 @@ Gate 3 hardware acceptance passed on the exact candidate. The historical full se
 
 Gate 4 is `PHYSICAL_OLED=PASS`: splash/home, real minute rollover, USB indicator transition and `uiruntime` restore were visually accepted with no blank/off pulse, flicker, stale pixels, dirty-span clipping or console corruption. Gate 4 evidence SHA-256 `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`.
 
-Gate 5 finalizes documentation/evidence, adds repository LF policy through `.gitattributes`, and records the deferred measured-optimization / robustness / observability / test-profile / storage policy in `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`. Gate 6 local acceptance commit is next; publication has not occurred yet.
+Gate 5 finalized documentation/evidence, added repository LF policy through `.gitattributes`, and recorded the deferred measured-optimization / robustness / observability / test-profile / storage policy in `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`. Gate 5 evidence SHA-256 `7DAB43E97E238DA35894B767AD1403064905E64D9326F8B4E002AE0816AB6436`. Gate 6 committed the exact reviewed source/docs set as `39690c9ef103cbcf93272df8bad0359a934b7dc1`, tree `f195fac5ce733c36a1d955e0fbe687ee6c83b605`, subject `feat: optimize OLED dirty region updates`; Gate 6 evidence SHA-256 `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`. Gate 7 published it by one ordinary non-force push; fresh fetch verified `HEAD == origin/main == FETCH_HEAD`, clean repository and ahead/behind `0/0`. Gate 7 evidence SHA-256 `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
+
+### Planned — Application runtime foundation — Gate 0 accepted
+
+Boundary: `APPLICATION_RUNTIME_FOUNDATION`.
+
+Gate 0 freezes the first real application runtime on the accepted two-task substrate: static `system.home=0x0001` and `device.info=0x0002`, one foreground application, explicit REGISTERED/STOPPED/STARTING/RUNNING/BLOCKED/STOPPING/FAILED lifecycle, task0-only callback/event dispatch, fixed pointer-free semantic events separate from scheduler wake bits, a bounded system/time/USB/network snapshot, and exactly three application content rows under the system-owned status bar. `system.home` preserves `DEUS OS / DESKTOP / READY`; `device.info` uses `DEUS OS / DEVICE INFO / STM32F103`.
+
+The existing RPC IDs `0x0001..0x0020` remain frozen. Gate 1 will append only `applist=0x0021`, `appstart=0x0022`, `appstop=0x0023`, advance `COMMAND_SERVICE_FOUNDATION_VERSION` to `2`, and retain binary framing protocol v1. Initial source boundary is new `include/kernel/application_runtime.h`, new `src/kernel/application_runtime.c`, plus `include/kernel/command_service.h`, `src/kernel/command_service.c`, and `src/kernel.c`. No heap, queue, mutex, generic timer, new task/SVC, dynamic loader, filesystem or USB redesign is authorized. Gate 2 budgets are Flash <= `48656`, SRAM <= `10104`, task stacks exactly `1024 / 512`, and hardware runtime margins >= `256` bytes.
 
 ## 2026-09-16
 

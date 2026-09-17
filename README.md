@@ -5,23 +5,23 @@
 
 Published firmware/source baseline:
 
-`d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` — `feat: add boot desktop UI foundation`
+`39690c9ef103cbcf93272df8bad0359a934b7dc1` — `feat: optimize OLED dirty region updates`
 
 Published tree:
 
-`d27cf8246fb7563b2327955ffc06428b9d843b2a`
+`f195fac5ce733c36a1d955e0fbe687ee6c83b605`
 
-Boot / desktop UI foundation — **GATES 0–7 ACCEPTED / PUBLISHED**
+OLED dirty-region optimization — **GATES 0–7 ACCEPTED / PUBLISHED**
 
 Accepted firmware:
 
-- tested candidate tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`;
-- binary `41520` bytes / SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`;
-- Flash `41520 / 65536`, SRAM `9792 / 20480`;
-- nonblocking `BOOT_SPLASH -> DESKTOP_HOME`, real SYSTEM/USB/NETWORK status semantics and monotonic uptime accepted;
-- steady-state semantic refresh never re-enters SSD1306 initialization/display-off;
+- tested candidate tree `75f05f689970b760604112b30346b0c328bfaff2`;
+- binary `44560` bytes / SHA-256 `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`;
+- Flash `44560 / 65536`, SRAM `9848 / 20480`;
+- exact dirty-span OLED transfer: full semantic baseline `572` payload bytes / `36` writes, clean `0`, one-byte update `9`, minute `11`, USB `11`;
+- task0/task1 post-diagnostic margins `328 / 424` bytes;
 - retained CDC/UART/binary pressure, reconnect, malformed-frame recovery and IWDG recovery accepted;
-- physical OLED `PHYSICAL_OLED=PASS` with clean minute/text transitions and no blank pulse/flicker/stale pixels;
+- physical OLED `PHYSICAL_OLED=PASS` with no blank/off pulse, stale pixels, clipping or console corruption;
 - final Flash readback exact;
 - ordinary non-force publication complete; local/remote ahead-behind `0/0`.
 
@@ -39,7 +39,7 @@ Canonical architecture docs:
 
 The foundation-gap review confirms no missing kernel blocker before boot/desktop/application work. It additionally freezes later contracts for semantic application events, system identity/capabilities, bounded persistence safety, crash/reset observability, security/trust before network mutation or firmware update, and portability layering. Generic timers/queues/synchronization/runtime statistics remain consumer-driven rather than speculative prerequisites.
 
-Latest published firmware boundary:
+Previous published UI boundary:
 
 `BOOT_DESKTOP_UI_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`**.
 
@@ -52,28 +52,28 @@ The accepted revision-2 implementation provides a nonblocking `BOOT_SPLASH -> DE
 
 Accepted Gate 2/3 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN `41520` bytes / SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`, ELF `70700` bytes / SHA-256 `62A827893CC1EF44B18025E87B8299792636CA2D93093ED569F27F08A0B09F02`, Flash `41520 / 65536`, SRAM `9792 / 20480`. Gate 3 retained CDC/UART/binary pressure, reconnect, IWDG recovery and exact final Flash readback all passed. Gate 4 is operator-confirmed `PHYSICAL_OLED=PASS`: minute/text transitions are clean, with no blank pulse, flicker, stale pixels or unintended redraw artifacts.
 
-Current implementation boundary:
+Latest published firmware boundary:
 
-`OLED_DIRTY_REGION_OPTIMIZATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
+`OLED_DIRTY_REGION_OPTIMIZATION` — **GATES 0–7 ACCEPTED / PUBLISHED `39690c9ef103cbcf93272df8bad0359a934b7dc1`**.
 
-Accepted candidate/evidence:
-
-- candidate tree `75f05f689970b760604112b30346b0c328bfaff2`;
-- BIN `44560` bytes / SHA-256 `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`;
-- ELF `71308` bytes / SHA-256 `E0CB04772160A7906E235C7E6C4984E3BACB1C84AB4C39B244A1995DE1B1950C`;
-- Flash `44560 / 65536`, SRAM `9848 / 20480`;
-- Gate 2 evidence `FF1156B29A7BBF8D4F843B4A9AEECD2A9E6402B89BF9CF8C92D2CACAFB9DE7FC`;
-- Gate 3 evidence `76A49D4483033708542A7F6F14CA3B2FED90B77F1035C08513A3610E9ED34214`;
-- Gate 4 evidence `1C1982E6685D995082B61E99195AE83AC4CFFC537A65875D9B71460CE3C25EB6`, `PHYSICAL_OLED=PASS`;
-- hardware transfer proof: historical full semantic refresh `572` payload bytes / `36` writes, clean present `0`, one-byte narrow update `9`, minute update `11`, USB update `11`;
-- task0 margin after `oledstatus` and after `oleddirty` = `328` bytes; task1 margin = `424` bytes;
-- Gate 5 documentation/evidence finalization is accepted; no firmware source change occurs in Gate 5.
+Publication tree `f195fac5ce733c36a1d955e0fbe687ee6c83b605`; Gate 6 evidence `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`; Gate 7 evidence `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
 
 Canonical design/acceptance/backlog:
 
 - `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`
 - `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`
 - `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
+
+Current implementation boundary:
+
+`APPLICATION_RUNTIME_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 NEXT**.
+
+Gate 0 freezes a static two-application runtime (`system.home=0x0001`, `device.info=0x0002`), task0-only lifecycle/event dispatch, bounded pointer-free semantic events, a bounded three-row application view model, and transport-neutral `applist/appstart/appstop` methods appended as RPC IDs `0x0021..0x0023` without renumbering the existing `0x0001..0x0020` surface. No heap, queue, new task/SVC, dynamic loader, filesystem or USB redesign is introduced.
+
+Canonical design/acceptance:
+
+- `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`
+- `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`
 
 Implementation order:
 
@@ -144,7 +144,8 @@ Built locally:
 - [x] Production scheduler steady-state block/event/wake foundation
 - [x] Normal-boot scheduler ownership migration
 - [x] Boot splash / desktop runtime UI foundation (hardware + physical OLED accepted)
-- [x] OLED dirty-region transfer optimization (Gates 0–5 accepted; publication pending)
+- [x] OLED dirty-region transfer optimization (Gates 0–7 accepted / published)
+- [ ] Application runtime foundation (Gate 0 accepted / Gate 1 next)
 - [ ] IPC primitives
 - [ ] ESP8266 networking
 

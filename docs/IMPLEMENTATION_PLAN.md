@@ -84,7 +84,7 @@ Canonical acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.
 
 Publication is complete at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` / tree `d27cf8246fb7563b2327955ffc06428b9d843b2a`; ordinary non-force push is complete and local/remote ahead-behind is `0/0`.
 
-### Current boundary — OLED dirty-region optimization — GATES 0–5 ACCEPTED / GATE 6 NEXT
+### Published boundary — OLED dirty-region optimization — GATES 0–7 ACCEPTED
 
 `OLED_DIRTY_REGION_OPTIMIZATION` is a measured rendering/transport optimization. It keeps one 512-byte framebuffer, adds 16-bit per-page dirty X spans, makes framebuffer byte writes change-aware, updates the aligned text fast path, sends exact SSD1306 page+column windows, records bounded present-transfer metrics and changes runtime status composition so minute/SYSTEM/USB changes do not clear/recompose the full screen. No shadow framebuffer, heap, DMA or new RTOS primitive was introduced.
 
@@ -106,7 +106,18 @@ Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`.
 Canonical acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.
 Canonical deferred backlog: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`.
 
-Gate 6 local acceptance commit is next. After publication, exact next implementation boundary is `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION` before the host control application.
+Gate 6/7 publication is complete at `39690c9ef103cbcf93272df8bad0359a934b7dc1` / tree `f195fac5ce733c36a1d955e0fbe687ee6c83b605`, with ordinary non-force push and final ahead/behind `0/0`. Gate 6 evidence is `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`; Gate 7 evidence is `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
+
+### Current boundary — Application runtime foundation — GATE 0 ACCEPTED / GATE 1 NEXT
+
+`APPLICATION_RUNTIME_FOUNDATION` implements the published static application model without scheduler expansion. Gate 0 freezes two built-in system applications (`system.home=0x0001`, `device.info=0x0002`), explicit lifecycle state, one foreground app, task0-only callback/event dispatch, bounded pointer-free semantic events, a bounded service snapshot and three-row application view ownership under the system status bar.
+
+The existing command/RPC surface remains stable at IDs `0x0001..0x0020`; exactly three new methods are appended: `applist=0x0021`, `appstart=0x0022`, `appstop=0x0023`. Command-service foundation version becomes `2`; binary framing/protocol remains v1. No heap, queue, new task/SVC, filesystem, dynamic loader or USB redesign is authorized.
+
+Canonical design: `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`.
+Canonical acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.
+
+Initial Gate 1 source boundary: new `include/kernel/application_runtime.h`, new `src/kernel/application_runtime.c`, plus `include/kernel/command_service.h`, `src/kernel/command_service.c`, `src/kernel.c`. After this boundary publishes, `USB_MANAGEMENT_DEVICE_FOUNDATION` is next before the host control application.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

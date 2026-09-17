@@ -1,6 +1,6 @@
 # Deus OS — OLED Dirty-Region Optimization Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `39690c9ef103cbcf93272df8bad0359a934b7dc1`**
 
 Boundary ID:
 
@@ -215,8 +215,20 @@ Gate 2  fresh GNU build/link/resource + transfer-metric validation — PASS
 Gate 3  retained hardware/runtime + optimized-transfer proof — PASS
 Gate 4  mandatory physical OLED regression — PASS / PHYSICAL_OLED=PASS
 Gate 5  docs/evidence finalization — PASS
-Gate 6  local acceptance commit — NEXT
-Gate 7  ordinary non-force publication — PENDING
+Gate 6  local acceptance commit — PASS / `39690c9ef103cbcf93272df8bad0359a934b7dc1`
+Gate 7  ordinary non-force publication — PASS / PUBLISHED
+```
+
+Publication record:
+
+```text
+commit                  39690c9ef103cbcf93272df8bad0359a934b7dc1
+tree                    f195fac5ce733c36a1d955e0fbe687ee6c83b605
+subject                 feat: optimize OLED dirty region updates
+Gate 5 evidence         7DAB43E97E238DA35894B767AD1403064905E64D9326F8B4E002AE0816AB6436
+Gate 6 evidence         026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB
+Gate 7 evidence         FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718
+final repository        clean / ahead-behind 0/0
 ```
 
 After Gate 7, exact next boundary:

@@ -1,6 +1,6 @@
 # Deus OS — OLED Dirty-Region Optimization Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `39690c9ef103cbcf93272df8bad0359a934b7dc1`**
 
 Boundary ID:
 
@@ -190,11 +190,11 @@ Accepted evidence record:
 
 ## Gate 6 — local acceptance commit
 
-Require exact accepted source/docs path set, complete evidence, `PHYSICAL_OLED=PASS`, no unreviewed paths, `git diff --cached --check` PASS, one local commit, clean repo afterward, remote at direct parent and ahead/behind `1/0` before push.
+Acceptance: **PASS**. Exact reviewed 20-path source/docs set was committed as `39690c9ef103cbcf93272df8bad0359a934b7dc1`, tree `f195fac5ce733c36a1d955e0fbe687ee6c83b605`, subject `feat: optimize OLED dirty region updates`. `git diff --cached --check` passed; post-commit repository was clean and ahead/behind `1/0` with remote still at direct parent `8cf5b301b5ee394baf39ba35e06a290e70191cd1`. Gate 6 evidence SHA-256 `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`.
 
 ## Gate 7 — ordinary non-force publication
 
-Fresh-fetch remote state must still equal the Gate 6 parent. Publish with exactly one ordinary non-force `git push origin main:main`. After fresh fetch require `HEAD == origin/main == FETCH_HEAD`, clean repo and ahead/behind `0/0`.
+Acceptance: **PASS / PUBLISHED**. One ordinary non-force `git push origin main:main` advanced remote `main` from `8cf5b301b5ee394baf39ba35e06a290e70191cd1` to `39690c9ef103cbcf93272df8bad0359a934b7dc1`. Fresh fetch verified `HEAD == origin/main == FETCH_HEAD == 39690c9ef103cbcf93272df8bad0359a934b7dc1`, clean repository, ahead/behind `0/0`. Gate 7 evidence SHA-256 `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
 
 After Gate 7, exact next boundary:
 

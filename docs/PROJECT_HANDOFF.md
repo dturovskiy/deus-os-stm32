@@ -7,13 +7,13 @@
 
 The latest accepted and published firmware/source baseline is:
 
-`d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` — `feat: add boot desktop UI foundation`
+`39690c9ef103cbcf93272df8bad0359a934b7dc1` — `feat: optimize OLED dirty region updates`
 
 Published tree:
 
-`d27cf8246fb7563b2327955ffc06428b9d843b2a`
+`f195fac5ce733c36a1d955e0fbe687ee6c83b605`
 
-Accepted firmware candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN `41520` bytes / SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`, Flash `41520 / 65536`, SRAM `9792 / 20480`, Gate 4 `PHYSICAL_OLED=PASS`. Gates 0–7 are complete and ordinary non-force publication ended clean at ahead/behind `0/0`.
+Accepted firmware candidate: tree `75f05f689970b760604112b30346b0c328bfaff2`, BIN `44560` bytes / SHA-256 `93D999CC3C6B3EA7AE3B7FED991E0FCFDFA6C7AC2445412E801226869C6DD677`, Flash `44560 / 65536`, SRAM `9848 / 20480`, Gate 4 `PHYSICAL_OLED=PASS`. Gates 0–7 are complete and ordinary non-force publication ended clean at ahead/behind `0/0`.
 
 The previously published binary-framed transport baseline remains the underlying transport compatibility baseline:
 
@@ -140,7 +140,7 @@ Current foundation completeness review:
 
 Power rule remains: micro-USB is the normal target power source during USB runtime; ST-LINK 3.3 V and UART adapter VCC remain disconnected. UART TX/RX, SWDIO/SWCLK and grounds remain connected.
 
-### Latest published firmware boundary
+### Previous published UI boundary
 
 **`BOOT_DESKTOP_UI_FOUNDATION` — Gates 0–7 accepted and published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`. Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`; acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.**
 
@@ -167,9 +167,9 @@ Gate 3 passed CDC `128/128` zero drops, UART `128/128` zero drops/errors, binary
 
 Publication commit/tree is `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` / `d27cf8246fb7563b2327955ffc06428b9d843b2a`; final `HEAD == origin/main == FETCH_HEAD` and ahead/behind `0/0`.
 
-### Current boundary
+### Latest published firmware boundary
 
-**`OLED_DIRTY_REGION_OPTIMIZATION` — Gates 0–5 accepted; Gate 6 local acceptance commit is next. Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`; acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`; deferred engineering policy: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`.**
+**`OLED_DIRTY_REGION_OPTIMIZATION` — Gates 0–7 accepted and published at `39690c9ef103cbcf93272df8bad0359a934b7dc1`, tree `f195fac5ce733c36a1d955e0fbe687ee6c83b605`. Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`; acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`; deferred engineering policy: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`.**
 
 Accepted candidate/evidence:
 
@@ -191,9 +191,17 @@ Gate 4                  PHYSICAL_OLED=PASS
 
 The implementation keeps one 512-byte framebuffer and adds exact per-page X dirty spans. Hardware measured the prior full semantic refresh at `572` payload bytes / `36` writes, clean present at `0`, one-byte update at `9`, minute `00:00 -> 00:01` at `11` over `x=123..125`, and USB indicator transition at `11` over `x=9..11`. Post-`oledstatus` and post-`oleddirty` task margins are task0 `328` bytes / task1 `424` bytes. Final Flash readback is exact; CDC/UART/binary pressure, malformed-frame recovery, physical reconnect and IWDG recovery all pass.
 
-Gate 5 adds the canonical deferred optimization/robustness/observability/storage/test-profile backlog and `.gitattributes` LF policy. It does not change firmware source or the accepted binary. Publication has not occurred yet.
+Gate 5 added the canonical deferred optimization/robustness/observability/storage/test-profile backlog and `.gitattributes` LF policy without changing the accepted firmware candidate. Gate 6 committed the exact reviewed source/docs set as `39690c9ef103cbcf93272df8bad0359a934b7dc1`; Gate 7 published it by ordinary non-force push. Gate 6 evidence is `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`; Gate 7 evidence is `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
 
-After publication, exact next boundary is `APPLICATION_RUNTIME_FOUNDATION`; production Windows USB follows in `USB_MANAGEMENT_DEVICE_FOUNDATION` using vendor-specific WinUSB `Deus OS Device` identity rather than COM-port-first CDC.
+### Current implementation boundary
+
+**`APPLICATION_RUNTIME_FOUNDATION` — Gate 0 accepted; Gate 1 source implementation is next. Canonical design: `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`; acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.**
+
+Gate 0 freezes a static firmware-linked v1 runtime with `system.home=0x0001` and `device.info=0x0002`, one foreground application, explicit lifecycle states, task0-only callback/event dispatch, fixed pointer-free semantic events, a bounded system-state snapshot, and a three-row application view beneath the system-owned status bar. Existing RPC IDs `0x0001..0x0020` remain unchanged; `applist/appstart/appstop` append `0x0021..0x0023`. No heap, event queue, new task/SVC, dynamic loader, filesystem or USB redesign is authorized.
+
+Initial Gate 1 source boundary is exactly new `include/kernel/application_runtime.h`, new `src/kernel/application_runtime.c`, plus `include/kernel/command_service.h`, `src/kernel/command_service.c`, and `src/kernel.c`.
+
+After application-runtime publication, production Windows USB follows in `USB_MANAGEMENT_DEVICE_FOUNDATION` using vendor-specific WinUSB `Deus OS Device` identity rather than COM-port-first CDC.
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 
