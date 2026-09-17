@@ -96,11 +96,11 @@ Canonical planning: `docs/SHELL_RPC_FOUNDATION_PLAN.md` and `docs/SHELL_RPC_FOUN
 
 Gates 0–7 are accepted and published. Gate 2 produced candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`, BIN `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`, Flash `37196` bytes and SRAM `9216` bytes. Gate 3 proved the shared command service over both UART and CDC: deterministic 32-method registry, `help`, `help ping`, `rpcinfo`, exact legacy `ERR` behavior, tabs/backspace/DEL/overflow recovery, origin-bound replies, UART+CDC `schedtimed`, retained `20/20` CDC safe surface pre/post IWDG, `8/8` scheduler BUSY, `38/38` packet-boundary PONG, `128/128` CDC pressure, `128/128` UART pressure, physical USB reconnect, real IWDG reboot with automatic CDC reopen, and final exact Flash readback. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`. Published commit `0c33304d2db86e54d715905393f49147bb6dd2ea`, tree `19ac9b95caca09e991842f6f9963864934b0a334`, subject `feat: add transport-neutral shell RPC foundation`; local/remote ahead-behind `0/0`.
 
-### Accepted through Gate 5 — binary framed transport foundation
+### Published — binary framed transport foundation
 
 Boundary: `BINARY_FRAMED_TRANSPORT_FOUNDATION`.
 
-Gates 0–6 are accepted; Gate 7 ordinary non-force publication is current. Protocol v1 runs over the existing USB CDC stream with `A5 5A` magic, little-endian fields, request-ID correlation, CRC-16/CCITT-FALSE, stable explicit 16-bit RPC IDs for all 32 command-service methods, bounded four-argument adaptation, 48-byte response-data chunks, structured final status, explicit destructive authorization, deterministic text/binary coexistence, and nonblocking all-or-none CDC frame enqueue.
+Gates 0–7 are accepted and published. Protocol v1 runs over the existing USB CDC stream with `A5 5A` magic, little-endian fields, request-ID correlation, CRC-16/CCITT-FALSE, stable explicit 16-bit RPC IDs for all 32 command-service methods, bounded four-argument adaptation, 48-byte response-data chunks, structured final status, explicit destructive authorization, deterministic text/binary coexistence, and nonblocking all-or-none CDC frame enqueue.
 
 Accepted tested candidate:
 
@@ -131,7 +131,24 @@ Evidence:
 - Gate 3 hardware log `F8DE91AE43AA2731C26828FF4A993597E4FD940794D0BEE03D661B0DB771758B`;
 - Gate 3 hardware evidence `8A38E6E60A3B6B2EAE0F35835E6BBE06AF5E38513A492BA2184662243E1B6565`.
 
-Gate 5 documentation/evidence finalization is accepted. No build, flash, commit or push is part of Gate 5. Canonical protocol/design/acceptance: `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`, `docs/BINARY_FRAMED_TRANSPORT_PLAN.md`, and `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`.
+Gate 5 documentation/evidence finalization is accepted. Canonical protocol/design/acceptance: `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`, `docs/BINARY_FRAMED_TRANSPORT_PLAN.md`, and `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`.
+
+Published commit `2fde9025a51021511e73a76b561f7983ca655e2f`, tree `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`, subject `feat: add binary framed transport foundation`. Ordinary non-force publication complete; local/remote ahead-behind `0/0`.
+
+### Accepted through Gate 5 — Deus OS product/application/UI model foundation
+
+Boundary: `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`.
+
+This documentation-only architecture boundary defines Deus OS as an independently operating embedded device runtime, freezes the first static application/lifecycle model, defines boot splash -> desktop/home -> application-view ownership, assigns real SYSTEM/USB/NETWORK and uptime semantics to the current status bar, separates target applications from host Control Panel plugins/packages, and keeps native dynamic ARM loading, filesystem, update protocol and bootloader deferred.
+
+Canonical planning:
+
+- `docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`;
+- `docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md`.
+
+Gates 0–5 are accepted docs-only; Gate 6 local documentation acceptance commit is current, followed by ordinary non-force Gate 7 publication. After this docs-only foundation, exact firmware order is `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION`.
+
+A foundation completeness review is now canonical in `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`. It records that no kernel blocker requires speculative RTOS work before that sequence, while explicitly retaining later contracts for semantic application events, system/build/platform capability identity, bounded persistent-state safety, retained crash/reset observability, structured telemetry, security/trust before network mutation or executable update, controlled update reboot handoff, and portability layering. Generic timers, message queues, synchronization and runtime statistics remain consumer-driven; heap/filesystem/RTC/DMA/MPU/general power-management facilities remain deferred until a real product requirement justifies them.
 
 ## 2026-09-15
 

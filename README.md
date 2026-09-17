@@ -5,43 +5,43 @@
 
 Published baseline:
 
-`0c33304d2db86e54d715905393f49147bb6dd2ea` — `feat: add transport-neutral shell RPC foundation`
+`2fde9025a51021511e73a76b561f7983ca655e2f` — `feat: add binary framed transport foundation`
 
 Published tree:
 
-`19ac9b95caca09e991842f6f9963864934b0a334`
+`27248c5ac81c60cc898083b09ea73b95aa1e1ff1`
 
-Transport-neutral shell/RPC foundation — **PUBLISHED**
+Binary framed transport foundation — **PUBLISHED**
 
-Accepted shell/RPC firmware:
+Accepted firmware:
 
-- candidate tree `e136814480ac0760bc5dd62a78ebca4e07f0ba98`;
-- binary `37196` bytes / SHA-256 `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`;
-- Flash `37196` bytes, SRAM `9216` bytes;
-- static allocation-free registry with `32` methods;
-- explicit transport-neutral execution context and response writer;
-- `help`, `help ping`, `rpcinfo`, bounded `4` args and `32`-byte text line capacity;
-- UART/CDC parser isolation, editing, origin-bound responses, pressure and IWDG/reconnect regressions hardware accepted;
+- tested candidate tree `c2c3d9743c23ab02329a9652714862fafb5bb17c`;
+- binary `40720` bytes / SHA-256 `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`;
+- Flash `40720 / 65536`, SRAM `9752 / 20480`;
+- USB CDC text + binary coexistence, stable 32-method RPC IDs, request correlation, CRC-16/CCITT-FALSE, bounded arguments and atomic frame TX accepted;
+- physical reconnect, pressure, malformed-frame recovery, deliberate IWDG reset and automatic post-reset text+binary recovery hardware accepted;
 - final Flash readback exact;
-- OLED Gate 4: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+- ordinary non-force publication complete; local/remote ahead-behind `0/0`.
 
 Current architecture boundary:
 
-`BINARY_FRAMED_TRANSPORT_FOUNDATION` — **GATES 0–6 ACCEPTED / GATE 7 ORDINARY NON-FORCE PUBLICATION CURRENT**
+`OS_APPLICATION_AND_UI_MODEL_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 LOCAL ACCEPTANCE COMMIT CURRENT**
 
-Protocol v1 is implemented and hardware accepted over the existing USB CDC byte stream while retaining the human text shell and UART emergency console. The accepted contract uses `A5 5A` framing magic, request IDs, little-endian fields, CRC-16/CCITT-FALSE, stable 16-bit RPC method IDs, bounded arguments, 48-byte response chunks, explicit destructive-request authorization and no heap/new task/SVC/USB descriptor change.
+This docs-only boundary defines Deus OS as a deterministic embedded device runtime, freezes the initial static application/lifecycle model, separates firmware ownership from future host Control Panel responsibilities, defines boot-splash/desktop/application-view UI lifecycle and real status-bar semantics, and explicitly defers arbitrary uploaded ARM executables, filesystem, bootloader and firmware update to later independent boundaries.
 
-Accepted tested candidate: tree `c2c3d9743c23ab02329a9652714862fafb5bb17c`, BIN `40720` bytes / `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`, Flash `40720 / 65536`, SRAM `9752 / 20480`. Gate 3 proved `21/21` binary safe methods, `8/8` scheduler BUSY diagnostics, `128/128` unique-ID binary pressure, retained CDC/UART pressure, physical reconnect, deliberate IWDG reset with automatic text+binary recovery, and final exact Flash readback. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`; Gate 5 documentation/evidence finalization is accepted.
+Canonical architecture docs:
 
-Canonical binary transport docs:
+- `docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`
+- `docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md`
+- `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`
 
-- `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
-- `docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
-- `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
+The foundation-gap review confirms no missing kernel blocker before boot/desktop/application work. It additionally freezes later contracts for semantic application events, system identity/capabilities, bounded persistence safety, crash/reset observability, security/trust before network mutation or firmware update, and portability layering. Generic timers/queues/synchronization/runtime statistics remain consumer-driven rather than speculative prerequisites.
 
-Next gate:
+Planned order after this architecture freeze:
 
-**Gate 7 — ordinary non-force publication only. Require exact local acceptance commit, clean repo, remote still at the published parent, and fast-forward ancestry before push.**
+`BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
+
+Gates 0–5 are accepted docs-only with no source/build/flash. Gate 6 is the local documentation acceptance commit; Gate 7 is ordinary non-force publication.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.
@@ -88,6 +88,7 @@ Built locally:
 - [x] Native USB Device core foundation
 - [x] USB CDC ACM diagnostic/command console
 - [x] Transport-neutral shell/RPC command-service foundation
+- [x] Binary framed USB CDC RPC transport foundation
 - [x] I2C1 master + hardware bus scan (B6/B7, 100 kHz, SSD1306 at 0x3C)
 - [x] SSD1306 command transport at 0x3C (`oledping` / NOP transaction)
 - [x] Native 128x32 SSD1306 runtime UI with frozen status bar + retained 21x3 console

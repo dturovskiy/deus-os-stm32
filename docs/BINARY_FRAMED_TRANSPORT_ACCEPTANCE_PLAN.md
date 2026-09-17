@@ -1,6 +1,6 @@
 # STM32 OS — Binary Framed Transport Foundation Acceptance Plan
 
-Status: **GATES 0–6 ACCEPTED — GATE 7 ORDINARY NON-FORCE PUBLICATION CURRENT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED — `2fde9025a51021511e73a76b561f7983ca655e2f`**
 
 Boundary ID:
 
@@ -272,7 +272,7 @@ Evidence SHA-256:
 
 Gate 5 documentation/evidence finalization: **PASS**. Gate 5 performs no build, flash, commit, or push.
 
-Gate 6 local acceptance commit: **PASS**. Exact next gate: **Gate 7 — ordinary non-force publication**. After publication, the next architecture boundary is **host control application foundation**.
+Gate 6 local acceptance commit: **PASS**. Gate 7 ordinary non-force publication: **PASS** at `2fde9025a51021511e73a76b561f7983ca655e2f`, tree `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`. The next architecture boundary is `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`.
 
 ## Gate 6 — local acceptance commit
 
@@ -282,7 +282,7 @@ Stage only accepted boundary paths. Require exact published parent/tree, exact s
 
 Require exact local acceptance commit, clean repo, remote at published parent, fast-forward ancestry and ahead/behind `1/0` before push.
 
-Execute one ordinary non-force push. Post-push require local HEAD/origin/live remote exact and clean `0/0` state.
+Executed one ordinary non-force push `origin main:main`. Post-push local `HEAD`, `origin/main` and fresh `FETCH_HEAD` were exact at `2fde9025a51021511e73a76b561f7983ca655e2f`; repository clean, ahead/behind `0/0`. Gate 7 PASS.
 
 ## Permanent retained constraints
 

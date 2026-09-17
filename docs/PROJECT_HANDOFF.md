@@ -5,33 +5,35 @@
 
 ### Published repository baseline
 
-`main`, `origin/main` and remote `main` were synchronized before this boundary at:
+`main`, `origin/main` and remote `main` are synchronized at:
 
-`0c33304d2db86e54d715905393f49147bb6dd2ea` — `feat: add transport-neutral shell RPC foundation`
+`2fde9025a51021511e73a76b561f7983ca655e2f` — `feat: add binary framed transport foundation`
 
 Published tree:
 
-`19ac9b95caca09e991842f6f9963864934b0a334`
+`27248c5ac81c60cc898083b09ea73b95aa1e1ff1`
 
-Published shell/RPC candidate:
+Accepted binary transport candidate:
 
 ```text
-candidate tree       e136814480ac0760bc5dd62a78ebca4e07f0ba98
-binary               37196 bytes
-SHA-256              90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60
-ELF                   64816 bytes
-ELF SHA-256           D95F9798612E3F7A03EF27F138DA8DBCA7B956F2B4AAF5D0CEE8179308EEBCBA
-Flash used            37196 bytes
-SRAM used             9216 bytes
+tested candidate tree c2c3d9743c23ab02329a9652714862fafb5bb17c
+binary                40720 bytes
+BIN SHA-256            AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022
+ELF                    65876 bytes
+ELF SHA-256            4DAFEF92ED58F72BF2C4A29B8E3B1131579BD9ADC4002DB2EAB0F1387BFF634B
+Flash used             40720 / 65536
+SRAM used              9752 / 20480
 ```
 
-The transport-neutral shell/RPC foundation is fully accepted and published. The 32-method allocation-free command service is shared by UART and USB CDC text adapters; parser/editing/origin isolation, pressure, physical reconnect, real IWDG reset with automatic CDC reopen, exact final Flash readback and OLED conditional N/A disposition all passed.
+The binary framed transport foundation is fully accepted and published. USB CDC now carries the retained text shell plus binary RPC v1 with stable public method IDs, request correlation, CRC, bounded argument adaptation, atomic frame TX, malformed-frame recovery, reconnect recovery and deliberate IWDG-reset recovery.
 
 ### Current architecture boundary
 
-`BINARY_FRAMED_TRANSPORT_FOUNDATION`
+`OS_APPLICATION_AND_UI_MODEL_FOUNDATION`
 
-Gates 0–6 are accepted; Gate 7 ordinary non-force publication is current. The v1 implementation includes the bounded binary frame parser/encoder, stable public RPC-ID lookup, binary RPC request/response adapter, explicit destructive authorization, CDC text/binary demultiplexing in task0, and one narrowly scoped nonblocking all-or-none CDC TX-span primitive. Scheduler/watchdog/OLED ownership remains unchanged, and Gate 3 hardware acceptance proved the exact Gate 2 candidate end-to-end.
+Gates 0–5 documentation/architecture acceptance are complete; Gate 6 local acceptance commit is current. This boundary defines Deus OS as an independently operating deterministic embedded runtime, freezes the v1 static application/lifecycle model, defines splash -> desktop/home -> application-view UI ownership and real status-bar semantics, separates firmware responsibilities from future host Control Panel responsibilities, and keeps dynamic native application loading/update/bootloader work deferred to later boundaries.
+
+Foundation gap review found no missing kernel blocker before boot/desktop/application work. Mandatory later contracts are now explicit: semantic application events separate from scheduler wake bits; complete system/build/platform/capability identity for host tooling; bounded recoverable persistence before Flash-resident settings/packages; retained previous-boot crash/reset diagnostics and structured observability; security/trust before network mutation or executable Flash update; controlled reboot/update handoff; and a portability boundary keeping arch/platform/drivers below kernel/services/apps/UI/protocol semantics. Generic timers, queues, synchronization and runtime statistics remain consumer-driven rather than speculative prerequisites.
 
 Published command-service path inherited by this boundary:
 
@@ -106,20 +108,29 @@ Published shell/RPC design/acceptance:
 `docs/SHELL_RPC_FOUNDATION_PLAN.md`
 `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Current binary protocol:
+Published binary protocol:
 `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
 
-Current binary design:
+Published binary design:
 `docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
 
-Current binary acceptance:
+Published binary acceptance:
 `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
+
+Current product/application/UI model:
+`docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`
+
+Current model acceptance:
+`docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md`
+
+Current foundation completeness review:
+`docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`
 
 Power rule remains: micro-USB is the normal target power source during USB runtime; ST-LINK 3.3 V and UART adapter VCC remain disconnected. UART TX/RX, SWDIO/SWCLK and grounds remain connected.
 
 ### Exact next gate
 
-**Gate 7 — ordinary non-force publication for `BINARY_FRAMED_TRANSPORT_FOUNDATION`. Require the exact accepted local commit, clean repo, remote still at the published parent, fast-forward ancestry, and one ordinary `git push origin main:main`.**
+**Gate 6 — local documentation acceptance commit for `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`. Stage only the accepted docs-only path set, require exact parent `2fde9025a51021511e73a76b561f7983ca655e2f`, `git diff --cached --check` PASS, no source/header/linker/script/build changes, then verify clean local state and ahead/behind `1/0`. Gate 7 is one ordinary non-force `git push origin main:main`.**
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 
@@ -281,7 +292,7 @@ Current production source contains:
 - UsageFault handler
 - assembly MSP/PSP selection using EXC_RETURN
 - C `fault_capture()`
-- persistent `fault_record` in SRAM
+- runtime `fault_record` in SRAM `.bss` (cleared on reset; not a retained previous-boot crash record)
 - capture of stacked r0-r3, r12, lr, pc, xPSR
 - capture of ICSR, VTOR, SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR, AFSR
 - deterministic panic LED pattern

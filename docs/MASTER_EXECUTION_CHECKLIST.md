@@ -5,17 +5,17 @@
 
 This section is authoritative.
 
-### Published baseline — transport-neutral shell/RPC foundation
+### Published baseline — binary framed transport foundation
 
-- [x] `main` / `origin/main` / remote `main` = `0c33304d2db86e54d715905393f49147bb6dd2ea`.
-- [x] published tree = `19ac9b95caca09e991842f6f9963864934b0a334`.
-- [x] subject = `feat: add transport-neutral shell RPC foundation`.
-- [x] accepted firmware candidate = `37196` bytes / `90534921EA966235D3F3C72AE65F1684D62FA6A122762E64BCF4972A5C39EA60`.
-- [x] candidate source tree = `e136814480ac0760bc5dd62a78ebca4e07f0ba98`.
-- [x] UART/CDC shell, 32-method command service, physical reconnect and post-IWDG automatic CDC recovery accepted.
+- [x] `main` / `origin/main` / remote `main` = `2fde9025a51021511e73a76b561f7983ca655e2f`.
+- [x] published tree = `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`.
+- [x] subject = `feat: add binary framed transport foundation`.
+- [x] accepted firmware candidate = `40720` bytes / `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`.
+- [x] tested source candidate tree = `c2c3d9743c23ab02329a9652714862fafb5bb17c`.
+- [x] USB CDC text + binary RPC, malformed-frame recovery, pressure, reconnect and post-IWDG recovery accepted.
 - [x] final published repo state = clean, ahead/behind `0/0`.
 
-### Current boundary — binary framed transport foundation
+### Published boundary — binary framed transport foundation
 
 Boundary ID:
 
@@ -45,7 +45,7 @@ Gate order:
 - [x] Gate 4 OLED conditional review — **PASS / `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`**.
 - [x] Gate 5 docs/evidence finalization — **PASS**.
 - [x] Gate 6 local acceptance commit — **PASS**.
-- [ ] Gate 7 ordinary non-force publication — **CURRENT**.
+- [x] Gate 7 ordinary non-force publication — **PASS / PUBLISHED `2fde9025a51021511e73a76b561f7983ca655e2f`**.
 
 Accepted Gate 2/3 candidate and evidence:
 
@@ -59,6 +59,54 @@ Accepted Gate 2/3 candidate and evidence:
 - [x] Gate 2 evidence `D1EAB3470A88A802314B9F9A735CA49799FBD0F30D0413CA99F8698503CF8E3A`;
 - [x] Gate 3 log `F8DE91AE43AA2731C26828FF4A993597E4FD940794D0BEE03D661B0DB771758B`;
 - [x] Gate 3 evidence `8A38E6E60A3B6B2EAE0F35835E6BBE06AF5E38513A492BA2184662243E1B6565`.
+
+### Current boundary — OS application and UI model foundation
+
+Boundary ID:
+
+`OS_APPLICATION_AND_UI_MODEL_FOUNDATION`
+
+Gate order:
+
+- [x] Gate 0 product/application/UI architecture freeze — **PASS**.
+- [x] Gate 1 published-source capability inventory — **PASS / READ-ONLY**.
+- [x] Gate 2 architecture consistency review — **PASS**.
+- [x] Gate 3 hardware acceptance — **PASS / `N/A_DOCS_ONLY`**.
+- [x] Gate 4 OLED review — **PASS / `PHYSICAL_OLED=N/A_DOCS_ONLY_NO_FIRMWARE_CHANGE`**.
+- [x] Gate 5 documentation finalization — **PASS**.
+- [ ] Gate 6 local docs acceptance commit — **CURRENT**.
+- [ ] Gate 7 ordinary non-force publication.
+
+Gate 0 freezes:
+
+- Deus OS as an independently operating deterministic embedded device runtime;
+- static firmware-linked applications with explicit IDs/lifecycle for v1;
+- no arbitrary uploaded ARM executables or one-task-per-app requirement;
+- splash -> desktop/home -> application-view UI lifecycle;
+- real SYSTEM / USB / NETWORK status indicators;
+- initial status time source = uptime `HH:MM`;
+- firmware ownership versus future Control Panel management-plane ownership;
+- target apps versus host plugins versus transferable non-executable packages;
+- scheduler wake bits remain internal kernel notification state, not the public application-event ABI;
+- `APPLICATION_RUNTIME_FOUNDATION` must define bounded semantic app events/services;
+- future host tooling requires explicit firmware/build/platform/service/application identity/capability discovery;
+- persistent Flash state requires version/integrity/atomic-commit/recovery/wear semantics before acceptance;
+- current BSS `fault_record` is not reset-persistent; retained previous-boot crash/reset diagnostics remain later observability work;
+- CRC/destructive authorization flags are not authentication; trust-sensitive network/update boundaries require explicit security review;
+- portability must keep arch/platform/driver details below kernel/services/apps/UI/protocol semantics without speculative universal HAL work;
+- timers/queues/synchronization/runtime statistics and heap/filesystem/RTC/DMA/MPU/power frameworks remain consumer-driven/deferred;
+- exact next implementation order beginning with `BOOT_DESKTOP_UI_FOUNDATION`.
+
+Canonical design:
+`docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`
+
+Canonical acceptance:
+`docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md`
+
+Canonical foundation gap review:
+`docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`
+
+Gates 0–5 are accepted without source/build/flash. Gate 6 is the first authorized Git mutation for this boundary and must stage only the accepted documentation path set.
 
 Permanent constraints retained:
 

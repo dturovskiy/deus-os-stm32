@@ -1,6 +1,23 @@
 # Architecture
 
-Status: **transport-neutral shell/RPC remains the published remote baseline at `0c33304d2db86e54d715905393f49147bb6dd2ea`; `BINARY_FRAMED_TRANSPORT_FOUNDATION` Gates 0–6 accepted / Gate 7 ordinary non-force publication current**
+Status: **`BINARY_FRAMED_TRANSPORT_FOUNDATION` published at `2fde9025a51021511e73a76b561f7983ca655e2f`; `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` Gate 0 documentation/architecture freeze current**
+
+## Current foundation completeness constraints
+
+Canonical review: `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`.
+
+The published kernel/transport substrate is sufficient to proceed to boot/desktop and the static application runtime without speculative kernel expansion. The following rules are now part of the architecture:
+
+- scheduler event bits are internal wake notifications and must not become stable application event IDs;
+- `APPLICATION_RUNTIME_FOUNDATION` owns a bounded semantic application event/service contract;
+- generic timers, queues, synchronization primitives and runtime statistics remain consumer-driven extensions; scheduler-internal PRIMASK save/restore is not a public mutex/semaphore API;
+- host-facing system identity must eventually distinguish firmware/build/platform/service/application capabilities from USB identity and protocol capability flags;
+- persistent target state requires versioning, integrity, atomic commit/recovery and Flash wear policy before acceptance;
+- current `fault_record` is normal `.bss` runtime state and is cleared by reset; bounded previous-boot crash/reset retention is later observability work;
+- CRC-16 and explicit destructive intent are not authentication; trust-sensitive network mutation and firmware update require a separate security/authenticity contract;
+- controlled reboot/update handoff belongs to the update/bootloader boundary;
+- startup/context-switch/register drivers remain arch/platform-specific while kernel/services/apps/UI/protocol semantics should avoid leaking STM32 register details upward;
+- heap, filesystem, generic DMA framework, RTC, MPU isolation and broad power-management facilities are not current prerequisites.
 
 ## C4.0 accepted IWDG liveness record
 
@@ -191,7 +208,7 @@ Implemented service invariants:
 Canonical design: `docs/SHELL_RPC_FOUNDATION_PLAN.md`.
 Canonical acceptance: `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
-## Accepted architecture — binary framed transport foundation — GATES 0–5 ACCEPTED
+## Accepted architecture — binary framed transport foundation — PUBLISHED `2fde9025a51021511e73a76b561f7983ca655e2f`
 
 Boundary: `BINARY_FRAMED_TRANSPORT_FOUNDATION`.
 
@@ -245,7 +262,33 @@ Accepted binary transport proof — 2026-09-16:
 - frozen OLED/gfx/status-bar remained exact; Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
 - Gate 5 documentation/evidence finalization is accepted; no source/build/flash/commit/push occurred in Gate 5.
 
-Gate 6 local acceptance commit is accepted. Gate 7 ordinary non-force publication is current; after publication, the next architecture boundary is **host control application foundation**.
+Gate 6 local acceptance commit and Gate 7 ordinary non-force publication are accepted. Published commit/tree: `2fde9025a51021511e73a76b561f7983ca655e2f` / `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`.
+
+## Current architecture — Deus OS product/application/UI model foundation
+
+Boundary: `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`.
+
+This is a documentation-only architecture freeze above the accepted kernel/driver/command/RPC substrate. Deus OS is defined as an independently operating deterministic embedded device runtime; a future PC Control Panel is a management plane rather than a runtime dependency.
+
+The initial application model is static and event-driven: applications are firmware-linked modules with explicit stable IDs and lifecycle state, not arbitrary uploaded ARM executables. The accepted two-task production topology remains authoritative; application dispatch initially belongs to task0 / Thread-PSP and does not imply one scheduler task per application.
+
+The local UI lifecycle is explicitly separated into bootstrap splash, desktop/home and application view. The current decorative status bar gains real v1 semantics: SYSTEM, USB and NETWORK indicators plus uptime `HH:MM`. NETWORK must remain offline/unavailable until a network service is actually present; the UI must not fabricate connectivity or wall-clock time.
+
+Firmware owns hardware, safety, application lifecycle and the local UI. The future Deus OS Control Panel owns discovery, protocol negotiation, human-facing management UI, diagnostics presentation, host plugins and later transfer/update orchestration.
+
+Canonical plan: `docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`.
+Canonical acceptance: `docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md`.
+
+Exact implementation order after this docs-only boundary:
+
+```text
+BOOT_DESKTOP_UI_FOUNDATION
+ -> APPLICATION_RUNTIME_FOUNDATION
+ -> HOST_CONTROL_APPLICATION_FOUNDATION
+ -> ASSET_CONFIGURATION_TRANSFER_FOUNDATION
+ -> FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION
+ -> networking/service extensions
+```
 
 ## 1. Boot flow
 

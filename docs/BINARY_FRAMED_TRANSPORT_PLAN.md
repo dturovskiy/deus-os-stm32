@@ -1,6 +1,6 @@
 # STM32 OS — Binary Framed Transport Foundation Plan
 
-Status: **GATES 0–6 ACCEPTED — GATE 7 ORDINARY NON-FORCE PUBLICATION CURRENT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED — `2fde9025a51021511e73a76b561f7983ca655e2f`**
 
 Boundary ID:
 
@@ -290,7 +290,8 @@ Accepted candidate/evidence:
 - Gate 3 log `F8DE91AE43AA2731C26828FF4A993597E4FD940794D0BEE03D661B0DB771758B`;
 - Gate 3 evidence `8A38E6E60A3B6B2EAE0F35835E6BBE06AF5E38513A492BA2184662243E1B6565`;
 - Gate 5 documentation/evidence finalization: PASS;
-- Gate 6 local acceptance commit: PASS; Gate 7 ordinary non-force publication is current.
+- Gate 6 local acceptance commit: PASS;
+- Gate 7 ordinary non-force publication: PASS at `2fde9025a51021511e73a76b561f7983ca655e2f`, tree `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`; next architecture boundary is `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`.
 
 ## 17. Non-goals
 

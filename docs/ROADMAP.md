@@ -30,48 +30,72 @@
 - [x] ordinary non-force publication complete;
 - [x] local/remote ahead-behind `0/0` before the next boundary.
 
-### Current boundary — binary framed transport foundation
+### Binary framed transport foundation — PUBLISHED
+
+- [x] commit `2fde9025a51021511e73a76b561f7983ca655e2f`;
+- [x] tree `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`;
+- [x] accepted firmware `40720` bytes / `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`;
+- [x] text/binary CDC coexistence, stable RPC IDs, CRC, request correlation and destructive authorization accepted;
+- [x] malformed/pressure/reconnect/IWDG recovery hardware accepted;
+- [x] ordinary non-force publication complete;
+- [x] local/remote ahead-behind `0/0`.
+
+Canonical protocol/design/acceptance:
+`docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
+`docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
+`docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
+
+### Current boundary — OS application and UI model foundation
 
 Boundary:
 
-`BINARY_FRAMED_TRANSPORT_FOUNDATION`
+`OS_APPLICATION_AND_UI_MODEL_FOUNDATION`
 
-Roadmap target:
+This is a documentation-only architecture boundary. Gates 0–5 are accepted; Gate 6 local documentation acceptance commit is current. The accepted architecture freezes:
 
-- [x] Gate 0 normative protocol/design/acceptance planning;
-- [x] versioned allocation-free binary frame parser/encoder — implemented and accepted;
-- [x] stable public 16-bit RPC IDs separate from internal dispatch enums — implemented and accepted;
-- [x] CDC text/binary coexistence with partial-text-state preservation — implemented and accepted;
-- [x] CRC-16/CCITT-FALSE integrity and bounded recovery — implemented and accepted;
-- [x] HELLO capability negotiation — implemented and accepted;
-- [x] binary RPC argument adaptation into the existing command service — implemented and accepted;
-- [x] chunked binary response writer + structured final service status — implemented and accepted;
-- [x] explicit destructive-request authorization — implemented and accepted;
-- [x] atomic nonblocking all-or-none CDC frame enqueue — implemented and accepted;
-- [x] retained text CDC/UART, scheduler/IWDG/stack/MSP/reconnect regressions — Gate 3 PASS;
-- [x] OLED Gate 4 conditional review — `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
-- [x] docs/evidence finalization — Gate 5 PASS;
-- [x] local acceptance commit — Gate 6 PASS;
-- [ ] ordinary non-force publication — Gate 7 CURRENT.
+- Deus OS product role as an independently operating embedded runtime;
+- initial static application registry/lifecycle model;
+- boot splash -> desktop/home -> application view lifecycle;
+- real SYSTEM/USB/NETWORK indicator semantics;
+- initial uptime `HH:MM` status time;
+- firmware versus Control Panel responsibility split;
+- target apps versus host plugins versus target resource packages;
+- deferral of arbitrary native ARM loading, filesystem and update/bootloader work.
 
-Canonical protocol:
-`docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
+Canonical design/acceptance/gap review:
+`docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`
+`docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md`
+`docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`
 
-Canonical design:
-`docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
+Foundation completeness constraints retained:
 
-Canonical acceptance:
-`docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
+- scheduler event bits stay an internal wake primitive; `APPLICATION_RUNTIME_FOUNDATION` defines a separate bounded semantic app-event/service contract;
+- host tooling must gain explicit firmware/build/platform/service/application identity/capability discovery rather than treating USB VID/PID or protocol flags as the whole OS identity;
+- Flash-resident settings/packages require a bounded versioned persistence contract with integrity, atomic commit/recovery and wear policy;
+- bounded previous-boot crash/reset retention and structured observability remain later independently accepted work;
+- CRC/destructive-intent flags are not authentication; network mutation and executable Flash update require explicit security/trust review;
+- portability preserves separation of arch/platform/drivers from kernel/services/apps/UI/protocol semantics without a speculative heavyweight HAL.
 
-After binary transport publication the next boundary is **host control application foundation**.
+Planned implementation order after this docs-only boundary:
+
+1. `BOOT_DESKTOP_UI_FOUNDATION`;
+2. `APPLICATION_RUNTIME_FOUNDATION`;
+3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
+4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
+5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+6. networking/service extensions.
 
 ### Phase 4 ordering constraint
 
 Generic timer callbacks remain deferred until a real consumer requires them.
 Message queues and synchronization remain deferred until a real cross-task
 ownership boundary requires them. Runtime statistics remain a later
-observability slice. The frozen OLED/status-bar remains unchanged until its
-dedicated UI slice.
+observability slice. The scheduler already has internal PRIMASK-protected
+critical sections; that does not imply a public mutex/semaphore API. Heap,
+filesystem, generic DMA framework, RTC/wall-clock service, MPU isolation and
+general power-management framework are also consumer-driven, not missing
+prerequisites. The frozen OLED/status-bar remains unchanged until its dedicated
+UI slice.
 
 ## Phase 0 - Boot baseline
 
@@ -137,14 +161,16 @@ The Blue Pill micro-USB connector is a planned first-class OS transport, not onl
 
 Target progression:
 
-1. Minimal STM32F103 USB Device core on PA11/PA12, implemented without HAL.
-2. USB CDC ACM diagnostic/command console.
-3. Bidirectional kernel shell/RPC transport over USB.
-4. Binary transport for structured telemetry, files, bitmap/framebuffer chunks, and host-rendered UI primitives.
-5. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); the name may change later without changing protocol architecture.
-6. Host-side interactive/control UI and CLI-style control surface over the stable protocol.
-7. USB firmware-update path and a small recoverable bootloader so normal development can eventually use the native micro-USB cable without the external UART adapter.
-8. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary transport.
+1. Minimal STM32F103 USB Device core on PA11/PA12, implemented without HAL — published.
+2. USB CDC ACM diagnostic/command console — published.
+3. Transport-neutral shell/RPC service layer — published.
+4. Binary framed RPC transport with CRC/request correlation — published; v1 is control/RPC only, not file transfer or firmware update.
+5. Freeze Deus OS product/application/UI model, then implement boot splash/desktop and the static application runtime.
+6. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); it manages the stable firmware runtime rather than defining it.
+7. Add bounded versioned asset/configuration transfer for non-executable packages.
+8. Add a recoverable USB firmware-update path and small bootloader as a separate safety boundary.
+9. Add networking/service extensions over the same application/service model.
+10. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
 
 Initial host integration should avoid requiring a custom kernel-mode USB driver: CDC ACM is the first compatibility target. A later vendor-specific bulk interface through standard userspace USB facilities may be considered only if CDC becomes a throughput/latency limitation.
 

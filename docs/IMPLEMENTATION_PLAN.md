@@ -17,7 +17,7 @@ Accepted firmware:
 
 The static allocation-free 32-method command service, explicit response context, UART/CDC text adapters, argument parser, physical reconnect and post-IWDG CDC recovery are accepted and published.
 
-### Current boundary — binary framed transport foundation — GATES 0–6 ACCEPTED / GATE 7 CURRENT
+### Published boundary — binary framed transport foundation — GATES 0–7 ACCEPTED
 
 Boundary:
 
@@ -59,7 +59,19 @@ Accepted Gate 2/3 candidate:
 
 Next:
 
-**Gate 7 — ordinary non-force publication only. No source/build/flash mutation in Gate 7.**
+Binary Gate 7 publication is complete at `2fde9025a51021511e73a76b561f7983ca655e2f` / tree `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`.
+
+### Current boundary — OS application and UI model foundation — GATES 0–5 ACCEPTED / GATE 6 CURRENT
+
+`OS_APPLICATION_AND_UI_MODEL_FOUNDATION` is documentation-only. It freezes the Deus OS product role, static application/lifecycle model, boot-splash/desktop/application-view ownership, real status-bar semantics, firmware-vs-host responsibilities and long-term package/update ordering before new source work.
+
+Canonical design: `docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`.
+Canonical acceptance: `docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md`.
+Canonical completeness review: `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`.
+
+The completeness review confirms there is no kernel blocker before boot/desktop/application work. It adds these mandatory later contracts: semantic app events separate from scheduler wake bits; firmware/build/platform/system capability identity for host tooling; bounded recoverable persistence before Flash settings/packages; retained previous-boot crash/reset diagnostics and structured observability as later work; explicit security/trust before network mutation or executable Flash update; controlled update reboot handoff; and portability layering between arch/platform/drivers and kernel/services/apps/UI/protocol. Generic timers/queues/synchronization/runtime statistics remain consumer-driven; heap/filesystem/MPU/RTC/DMA/power frameworks remain deferred until justified.
+
+Gates 0–5 are accepted docs-only with no source/build/flash. Gate 6 now authorizes only the exact documentation acceptance commit; Gate 7 then authorizes one ordinary non-force publication. After publication, exact firmware order begins with `BOOT_DESKTOP_UI_FOUNDATION`, then `APPLICATION_RUNTIME_FOUNDATION`, then `HOST_CONTROL_APPLICATION_FOUNDATION`.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 
