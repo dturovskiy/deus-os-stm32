@@ -1,6 +1,6 @@
 # Normal-Boot Production Task Ownership Migration Plan
 
-Status: **CANONICAL PLANNING BASELINE — IMPLEMENTATION NOT STARTED**
+Status: **HISTORICAL PLAN — IMPLEMENTED, ACCEPTED AND PUBLISHED `33f15f1d23dfa31fabf9f2c83542a5f34046cde8`**
 
 Published baseline:
 

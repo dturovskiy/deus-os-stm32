@@ -1,6 +1,6 @@
 # C4.0 IWDG Production Liveness Foundation Plan
 
-Status: **C4.0 GATES 0–5 ACCEPTED — GATE 6 LOCAL COMMIT NEXT**
+Status: **C4.0 GATES 0–7 ACCEPTED / PUBLISHED `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`**
 
 Boundary ID:
 
@@ -256,10 +256,10 @@ C4.0 does not add:
 
 ## 14. Acceptance record — 2026-09-15
 
-C4.0 acceptance record — Gates 0–5 accepted on 2026-09-15
+C4.0 acceptance record — Gates 0–7 accepted and published on 2026-09-15
 
 - boundary: `IWDG_LIVENESS_FOUNDATION_C4_0`;
-- published parent remains `39ea5b3d1b72fca8d15e22e7544870ab0704c274` until Gate 6/7;
+- published commit `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`, direct parent `39ea5b3d1b72fca8d15e22e7544870ab0704c274`;
 - accepted source candidate tree: `f8e879f815051d300eec728f2afe03c39222ca47`;
 - accepted firmware: `build\iwdg_liveness_foundation_v2\os.bin`,
   `25192` bytes,

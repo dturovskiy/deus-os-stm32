@@ -1,6 +1,6 @@
 # STM32 OS — Scheduler Timed Blocking Acceptance Plan
 
-Status: **C3.7 GATES 0–5 ACCEPTED — GATE 6 LOCAL COMMIT NEXT**
+Status: **C3.7 GATES 0–7 ACCEPTED / PUBLISHED `90df6a690230c9800c0d8497d5597f87a5ae0409`**
 
 Published parent:
 

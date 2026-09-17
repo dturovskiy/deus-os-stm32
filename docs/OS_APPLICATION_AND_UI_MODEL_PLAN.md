@@ -1,12 +1,12 @@
 # Deus OS — Product, Application and UI Model Foundation Plan
 
-Status: **GATE 0 PLANNING / ARCHITECTURE FREEZE CURRENT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`**
 
 Boundary ID:
 
 `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`
 
-Published baseline:
+Published parent baseline:
 
 - commit `2fde9025a51021511e73a76b561f7983ca655e2f`;
 - tree `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`;

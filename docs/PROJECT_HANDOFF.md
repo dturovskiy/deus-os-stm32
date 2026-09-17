@@ -1,17 +1,25 @@
 # STM32 OS — Project Handoff
 
 <!-- BEGIN STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
-## Current authoritative handoff — 2026-09-16
+## Current authoritative handoff — 2026-09-17
 
-### Published repository baseline
+### Published firmware and architecture baselines
 
-`main`, `origin/main` and remote `main` are synchronized at:
+The accepted firmware/source baseline remains:
 
 `2fde9025a51021511e73a76b561f7983ca655e2f` — `feat: add binary framed transport foundation`
 
-Published tree:
+Firmware/source tree:
 
 `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`
+
+The docs-only `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` was subsequently published at:
+
+`3dac2c4528fc77e87e1374ff47f56223d2b44e2c` — `docs: freeze application and ui model foundation`
+
+Architecture-foundation tree:
+
+`ff63c349a54a508725a460ce2c0d23d28fe1ec33`
 
 Accepted binary transport candidate:
 
@@ -27,11 +35,11 @@ SRAM used              9752 / 20480
 
 The binary framed transport foundation is fully accepted and published. USB CDC now carries the retained text shell plus binary RPC v1 with stable public method IDs, request correlation, CRC, bounded argument adaptation, atomic frame TX, malformed-frame recovery, reconnect recovery and deliberate IWDG-reset recovery.
 
-### Current architecture boundary
+### Latest published architecture foundation
 
 `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`
 
-Gates 0–5 documentation/architecture acceptance are complete; Gate 6 local acceptance commit is current. This boundary defines Deus OS as an independently operating deterministic embedded runtime, freezes the v1 static application/lifecycle model, defines splash -> desktop/home -> application-view UI ownership and real status-bar semantics, separates firmware responsibilities from future host Control Panel responsibilities, and keeps dynamic native application loading/update/bootloader work deferred to later boundaries.
+Gates 0–7 documentation/architecture acceptance are complete and published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`. This boundary defines Deus OS as an independently operating deterministic embedded runtime, freezes the v1 static application/lifecycle model, defines splash -> desktop/home -> application-view UI ownership and real status-bar semantics, separates firmware responsibilities from future host Control Panel responsibilities, and keeps dynamic native application loading/update/bootloader work deferred to later boundaries.
 
 Foundation gap review found no missing kernel blocker before boot/desktop/application work. Mandatory later contracts are now explicit: semantic application events separate from scheduler wake bits; complete system/build/platform/capability identity for host tooling; bounded recoverable persistence before Flash-resident settings/packages; retained previous-boot crash/reset diagnostics and structured observability; security/trust before network mutation or executable Flash update; controlled reboot/update handoff; and a portability boundary keeping arch/platform/drivers below kernel/services/apps/UI/protocol semantics. Generic timers, queues, synchronization and runtime statistics remain consumer-driven rather than speculative prerequisites.
 
@@ -128,9 +136,9 @@ Current foundation completeness review:
 
 Power rule remains: micro-USB is the normal target power source during USB runtime; ST-LINK 3.3 V and UART adapter VCC remain disconnected. UART TX/RX, SWDIO/SWCLK and grounds remain connected.
 
-### Exact next gate
+### Exact next boundary
 
-**Gate 6 — local documentation acceptance commit for `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`. Stage only the accepted docs-only path set, require exact parent `2fde9025a51021511e73a76b561f7983ca655e2f`, `git diff --cached --check` PASS, no source/header/linker/script/build changes, then verify clean local state and ahead/behind `1/0`. Gate 7 is one ordinary non-force `git push origin main:main`.**
+**`BOOT_DESKTOP_UI_FOUNDATION` — begin with its own Gate 0 planning/acceptance contract before firmware mutation. Preserve the published two-task topology, nonblocking startup/liveness rules, frozen 128x32 geometry, and the application/UI architecture contracts published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`.**
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 

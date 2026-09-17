@@ -1,3 +1,9 @@
+## 2026-09-17
+
+### Documentation consistency finalization
+
+Post-publication documentation audit completed after `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` Gate 7. Canonical current-state docs now record Gates 0–7 as published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, distinguish the accepted firmware/source baseline from the later docs-only architecture publication, and identify `BOOT_DESKTOP_UI_FOUNDATION` as the exact next boundary. Historical C3.6/C3.7/C3.8/C3.9/C4.0 plan/acceptance headers that still claimed implementation/publication was pending were corrected to their actual published commits; historical plan bodies remain unchanged. No firmware/source/header/linker/script/build mutation is part of this cleanup.
+
 ## 2026-09-16
 
 ### Published — Native STM32F103 USB Device core foundation
@@ -135,7 +141,7 @@ Gate 5 documentation/evidence finalization is accepted. Canonical protocol/desig
 
 Published commit `2fde9025a51021511e73a76b561f7983ca655e2f`, tree `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`, subject `feat: add binary framed transport foundation`. Ordinary non-force publication complete; local/remote ahead-behind `0/0`.
 
-### Accepted through Gate 5 — Deus OS product/application/UI model foundation
+### Published — Deus OS product/application/UI model foundation
 
 Boundary: `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`.
 
@@ -146,7 +152,7 @@ Canonical planning:
 - `docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`;
 - `docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md`.
 
-Gates 0–5 are accepted docs-only; Gate 6 local documentation acceptance commit is current, followed by ordinary non-force Gate 7 publication. After this docs-only foundation, exact firmware order is `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION`.
+Gates 0–7 are accepted. The docs-only foundation was committed as `3dac2c4528fc77e87e1374ff47f56223d2b44e2c` (`docs: freeze application and ui model foundation`), tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`, and published by ordinary non-force fast-forward. After this foundation, exact firmware order is `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION`.
 
 A foundation completeness review is now canonical in `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`. It records that no kernel blocker requires speculative RTOS work before that sequence, while explicitly retaining later contracts for semantic application events, system/build/platform capability identity, bounded persistent-state safety, retained crash/reset observability, structured telemetry, security/trust before network mutation or executable update, controlled update reboot handoff, and portability layering. Generic timers, message queues, synchronization and runtime statistics remain consumer-driven; heap/filesystem/RTC/DMA/MPU/general power-management facilities remain deferred until a real product requirement justifies them.
 
@@ -202,7 +208,7 @@ ST-LINK 3.3 V and micro-USB VBUS.
 
 No source implementation is authorized by this planning gate.
 
-### Accepted — C4.0 IWDG production liveness foundation — publication pending
+### Published — C4.0 IWDG production liveness foundation
 
 Boundary:
 `IWDG_LIVENESS_FOUNDATION_C4_0`
@@ -256,12 +262,11 @@ Evidence:
 - hardware evidence `08410EF7BC5F330CF2D18BD7CEDF5E85D83FCD4A825C3D5BD0D0C1E4F7D24F66`;
 - Gate 4 disposition `3B69B950D80AB8402D873E02567BEF4976E846CC585EE680CCD852B4E96778AE`.
 
-Gates 0–5 are accepted. Next: Gate 6 local acceptance commit, then Gate 7
-ordinary non-force publication.
+Gates 0–7 are accepted. Published at `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca` by ordinary non-force fast-forward.
 
 ### Published — C3.9 production heartbeat task ownership
 
-Status: hardware accepted; local acceptance commit and publication pending.
+Status: Gates 0–7 accepted and published at `39ea5b3d1b72fca8d15e22e7544870ab0704c274`.
 
 Accepted candidate:
 
@@ -301,7 +306,7 @@ OLED Gate 4:
 
 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
-Next: Gate 6 local acceptance commit, then Gate 7 ordinary non-force publication.
+Publication completed at `39ea5b3d1b72fca8d15e22e7544870ab0704c274` by ordinary non-force fast-forward.
 ### Accepted — C3.8 static fixed-priority scheduling
 
 Accepted candidate:

@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 
 <!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
-## Current execution state — 2026-09-16
+## Current execution state — 2026-09-17
 
 This section is authoritative.
 
@@ -60,7 +60,7 @@ Accepted Gate 2/3 candidate and evidence:
 - [x] Gate 3 log `F8DE91AE43AA2731C26828FF4A993597E4FD940794D0BEE03D661B0DB771758B`;
 - [x] Gate 3 evidence `8A38E6E60A3B6B2EAE0F35835E6BBE06AF5E38513A492BA2184662243E1B6565`.
 
-### Current boundary — OS application and UI model foundation
+### Published boundary — OS application and UI model foundation
 
 Boundary ID:
 
@@ -74,8 +74,8 @@ Gate order:
 - [x] Gate 3 hardware acceptance — **PASS / `N/A_DOCS_ONLY`**.
 - [x] Gate 4 OLED review — **PASS / `PHYSICAL_OLED=N/A_DOCS_ONLY_NO_FIRMWARE_CHANGE`**.
 - [x] Gate 5 documentation finalization — **PASS**.
-- [ ] Gate 6 local docs acceptance commit — **CURRENT**.
-- [ ] Gate 7 ordinary non-force publication.
+- [x] Gate 6 local docs acceptance commit — **PASS / `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`**.
+- [x] Gate 7 ordinary non-force publication — **PASS / PUBLISHED**.
 
 Gate 0 freezes:
 
@@ -106,7 +106,7 @@ Canonical acceptance:
 Canonical foundation gap review:
 `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`
 
-Gates 0–5 are accepted without source/build/flash. Gate 6 is the first authorized Git mutation for this boundary and must stage only the accepted documentation path set.
+Gates 0–7 are accepted. Gate 6 committed exactly the accepted docs-only path set at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`; Gate 7 published it by ordinary non-force fast-forward. The next implementation boundary is `BOOT_DESKTOP_UI_FOUNDATION`.
 
 Permanent constraints retained:
 

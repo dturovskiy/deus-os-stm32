@@ -1,6 +1,6 @@
 # C4.0 IWDG Production Liveness Foundation Acceptance Plan
 
-Status: **C4.0 GATES 0–5 ACCEPTED — GATE 6 LOCAL COMMIT NEXT**
+Status: **C4.0 GATES 0–7 ACCEPTED / PUBLISHED `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`**
 
 Boundary:
 

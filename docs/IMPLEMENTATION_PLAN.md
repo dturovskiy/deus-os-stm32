@@ -1,7 +1,7 @@
 # STM32 OS — Implementation Plan
 
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
-## Current implementation checkpoint — 2026-09-16
+## Current implementation checkpoint — 2026-09-17
 
 ### Transport-neutral shell/RPC foundation — PUBLISHED
 
@@ -61,7 +61,7 @@ Next:
 
 Binary Gate 7 publication is complete at `2fde9025a51021511e73a76b561f7983ca655e2f` / tree `27248c5ac81c60cc898083b09ea73b95aa1e1ff1`.
 
-### Current boundary — OS application and UI model foundation — GATES 0–5 ACCEPTED / GATE 6 CURRENT
+### Published boundary — OS application and UI model foundation — GATES 0–7 ACCEPTED
 
 `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` is documentation-only. It freezes the Deus OS product role, static application/lifecycle model, boot-splash/desktop/application-view ownership, real status-bar semantics, firmware-vs-host responsibilities and long-term package/update ordering before new source work.
 
@@ -71,7 +71,7 @@ Canonical completeness review: `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`.
 
 The completeness review confirms there is no kernel blocker before boot/desktop/application work. It adds these mandatory later contracts: semantic app events separate from scheduler wake bits; firmware/build/platform/system capability identity for host tooling; bounded recoverable persistence before Flash settings/packages; retained previous-boot crash/reset diagnostics and structured observability as later work; explicit security/trust before network mutation or executable Flash update; controlled update reboot handoff; and portability layering between arch/platform/drivers and kernel/services/apps/UI/protocol. Generic timers/queues/synchronization/runtime statistics remain consumer-driven; heap/filesystem/MPU/RTC/DMA/power frameworks remain deferred until justified.
 
-Gates 0–5 are accepted docs-only with no source/build/flash. Gate 6 now authorizes only the exact documentation acceptance commit; Gate 7 then authorizes one ordinary non-force publication. After publication, exact firmware order begins with `BOOT_DESKTOP_UI_FOUNDATION`, then `APPLICATION_RUNTIME_FOUNDATION`, then `HOST_CONTROL_APPLICATION_FOUNDATION`.
+Gates 0–7 are accepted and ordinary non-force publication is complete at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c` / tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`. The boundary changed documentation only; no firmware build/flash was required. Exact next firmware order begins with `BOOT_DESKTOP_UI_FOUNDATION`, then `APPLICATION_RUNTIME_FOUNDATION`, then `HOST_CONTROL_APPLICATION_FOUNDATION`.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

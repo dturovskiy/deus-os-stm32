@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`BINARY_FRAMED_TRANSPORT_FOUNDATION` published at `2fde9025a51021511e73a76b561f7983ca655e2f`; `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` Gate 0 documentation/architecture freeze current**
+Status: **`BINARY_FRAMED_TRANSPORT_FOUNDATION` published at `2fde9025a51021511e73a76b561f7983ca655e2f`; `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` Gates 0–7 published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`; next boundary `BOOT_DESKTOP_UI_FOUNDATION`**
 
 ## Current foundation completeness constraints
 
@@ -21,10 +21,10 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 
 ## C4.0 accepted IWDG liveness record
 
-C4.0 acceptance record — Gates 0–5 accepted on 2026-09-15
+C4.0 acceptance record — Gates 0–7 accepted and published on 2026-09-15
 
 - boundary: `IWDG_LIVENESS_FOUNDATION_C4_0`;
-- published parent remains `39ea5b3d1b72fca8d15e22e7544870ab0704c274` until Gate 6/7;
+- published commit `3a8b1b5d0dbfa33e0ced1f02164f1761d21277ca`, direct parent `39ea5b3d1b72fca8d15e22e7544870ab0704c274`;
 - accepted source candidate tree: `f8e879f815051d300eec728f2afe03c39222ca47`;
 - accepted firmware: `build\iwdg_liveness_foundation_v2\os.bin`,
   `25192` bytes,

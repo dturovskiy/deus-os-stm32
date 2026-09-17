@@ -1,6 +1,6 @@
 # Deus OS — Product, Application and UI Model Foundation Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT CURRENT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`**
 
 Boundary ID:
 
@@ -153,6 +153,8 @@ Stage only the accepted documentation path set. Require:
 - ahead/behind `1/0`;
 - no push.
 
+Acceptance: **PASS**. Exact docs-only path set was committed as `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, direct parent `2fde9025a51021511e73a76b561f7983ca655e2f`; staged diff check passed and the post-commit repository was clean at ahead/behind `1/0`.
+
 ## Gate 7 — ordinary non-force publication
 
 Before publication require:
@@ -175,6 +177,8 @@ After publication require:
 - local `HEAD == origin/main == fresh remote main`;
 - clean repository;
 - ahead/behind `0/0`.
+
+Acceptance: **PASS / PUBLISHED**. One ordinary non-force `git push origin main:main` advanced remote `main` from `2fde9025a51021511e73a76b561f7983ca655e2f` to `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`. Fresh fetch verified `HEAD == origin/main == FETCH_HEAD` and ahead/behind `0/0`.
 
 After Gate 7, exact next firmware boundary:
 

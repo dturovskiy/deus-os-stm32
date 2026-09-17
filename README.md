@@ -1,9 +1,9 @@
 # STM32 OS
 
 <!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_14 -->
-## Accepted project state — 2026-09-16
+## Accepted project state — 2026-09-17
 
-Published baseline:
+Published firmware/source baseline:
 
 `2fde9025a51021511e73a76b561f7983ca655e2f` — `feat: add binary framed transport foundation`
 
@@ -23,9 +23,9 @@ Accepted firmware:
 - final Flash readback exact;
 - ordinary non-force publication complete; local/remote ahead-behind `0/0`.
 
-Current architecture boundary:
+Latest published architecture foundation:
 
-`OS_APPLICATION_AND_UI_MODEL_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 LOCAL ACCEPTANCE COMMIT CURRENT**
+`OS_APPLICATION_AND_UI_MODEL_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`**
 
 This docs-only boundary defines Deus OS as a deterministic embedded device runtime, freezes the initial static application/lifecycle model, separates firmware ownership from future host Control Panel responsibilities, defines boot-splash/desktop/application-view UI lifecycle and real status-bar semantics, and explicitly defers arbitrary uploaded ARM executables, filesystem, bootloader and firmware update to later independent boundaries.
 
@@ -41,7 +41,7 @@ Planned order after this architecture freeze:
 
 `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
 
-Gates 0–5 are accepted docs-only with no source/build/flash. Gate 6 is the local documentation acceptance commit; Gate 7 is ordinary non-force publication.
+Gates 0–7 are accepted. The docs-only foundation was published by ordinary non-force fast-forward at commit `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`. No firmware bytes changed in this boundary.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.

@@ -1,6 +1,6 @@
 # STM32 OS — Scheduler Fixed-Priority Acceptance Plan
 
-Status: **C3.8 GATES 0–5 ACCEPTED — GATE 6 LOCAL COMMIT NEXT**
+Status: **C3.8 GATES 0–7 ACCEPTED / PUBLISHED `0312bb376c365c0235b9cafe22e927254528f2c4`**
 
 Published parent:
 

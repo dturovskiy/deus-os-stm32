@@ -1,7 +1,7 @@
 # Roadmap
 
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
-## Current roadmap checkpoint — 2026-09-16
+## Current roadmap checkpoint — 2026-09-17
 
 ### Native USB Device core foundation — PUBLISHED
 
@@ -45,13 +45,13 @@ Canonical protocol/design/acceptance:
 `docs/BINARY_FRAMED_TRANSPORT_PLAN.md`
 `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
 
-### Current boundary — OS application and UI model foundation
+### Published architecture foundation — OS application and UI model
 
 Boundary:
 
 `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`
 
-This is a documentation-only architecture boundary. Gates 0–5 are accepted; Gate 6 local documentation acceptance commit is current. The accepted architecture freezes:
+This documentation-only architecture boundary is fully accepted and published at commit `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`. The accepted architecture freezes:
 
 - Deus OS product role as an independently operating embedded runtime;
 - initial static application registry/lifecycle model;
@@ -165,7 +165,7 @@ Target progression:
 2. USB CDC ACM diagnostic/command console — published.
 3. Transport-neutral shell/RPC service layer — published.
 4. Binary framed RPC transport with CRC/request correlation — published; v1 is control/RPC only, not file transfer or firmware update.
-5. Freeze Deus OS product/application/UI model, then implement boot splash/desktop and the static application runtime.
+5. Deus OS product/application/UI model freeze — published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`; next implement boot splash/desktop, then the static application runtime.
 6. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); it manages the stable firmware runtime rather than defining it.
 7. Add bounded versioned asset/configuration transfer for non-executable packages.
 8. Add a recoverable USB firmware-update path and small bootloader as a separate safety boundary.

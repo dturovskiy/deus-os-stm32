@@ -1,6 +1,6 @@
 # Normal-Boot Production Task Ownership Migration — Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED — COMMIT/PUSH PENDING**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `33f15f1d23dfa31fabf9f2c83542a5f34046cde8`**
 
 Baseline commit:
 
