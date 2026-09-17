@@ -76,14 +76,26 @@ Foundation completeness constraints retained:
 - CRC/destructive-intent flags are not authentication; network mutation and executable Flash update require explicit security/trust review;
 - portability preserves separation of arch/platform/drivers from kernel/services/apps/UI/protocol semantics without a speculative heavyweight HAL.
 
-Planned implementation order after this docs-only boundary:
+### Current implementation boundary — Boot / desktop UI foundation
 
-1. `BOOT_DESKTOP_UI_FOUNDATION`;
-2. `APPLICATION_RUNTIME_FOUNDATION`;
-3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
-4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
-5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-6. networking/service extensions.
+`BOOT_DESKTOP_UI_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 CURRENT**.
+
+This slice is intentionally smaller than the application runtime. It implements exactly `BOOT_SPLASH -> DESKTOP_HOME`, a nonblocking 1000 ms minimum visible splash dwell, task0-owned 250 ms timed UI service, real SYSTEM/USB/NETWORK status semantics, monotonic uptime `HH:MM`, redraw only on visible semantic change, and no steady-state SSD1306 reinitialization/display-off during routine refresh. Gate 2/3 accepted tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN `41520` bytes / `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`; Gate 4 is `PHYSICAL_OLED=PASS`.
+
+Canonical design/acceptance:
+`docs/BOOT_DESKTOP_UI_PLAN.md`
+`docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`
+
+Implementation order:
+
+1. `BOOT_DESKTOP_UI_FOUNDATION` — Gates 0–5 accepted, publication pending Gates 6–7;
+2. `OLED_DIRTY_REGION_OPTIMIZATION` — keep one 512-byte framebuffer; avoid dirtying unchanged bytes; track bounded min/max changed columns per SSD1306 page; transfer only changed page/column spans; measure I2C bytes before/after;
+3. `APPLICATION_RUNTIME_FOUNDATION`;
+4. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
+5. `HOST_CONTROL_APPLICATION_FOUNDATION`;
+6. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
+7. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+8. networking/service extensions.
 
 ### Phase 4 ordering constraint
 
@@ -94,8 +106,8 @@ observability slice. The scheduler already has internal PRIMASK-protected
 critical sections; that does not imply a public mutex/semaphore API. Heap,
 filesystem, generic DMA framework, RTC/wall-clock service, MPU isolation and
 general power-management framework are also consumer-driven, not missing
-prerequisites. The frozen OLED/status-bar remains unchanged until its dedicated
-UI slice.
+prerequisites. The 128x32 OLED geometry/gfx baseline remains frozen; the current
+`BOOT_DESKTOP_UI_FOUNDATION` is the dedicated slice authorized to evolve runtime-owned content/status semantics without changing that geometry.
 
 ## Phase 0 - Boot baseline
 
@@ -165,14 +177,18 @@ Target progression:
 2. USB CDC ACM diagnostic/command console — published.
 3. Transport-neutral shell/RPC service layer — published.
 4. Binary framed RPC transport with CRC/request correlation — published; v1 is control/RPC only, not file transfer or firmware update.
-5. Deus OS product/application/UI model freeze — published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`; next implement boot splash/desktop, then the static application runtime.
-6. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); it manages the stable firmware runtime rather than defining it.
-7. Add bounded versioned asset/configuration transfer for non-executable packages.
-8. Add a recoverable USB firmware-update path and small bootloader as a separate safety boundary.
-9. Add networking/service extensions over the same application/service model.
-10. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
+5. Deus OS product/application/UI model freeze — published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`.
+6. Boot/desktop UI foundation — hardware/physical acceptance complete; publication pending Gates 6–7.
+7. OLED dirty-region optimization — transfer only real changed page/column spans while retaining one 512-byte framebuffer.
+8. Static application runtime foundation.
+9. Production USB management-device foundation: vendor-specific WinUSB `Deus OS Device`, Microsoft OS descriptors, stable interface GUID and the accepted binary RPC above transport; CDC becomes debug/recovery rather than the primary production API.
+10. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); it manages the stable firmware runtime rather than defining it.
+11. Add bounded versioned asset/configuration transfer for non-executable packages.
+12. Add a recoverable USB firmware-update path and small bootloader as a separate safety boundary.
+13. Add networking/service extensions over the same application/service model.
+14. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
 
-Initial host integration should avoid requiring a custom kernel-mode USB driver: CDC ACM is the first compatibility target. A later vendor-specific bulk interface through standard userspace USB facilities may be considered only if CDC becomes a throughput/latency limitation.
+Production Windows integration should avoid a custom kernel-mode driver while also avoiding COM-port-first product identity. `USB_MANAGEMENT_DEVICE_FOUNDATION` therefore targets the Windows inbox WinUSB stack with firmware-supplied device identity/interface metadata. CDC remains valuable as an explicit development/debug/recovery profile, not as the final management surface.
 
 Constraint: STM32F103C8 is a USB Device target here, not a general USB Host platform. Keyboard/mouse emulation is possible as USB HID device behavior; directly hosting commodity USB peripherals is outside the baseline architecture.
 <!-- END STM32_OS_USB_STRATEGY -->

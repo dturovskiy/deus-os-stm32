@@ -4,6 +4,20 @@
 
 Post-publication documentation audit completed after `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` Gate 7. Canonical current-state docs now record Gates 0–7 as published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, distinguish the accepted firmware/source baseline from the later docs-only architecture publication, and identify `BOOT_DESKTOP_UI_FOUNDATION` as the exact next boundary. Historical C3.6/C3.7/C3.8/C3.9/C4.0 plan/acceptance headers that still claimed implementation/publication was pending were corrected to their actual published commits; historical plan bodies remain unchanged. No firmware/source/header/linker/script/build mutation is part of this cleanup.
 
+### Accepted — Boot / desktop UI foundation — Gates 0–5 complete / Gate 6 current
+
+Boundary: `BOOT_DESKTOP_UI_FOUNDATION`.
+
+The accepted revision-2 implementation delivers `BOOT_SPLASH -> DESKTOP_HOME`: bootstrap renders `DEUS OS / STARTING / PLEASE WAIT`, task0 transitions to `DEUS OS / DESKTOP / READY` only after a minimum 1000 ms visible dwell plus production readiness, and the accepted status bar now carries real SYSTEM/USB/NETWORK plus monotonic uptime semantics. Task0 uses the existing timed wait with a 250 ms service bound; semantic snapshot suppression prevents idle polling redraws. A hardware-observed first-candidate defect was corrected by separating one-time/recovery SSD1306 initialization from steady-state panel refresh, so routine minute/status transitions never issue `display off`.
+
+Accepted Gate 2 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`; BIN `41520` bytes / `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`; ELF `70700` bytes / `62A827893CC1EF44B18025E87B8299792636CA2D93093ED569F27F08A0B09F02`; MAP SHA-256 `D051AB4EBDAD4609B7961E5F7441FF90C4AF56766F5A977023B0A58D1E9208A8`; Flash `41520 / 65536`; SRAM `9792 / 20480`. Gate 2 evidence SHA-256 `62EA3D8DCA364F178D8D0B649740DCF551D095FC33F5E21AA424C3E23C8FF729`.
+
+Gate 3 hardware acceptance passed on the exact candidate: no reflash was needed because target Flash already matched; boot/scheduler/IWDG startup, task margins (`640` / `424` bytes), CDC text pressure `128/128` with zero drops, UART pressure `128/128` with zero drops/errors, binary pressure `128/128` unique IDs, malformed/CRC/oversize/split-frame recovery, physical USB reconnect, authorized IWDG reboot/recovery, three USB enumerations and final exact Flash readback all passed. Gate 3 log SHA-256 `9481BEFADB5A8F1D17AF6FC0ACDE238FE66B6956940F56DC86A828CBFAA7F900`; Gate 3 evidence SHA-256 `2B9EA2BB00671E829C5F4718FD63EC68889B25347EABF1D7FEF65191E5C3C0CD`.
+
+Gate 4 physical OLED review is `PHYSICAL_OLED=PASS`: displayed digits and text update correctly, no unintended content is drawn, and no flicker/blank pulse/stale-pixel artifact is visible. Gate 5 documentation/evidence finalization records this accepted state without changing firmware source bytes.
+
+Next independent optimization boundary is `OLED_DIRTY_REGION_OPTIMIZATION`: preserve the single 512-byte framebuffer, track real changed byte/column spans, and transfer only affected SSD1306 regions. It precedes `APPLICATION_RUNTIME_FOUNDATION`. Production Windows USB remains scheduled for `USB_MANAGEMENT_DEVICE_FOUNDATION`, using vendor-specific WinUSB `Deus OS Device` identity above the accepted binary RPC rather than COM-port-first CDC.
+
 ## 2026-09-16
 
 ### Published — Native STM32F103 USB Device core foundation

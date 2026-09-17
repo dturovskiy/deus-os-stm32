@@ -106,7 +106,57 @@ Canonical acceptance:
 Canonical foundation gap review:
 `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`
 
-Gates 0–7 are accepted. Gate 6 committed exactly the accepted docs-only path set at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`; Gate 7 published it by ordinary non-force fast-forward. The next implementation boundary is `BOOT_DESKTOP_UI_FOUNDATION`.
+Gates 0–7 are accepted. Gate 6 committed exactly the accepted docs-only path set at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`; Gate 7 published it by ordinary non-force fast-forward.
+
+### Current boundary — Boot / desktop UI foundation
+
+Boundary ID: `BOOT_DESKTOP_UI_FOUNDATION`.
+
+Gate order:
+
+- [x] Gate 0 architecture/source-boundary freeze — **PASS**.
+- [x] Gate 1 source implementation/static consistency — **PASS, REVISION 2**.
+- [x] Gate 2 fresh GNU build/link/resource validation — **PASS / REVISION-2 CANDIDATE**.
+- [x] Gate 3 retained hardware/runtime acceptance — **PASS**.
+- [x] Gate 4 physical OLED acceptance — **PASS / `PHYSICAL_OLED=PASS`**.
+- [x] Gate 5 docs/evidence finalization — **PASS**.
+- [ ] Gate 6 local acceptance commit — **CURRENT**.
+- [ ] Gate 7 ordinary non-force publication.
+
+Gate 0 freezes:
+
+- exactly `BOOT_SPLASH -> DESKTOP_HOME`; `APPLICATION_VIEW` remains deferred;
+- splash `DEUS OS / STARTING / PLEASE WAIT`, home `DEUS OS / DESKTOP / READY`;
+- 1000 ms minimum splash dwell without blocking scheduler/IWDG startup;
+- task0 250 ms timed UI-service wake using existing scheduler timeout support;
+- task0 as the only normal runtime OLED writer after bootstrap;
+- SYSTEM=production readiness, USB=actual CDC configured state, NETWORK=inactive;
+- monotonic uptime `HH:MM`, saturating at `99:59`;
+- panel presentation only on visible semantic change or explicit `uiruntime` restore;
+- normal semantic redraw never re-enters SSD1306 initialization/display-off; failed panel transfer may invalidate initialization and trigger bounded recovery on the next service pass;
+- no new task/SVC/queue/mutex/generic timer/heap/filesystem/application runtime/command ID/USB redesign.
+
+Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`.
+Canonical acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.
+
+Accepted Gate 2/3/4 evidence:
+
+- [x] candidate tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`;
+- [x] BIN `41520` bytes / `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`;
+- [x] ELF `70700` bytes / `62A827893CC1EF44B18025E87B8299792636CA2D93093ED569F27F08A0B09F02`;
+- [x] Flash `41520 / 65536`, SRAM `9792 / 20480`;
+- [x] task0/task1 stack margins `640` / `424` bytes;
+- [x] CDC `128/128` zero drops, UART `128/128` zero drops/errors, binary `128/128` unique IDs;
+- [x] physical USB reconnect and authorized IWDG reboot/recovery PASS;
+- [x] final Flash readback exact;
+- [x] Gate 2 evidence `62EA3D8DCA364F178D8D0B649740DCF551D095FC33F5E21AA424C3E23C8FF729`;
+- [x] Gate 3 log `9481BEFADB5A8F1D17AF6FC0ACDE238FE66B6956940F56DC86A828CBFAA7F900`;
+- [x] Gate 3 evidence `2B9EA2BB00671E829C5F4718FD63EC68889B25347EABF1D7FEF65191E5C3C0CD`;
+- [x] Gate 4 `PHYSICAL_OLED=PASS`: clean digit/text transitions, no unintended redraw, flicker, blank pulse or stale pixels.
+
+After publication, exact next boundary is `OLED_DIRTY_REGION_OPTIMIZATION`; then `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+
+No source/build/flash/commit/push in Gate 0.
 
 Permanent constraints retained:
 
@@ -119,7 +169,7 @@ Permanent constraints retained:
 - existing two-task production topology remains authoritative;
 - USB IRQ remains bounded hardware/ring/event ownership only;
 - generic timers, IPC/queues/synchronization and runtime statistics remain deferred;
-- OLED/gfx/status-bar remain frozen.
+- accepted 128x32 OLED geometry/gfx primitives remain frozen; this dedicated UI boundary may change only runtime-owned status/content semantics under its explicit Gate 4 visual acceptance.
 
 Canonical protocol:
 `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
@@ -131,11 +181,10 @@ Canonical acceptance:
 `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
 <!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
 
-> **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
+> **OLED geometry/rendering baseline: ACCEPTED / FROZEN (2026-09-11).**
 > The authoritative hardware-accepted geometry and firmware fingerprint are in
 > [`OLED_UI_ACCEPTED_BASELINE.md`](OLED_UI_ACCEPTED_BASELINE.md).
-> Any configurable-layout, preset, custom-layout, persistence, or alternate-geometry
-> material below is deferred planning and must not override the accepted baseline.
+> `BOOT_DESKTOP_UI_FOUNDATION` is the dedicated boundary allowed to evolve runtime-owned content/status semantics while preserving that geometry. Configurable-layout, preset, custom-layout, persistence, or alternate-geometry material remains deferred and must not override the accepted baseline.
 # Master Execution Checklist
 
 This file is the canonical execution gate for the STM32 OS project.

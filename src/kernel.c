@@ -141,6 +141,25 @@
 #define SCHED_TIMED_SLEEP_MS             50u
 #define SCHED_TIMED_TIMEOUT_MS           50u
 #define SCHED_TIMED_EVENT_TIMEOUT_MS     500u
+#define BOOT_DESKTOP_UI_SPLASH_MIN_MS    1000u
+#define BOOT_DESKTOP_UI_POLL_MS          250u
+#define BOOT_DESKTOP_UI_MAX_MINUTES      5999u
+#define BOOT_DESKTOP_UI_SATURATE_MINUTES 6000u
+
+typedef enum
+{
+    BOOT_DESKTOP_UI_SPLASH = 0,
+    BOOT_DESKTOP_UI_HOME = 1
+} boot_desktop_ui_state_t;
+
+typedef struct
+{
+    uint8_t state;
+    uint8_t system_indicator;
+    uint8_t usb_indicator;
+    uint8_t network_indicator;
+    uint32_t total_minutes;
+} boot_desktop_ui_snapshot_t;
 
 /*
  * PCLK2 = 72 MHz.
@@ -265,6 +284,15 @@ static volatile uint32_t production_watchdog_active;
 static volatile uint32_t production_watchdog_reload_count;
 static uint32_t production_reset_flags;
 static uint32_t production_iwdg_reset;
+
+static boot_desktop_ui_state_t boot_desktop_ui_state;
+static kernel_time_ms_t boot_desktop_ui_splash_started_at;
+static uint32_t boot_desktop_ui_splash_visible;
+static uint32_t boot_desktop_ui_initialized;
+static uint32_t boot_desktop_ui_uptime_saturated;
+static uint32_t boot_desktop_ui_snapshot_valid;
+static uint32_t boot_desktop_ui_panel_initialized;
+static boot_desktop_ui_snapshot_t boot_desktop_ui_last_snapshot;
 
 static volatile uint32_t scheduler_console_probe_task_started;
 static volatile uint32_t scheduler_console_probe_task_done;
@@ -1305,10 +1333,128 @@ static void console_oled_dirty(command_service_context_t *context)
     }
 }
 
-static int oled_runtime_ui_show(void)
+static int boot_desktop_ui_runtime_ready(void)
+{
+    return
+        (scheduler_is_active() != 0) &&
+        (production_console_task_started != 0u) &&
+        (production_heartbeat_task_started != 0u) &&
+        (production_watchdog_active != 0u) &&
+        (production_console_fault == 0u) &&
+        (production_heartbeat_fault == 0u);
+}
+
+static void boot_desktop_ui_initialize(void)
+{
+    boot_desktop_ui_state = BOOT_DESKTOP_UI_SPLASH;
+    boot_desktop_ui_splash_started_at = 0u;
+    boot_desktop_ui_splash_visible = 0u;
+    boot_desktop_ui_uptime_saturated = 0u;
+    boot_desktop_ui_snapshot_valid = 0u;
+    boot_desktop_ui_panel_initialized = 0u;
+    boot_desktop_ui_initialized = 1u;
+}
+
+static void boot_desktop_ui_update_state(void)
+{
+    if (
+        (boot_desktop_ui_initialized != 0u) &&
+        (boot_desktop_ui_state == BOOT_DESKTOP_UI_SPLASH) &&
+        (boot_desktop_ui_splash_visible != 0u) &&
+        (boot_desktop_ui_runtime_ready() != 0) &&
+        (kernel_time_elapsed(
+            boot_desktop_ui_splash_started_at,
+            BOOT_DESKTOP_UI_SPLASH_MIN_MS) != 0)
+    ) {
+        boot_desktop_ui_state = BOOT_DESKTOP_UI_HOME;
+    }
+}
+
+static uint32_t boot_desktop_ui_display_minutes(void)
+{
+    uint32_t total_minutes =
+        kernel_time_now() / 60000u;
+
+    if (
+        (boot_desktop_ui_uptime_saturated != 0u) ||
+        (total_minutes >= BOOT_DESKTOP_UI_SATURATE_MINUTES)
+    ) {
+        boot_desktop_ui_uptime_saturated = 1u;
+        return BOOT_DESKTOP_UI_MAX_MINUTES;
+    }
+
+    return total_minutes;
+}
+
+static void boot_desktop_ui_snapshot_build(
+    boot_desktop_ui_snapshot_t *snapshot)
+{
+    if (snapshot == (boot_desktop_ui_snapshot_t *)0)
+    {
+        return;
+    }
+
+    snapshot->state = boot_desktop_ui_state;
+    snapshot->system_indicator =
+        (boot_desktop_ui_runtime_ready() != 0) ?
+            OLED_STATUS_INDICATOR_FILLED :
+            OLED_STATUS_INDICATOR_RING;
+    snapshot->usb_indicator =
+        (usb_cdc_is_configured() != 0) ?
+            OLED_STATUS_INDICATOR_FILLED :
+            OLED_STATUS_INDICATOR_RING;
+    snapshot->network_indicator = OLED_STATUS_INDICATOR_RING;
+    snapshot->total_minutes =
+        boot_desktop_ui_display_minutes();
+}
+
+static int boot_desktop_ui_snapshot_equal(
+    const boot_desktop_ui_snapshot_t *left,
+    const boot_desktop_ui_snapshot_t *right)
+{
+    if (
+        (left == (const boot_desktop_ui_snapshot_t *)0) ||
+        (right == (const boot_desktop_ui_snapshot_t *)0)
+    ) {
+        return 0;
+    }
+
+    return
+        (left->state == right->state) &&
+        (left->system_indicator == right->system_indicator) &&
+        (left->usb_indicator == right->usb_indicator) &&
+        (left->network_indicator == right->network_indicator) &&
+        (left->total_minutes == right->total_minutes);
+}
+
+static int boot_desktop_ui_render(int force)
 {
     const oled_ui_layout_t *layout;
     oled_status_bar_t status;
+    boot_desktop_ui_snapshot_t snapshot;
+    uint32_t hours;
+    uint32_t minutes;
+    uint32_t display_enable_required = 0u;
+
+    if (boot_desktop_ui_initialized == 0u)
+    {
+        boot_desktop_ui_initialize();
+    }
+
+    boot_desktop_ui_update_state();
+    boot_desktop_ui_snapshot_build(&snapshot);
+
+    if (
+        (force == 0) &&
+        (boot_desktop_ui_snapshot_valid != 0u) &&
+        (boot_desktop_ui_snapshot_equal(
+            &snapshot,
+            &boot_desktop_ui_last_snapshot) != 0)
+    ) {
+        return 1;
+    }
+
+    boot_desktop_ui_snapshot_valid = 0u;
 
     layout = oled_ui_layout_default();
 
@@ -1319,18 +1465,32 @@ static int oled_runtime_ui_show(void)
         return 0;
     }
 
-    if (ssd1306_init() == 0)
+    if (boot_desktop_ui_panel_initialized == 0u)
     {
-        return 0;
+        if (ssd1306_init() == 0)
+        {
+            return 0;
+        }
+
+        boot_desktop_ui_panel_initialized = 1u;
+        display_enable_required = 1u;
     }
 
     mono_fb_clear(&oled_surface);
 
+    hours = snapshot.total_minutes / 60u;
+    minutes = snapshot.total_minutes % 60u;
+
     oled_status_bar_init(&status);
+    oled_status_bar_set_indicators(
+        &status,
+        snapshot.system_indicator,
+        snapshot.usb_indicator,
+        snapshot.network_indicator);
     oled_status_bar_set_time(
         &status,
-        0u,
-        0u);
+        hours,
+        minutes);
 
     oled_status_bar_render(
         &status,
@@ -1343,13 +1503,24 @@ static int oled_runtime_ui_show(void)
         &oled_console_state,
         "DEUS OS");
 
-    oled_console_write_line(
-        &oled_console_state,
-        "BOOT OK");
-
-    oled_console_write(
-        &oled_console_state,
-        "READY");
+    if (snapshot.state == BOOT_DESKTOP_UI_SPLASH)
+    {
+        oled_console_write_line(
+            &oled_console_state,
+            "STARTING");
+        oled_console_write(
+            &oled_console_state,
+            "PLEASE WAIT");
+    }
+    else
+    {
+        oled_console_write_line(
+            &oled_console_state,
+            "DESKTOP");
+        oled_console_write(
+            &oled_console_state,
+            "READY");
+    }
 
     oled_console_render(
         &oled_console_state,
@@ -1363,6 +1534,7 @@ static int oled_runtime_ui_show(void)
 
     if (ssd1306_present(&oled_surface) == 0)
     {
+        boot_desktop_ui_panel_initialized = 0u;
         return 0;
     }
 
@@ -1371,7 +1543,36 @@ static int oled_runtime_ui_show(void)
         return 0;
     }
 
-    return ssd1306_display_on();
+    if (
+        (display_enable_required != 0u) &&
+        (ssd1306_display_on() == 0)
+    ) {
+        boot_desktop_ui_panel_initialized = 0u;
+        return 0;
+    }
+
+    if (
+        (snapshot.state == BOOT_DESKTOP_UI_SPLASH) &&
+        (boot_desktop_ui_splash_visible == 0u)
+    ) {
+        boot_desktop_ui_splash_started_at = kernel_time_now();
+        boot_desktop_ui_splash_visible = 1u;
+    }
+
+    boot_desktop_ui_last_snapshot = snapshot;
+    boot_desktop_ui_snapshot_valid = 1u;
+
+    return 1;
+}
+
+static int oled_runtime_ui_show(void)
+{
+    return boot_desktop_ui_render(1);
+}
+
+static void boot_desktop_ui_service(void)
+{
+    (void)boot_desktop_ui_render(0);
 }
 
 static void scheduler_workload_oled_task(void *argument)
@@ -3822,17 +4023,19 @@ static void production_console_task(void *argument)
         console_drain_uart_rx();
         console_drain_usb_cdc_rx();
         production_watchdog_reload();
+        boot_desktop_ui_service();
 
         ++production_console_wait_count;
 
         events =
-            scheduler_wait_events(
-                PRODUCTION_CONSOLE_RX_EVENTS);
+            scheduler_wait_events_timeout(
+                PRODUCTION_CONSOLE_RX_EVENTS,
+                BOOT_DESKTOP_UI_POLL_MS);
 
         production_console_wake_events |= events;
         ++production_console_wake_count;
 
-        if ((events & PRODUCTION_CONSOLE_RX_EVENTS) == 0u)
+        if ((events & ~PRODUCTION_CONSOLE_RX_EVENTS) != 0u)
         {
             production_console_fault = 1u;
             return;

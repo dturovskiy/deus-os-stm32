@@ -71,7 +71,18 @@ Canonical completeness review: `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`.
 
 The completeness review confirms there is no kernel blocker before boot/desktop/application work. It adds these mandatory later contracts: semantic app events separate from scheduler wake bits; firmware/build/platform/system capability identity for host tooling; bounded recoverable persistence before Flash settings/packages; retained previous-boot crash/reset diagnostics and structured observability as later work; explicit security/trust before network mutation or executable Flash update; controlled update reboot handoff; and portability layering between arch/platform/drivers and kernel/services/apps/UI/protocol. Generic timers/queues/synchronization/runtime statistics remain consumer-driven; heap/filesystem/MPU/RTC/DMA/power frameworks remain deferred until justified.
 
-Gates 0–7 are accepted and ordinary non-force publication is complete at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c` / tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`. The boundary changed documentation only; no firmware build/flash was required. Exact next firmware order begins with `BOOT_DESKTOP_UI_FOUNDATION`, then `APPLICATION_RUNTIME_FOUNDATION`, then `HOST_CONTROL_APPLICATION_FOUNDATION`.
+Gates 0–7 are accepted and ordinary non-force publication is complete at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c` / tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`. The boundary changed documentation only; no firmware build/flash was required.
+
+### Current boundary — Boot / desktop UI foundation — GATES 0–5 ACCEPTED / GATE 6 CURRENT
+
+`BOOT_DESKTOP_UI_FOUNDATION` is the first firmware consumer of the published UI architecture. The accepted implementation is a two-state `BOOT_SPLASH -> DESKTOP_HOME` runtime lifecycle with nonblocking 1000 ms visible splash dwell, task0-owned 250 ms timed UI service, real SYSTEM/USB/NETWORK indicators, monotonic uptime `HH:MM`, render-on-visible-change behavior, and one-time/recovery-only SSD1306 initialization. It does not introduce `APPLICATION_VIEW`, an application registry/event ABI, local input, host tooling, production WinUSB management USB, networking, persistence, a new RTOS primitive or a third task.
+
+Accepted Gate 2/3 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`; BIN `41520` bytes / `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`; ELF `70700` bytes / `62A827893CC1EF44B18025E87B8299792636CA2D93093ED569F27F08A0B09F02`; MAP `D051AB4EBDAD4609B7961E5F7441FF90C4AF56766F5A977023B0A58D1E9208A8`; Flash `41520 / 65536`; SRAM `9792 / 20480`. Gate 3 retained CDC/UART/binary pressure, USB reconnect, IWDG reboot/recovery and exact final Flash readback all pass. Gate 4 is `PHYSICAL_OLED=PASS` with clean minute/text transitions and no blank pulse/flicker/stale pixels. Gate 5 is docs/evidence-only finalization.
+
+Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`.
+Canonical acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.
+
+After publication, exact next implementation boundary is `OLED_DIRTY_REGION_OPTIMIZATION`, using the existing 512-byte framebuffer plus bounded dirty byte/column spans rather than a second framebuffer. It is followed by `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION` before the host control application.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

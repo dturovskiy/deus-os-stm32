@@ -136,9 +136,32 @@ Current foundation completeness review:
 
 Power rule remains: micro-USB is the normal target power source during USB runtime; ST-LINK 3.3 V and UART adapter VCC remain disconnected. UART TX/RX, SWDIO/SWCLK and grounds remain connected.
 
-### Exact next boundary
+### Current boundary
 
-**`BOOT_DESKTOP_UI_FOUNDATION` — begin with its own Gate 0 planning/acceptance contract before firmware mutation. Preserve the published two-task topology, nonblocking startup/liveness rules, frozen 128x32 geometry, and the application/UI architecture contracts published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`.**
+**`BOOT_DESKTOP_UI_FOUNDATION` — Gates 0–5 accepted; Gate 6 local acceptance commit is current. Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`; acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.**
+
+The accepted boundary delivers only `BOOT_SPLASH -> DESKTOP_HOME`: a 1000 ms minimum visible splash dwell that does not delay scheduler/IWDG startup, task0-owned 250 ms timed UI service, real SYSTEM/USB/NETWORK indicators, monotonic uptime `HH:MM`, semantic snapshot suppression, and recovery-only SSD1306 initialization. Gate 1 source remains confined to exactly `src/kernel.c`, `src/kernel/oled_status_bar.c`, and `include/kernel/oled_status_bar.h`.
+
+Accepted candidate/evidence:
+
+```text
+tested candidate tree  41e0c7cd345dd64d3b5336abf2fc46d446f19ecb
+BIN                    41520 bytes
+BIN SHA-256             A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42
+ELF                    70700 bytes
+ELF SHA-256             62A827893CC1EF44B18025E87B8299792636CA2D93093ED569F27F08A0B09F02
+MAP SHA-256             D051AB4EBDAD4609B7961E5F7441FF90C4AF56766F5A977023B0A58D1E9208A8
+Flash used              41520 / 65536
+SRAM used               9792 / 20480
+Gate 2 evidence         62EA3D8DCA364F178D8D0B649740DCF551D095FC33F5E21AA424C3E23C8FF729
+Gate 3 log              9481BEFADB5A8F1D17AF6FC0ACDE238FE66B6956940F56DC86A828CBFAA7F900
+Gate 3 evidence         2B9EA2BB00671E829C5F4718FD63EC68889B25347EABF1D7FEF65191E5C3C0CD
+Gate 4                  PHYSICAL_OLED=PASS
+```
+
+Gate 3 passed CDC `128/128` zero drops, UART `128/128` zero drops/errors, binary `128/128` unique request IDs, bad-CRC/oversize/split-frame recovery, physical micro-USB reconnect, authorized IWDG reboot with automatic transport recovery, task margins `640` / `424` bytes, three USB enumerations and exact final Flash readback. Physical OLED review confirmed clean digit/text transitions with no unintended content, flicker, blank/off pulse or stale pixels.
+
+After publication, exact next boundary is `OLED_DIRTY_REGION_OPTIMIZATION`: keep the single 512-byte framebuffer and track only real changed page/column spans. Then proceed to `APPLICATION_RUNTIME_FOUNDATION`; production Windows USB follows in `USB_MANAGEMENT_DEVICE_FOUNDATION` using vendor-specific WinUSB `Deus OS Device` identity rather than COM-port-first CDC.
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 
@@ -179,11 +202,12 @@ DIO        SWDIO
 
 Do not simultaneously power the Blue Pill from its micro-USB while 3.3 V power is being supplied from this ST-LINK wiring.
 
-Available future display:
+Current accepted display:
 
 - SSD1306-class OLED
-- 128x64
-- 4-pin I2C-style module: GND, VCC, SCK/SCL, SDA
+- native 128x32
+- I2C address `0x3C`
+- 4-pin I2C module: GND, VCC, SCK/SCL, SDA
 
 Possible future networking hardware:
 

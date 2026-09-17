@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`BINARY_FRAMED_TRANSPORT_FOUNDATION` published at `2fde9025a51021511e73a76b561f7983ca655e2f`; `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` Gates 0–7 published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`; next boundary `BOOT_DESKTOP_UI_FOUNDATION`**
+Status: **`BOOT_DESKTOP_UI_FOUNDATION` Gates 0–5 accepted; Gate 6 local acceptance commit current**
 
 ## Current foundation completeness constraints
 
@@ -12,12 +12,24 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - `APPLICATION_RUNTIME_FOUNDATION` owns a bounded semantic application event/service contract;
 - generic timers, queues, synchronization primitives and runtime statistics remain consumer-driven extensions; scheduler-internal PRIMASK save/restore is not a public mutex/semaphore API;
 - host-facing system identity must eventually distinguish firmware/build/platform/service/application capabilities from USB identity and protocol capability flags;
+- after `APPLICATION_RUNTIME_FOUNDATION`, `USB_MANAGEMENT_DEVICE_FOUNDATION` owns the production Windows USB profile: vendor-specific WinUSB management transport with explicit product identity/device-interface GUID, reusing the accepted binary RPC above transport; CDC/COM must not remain the primary production host API;
 - persistent target state requires versioning, integrity, atomic commit/recovery and Flash wear policy before acceptance;
 - current `fault_record` is normal `.bss` runtime state and is cleared by reset; bounded previous-boot crash/reset retention is later observability work;
 - CRC-16 and explicit destructive intent are not authentication; trust-sensitive network mutation and firmware update require a separate security/authenticity contract;
 - controlled reboot/update handoff belongs to the update/bootloader boundary;
 - startup/context-switch/register drivers remain arch/platform-specific while kernel/services/apps/UI/protocol semantics should avoid leaking STM32 register details upward;
 - heap, filesystem, generic DMA framework, RTC, MPU isolation and broad power-management facilities are not current prerequisites.
+
+## Current boundary — Boot / desktop UI foundation
+
+Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`.
+Canonical acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.
+
+The first UI implementation remains deliberately below the application runtime. It adds only `BOOT_SPLASH -> DESKTOP_HOME`, preserving the two-task topology. Bootstrap may perform the one initial splash render before scheduler start; after that, task0 / Thread-PSP is the single normal OLED writer. Task0 uses the accepted timed wait with a 250 ms timeout to service UI state while retaining immediate UART/CDC event wakes. The minimum splash dwell is 1000 ms but never delays scheduler/IWDG startup.
+
+The status bar keeps the accepted 128x9 geometry. SYSTEM reflects scheduler/task/watchdog readiness, USB reflects actual CDC configured state for this boundary, NETWORK remains inactive until a real network service exists, and the right field is monotonic uptime `HH:MM` saturating at `99:59`. Polling does not imply periodic redraw: the framebuffer/panel is updated only when lifecycle state, an indicator, displayed minute, or explicit `uiruntime` restore changes visible state. Steady-state redraw keeps an initialized OLED powered on; SSD1306 reinitialization/display-off is reserved for initial bring-up or real transfer recovery. This behavior is build-, hardware- and physically accepted on candidate tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`, with `PHYSICAL_OLED=PASS`.
+
+The next independent UI optimization is `OLED_DIRTY_REGION_OPTIMIZATION`: retain one 512-byte framebuffer, make pixel writes dirty only when byte state actually changes, track bounded horizontal dirty spans per SSD1306 page, and issue page/column windows only for those spans. A second 512-byte shadow framebuffer is not required. `APPLICATION_VIEW` remains deferred to `APPLICATION_RUNTIME_FOUNDATION`; production WinUSB management USB remains a later `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 
 ## C4.0 accepted IWDG liveness record
 

@@ -37,11 +37,26 @@ Canonical architecture docs:
 
 The foundation-gap review confirms no missing kernel blocker before boot/desktop/application work. It additionally freezes later contracts for semantic application events, system identity/capabilities, bounded persistence safety, crash/reset observability, security/trust before network mutation or firmware update, and portability layering. Generic timers/queues/synchronization/runtime statistics remain consumer-driven rather than speculative prerequisites.
 
-Planned order after this architecture freeze:
+Current firmware boundary:
 
-`BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
+`BOOT_DESKTOP_UI_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 LOCAL ACCEPTANCE COMMIT CURRENT**.
 
-Gates 0–7 are accepted. The docs-only foundation was published by ordinary non-force fast-forward at commit `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`. No firmware bytes changed in this boundary.
+Canonical design/acceptance:
+
+- `docs/BOOT_DESKTOP_UI_PLAN.md`
+- `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`
+
+The accepted revision-2 implementation provides a nonblocking `BOOT_SPLASH -> DESKTOP_HOME` lifecycle on the existing 128x32 UI: 1000 ms minimum visible splash dwell without delaying scheduler/IWDG startup, task0-owned 250 ms timed UI service, real SYSTEM/USB/NETWORK indicator semantics, monotonic uptime `HH:MM`, redraw only on visible semantic change, and no new task/queue/timer subsystem. Steady-state redraw never re-enters SSD1306 initialization/display-off; panel reinitialization is recovery-only.
+
+Accepted Gate 2/3 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN `41520` bytes / SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`, ELF `70700` bytes / SHA-256 `62A827893CC1EF44B18025E87B8299792636CA2D93093ED569F27F08A0B09F02`, Flash `41520 / 65536`, SRAM `9792 / 20480`. Gate 3 retained CDC/UART/binary pressure, reconnect, IWDG recovery and exact final Flash readback all passed. Gate 4 is operator-confirmed `PHYSICAL_OLED=PASS`: minute/text transitions are clean, with no blank pulse, flicker, stale pixels or unintended redraw artifacts.
+
+Planned order after this boundary:
+
+`BOOT_DESKTOP_UI_FOUNDATION` -> `OLED_DIRTY_REGION_OPTIMIZATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `USB_MANAGEMENT_DEVICE_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
+
+`USB_MANAGEMENT_DEVICE_FOUNDATION` will make the production Windows-facing device a vendor-specific WinUSB management device rather than a COM-port-first CDC console. The existing binary framed RPC remains the management protocol above the transport; production USB naming/identity, Microsoft OS descriptors, a stable device-interface GUID and WinUSB bulk transport belong to that boundary. CDC may remain only as an explicit debug/recovery profile if later justified.
+
+The preceding docs-only application/UI foundation is fully accepted and was published by ordinary non-force fast-forward at commit `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
 
 A small bare-metal operating system for the STM32F103 Cortex-M3.
@@ -103,6 +118,8 @@ Built locally:
 - [x] Production scheduler lifecycle / diagnostic isolation
 - [x] Production scheduler steady-state block/event/wake foundation
 - [x] Normal-boot scheduler ownership migration
+- [x] Boot splash / desktop runtime UI foundation (hardware + physical OLED accepted)
+- [ ] OLED dirty-region transfer optimization
 - [ ] IPC primitives
 - [ ] ESP8266 networking
 
