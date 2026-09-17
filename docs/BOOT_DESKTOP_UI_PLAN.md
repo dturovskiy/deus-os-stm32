@@ -1,6 +1,6 @@
 # Deus OS — Boot / Desktop UI Foundation Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT CURRENT**
+Status: **GATES 0–7 ACCEPTED — PUBLISHED `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`**
 
 Boundary ID:
 

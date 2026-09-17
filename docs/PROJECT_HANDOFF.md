@@ -5,13 +5,17 @@
 
 ### Published firmware and architecture baselines
 
-The accepted firmware/source baseline remains:
+The latest accepted and published firmware/source baseline is:
 
-`2fde9025a51021511e73a76b561f7983ca655e2f` — `feat: add binary framed transport foundation`
+`d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` — `feat: add boot desktop UI foundation`
 
-Firmware/source tree:
+Published tree:
 
-`27248c5ac81c60cc898083b09ea73b95aa1e1ff1`
+`d27cf8246fb7563b2327955ffc06428b9d843b2a`
+
+Accepted firmware candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN `41520` bytes / SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`, Flash `41520 / 65536`, SRAM `9792 / 20480`, Gate 4 `PHYSICAL_OLED=PASS`. Gates 0–7 are complete and ordinary non-force publication ended clean at ahead/behind `0/0`.
+
+The previously published binary-framed transport baseline remains the underlying transport compatibility baseline:
 
 The docs-only `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` was subsequently published at:
 
@@ -136,11 +140,11 @@ Current foundation completeness review:
 
 Power rule remains: micro-USB is the normal target power source during USB runtime; ST-LINK 3.3 V and UART adapter VCC remain disconnected. UART TX/RX, SWDIO/SWCLK and grounds remain connected.
 
-### Current boundary
+### Latest published firmware boundary
 
-**`BOOT_DESKTOP_UI_FOUNDATION` — Gates 0–5 accepted; Gate 6 local acceptance commit is current. Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`; acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.**
+**`BOOT_DESKTOP_UI_FOUNDATION` — Gates 0–7 accepted and published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`. Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`; acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.**
 
-The accepted boundary delivers only `BOOT_SPLASH -> DESKTOP_HOME`: a 1000 ms minimum visible splash dwell that does not delay scheduler/IWDG startup, task0-owned 250 ms timed UI service, real SYSTEM/USB/NETWORK indicators, monotonic uptime `HH:MM`, semantic snapshot suppression, and recovery-only SSD1306 initialization. Gate 1 source remains confined to exactly `src/kernel.c`, `src/kernel/oled_status_bar.c`, and `include/kernel/oled_status_bar.h`.
+The published boundary delivers `BOOT_SPLASH -> DESKTOP_HOME`: a 1000 ms minimum visible splash dwell that does not delay scheduler/IWDG startup, task0-owned 250 ms timed UI service, real SYSTEM/USB/NETWORK indicators, monotonic uptime `HH:MM`, semantic snapshot suppression, and recovery-only SSD1306 initialization.
 
 Accepted candidate/evidence:
 
@@ -161,7 +165,17 @@ Gate 4                  PHYSICAL_OLED=PASS
 
 Gate 3 passed CDC `128/128` zero drops, UART `128/128` zero drops/errors, binary `128/128` unique request IDs, bad-CRC/oversize/split-frame recovery, physical micro-USB reconnect, authorized IWDG reboot with automatic transport recovery, task margins `640` / `424` bytes, three USB enumerations and exact final Flash readback. Physical OLED review confirmed clean digit/text transitions with no unintended content, flicker, blank/off pulse or stale pixels.
 
-After publication, exact next boundary is `OLED_DIRTY_REGION_OPTIMIZATION`: keep the single 512-byte framebuffer and track only real changed page/column spans. Then proceed to `APPLICATION_RUNTIME_FOUNDATION`; production Windows USB follows in `USB_MANAGEMENT_DEVICE_FOUNDATION` using vendor-specific WinUSB `Deus OS Device` identity rather than COM-port-first CDC.
+Publication commit/tree is `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` / `d27cf8246fb7563b2327955ffc06428b9d843b2a`; final `HEAD == origin/main == FETCH_HEAD` and ahead/behind `0/0`.
+
+### Current boundary
+
+**`OLED_DIRTY_REGION_OPTIMIZATION` — Gate 0 accepted; Gate 1 source implementation current. Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`; acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.**
+
+Purpose: keep the single 512-byte framebuffer but make rendering and SSD1306 transfer proportional to actual visible byte changes. Gate 1 is initially limited to exactly eight source paths: `include/gfx/mono_fb.h`, `src/gfx/mono_fb.c`, `src/gfx/text_renderer.c`, `include/drivers/ssd1306.h`, `src/drivers/ssd1306.c`, `include/kernel/oled_status_bar.h`, `src/kernel/oled_status_bar.c`, `src/kernel.c`.
+
+Frozen resource/measurement contract: +32 bytes of 16-bit dirty-span metadata in `mono_fb_t`; all persistent optimization metadata <= +64 bytes SRAM; no second framebuffer. Clean present must produce zero I2C traffic; deterministic `00:00 -> 00:01` must be <=11 I2C payload bytes; USB indicator transition <=13 bytes, compared with the current 572-byte four-page semantic-refresh baseline. Status-only updates must not rerasterize console content or clear/recompose the full framebuffer.
+
+After this boundary, exact next boundary is `APPLICATION_RUNTIME_FOUNDATION`; production Windows USB follows in `USB_MANAGEMENT_DEVICE_FOUNDATION` using vendor-specific WinUSB `Deus OS Device` identity rather than COM-port-first CDC.
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 

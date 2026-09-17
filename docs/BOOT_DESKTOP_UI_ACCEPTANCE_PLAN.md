@@ -1,6 +1,6 @@
 # Deus OS — Boot / Desktop UI Foundation Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT CURRENT**
+Status: **GATES 0–7 ACCEPTED — PUBLISHED `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`**
 
 Boundary ID:
 
@@ -223,6 +223,8 @@ After publication require:
 - `HEAD == origin/main == FETCH_HEAD`;
 - clean worktree/index;
 - ahead/behind `0/0`.
+
+Acceptance: **PASS / PUBLISHED**. Gate 6 commit `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`, tree `d27cf8246fb7563b2327955ffc06428b9d843b2a`, direct parent `117607f508cd71cf679aa43888b2b05f8143272d`, subject `feat: add boot desktop UI foundation`. Gate 7 used one ordinary non-force `git push origin main:main`; fresh fetch proved `HEAD == origin/main == FETCH_HEAD == d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`, clean repository and ahead/behind `0/0`.
 
 After Gate 7, exact next architecture/firmware boundary:
 

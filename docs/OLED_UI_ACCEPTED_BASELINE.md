@@ -1,7 +1,9 @@
 # OLED UI accepted baseline
 
-Status: **ACCEPTED / FROZEN**  
+Status: **ACCEPTED / FROZEN GEOMETRY BASELINE**
 Hardware acceptance date: **2026-09-11**
+
+Post-baseline evolution: `BOOT_DESKTOP_UI_FOUNDATION` is now published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` with real uptime and SYSTEM/USB/NETWORK semantics while preserving this geometry. Current boundary `OLED_DIRTY_REGION_OPTIMIZATION` changes only framebuffer dirty tracking and SSD1306 transfer granularity; it must not alter this visual baseline.
 
 This document is the authoritative visual and geometry baseline for the current
 128x32 OLED UI. Earlier layout experiments and configurable-layout plans are retained

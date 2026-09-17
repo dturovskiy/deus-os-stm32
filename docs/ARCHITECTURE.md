@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`BOOT_DESKTOP_UI_FOUNDATION` Gates 0–5 accepted; Gate 6 local acceptance commit current**
+Status: **`BOOT_DESKTOP_UI_FOUNDATION` published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`; `OLED_DIRTY_REGION_OPTIMIZATION` Gate 0 accepted / Gate 1 current**
 
 ## Current foundation completeness constraints
 
@@ -20,7 +20,7 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - startup/context-switch/register drivers remain arch/platform-specific while kernel/services/apps/UI/protocol semantics should avoid leaking STM32 register details upward;
 - heap, filesystem, generic DMA framework, RTC, MPU isolation and broad power-management facilities are not current prerequisites.
 
-## Current boundary — Boot / desktop UI foundation
+## Published boundary — Boot / desktop UI foundation
 
 Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`.
 Canonical acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.
@@ -29,7 +29,14 @@ The first UI implementation remains deliberately below the application runtime. 
 
 The status bar keeps the accepted 128x9 geometry. SYSTEM reflects scheduler/task/watchdog readiness, USB reflects actual CDC configured state for this boundary, NETWORK remains inactive until a real network service exists, and the right field is monotonic uptime `HH:MM` saturating at `99:59`. Polling does not imply periodic redraw: the framebuffer/panel is updated only when lifecycle state, an indicator, displayed minute, or explicit `uiruntime` restore changes visible state. Steady-state redraw keeps an initialized OLED powered on; SSD1306 reinitialization/display-off is reserved for initial bring-up or real transfer recovery. This behavior is build-, hardware- and physically accepted on candidate tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`, with `PHYSICAL_OLED=PASS`.
 
-The next independent UI optimization is `OLED_DIRTY_REGION_OPTIMIZATION`: retain one 512-byte framebuffer, make pixel writes dirty only when byte state actually changes, track bounded horizontal dirty spans per SSD1306 page, and issue page/column windows only for those spans. A second 512-byte shadow framebuffer is not required. `APPLICATION_VIEW` remains deferred to `APPLICATION_RUNTIME_FOUNDATION`; production WinUSB management USB remains a later `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+The boot/desktop boundary is published at commit `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`, tree `d27cf8246fb7563b2327955ffc06428b9d843b2a`; final repository state after publication was clean at ahead/behind `0/0`.
+
+## Current boundary — OLED dirty-region optimization
+
+Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`.
+Canonical acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.
+
+`OLED_DIRTY_REGION_OPTIMIZATION` retains one 512-byte framebuffer and adds bounded 16-bit horizontal dirty spans for the existing eight-page maximum. No-op writes do not dirty framebuffer state; the aligned renderer must use the same change-aware byte path; `ssd1306_present()` programs exact page+column windows and transfers only the dirty span. The production `mono_fb_t` growth is 32 bytes; all persistent optimization metadata is capped at +64 bytes static SRAM over the accepted 9792-byte baseline. Normal minute/SYSTEM/USB updates become component-local and must not clear/recompose the whole framebuffer; initial render, splash->home, explicit restore and recovery may still perform full composition. A second framebuffer is forbidden. After this optimization, `APPLICATION_RUNTIME_FOUNDATION` is next; production WinUSB management USB remains a later `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 
 ## C4.0 accepted IWDG liveness record
 

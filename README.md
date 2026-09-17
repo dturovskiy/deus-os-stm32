@@ -5,21 +5,23 @@
 
 Published firmware/source baseline:
 
-`2fde9025a51021511e73a76b561f7983ca655e2f` — `feat: add binary framed transport foundation`
+`d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` — `feat: add boot desktop UI foundation`
 
 Published tree:
 
-`27248c5ac81c60cc898083b09ea73b95aa1e1ff1`
+`d27cf8246fb7563b2327955ffc06428b9d843b2a`
 
-Binary framed transport foundation — **PUBLISHED**
+Boot / desktop UI foundation — **GATES 0–7 ACCEPTED / PUBLISHED**
 
 Accepted firmware:
 
-- tested candidate tree `c2c3d9743c23ab02329a9652714862fafb5bb17c`;
-- binary `40720` bytes / SHA-256 `AE24F039C2CE24866C900E46EEF09179439E9E93B1F51C97AF9590B7165C2022`;
-- Flash `40720 / 65536`, SRAM `9752 / 20480`;
-- USB CDC text + binary coexistence, stable 32-method RPC IDs, request correlation, CRC-16/CCITT-FALSE, bounded arguments and atomic frame TX accepted;
-- physical reconnect, pressure, malformed-frame recovery, deliberate IWDG reset and automatic post-reset text+binary recovery hardware accepted;
+- tested candidate tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`;
+- binary `41520` bytes / SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`;
+- Flash `41520 / 65536`, SRAM `9792 / 20480`;
+- nonblocking `BOOT_SPLASH -> DESKTOP_HOME`, real SYSTEM/USB/NETWORK status semantics and monotonic uptime accepted;
+- steady-state semantic refresh never re-enters SSD1306 initialization/display-off;
+- retained CDC/UART/binary pressure, reconnect, malformed-frame recovery and IWDG recovery accepted;
+- physical OLED `PHYSICAL_OLED=PASS` with clean minute/text transitions and no blank pulse/flicker/stale pixels;
 - final Flash readback exact;
 - ordinary non-force publication complete; local/remote ahead-behind `0/0`.
 
@@ -37,9 +39,9 @@ Canonical architecture docs:
 
 The foundation-gap review confirms no missing kernel blocker before boot/desktop/application work. It additionally freezes later contracts for semantic application events, system identity/capabilities, bounded persistence safety, crash/reset observability, security/trust before network mutation or firmware update, and portability layering. Generic timers/queues/synchronization/runtime statistics remain consumer-driven rather than speculative prerequisites.
 
-Current firmware boundary:
+Latest published firmware boundary:
 
-`BOOT_DESKTOP_UI_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 LOCAL ACCEPTANCE COMMIT CURRENT**.
+`BOOT_DESKTOP_UI_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`**.
 
 Canonical design/acceptance:
 
@@ -50,9 +52,18 @@ The accepted revision-2 implementation provides a nonblocking `BOOT_SPLASH -> DE
 
 Accepted Gate 2/3 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN `41520` bytes / SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`, ELF `70700` bytes / SHA-256 `62A827893CC1EF44B18025E87B8299792636CA2D93093ED569F27F08A0B09F02`, Flash `41520 / 65536`, SRAM `9792 / 20480`. Gate 3 retained CDC/UART/binary pressure, reconnect, IWDG recovery and exact final Flash readback all passed. Gate 4 is operator-confirmed `PHYSICAL_OLED=PASS`: minute/text transitions are clean, with no blank pulse, flicker, stale pixels or unintended redraw artifacts.
 
-Planned order after this boundary:
+Current implementation boundary:
 
-`BOOT_DESKTOP_UI_FOUNDATION` -> `OLED_DIRTY_REGION_OPTIMIZATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `USB_MANAGEMENT_DEVICE_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
+`OLED_DIRTY_REGION_OPTIMIZATION` — **GATE 0 ACCEPTED / GATE 1 SOURCE IMPLEMENTATION CURRENT**.
+
+Canonical design/acceptance:
+
+- `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`
+- `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`
+
+Implementation order:
+
+`OLED_DIRTY_REGION_OPTIMIZATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `USB_MANAGEMENT_DEVICE_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
 
 `USB_MANAGEMENT_DEVICE_FOUNDATION` will make the production Windows-facing device a vendor-specific WinUSB management device rather than a COM-port-first CDC console. The existing binary framed RPC remains the management protocol above the transport; production USB naming/identity, Microsoft OS descriptors, a stable device-interface GUID and WinUSB bulk transport belong to that boundary. CDC may remain only as an explicit debug/recovery profile if later justified.
 

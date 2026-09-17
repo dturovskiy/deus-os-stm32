@@ -73,7 +73,7 @@ The completeness review confirms there is no kernel blocker before boot/desktop/
 
 Gates 0–7 are accepted and ordinary non-force publication is complete at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c` / tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`. The boundary changed documentation only; no firmware build/flash was required.
 
-### Current boundary — Boot / desktop UI foundation — GATES 0–5 ACCEPTED / GATE 6 CURRENT
+### Published boundary — Boot / desktop UI foundation — GATES 0–7 ACCEPTED
 
 `BOOT_DESKTOP_UI_FOUNDATION` is the first firmware consumer of the published UI architecture. The accepted implementation is a two-state `BOOT_SPLASH -> DESKTOP_HOME` runtime lifecycle with nonblocking 1000 ms visible splash dwell, task0-owned 250 ms timed UI service, real SYSTEM/USB/NETWORK indicators, monotonic uptime `HH:MM`, render-on-visible-change behavior, and one-time/recovery-only SSD1306 initialization. It does not introduce `APPLICATION_VIEW`, an application registry/event ABI, local input, host tooling, production WinUSB management USB, networking, persistence, a new RTOS primitive or a third task.
 
@@ -82,7 +82,16 @@ Accepted Gate 2/3 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`; BI
 Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`.
 Canonical acceptance: `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md`.
 
-After publication, exact next implementation boundary is `OLED_DIRTY_REGION_OPTIMIZATION`, using the existing 512-byte framebuffer plus bounded dirty byte/column spans rather than a second framebuffer. It is followed by `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION` before the host control application.
+Publication is complete at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` / tree `d27cf8246fb7563b2327955ffc06428b9d843b2a`; ordinary non-force push is complete and local/remote ahead-behind is `0/0`.
+
+### Current boundary — OLED dirty-region optimization — GATE 0 ACCEPTED / GATE 1 CURRENT
+
+`OLED_DIRTY_REGION_OPTIMIZATION` is a measured rendering/transport optimization. It keeps one 512-byte framebuffer, adds 16-bit per-page dirty X spans, makes framebuffer byte writes change-aware, updates the aligned text fast path, sends exact SSD1306 page+column windows, records bounded present-transfer metrics and changes runtime status composition so minute/SYSTEM/USB changes do not clear/recompose the full screen. Static optimization metadata is capped at +64 bytes SRAM; no shadow framebuffer, heap, DMA or new RTOS primitive is allowed.
+
+Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`.
+Canonical acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.
+
+After its publication, exact next implementation boundary is `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION` before the host control application.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 

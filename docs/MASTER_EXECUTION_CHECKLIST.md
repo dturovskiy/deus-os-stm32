@@ -108,7 +108,7 @@ Canonical foundation gap review:
 
 Gates 0–7 are accepted. Gate 6 committed exactly the accepted docs-only path set at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`; Gate 7 published it by ordinary non-force fast-forward.
 
-### Current boundary — Boot / desktop UI foundation
+### Published boundary — Boot / desktop UI foundation
 
 Boundary ID: `BOOT_DESKTOP_UI_FOUNDATION`.
 
@@ -120,8 +120,8 @@ Gate order:
 - [x] Gate 3 retained hardware/runtime acceptance — **PASS**.
 - [x] Gate 4 physical OLED acceptance — **PASS / `PHYSICAL_OLED=PASS`**.
 - [x] Gate 5 docs/evidence finalization — **PASS**.
-- [ ] Gate 6 local acceptance commit — **CURRENT**.
-- [ ] Gate 7 ordinary non-force publication.
+- [x] Gate 6 local acceptance commit — **PASS / `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`**.
+- [x] Gate 7 ordinary non-force publication — **PASS / PUBLISHED**.
 
 Gate 0 freezes:
 
@@ -154,9 +154,44 @@ Accepted Gate 2/3/4 evidence:
 - [x] Gate 3 evidence `2B9EA2BB00671E829C5F4718FD63EC68889B25347EABF1D7FEF65191E5C3C0CD`;
 - [x] Gate 4 `PHYSICAL_OLED=PASS`: clean digit/text transitions, no unintended redraw, flicker, blank pulse or stale pixels.
 
-After publication, exact next boundary is `OLED_DIRTY_REGION_OPTIMIZATION`; then `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+Publication commit/tree: `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8` / `d27cf8246fb7563b2327955ffc06428b9d843b2a`; ordinary non-force push complete; final repository ahead/behind `0/0`.
 
-No source/build/flash/commit/push in Gate 0.
+### Current boundary — OLED dirty-region optimization
+
+Boundary ID: `OLED_DIRTY_REGION_OPTIMIZATION`.
+
+Gate order:
+
+- [x] Gate 0 architecture/source-boundary freeze — **PASS**.
+- [ ] Gate 1 source implementation + deterministic self/static proof — **CURRENT**.
+- [ ] Gate 2 fresh GNU build/link/resource + transfer-metric validation.
+- [ ] Gate 3 retained hardware/runtime + optimized-transfer proof.
+- [ ] Gate 4 physical OLED regression — **MANDATORY `PHYSICAL_OLED=PASS`**.
+- [ ] Gate 5 docs/evidence finalization.
+- [ ] Gate 6 local acceptance commit.
+- [ ] Gate 7 ordinary non-force publication.
+
+Canonical design: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`.
+Canonical acceptance: `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`.
+
+Gate 0 freezes:
+
+- exactly one 512-byte framebuffer; no shadow framebuffer;
+- 16-bit dirty min/max X bounds for each of at most eight framebuffer pages (+32 bytes in `mono_fb_t`);
+- all persistent optimization metadata <= +64 bytes SRAM over the accepted 9792-byte baseline;
+- no-op framebuffer writes remain clean; changed bytes expand only their page span;
+- aligned text fast path uses the same change-aware byte path;
+- `ssd1306_present()` transfers exact dirty page/column spans and preserves retry state on failure;
+- clean present = `0` I2C writes / `0` payload bytes;
+- `00:00 -> 00:01` target <= `11` I2C payload bytes;
+- USB indicator transition target <= `13` I2C payload bytes;
+- current prior four-page semantic-refresh baseline = `572` I2C payload bytes;
+- normal minute/SYSTEM/USB updates do not clear/recompose the full framebuffer or rerasterize console content;
+- no geometry, task/SVC/IPC, command/RPC, USB, IWDG, linker/startup or application-runtime redesign.
+
+Initial Gate 1 source boundary is exactly eight paths: `include/gfx/mono_fb.h`, `src/gfx/mono_fb.c`, `src/gfx/text_renderer.c`, `include/drivers/ssd1306.h`, `src/drivers/ssd1306.c`, `include/kernel/oled_status_bar.h`, `src/kernel/oled_status_bar.c`, `src/kernel.c`.
+
+After publication, exact next boundary is `APPLICATION_RUNTIME_FOUNDATION`, then `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 
 Permanent constraints retained:
 

@@ -4,7 +4,7 @@
 
 Post-publication documentation audit completed after `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` Gate 7. Canonical current-state docs now record Gates 0–7 as published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, distinguish the accepted firmware/source baseline from the later docs-only architecture publication, and identify `BOOT_DESKTOP_UI_FOUNDATION` as the exact next boundary. Historical C3.6/C3.7/C3.8/C3.9/C4.0 plan/acceptance headers that still claimed implementation/publication was pending were corrected to their actual published commits; historical plan bodies remain unchanged. No firmware/source/header/linker/script/build mutation is part of this cleanup.
 
-### Accepted — Boot / desktop UI foundation — Gates 0–5 complete / Gate 6 current
+### Published — Boot / desktop UI foundation — Gates 0–7 accepted
 
 Boundary: `BOOT_DESKTOP_UI_FOUNDATION`.
 
@@ -14,9 +14,15 @@ Accepted Gate 2 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`; BIN 
 
 Gate 3 hardware acceptance passed on the exact candidate: no reflash was needed because target Flash already matched; boot/scheduler/IWDG startup, task margins (`640` / `424` bytes), CDC text pressure `128/128` with zero drops, UART pressure `128/128` with zero drops/errors, binary pressure `128/128` unique IDs, malformed/CRC/oversize/split-frame recovery, physical USB reconnect, authorized IWDG reboot/recovery, three USB enumerations and final exact Flash readback all passed. Gate 3 log SHA-256 `9481BEFADB5A8F1D17AF6FC0ACDE238FE66B6956940F56DC86A828CBFAA7F900`; Gate 3 evidence SHA-256 `2B9EA2BB00671E829C5F4718FD63EC68889B25347EABF1D7FEF65191E5C3C0CD`.
 
-Gate 4 physical OLED review is `PHYSICAL_OLED=PASS`: displayed digits and text update correctly, no unintended content is drawn, and no flicker/blank pulse/stale-pixel artifact is visible. Gate 5 documentation/evidence finalization records this accepted state without changing firmware source bytes.
+Gate 4 physical OLED review is `PHYSICAL_OLED=PASS`: displayed digits and text update correctly, no unintended content is drawn, and no flicker/blank pulse/stale-pixel artifact is visible. Gate 5 documentation/evidence finalization changed docs only. Gate 6 committed the accepted 12-path source/docs candidate as `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`, tree `d27cf8246fb7563b2327955ffc06428b9d843b2a`, subject `feat: add boot desktop UI foundation`; Gate 7 published it by ordinary non-force fast-forward and final local/remote ahead-behind is `0/0`.
 
-Next independent optimization boundary is `OLED_DIRTY_REGION_OPTIMIZATION`: preserve the single 512-byte framebuffer, track real changed byte/column spans, and transfer only affected SSD1306 regions. It precedes `APPLICATION_RUNTIME_FOUNDATION`. Production Windows USB remains scheduled for `USB_MANAGEMENT_DEVICE_FOUNDATION`, using vendor-specific WinUSB `Deus OS Device` identity above the accepted binary RPC rather than COM-port-first CDC.
+### Current — OLED dirty-region optimization — Gate 0 accepted / Gate 1 current
+
+Boundary: `OLED_DIRTY_REGION_OPTIMIZATION`.
+
+Canonical planning: `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md` and `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`. Gate 0 freezes a single 512-byte framebuffer, +32-byte 16-bit dirty X-span metadata in `mono_fb_t`, change-aware framebuffer writes, partial SSD1306 page+column windows, bounded present telemetry, component-dirty status rendering and no full-frame recomposition for normal minute/SYSTEM/USB changes. Incremental static SRAM for optimization metadata is capped at 64 bytes; no shadow framebuffer, heap, DMA, new task/SVC/IPC primitive, geometry change, command/RPC renumbering or USB redesign is authorized.
+
+Deterministic transfer targets are measured against the current 572-I2C-payload-byte four-page semantic refresh: unchanged present `0` bytes, `00:00 -> 00:01` <= `11` payload bytes, and a USB indicator transition <= `13` payload bytes. `APPLICATION_RUNTIME_FOUNDATION` follows after this optimization. Production Windows USB remains scheduled for `USB_MANAGEMENT_DEVICE_FOUNDATION`, using vendor-specific WinUSB `Deus OS Device` identity above the accepted binary RPC rather than COM-port-first CDC.
 
 ## 2026-09-16
 
