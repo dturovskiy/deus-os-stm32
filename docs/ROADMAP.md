@@ -101,28 +101,35 @@ Canonical design/acceptance/backlog:
 `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`
 `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
 
-### Current implementation boundary — Application runtime foundation
+### Published implementation boundary — Application runtime foundation
 
-`APPLICATION_RUNTIME_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
+`APPLICATION_RUNTIME_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `25752fba557b1a1b518265a93bde05d3a6a3f9ad`**.
 
-Accepted candidate: tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`; BIN `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; ELF `77836` bytes / `E05725E7D1C5EC21619578A2CE8AEA873F6A3CE2D0D5DC4C75588FD4E65D09C6`; MAP `43CFA7528043649C7D8A871D9EBC6FC6A5F9137105137A51FE25B9DA8627D7D4`; Flash `48604/65536`; SRAM `10032/20480`; named runtime static state `184` bytes. Hardware accepted text/binary lifecycle, idempotent/invalid-start behavior, minute semantic-event delivery without rerender, CDC/UART/binary pressure `128/128`, power-cycle USB recovery, IWDG recovery and final exact Flash readback. Minimum observed task0/task1 margins after full application/binary activity are `272/424` bytes. Gate 4 is `PHYSICAL_OLED=PASS`.
+Accepted candidate: tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`; BIN `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; ELF `77836` bytes / `E05725E7D1C5EC21619578A2CE8AEA873F6A3CE2D0D5DC4C75588FD4E65D09C6`; MAP `43CFA7528043649C7D8A871D9EBC6FC6A5F9137105137A51FE25B9DA8627D7D4`; Flash `48604/65536`; SRAM `10032/20480`; named runtime static state `184` bytes. Hardware accepted text/binary lifecycle, idempotent/invalid-start behavior, minute semantic-event delivery without rerender, CDC/UART/binary pressure `128/128`, power-cycle USB recovery, IWDG recovery and final exact Flash readback. Minimum observed task0/task1 margins after full application/binary activity are `272/424` bytes. Gate 4 is `PHYSICAL_OLED=PASS`. Evidence: Gate 2 `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`; Gate 3 `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`; Gate 4 `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`. Publication commit/tree `25752fba557b1a1b518265a93bde05d3a6a3f9ad` / `24624db70923bdaa77f134cc956423511785c199`; Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`; Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`.
 
 Canonical design/acceptance:
 `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`
 `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Architectural follow-up:
+### Current implementation boundary — Kernel composition-root decomposition
+
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATE 0 ACCEPTED / GATE 1 NEXT**.
+
+The accepted firmware is not classified as spaghetti, but the `5100`-line `src/kernel.c` has measured god-module concentration across composition/bootstrap, command/diagnostic dispatch, UI/application integration and low-level glue. This boundary is behavior-preserving cleanup only: extract coherent ownership, preserve one-way dependencies, and do not replace the god-module with a catch-all context/service-locator god object.
+
+Canonical decision/design/acceptance:
 `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`
+`docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`
+`docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`
 
 Implementation order:
 
-1. `APPLICATION_RUNTIME_FOUNDATION` — Gates 0–5 accepted; Gate 6/7 publication next;
-2. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — mandatory behavior-preserving decomposition of the measured `src/kernel.c` god-module concentration before any new feature growth;
-3. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
-4. `HOST_CONTROL_APPLICATION_FOUNDATION`;
-5. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
-6. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-7. networking/service extensions.
+1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gate 0 accepted; Gate 1 source decomposition next;
+2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
+3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
+4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
+5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+6. networking/service extensions.
 
 Deferred optimization/robustness items are trigger-driven, not new immediate roadmap boundaries: I2C IRQ/DMA only after measured bus pressure; scheduler ready-set acceleration only after materially larger task count and measured overhead; CRC acceleration only for measured streaming cost; bounded minimal-copy/backpressure for WinUSB and transfer paths; tickless only for a real power requirement; structured binary event tracing rather than printf-heavy logging; bounded storage/block-device layers when a consumer exists.
 

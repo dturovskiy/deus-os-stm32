@@ -54,26 +54,26 @@ Accepted Gate 2/3 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BI
 
 Latest published firmware boundary:
 
-`OLED_DIRTY_REGION_OPTIMIZATION` — **GATES 0–7 ACCEPTED / PUBLISHED `39690c9ef103cbcf93272df8bad0359a934b7dc1`**.
+`APPLICATION_RUNTIME_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `25752fba557b1a1b518265a93bde05d3a6a3f9ad`**.
 
-Publication tree `f195fac5ce733c36a1d955e0fbe687ee6c83b605`; Gate 6 evidence `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`; Gate 7 evidence `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
-
-Canonical design/acceptance/backlog:
-
-- `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md`
-- `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md`
-- `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
-
-Current implementation boundary:
-
-`APPLICATION_RUNTIME_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
-
-The accepted runtime implements static `system.home=0x0001` and `device.info=0x0002`, task0-only lifecycle/event dispatch, bounded pointer-free semantic events, a bounded three-row application view, and transport-neutral `applist/appstart/appstop` at RPC IDs `0x0021..0x0023` without renumbering `0x0001..0x0020`. Gate 2/3 candidate tree is `ba8b7066c8c435b7bca4fdef3932f27c5055761c`, BIN `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`, Flash `48604/65536`, SRAM `10032/20480`; Gate 3 hardware/runtime and Gate 4 `PHYSICAL_OLED=PASS` are accepted.
+Publication tree `24624db70923bdaa77f134cc956423511785c199`; accepted firmware tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`; BIN `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; Flash `48604/65536`; SRAM `10032/20480`; minimum task0/task1 margins `272/424` bytes; `PHYSICAL_OLED=PASS`. Evidence: Gate 2 `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`; Gate 3 `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`; Gate 4 `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`; Gate 5 `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`; Gate 6 `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`; Gate 7 `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`.
 
 Canonical design/acceptance:
 
 - `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`
 - `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`
+
+Current implementation boundary:
+
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATE 0 ACCEPTED / GATE 1 NEXT**.
+
+This boundary is behavior-preserving architecture cleanup triggered by measured integration concentration in the `5100`-line `src/kernel.c`. It must extract coherent application bridge, application command, scheduler diagnostic and production-glue responsibilities while preserving all accepted public/hardware behavior. It must not replace the god-module with a universal `kernel_context_t` or service-locator god object.
+
+Canonical decision/design/acceptance:
+
+- `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`
+- `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`
+- `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`
 
 Implementation order:
 

@@ -365,24 +365,32 @@ Exact order:
    - list/status/start/stop/control service API;
    - no dynamic native loader.
 
-3. `HOST_CONTROL_APPLICATION_FOUNDATION`
+3. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION`
+   - mandatory behavior-preserving decomposition of the measured `src/kernel.c` integration/god-module concentration;
+   - no catch-all god object, no feature growth inside the cleanup.
+
+4. `USB_MANAGEMENT_DEVICE_FOUNDATION`
+   - vendor-specific WinUSB production management transport;
+   - stable Windows device-interface identity while reusing the accepted binary RPC semantics above transport.
+
+5. `HOST_CONTROL_APPLICATION_FOUNDATION`
    - Windows/Linux host application;
    - device discovery and HELLO;
    - usable system identity/build/platform/capability discovery before host UX depends on it;
    - health/console/application control;
    - binary RPC client foundation.
 
-4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`
+6. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`
    - bounded versioned upload/download for non-executable resources/configuration;
    - persistent storage contract before Flash-resident target state: versioning, integrity, atomic commit/recovery and wear policy.
 
-5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`
+7. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`
    - recoverable native-USB update path;
    - controlled reboot/update handoff;
    - explicit Flash/update transaction safety;
    - security/trust contract covering update authenticity and authorization before executable Flash mutation.
 
-6. networking/service extensions.
+8. networking/service extensions.
    - reuse the same application/service model;
    - require authorization/trust review before network-accessible state mutation.
 

@@ -1,6 +1,6 @@
 # Deus OS — Application Runtime Foundation Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `25752fba557b1a1b518265a93bde05d3a6a3f9ad`**
 
 Boundary ID:
 
@@ -182,39 +182,17 @@ Synchronize at minimum:
 - canonical application/UI architecture docs where required;
 - this plan and acceptance plan.
 
-Record exact app IDs, lifecycle/event ABI, command/RPC additions, resource usage, stack evidence, hardware results and physical OLED disposition.
+Record exact app IDs, lifecycle/event ABI, command/RPC additions, resource usage, stack evidence, hardware results and physical OLED disposition. Accepted evidence: Gate 2 `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`; Gate 3 `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`; Gate 3 log `703C41A7493D078E456A5721EAFEFF821A152D217FB3F30AB8C809D7452A6B36`; Gate 4 `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`; physical OLED `PASS`.
 
 Do not silently fold USB management-device, host GUI, persistence, update or networking work into Gate 5.
 
 ## Gate 6 — local acceptance commit
 
-Require:
-
-- exact accepted source/docs set only;
-- complete Gate 2/3/4/5 evidence;
-- `PHYSICAL_OLED=PASS`;
-- no unreviewed paths;
-- `git diff --cached --check` PASS;
-- one local acceptance commit;
-- clean repository after commit;
-- fresh remote still at direct parent;
-- ahead/behind `1/0` before push.
+Acceptance: **PASS**. Exact reviewed source/docs set committed as `25752fba557b1a1b518265a93bde05d3a6a3f9ad`, tree `24624db70923bdaa77f134cc956423511785c199`; `git diff --cached --check` PASS, repo clean after commit, remote still direct parent, ahead/behind `1/0`. Gate 5 evidence `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`; Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`.
 
 ## Gate 7 — ordinary non-force publication
 
-Before push require fresh remote still equals Gate 6 parent and fast-forward ancestry is exact.
-
-Publish with one ordinary non-force:
-
-```text
-git push origin main:main
-```
-
-After fresh fetch require:
-
-- `HEAD == origin/main == FETCH_HEAD`;
-- clean repo;
-- ahead/behind `0/0`.
+Acceptance: **PASS**. One ordinary non-force `git push origin main:main` published `25752fba557b1a1b518265a93bde05d3a6a3f9ad`; fresh fetch verified `HEAD == origin/main == FETCH_HEAD`, clean repo, ahead/behind `0/0`. Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`.
 
 After Gate 7, exact next boundary:
 

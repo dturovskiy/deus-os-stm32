@@ -1,10 +1,10 @@
 ## 2026-09-18
 
-### Accepted through Gate 5 — Application runtime foundation
+### Published — Application runtime foundation — Gates 0–7 accepted
 
 Boundary: `APPLICATION_RUNTIME_FOUNDATION`.
 
-Accepted candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`; BIN `48604` bytes / SHA-256 `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; ELF `77836` bytes / SHA-256 `E05725E7D1C5EC21619578A2CE8AEA873F6A3CE2D0D5DC4C75588FD4E65D09C6`; MAP SHA-256 `43CFA7528043649C7D8A871D9EBC6FC6A5F9137105137A51FE25B9DA8627D7D4`; Flash `48604 / 65536`; SRAM `10032 / 20480`; named application-runtime static state `184` bytes.
+Accepted candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`; BIN `48604` bytes / SHA-256 `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; ELF `77836` bytes / SHA-256 `E05725E7D1C5EC21619578A2CE8AEA873F6A3CE2D0D5DC4C75588FD4E65D09C6`; MAP SHA-256 `43CFA7528043649C7D8A871D9EBC6FC6A5F9137105137A51FE25B9DA8627D7D4`; Flash `48604 / 65536`; SRAM `10032 / 20480`; named application-runtime static state `184` bytes. Gate 2 evidence SHA-256 is `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`.
 
 The accepted runtime adds static `system.home=0x0001` and `device.info=0x0002`, explicit seven-state lifecycle ABI, task0-only synchronous pointer-free semantic events, a bounded 3x21 application view, and transport-neutral `applist/appstart/appstop` at RPC IDs `0x0021..0x0023` while retaining existing IDs `0x0001..0x0020` and binary frame protocol v1.
 
@@ -13,6 +13,12 @@ Gate 3 hardware/runtime acceptance passed on the exact candidate: text/binary li
 Gate 4 is `PHYSICAL_OLED=PASS`; evidence SHA-256 `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`.
 
 Acceptance-model clarification: with micro-USB as the sole target power source, physical unplug/reconnect is a reset/power-cycle recovery test, not a live `USB_STATE_CHANGED` edge test because the previous volatile USB snapshot does not survive reset. Dynamic semantic-event/no-rerender behavior is independently proven by the real minute transition.
+
+Gate 5 evidence SHA-256 `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`. Gate 6 committed the exact accepted source/docs set as `25752fba557b1a1b518265a93bde05d3a6a3f9ad`, tree `24624db70923bdaa77f134cc956423511785c199`; Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`. Gate 7 published by ordinary non-force fast-forward; Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`; final ahead/behind `0/0`.
+
+### Gate 0 accepted — kernel composition-root decomposition
+
+Canonical design: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`; acceptance: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`.
 
 ### Architecture decision — kernel composition-root decomposition required next
 

@@ -219,6 +219,10 @@ OS_APPLICATION_AND_UI_MODEL_FOUNDATION
  -> BOOT_DESKTOP_UI_FOUNDATION
  -> APPLICATION_RUNTIME_FOUNDATION
       includes semantic application event/service contract
+ -> KERNEL_COMPOSITION_ROOT_DECOMPOSITION
+      behavior-preserving cleanup required after measured src/kernel.c integration concentration
+ -> USB_MANAGEMENT_DEVICE_FOUNDATION
+      production WinUSB management transport reusing accepted binary RPC semantics
  -> HOST_CONTROL_APPLICATION_FOUNDATION
       requires usable system identity/capability discovery
  -> ASSET_CONFIGURATION_TRANSFER_FOUNDATION

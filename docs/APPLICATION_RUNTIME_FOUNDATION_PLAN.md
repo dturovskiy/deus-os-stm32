@@ -1,6 +1,6 @@
 # Deus OS — Application Runtime Foundation Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `25752fba557b1a1b518265a93bde05d3a6a3f9ad`**
 
 Boundary ID:
 
@@ -359,11 +359,13 @@ Require explicit `PHYSICAL_OLED=PASS` after observing:
 
 ## 16. Gates 5–7
 
-Gate 5 synchronizes canonical documentation/evidence and records exact candidate/resource/hardware/physical results.
+Gate 5 synchronizes canonical documentation/evidence and records exact candidate/resource/hardware/physical results. Accepted evidence is Gate 2 `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`, Gate 3 `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52` with log `703C41A7493D078E456A5721EAFEFF821A152D217FB3F30AB8C809D7452A6B36`, and Gate 4 `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86` with `PHYSICAL_OLED=PASS`.
 
-Gate 6 creates one local acceptance commit from the exact reviewed source/docs set, with clean repo afterward and remote still at the direct parent.
+Gate 5 evidence is `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`.
 
-Gate 7 performs one ordinary non-force `git push origin main:main`, then fresh-fetch verification of `HEAD == origin/main == FETCH_HEAD`, clean repo and ahead/behind `0/0`.
+Gate 6 accepted the exact reviewed source/docs set as commit `25752fba557b1a1b518265a93bde05d3a6a3f9ad`, tree `24624db70923bdaa77f134cc956423511785c199`; evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`.
+
+Gate 7 published that commit by ordinary non-force `git push origin main:main`; evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`. Fresh fetch verified `HEAD == origin/main == FETCH_HEAD`, clean repo and ahead/behind `0/0`.
 
 After publication, exact next boundary:
 

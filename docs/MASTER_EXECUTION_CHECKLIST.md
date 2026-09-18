@@ -1,9 +1,34 @@
 > [!IMPORTANT]
 
 <!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
-## Current execution state — 2026-09-17
+## Current execution state — 2026-09-18
 
 This section is authoritative.
+
+### Published boundary — application runtime foundation — Gates 0–7 accepted
+
+- [x] Gate 0 architecture/source-boundary freeze — PASS / planning parent `5191850ec749c0e7519b24aa53a5cbb9cd477e8c`.
+- [x] Gate 1 exact five-path source implementation/static proof — PASS.
+- [x] Gate 2 fresh GNU build/link/resource/stack validation — PASS; evidence `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`.
+- [x] Gate 3 hardware/runtime acceptance — PASS; evidence `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`, log `703C41A7493D078E456A5721EAFEFF821A152D217FB3F30AB8C809D7452A6B36`.
+- [x] Gate 4 physical application-view OLED review — PASS / `PHYSICAL_OLED=PASS`; evidence `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`.
+- [x] Gate 5 canonical docs/evidence finalization — PASS; evidence `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`.
+- [x] Gate 6 local acceptance commit — PASS / `25752fba557b1a1b518265a93bde05d3a6a3f9ad`; evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`.
+- [x] Gate 7 ordinary non-force publication — PASS; evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`.
+
+Published commit/tree: `25752fba557b1a1b518265a93bde05d3a6a3f9ad` / `24624db70923bdaa77f134cc956423511785c199`; final `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`. Accepted candidate: tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`; BIN `48604` / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; ELF `77836` / `E05725E7D1C5EC21619578A2CE8AEA873F6A3CE2D0D5DC4C75588FD4E65D09C6`; MAP `43CFA7528043649C7D8A871D9EBC6FC6A5F9137105137A51FE25B9DA8627D7D4`; Flash `48604/65536`; SRAM `10032/20480`; minimum observed task0/task1 margins `272/424`.
+
+Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a live `USB_STATE_CHANGED` edge proof, because micro-USB is the sole target power source. Dynamic semantic-event delivery/no-rerender is independently proven by the real minute transition.
+
+### Current boundary — kernel composition-root decomposition — Gate 0 accepted / Gate 1 next
+
+- [x] measured god-module trigger recorded: `src/kernel.c = 5100` lines, `console_execute_request = 8644` linked bytes, task0 minimum accepted margin `272` bytes;
+- [x] behavior-preserving decomposition only; no feature work;
+- [x] no universal `kernel_context_t`, service locator or catch-all god object;
+- [x] public application/RPC/binary/USB/scheduler/IWDG/OLED/startup behavior frozen;
+- [x] initial source boundary and resource ceilings frozen in `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`;
+- [x] Gate 0 acceptance frozen in `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`;
+- [ ] Gate 1 source decomposition — NEXT.
 
 ### Published baseline — binary framed transport foundation
 
@@ -205,7 +230,7 @@ Publication commit/tree: `39690c9ef103cbcf93272df8bad0359a934b7dc1` / `f195fac5c
 
 Gate 5 additionally froze measured/deferred optimization triggers, latent-bug/soak/fault-injection strategy, bounded binary event-trace policy, external-storage/memory policy, diagnostic build-profile policy and repository EOL policy. `.gitattributes` owns LF for source/docs so Windows line-ending warnings do not remain operator-log noise.
 
-### Current boundary — Application runtime foundation
+### Published boundary — Application runtime foundation
 
 Boundary ID: `APPLICATION_RUNTIME_FOUNDATION`.
 
@@ -217,8 +242,8 @@ Gate order:
 - [x] Gate 3 retained hardware/runtime + application lifecycle/event proof — **PASS / V5 EVIDENCE**.
 - [x] Gate 4 physical OLED application-view regression — **PASS / `PHYSICAL_OLED=PASS`**.
 - [x] Gate 5 docs/evidence finalization — **PASS**.
-- [ ] Gate 6 local acceptance commit — **NEXT**.
-- [ ] Gate 7 ordinary non-force publication.
+- [x] Gate 6 local acceptance commit — **PASS / `25752fba557b1a1b518265a93bde05d3a6a3f9ad`**.
+- [x] Gate 7 ordinary non-force publication — **PASS / PUBLISHED**.
 
 Canonical design: `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`.
 Canonical acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.
@@ -248,7 +273,41 @@ Accepted Gate 1–4 evidence:
 
 Architecture review outcome: `src/kernel.c` is not classified as spaghetti, but its `5100` lines and concentration of composition, command/diagnostic, UI/application integration and low-level glue constitute a god-module risk. No additional feature may extend it before `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is accepted. Do not replace it with a catch-all god object.
 
-After publication, exact next boundary is `KERNEL_COMPOSITION_ROOT_DECOMPOSITION`.
+Publication commit/tree: `25752fba557b1a1b518265a93bde05d3a6a3f9ad` / `24624db70923bdaa77f134cc956423511785c199`; ordinary non-force publication complete; final repository ahead/behind `0/0`. Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`; Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`.
+
+### Current boundary — Kernel composition-root decomposition
+
+Boundary ID: `KERNEL_COMPOSITION_ROOT_DECOMPOSITION`.
+
+Gate order:
+
+- [x] Gate 0 architecture/source-boundary freeze — **PASS**.
+- [ ] Gate 1 behavior-preserving source decomposition + static dependency proof — **NEXT**.
+- [ ] Gate 2 fresh build/link/resource/structure validation.
+- [ ] Gate 3 hardware/runtime equivalence.
+- [ ] Gate 4 physical OLED equivalence if UI/application integration moves.
+- [ ] Gate 5 docs/evidence finalization.
+- [ ] Gate 6 local acceptance commit.
+- [ ] Gate 7 ordinary non-force publication.
+
+Canonical decision: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`.
+Canonical design: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`.
+Canonical acceptance: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`.
+
+Gate 0 freeze:
+
+- [x] parent commit/tree `25752fba557b1a1b518265a93bde05d3a6a3f9ad` / `24624db70923bdaa77f134cc956423511785c199`;
+- [x] measured prestate `src/kernel.c = 5100` lines;
+- [x] linked prestate: `console_execute_request=8644`, `console_execute_scheduler_diagnostic=3284`, `boot_desktop_ui_render=1420`, `kernel_main=1116` bytes;
+- [x] refactor-only boundary: no public application/RPC/USB/scheduler/IWDG/OLED behavior change;
+- [x] no universal `kernel_context_t`, service locator or catch-all god object;
+- [x] no hidden extern access to private `kernel.c` state and no circular module dependency;
+- [x] initially authorized new modules: application runtime bridge, application commands, scheduler diagnostics header/source pairs;
+- [x] initially authorized modified files: `src/kernel.c`, with command-service header/source only if relocation requires it without public ABI change;
+- [x] Flash <= `48656`, SRAM <= `10104`, task stacks exactly `1024 / 512`, runtime margins >= `256` bytes;
+- [x] target material `kernel.c` reduction (~30% expected) is subordinate to coherent ownership/dependency quality, not line-count gaming.
+
+After decomposition publication, exact next feature boundary is `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 
 Permanent constraints retained:
 

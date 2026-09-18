@@ -108,7 +108,7 @@ Canonical deferred backlog: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`.
 
 Gate 6/7 publication is complete at `39690c9ef103cbcf93272df8bad0359a934b7dc1` / tree `f195fac5ce733c36a1d955e0fbe687ee6c83b605`, with ordinary non-force push and final ahead/behind `0/0`. Gate 6 evidence is `026C6D20AFF0FF0B13ED984217AD14132A25144EA6177CD78D88E88AE506AABB`; Gate 7 evidence is `FE69CA002582934A19A7D920EE1E9ACB61739E71EDCFC0018C1D1573D4A1F718`.
 
-### Current boundary — Application runtime foundation — GATES 0–5 ACCEPTED / GATE 6 NEXT
+### Published boundary — Application runtime foundation — GATES 0–7 ACCEPTED / PUBLISHED `25752fba557b1a1b518265a93bde05d3a6a3f9ad`
 
 `APPLICATION_RUNTIME_FOUNDATION` implements the published static application model without scheduler expansion. Gate 0 freezes two built-in system applications (`system.home=0x0001`, `device.info=0x0002`), explicit lifecycle state, one foreground app, task0-only callback/event dispatch, bounded pointer-free semantic events, a bounded service snapshot and three-row application view ownership under the system status bar.
 
@@ -117,7 +117,7 @@ The existing command/RPC surface remains stable at IDs `0x0001..0x0020`; exactly
 Canonical design: `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`.
 Canonical acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
-Accepted source boundary is new `include/kernel/application_runtime.h`, new `src/kernel/application_runtime.c`, plus `include/kernel/command_service.h`, `src/kernel/command_service.c`, and `src/kernel.c`. Gate 2/3 candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c` uses Flash `48604/65536`, SRAM `10032/20480`, and hardware minimum task0/task1 margins `272/424` bytes after full application/binary activity. After publication, `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is mandatory before `USB_MANAGEMENT_DEVICE_FOUNDATION` or any other feature growth.
+Accepted source boundary is new `include/kernel/application_runtime.h`, new `src/kernel/application_runtime.c`, plus `include/kernel/command_service.h`, `src/kernel/command_service.c`, and `src/kernel.c`. Gate 2/3 candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c` uses Flash `48604/65536`, SRAM `10032/20480`, and hardware minimum task0/task1 margins `272/424` bytes after full application/binary activity. Evidence SHA-256: Gate 2 `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`; Gate 3 `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`; Gate 4 `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`; Gate 5 `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`. Gate 6/7 publication is complete at commit `25752fba557b1a1b518265a93bde05d3a6a3f9ad`, tree `24624db70923bdaa77f134cc956423511785c199`; Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`, Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`. Current boundary is `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` Gate 0 accepted / Gate 1 next; canonical design/acceptance are `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md` and `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`.
 <!-- END STM32_OS_IMPLEMENTATION_CHECKPOINT_2026_09_13 -->
 ## Objective
 
