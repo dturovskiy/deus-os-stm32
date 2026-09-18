@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`OLED_DIRTY_REGION_OPTIMIZATION` published at `39690c9ef103cbcf93272df8bad0359a934b7dc1`; `APPLICATION_RUNTIME_FOUNDATION` Gate 0 accepted / Gate 1 next**
+Status: **`APPLICATION_RUNTIME_FOUNDATION` Gates 0–5 accepted / Gate 6 next; `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is the mandatory next boundary before feature growth**
 
 ## Current foundation completeness constraints
 
@@ -12,7 +12,7 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - `APPLICATION_RUNTIME_FOUNDATION` owns a bounded semantic application event/service contract;
 - generic timers, queues, synchronization primitives and runtime statistics remain consumer-driven extensions; scheduler-internal PRIMASK save/restore is not a public mutex/semaphore API;
 - host-facing system identity must eventually distinguish firmware/build/platform/service/application capabilities from USB identity and protocol capability flags;
-- after `APPLICATION_RUNTIME_FOUNDATION`, `USB_MANAGEMENT_DEVICE_FOUNDATION` owns the production Windows USB profile: vendor-specific WinUSB management transport with explicit product identity/device-interface GUID, reusing the accepted binary RPC above transport; CDC/COM must not remain the primary production host API;
+- after `APPLICATION_RUNTIME_FOUNDATION`, `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` must reduce the current `src/kernel.c` god-module concentration without changing behavior or replacing it with a universal god object; only then does `USB_MANAGEMENT_DEVICE_FOUNDATION` own the production Windows USB profile: vendor-specific WinUSB management transport with explicit product identity/device-interface GUID, reusing the accepted binary RPC above transport; CDC/COM must not remain the primary production host API;
 - persistent target state requires versioning, integrity, atomic commit/recovery and Flash wear policy before acceptance;
 - current `fault_record` is normal `.bss` runtime state and is cleared by reset; bounded previous-boot crash/reset retention is later observability work;
 - CRC-16 and explicit destructive intent are not authentication; trust-sensitive network mutation and firmware update require a separate security/authenticity contract;

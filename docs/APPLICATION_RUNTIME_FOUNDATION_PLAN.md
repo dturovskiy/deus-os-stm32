@@ -1,6 +1,6 @@
 # Deus OS — Application Runtime Foundation Plan
 
-Status: **GATE 0 ARCHITECTURE / SOURCE BOUNDARY FROZEN — GATE 1 NEXT**
+Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
 
 Boundary ID:
 
@@ -336,7 +336,7 @@ Application-runtime proof:
 - repeated start of the active app is idempotent;
 - invalid app ID performs no lifecycle/view mutation;
 - binary RPC invocation of application control returns the same semantics as text command service;
-- actual USB disconnect/reconnect produces bounded semantic USB application-event delivery without running app policy in IRQ context;
+- the minute semantic event proves bounded task0 application-event delivery without rerender when the callback returns no view-dirty effect; physical micro-USB disconnect/reconnect is a power-cycle/recovery proof because micro-USB is the sole target power source, so a live `USB_STATE_CHANGED` edge is not required across reset;
 - application event delivery does not rerender app content unless the callback marks the view dirty;
 - `uiruntime` restores the currently active application view;
 - task0/task1 stack canaries remain intact with >=256-byte margins;
@@ -367,7 +367,7 @@ Gate 7 performs one ordinary non-force `git push origin main:main`, then fresh-f
 
 After publication, exact next boundary:
 
-`USB_MANAGEMENT_DEVICE_FOUNDATION`
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION`
 
 ## 17. Non-goals
 

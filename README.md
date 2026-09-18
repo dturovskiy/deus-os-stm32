@@ -66,9 +66,9 @@ Canonical design/acceptance/backlog:
 
 Current implementation boundary:
 
-`APPLICATION_RUNTIME_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 NEXT**.
+`APPLICATION_RUNTIME_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
 
-Gate 0 freezes a static two-application runtime (`system.home=0x0001`, `device.info=0x0002`), task0-only lifecycle/event dispatch, bounded pointer-free semantic events, a bounded three-row application view model, and transport-neutral `applist/appstart/appstop` methods appended as RPC IDs `0x0021..0x0023` without renumbering the existing `0x0001..0x0020` surface. No heap, queue, new task/SVC, dynamic loader, filesystem or USB redesign is introduced.
+The accepted runtime implements static `system.home=0x0001` and `device.info=0x0002`, task0-only lifecycle/event dispatch, bounded pointer-free semantic events, a bounded three-row application view, and transport-neutral `applist/appstart/appstop` at RPC IDs `0x0021..0x0023` without renumbering `0x0001..0x0020`. Gate 2/3 candidate tree is `ba8b7066c8c435b7bca4fdef3932f27c5055761c`, BIN `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`, Flash `48604/65536`, SRAM `10032/20480`; Gate 3 hardware/runtime and Gate 4 `PHYSICAL_OLED=PASS` are accepted.
 
 Canonical design/acceptance:
 
@@ -77,7 +77,7 @@ Canonical design/acceptance:
 
 Implementation order:
 
-`OLED_DIRTY_REGION_OPTIMIZATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `USB_MANAGEMENT_DEVICE_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
+`OLED_DIRTY_REGION_OPTIMIZATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` -> `USB_MANAGEMENT_DEVICE_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
 
 `USB_MANAGEMENT_DEVICE_FOUNDATION` will make the production Windows-facing device a vendor-specific WinUSB management device rather than a COM-port-first CDC console. The existing binary framed RPC remains the management protocol above the transport; production USB naming/identity, Microsoft OS descriptors, a stable device-interface GUID and WinUSB bulk transport belong to that boundary. CDC may remain only as an explicit debug/recovery profile if later justified.
 

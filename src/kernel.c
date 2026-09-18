@@ -11,6 +11,7 @@
 #include "kernel/oled_ui_layout.h"
 #include "kernel/scheduler.h"
 #include "kernel/command_service.h"
+#include "kernel/application_runtime.h"
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
 
@@ -161,6 +162,11 @@ typedef struct
     uint32_t total_minutes;
 } boot_desktop_ui_snapshot_t;
 
+typedef char application_view_rows_must_match_oled_console[
+    (APPLICATION_VIEW_ROWS == OLED_CONSOLE_ROWS) ? 1 : -1];
+typedef char application_view_columns_must_match_oled_console[
+    (APPLICATION_VIEW_COLUMNS == OLED_CONSOLE_COLUMNS) ? 1 : -1];
+
 /*
  * PCLK2 = 72 MHz.
  * USARTDIV = 72,000,000 / (16 * 115,200) = 39.0625
@@ -253,6 +259,10 @@ static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
 static oled_console_t oled_console_state;
 static oled_status_bar_t boot_desktop_ui_status;
+static application_runtime_t application_runtime_state;
+static application_service_snapshot_t application_runtime_last_service_snapshot;
+static uint32_t application_runtime_service_snapshot_valid;
+static uint32_t application_runtime_ready_event_sent;
 
 static volatile uint32_t scheduler_workload_task0_started;
 static volatile uint32_t scheduler_workload_task0_done;
@@ -1530,6 +1540,8 @@ static void boot_desktop_ui_initialize(void)
     boot_desktop_ui_uptime_saturated = 0u;
     boot_desktop_ui_snapshot_valid = 0u;
     boot_desktop_ui_panel_initialized = 0u;
+    application_runtime_service_snapshot_valid = 0u;
+    application_runtime_ready_event_sent = 0u;
     oled_status_bar_init(&boot_desktop_ui_status);
     boot_desktop_ui_initialized = 1u;
 }
@@ -1606,6 +1618,247 @@ static int boot_desktop_ui_snapshot_equal(
         (left->total_minutes == right->total_minutes);
 }
 
+static void boot_desktop_ui_application_snapshot_build(
+    const boot_desktop_ui_snapshot_t *ui_snapshot,
+    application_service_snapshot_t *application_snapshot)
+{
+    if (
+        (ui_snapshot == (const boot_desktop_ui_snapshot_t *)0) ||
+        (application_snapshot == (application_service_snapshot_t *)0)
+    ) {
+        return;
+    }
+
+    application_snapshot->uptime_ms = kernel_time_now();
+    application_snapshot->displayed_minute = ui_snapshot->total_minutes;
+    application_snapshot->system_healthy =
+        (ui_snapshot->system_indicator == OLED_STATUS_INDICATOR_FILLED) ?
+            1u : 0u;
+    application_snapshot->usb_configured =
+        (ui_snapshot->usb_indicator == OLED_STATUS_INDICATOR_FILLED) ?
+            1u : 0u;
+    application_snapshot->network_online =
+        (ui_snapshot->network_indicator == OLED_STATUS_INDICATOR_FILLED) ?
+            1u : 0u;
+    application_snapshot->reserved = 0u;
+}
+
+static int boot_desktop_ui_application_dispatch_event(
+    uint16_t type,
+    uint16_t source,
+    uint32_t value0,
+    uint32_t value1,
+    const application_service_snapshot_t *services)
+{
+    application_event_t event;
+
+    if (services == (const application_service_snapshot_t *)0)
+    {
+        return 0;
+    }
+
+    event.type = type;
+    event.source = source;
+    event.value0 = value0;
+    event.value1 = value1;
+
+    return application_runtime_dispatch_event(
+        &application_runtime_state,
+        &event,
+        services);
+}
+
+static int boot_desktop_ui_application_service(
+    const boot_desktop_ui_snapshot_t *ui_snapshot)
+{
+    application_service_snapshot_t current;
+
+    if (ui_snapshot == (const boot_desktop_ui_snapshot_t *)0)
+    {
+        return 0;
+    }
+
+    if (ui_snapshot->state != BOOT_DESKTOP_UI_HOME)
+    {
+        return 1;
+    }
+
+    if (application_runtime_is_initialized(&application_runtime_state) == 0)
+    {
+        return 0;
+    }
+
+    boot_desktop_ui_application_snapshot_build(ui_snapshot, &current);
+
+    if (application_runtime_active_id(&application_runtime_state) == 0u)
+    {
+        if (application_runtime_start(
+                &application_runtime_state,
+                APPLICATION_ID_SYSTEM_HOME,
+                &current) == 0)
+        {
+            return 0;
+        }
+    }
+
+    if (application_runtime_ready_event_sent == 0u)
+    {
+        if (boot_desktop_ui_application_dispatch_event(
+                APPLICATION_EVENT_RUNTIME_READY,
+                APPLICATION_EVENT_SOURCE_RUNTIME,
+                application_runtime_active_id(&application_runtime_state),
+                0u,
+                &current) == 0)
+        {
+            return 0;
+        }
+
+        application_runtime_ready_event_sent = 1u;
+    }
+
+    if (application_runtime_service_snapshot_valid != 0u)
+    {
+        if (current.displayed_minute !=
+            application_runtime_last_service_snapshot.displayed_minute)
+        {
+            if (boot_desktop_ui_application_dispatch_event(
+                    APPLICATION_EVENT_UPTIME_MINUTE_CHANGED,
+                    APPLICATION_EVENT_SOURCE_TIME,
+                    current.displayed_minute,
+                    application_runtime_last_service_snapshot.displayed_minute,
+                    &current) == 0)
+            {
+                return 0;
+            }
+        }
+
+        if (current.system_healthy !=
+            application_runtime_last_service_snapshot.system_healthy)
+        {
+            if (boot_desktop_ui_application_dispatch_event(
+                    APPLICATION_EVENT_SYSTEM_HEALTH_CHANGED,
+                    APPLICATION_EVENT_SOURCE_SYSTEM,
+                    current.system_healthy,
+                    application_runtime_last_service_snapshot.system_healthy,
+                    &current) == 0)
+            {
+                return 0;
+            }
+        }
+
+        if (current.usb_configured !=
+            application_runtime_last_service_snapshot.usb_configured)
+        {
+            if (boot_desktop_ui_application_dispatch_event(
+                    APPLICATION_EVENT_USB_STATE_CHANGED,
+                    APPLICATION_EVENT_SOURCE_USB,
+                    current.usb_configured,
+                    application_runtime_last_service_snapshot.usb_configured,
+                    &current) == 0)
+            {
+                return 0;
+            }
+        }
+
+        if (current.network_online !=
+            application_runtime_last_service_snapshot.network_online)
+        {
+            if (boot_desktop_ui_application_dispatch_event(
+                    APPLICATION_EVENT_NETWORK_STATE_CHANGED,
+                    APPLICATION_EVENT_SOURCE_NETWORK,
+                    current.network_online,
+                    application_runtime_last_service_snapshot.network_online,
+                    &current) == 0)
+            {
+                return 0;
+            }
+        }
+    }
+
+    application_runtime_last_service_snapshot = current;
+    application_runtime_service_snapshot_valid = 1u;
+
+    return application_runtime_service(
+        &application_runtime_state,
+        &current);
+}
+
+static int boot_desktop_ui_application_snapshot_current(
+    application_service_snapshot_t *snapshot)
+{
+    boot_desktop_ui_snapshot_t ui_snapshot;
+
+    if (
+        (snapshot == (application_service_snapshot_t *)0) ||
+        (boot_desktop_ui_state != BOOT_DESKTOP_UI_HOME) ||
+        (application_runtime_is_initialized(&application_runtime_state) == 0)
+    ) {
+        return 0;
+    }
+
+    boot_desktop_ui_snapshot_build(&ui_snapshot);
+    boot_desktop_ui_application_snapshot_build(&ui_snapshot, snapshot);
+    return 1;
+}
+
+static int boot_desktop_ui_apply_application_view(uint32_t force_rows)
+{
+    const application_view_t *view;
+    uint32_t row;
+    uint32_t column;
+    uint8_t dirty_rows = 0u;
+
+    view = application_runtime_view_get(&application_runtime_state);
+    if (view == (const application_view_t *)0)
+    {
+        return 0;
+    }
+
+    if ((force_rows != 0u) || (oled_console_state.first_row != 0u))
+    {
+        dirty_rows =
+            (uint8_t)((1u << APPLICATION_VIEW_ROWS) - 1u);
+    }
+
+    oled_console_state.first_row = 0u;
+
+    for (row = 0u; row < APPLICATION_VIEW_ROWS; ++row)
+    {
+        uint32_t text_ended = 0u;
+
+        for (column = 0u; column < APPLICATION_VIEW_COLUMNS; ++column)
+        {
+            char desired = ' ';
+
+            if (text_ended == 0u)
+            {
+                char source = view->rows[row][column];
+
+                if (source == '\0')
+                {
+                    text_ended = 1u;
+                }
+                else
+                {
+                    desired = source;
+                }
+            }
+
+            if (oled_console_state.cells[row][column] != desired)
+            {
+                oled_console_state.cells[row][column] = desired;
+                dirty_rows |= (uint8_t)(1u << row);
+            }
+        }
+    }
+
+    oled_console_state.cursor_x = 0u;
+    oled_console_state.cursor_y = (uint8_t)OLED_CONSOLE_ROWS;
+    oled_console_state.dirty_rows |= dirty_rows;
+
+    return 1;
+}
+
 static int boot_desktop_ui_render(int force)
 {
     const oled_ui_layout_t *layout;
@@ -1623,9 +1876,15 @@ static int boot_desktop_ui_render(int force)
     boot_desktop_ui_update_state();
     boot_desktop_ui_snapshot_build(&snapshot);
 
+    if (boot_desktop_ui_application_service(&snapshot) == 0)
+    {
+        return 0;
+    }
+
     if (
         (force == 0) &&
         (boot_desktop_ui_snapshot_valid != 0u) &&
+        (application_runtime_view_dirty(&application_runtime_state) == 0) &&
         (boot_desktop_ui_snapshot_equal(
             &snapshot,
             &boot_desktop_ui_last_snapshot) != 0)
@@ -1690,31 +1949,44 @@ static int boot_desktop_ui_render(int force)
         &oled_surface,
         layout->status_rect);
 
-    if (full_compose != 0u)
-    {
+    if (
+        (snapshot.state == BOOT_DESKTOP_UI_SPLASH) &&
+        (full_compose != 0u)
+    ) {
         oled_console_clear(&oled_console_state);
-
         oled_console_write_line(
             &oled_console_state,
             "DEUS OS");
+        oled_console_write_line(
+            &oled_console_state,
+            "STARTING");
+        oled_console_write(
+            &oled_console_state,
+            "PLEASE WAIT");
 
-        if (snapshot.state == BOOT_DESKTOP_UI_SPLASH)
+        oled_console_render(
+            &oled_console_state,
+            &oled_surface,
+            layout->console_rect);
+
+        if (oled_console_state.dirty_rows != 0u)
         {
-            oled_console_write_line(
-                &oled_console_state,
-                "STARTING");
-            oled_console_write(
-                &oled_console_state,
-                "PLEASE WAIT");
+            boot_desktop_ui_snapshot_valid = 0u;
+            return 0;
         }
-        else
+    }
+    else if (
+        (snapshot.state == BOOT_DESKTOP_UI_HOME) &&
+        (
+            (full_compose != 0u) ||
+            (application_runtime_view_dirty(
+                &application_runtime_state) != 0)
+        )
+    ) {
+        if (boot_desktop_ui_apply_application_view(full_compose) == 0)
         {
-            oled_console_write_line(
-                &oled_console_state,
-                "DESKTOP");
-            oled_console_write(
-                &oled_console_state,
-                "READY");
+            boot_desktop_ui_snapshot_valid = 0u;
+            return 0;
         }
 
         oled_console_render(
@@ -1749,6 +2021,11 @@ static int boot_desktop_ui_render(int force)
         boot_desktop_ui_panel_initialized = 0u;
         boot_desktop_ui_snapshot_valid = 0u;
         return 0;
+    }
+
+    if (snapshot.state == BOOT_DESKTOP_UI_HOME)
+    {
+        application_runtime_view_consumed(&application_runtime_state);
     }
 
     if (
@@ -3828,6 +4105,211 @@ static command_service_status_t console_command_help(
     return COMMAND_SERVICE_STATUS_BAD_ARGS;
 }
 
+static int console_parse_application_id(
+    const char *text,
+    uint16_t *id_out)
+{
+    uint32_t value = 0u;
+    uint32_t base = 10u;
+    uint32_t index = 0u;
+    uint32_t digits = 0u;
+
+    if ((text == (const char *)0) || (id_out == (uint16_t *)0))
+    {
+        return 0;
+    }
+
+    if ((text[0] == '0') && ((text[1] == 'x') || (text[1] == 'X')))
+    {
+        base = 16u;
+        index = 2u;
+    }
+
+    while (text[index] != '\0')
+    {
+        uint32_t digit;
+        char c = text[index];
+
+        if ((c >= '0') && (c <= '9'))
+        {
+            digit = (uint32_t)(c - '0');
+        }
+        else if ((base == 16u) && (c >= 'a') && (c <= 'f'))
+        {
+            digit = 10u + (uint32_t)(c - 'a');
+        }
+        else if ((base == 16u) && (c >= 'A') && (c <= 'F'))
+        {
+            digit = 10u + (uint32_t)(c - 'A');
+        }
+        else
+        {
+            return 0;
+        }
+
+        if (digit >= base)
+        {
+            return 0;
+        }
+
+        value = (value * base) + digit;
+        if (value > 0xFFFFu)
+        {
+            return 0;
+        }
+
+        ++digits;
+        ++index;
+    }
+
+    if ((digits == 0u) || (value == 0u))
+    {
+        return 0;
+    }
+
+    *id_out = (uint16_t)value;
+    return 1;
+}
+
+static command_service_status_t console_command_applist(
+    command_service_context_t *context)
+{
+    uint32_t index;
+    uint16_t active_id =
+        application_runtime_active_id(&application_runtime_state);
+
+    console_write(context, "APP_RUNTIME_ABI=");
+    console_write_hex32(context, APPLICATION_RUNTIME_ABI_VERSION);
+    console_write(context, " APP_REGISTRY_COUNT=");
+    console_write_hex32(context, application_runtime_registry_count());
+    console_write(context, " APP_ACTIVE_ID=");
+    console_write_hex32(context, active_id);
+    console_write(context, " APP_FAULT_COUNT=");
+    console_write_hex32(
+        context,
+        application_runtime_fault_count(&application_runtime_state));
+    console_write(context, " APP_EVENT_COUNT=");
+    console_write_hex32(
+        context,
+        application_runtime_event_count(&application_runtime_state));
+    console_write(context, " APP_VIEW_REVISION=");
+    console_write_hex32(
+        context,
+        application_runtime_view_revision(&application_runtime_state));
+    console_write(context, " APP_LAST_EVENT_TYPE=");
+    console_write_hex32(
+        context,
+        application_runtime_last_event_type(&application_runtime_state));
+    console_write(context, " APP_LAST_EVENT_SOURCE=");
+    console_write_hex32(
+        context,
+        application_runtime_last_event_source(&application_runtime_state));
+    console_write(context, "\r\n");
+
+    for (index = 0u; index < application_runtime_registry_count(); ++index)
+    {
+        const application_descriptor_t *descriptor =
+            application_runtime_registry_at(index);
+        application_lifecycle_state_t state;
+
+        if ((descriptor == (const application_descriptor_t *)0) ||
+            (application_runtime_state_get(
+                &application_runtime_state,
+                descriptor->id,
+                &state) == 0))
+        {
+            return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+        }
+
+        console_write(context, "APP_ID=");
+        console_write_hex32(context, descriptor->id);
+        console_write(context, " NAME=");
+        console_write(context, descriptor->name);
+        console_write(context, " ABI=");
+        console_write_hex32(context, descriptor->abi_version);
+        console_write(context, " FLAGS=");
+        console_write_hex32(context, descriptor->flags);
+        console_write(context, " STATE=");
+        console_write(context, application_runtime_state_name(state));
+        console_write(context, " STATE_ID=");
+        console_write_hex32(context, (uint32_t)state);
+        console_write(context, " ACTIVE=");
+        console_write_hex32(
+            context,
+            (descriptor->id == active_id) ? 1u : 0u);
+        console_write(context, "\r\n");
+    }
+
+    return COMMAND_SERVICE_STATUS_OK;
+}
+
+static command_service_status_t console_command_appstart(
+    const command_service_request_t *request,
+    command_service_context_t *context)
+{
+    application_service_snapshot_t services;
+    uint16_t id;
+
+    if ((request == (const command_service_request_t *)0) ||
+        (request->argc != 1u) ||
+        (console_parse_application_id(request->argv[0], &id) == 0) ||
+        (application_runtime_find(id) == (const application_descriptor_t *)0))
+    {
+        return COMMAND_SERVICE_STATUS_BAD_ARGS;
+    }
+
+    if (boot_desktop_ui_application_snapshot_current(&services) == 0)
+    {
+        console_write_line(context, "APP_RUNTIME_BUSY");
+        return COMMAND_SERVICE_STATUS_BUSY;
+    }
+
+    if (application_runtime_start(
+            &application_runtime_state,
+            id,
+            &services) == 0)
+    {
+        return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+    }
+
+    console_write(context, "APP_START_OK ID=");
+    console_write_hex32(context, id);
+    console_write(context, " ACTIVE_ID=");
+    console_write_hex32(
+        context,
+        application_runtime_active_id(&application_runtime_state));
+    console_write(context, "\r\n");
+
+    return COMMAND_SERVICE_STATUS_OK;
+}
+
+static command_service_status_t console_command_appstop(
+    command_service_context_t *context)
+{
+    application_service_snapshot_t services;
+
+    if (boot_desktop_ui_application_snapshot_current(&services) == 0)
+    {
+        console_write_line(context, "APP_RUNTIME_BUSY");
+        return COMMAND_SERVICE_STATUS_BUSY;
+    }
+
+    if (application_runtime_stop(
+            &application_runtime_state,
+            &services) == 0)
+    {
+        return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+    }
+
+    console_write(context, "APP_STOP_OK ACTIVE_ID=");
+    console_write_hex32(
+        context,
+        application_runtime_active_id(&application_runtime_state));
+    console_write(context, "\r\n");
+
+    return COMMAND_SERVICE_STATUS_OK;
+}
+
 static command_service_status_t console_command_rpcinfo(command_service_context_t *context)
 {
     console_write(context, "RPC_FOUNDATION_VERSION=");
@@ -3838,6 +4320,34 @@ static command_service_status_t console_command_rpcinfo(command_service_context_
     console_write_hex32(context, COMMAND_SERVICE_LINE_CAPACITY);
     console_write(context, " MAX_ARGS=");
     console_write_hex32(context, COMMAND_SERVICE_MAX_ARGS);
+    console_write(context, " APP_RUNTIME_ABI=");
+    console_write_hex32(context, APPLICATION_RUNTIME_ABI_VERSION);
+    console_write(context, " APP_REGISTRY_COUNT=");
+    console_write_hex32(context, application_runtime_registry_count());
+    console_write(context, " APP_ACTIVE_ID=");
+    console_write_hex32(
+        context,
+        application_runtime_active_id(&application_runtime_state));
+    console_write(context, " APP_FAULT_COUNT=");
+    console_write_hex32(
+        context,
+        application_runtime_fault_count(&application_runtime_state));
+    console_write(context, " APP_EVENT_COUNT=");
+    console_write_hex32(
+        context,
+        application_runtime_event_count(&application_runtime_state));
+    console_write(context, " APP_VIEW_REVISION=");
+    console_write_hex32(
+        context,
+        application_runtime_view_revision(&application_runtime_state));
+    console_write(context, " APP_LAST_EVENT_TYPE=");
+    console_write_hex32(
+        context,
+        application_runtime_last_event_type(&application_runtime_state));
+    console_write(context, " APP_LAST_EVENT_SOURCE=");
+    console_write_hex32(
+        context,
+        application_runtime_last_event_source(&application_runtime_state));
     console_write(context, "\r\n");
 
     return COMMAND_SERVICE_STATUS_OK;
@@ -3952,6 +4462,15 @@ static command_service_status_t console_execute_safe_method(
 
         case COMMAND_SERVICE_METHOD_RPCINFO:
             return console_command_rpcinfo(context);
+
+        case COMMAND_SERVICE_METHOD_APPLIST:
+            return console_command_applist(context);
+
+        case COMMAND_SERVICE_METHOD_APPSTART:
+            return console_command_appstart(request, context);
+
+        case COMMAND_SERVICE_METHOD_APPSTOP:
+            return console_command_appstop(context);
 
         default:
             return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
@@ -4217,6 +4736,13 @@ static void production_console_task(void *argument)
     }
 
     production_console_task_started = 1u;
+
+    if (application_runtime_initialize(&application_runtime_state) == 0)
+    {
+        production_console_fault = 1u;
+        return;
+    }
+
     uart_emergency_write_line("SCHED_PROD_CONSOLE_ONLINE");
 
     for (;;)
@@ -4418,6 +4944,7 @@ void kernel_main(void)
         SSD1306_WIDTH,
         SSD1306_HEIGHT);
     oled_console_init(&oled_console_state);
+    application_runtime_reset(&application_runtime_state);
     faults_init();
     if (usb_device_init(core_clock_hz) == 0)
     {

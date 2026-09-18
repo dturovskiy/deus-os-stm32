@@ -1,3 +1,25 @@
+## 2026-09-18
+
+### Accepted through Gate 5 — Application runtime foundation
+
+Boundary: `APPLICATION_RUNTIME_FOUNDATION`.
+
+Accepted candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`; BIN `48604` bytes / SHA-256 `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; ELF `77836` bytes / SHA-256 `E05725E7D1C5EC21619578A2CE8AEA873F6A3CE2D0D5DC4C75588FD4E65D09C6`; MAP SHA-256 `43CFA7528043649C7D8A871D9EBC6FC6A5F9137105137A51FE25B9DA8627D7D4`; Flash `48604 / 65536`; SRAM `10032 / 20480`; named application-runtime static state `184` bytes.
+
+The accepted runtime adds static `system.home=0x0001` and `device.info=0x0002`, explicit seven-state lifecycle ABI, task0-only synchronous pointer-free semantic events, a bounded 3x21 application view, and transport-neutral `applist/appstart/appstop` at RPC IDs `0x0021..0x0023` while retaining existing IDs `0x0001..0x0020` and binary frame protocol v1.
+
+Gate 3 hardware/runtime acceptance passed on the exact candidate: text/binary lifecycle, repeated-start idempotence, invalid-start no-mutation, active-app `uiruntime` restore, real minute semantic-event delivery without app rerender, CDC/UART/binary pressure `128/128`, malformed-frame recovery, physical micro-USB power-cycle recovery, IWDG recovery and final exact Flash readback. Minimum observed task0/task1 margins after full application/binary activity were `272 / 424` bytes. Gate 3 evidence SHA-256 is `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`; log SHA-256 `703C41A7493D078E456A5721EAFEFF821A152D217FB3F30AB8C809D7452A6B36`.
+
+Gate 4 is `PHYSICAL_OLED=PASS`; evidence SHA-256 `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`.
+
+Acceptance-model clarification: with micro-USB as the sole target power source, physical unplug/reconnect is a reset/power-cycle recovery test, not a live `USB_STATE_CHANGED` edge test because the previous volatile USB snapshot does not survive reset. Dynamic semantic-event/no-rerender behavior is independently proven by the real minute transition.
+
+### Architecture decision — kernel composition-root decomposition required next
+
+`src/kernel.c` is now exactly `5100` lines and concentrates composition/bootstrap, command/diagnostic dispatch, UI/application integration and low-level glue. The accepted firmware is not classified as spaghetti code, and `application_runtime_t` remains bounded/cohesive, but the integration translation unit is now a god-module risk. No new feature may extend it before `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is accepted. The cleanup must preserve behavior and must not merely replace the god-module with a catch-all `kernel_context_t` god object.
+
+Canonical decision: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`.
+
 ## 2026-09-17
 
 ### Documentation consistency finalization

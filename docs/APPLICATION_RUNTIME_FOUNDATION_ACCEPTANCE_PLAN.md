@@ -1,6 +1,6 @@
 # Deus OS — Application Runtime Foundation Acceptance Plan
 
-Status: **GATE 0 ACCEPTED — GATE 1 SOURCE IMPLEMENTATION NEXT**
+Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
 
 Boundary ID:
 
@@ -141,7 +141,7 @@ Required boot/runtime proof:
 - invalid `appstart` leaves active/lifecycle/view state unchanged;
 - binary RPC `applist/appstart/appstop` matches text semantics and stable IDs;
 - `rpcinfo` reports command-service version `2`, registry `35` and runtime fields;
-- actual USB disconnect/reconnect produces semantic USB-state event delivery from task0, not IRQ-side application execution;
+- dynamic semantic-event delivery is proven by the real minute transition from task0 with stable application view revision; physical micro-USB disconnect/reconnect is accepted as power-cycle recovery plus USB configured-state/default-home proof because micro-USB is the sole target power source and volatile previous USB state does not survive reset;
 - app event counters/state remain bounded and no app rerender occurs for an event whose callback returns no view-dirty effect;
 - `uiruntime` restores the currently active app;
 - task0/task1 margins remain >=256 after application lifecycle/event/render activity;
@@ -218,7 +218,7 @@ After fresh fetch require:
 
 After Gate 7, exact next boundary:
 
-`USB_MANAGEMENT_DEVICE_FOUNDATION`
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION`
 
 ## Acceptance blockers
 

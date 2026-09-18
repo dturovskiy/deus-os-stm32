@@ -99,10 +99,11 @@ These deferred items do not insert speculative boundaries before `APPLICATION_RU
 Current intended order remains:
 
 1. `APPLICATION_RUNTIME_FOUNDATION`;
-2. `USB_MANAGEMENT_DEVICE_FOUNDATION`;
-3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
-4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` when a real consumer exists;
-5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-6. networking/service extensions.
+2. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — mandatory architecture cleanup after measured god-module concentration in `src/kernel.c`;
+3. `USB_MANAGEMENT_DEVICE_FOUNDATION`;
+4. `HOST_CONTROL_APPLICATION_FOUNDATION`;
+5. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` when a real consumer exists;
+6. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+7. networking/service extensions.
 
 Optimization rule: remove unnecessary work first, measure next, add complexity only against an observed bottleneck.

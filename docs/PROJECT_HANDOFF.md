@@ -195,13 +195,13 @@ Gate 5 added the canonical deferred optimization/robustness/observability/storag
 
 ### Current implementation boundary
 
-**`APPLICATION_RUNTIME_FOUNDATION` — Gate 0 accepted; Gate 1 source implementation is next. Canonical design: `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`; acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.**
+**`APPLICATION_RUNTIME_FOUNDATION` — Gates 0–5 accepted; Gate 6 local acceptance commit is next. Canonical design: `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`; acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.**
 
-Gate 0 freezes a static firmware-linked v1 runtime with `system.home=0x0001` and `device.info=0x0002`, one foreground application, explicit lifecycle states, task0-only callback/event dispatch, fixed pointer-free semantic events, a bounded system-state snapshot, and a three-row application view beneath the system-owned status bar. Existing RPC IDs `0x0001..0x0020` remain unchanged; `applist/appstart/appstop` append `0x0021..0x0023`. No heap, event queue, new task/SVC, dynamic loader, filesystem or USB redesign is authorized.
+Accepted runtime candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c` implements static `system.home=0x0001` and `device.info=0x0002`, one foreground application, explicit lifecycle states, task0-only callback/event dispatch, fixed pointer-free semantic events, a bounded system-state snapshot, and a three-row application view beneath the system-owned status bar. Existing RPC IDs `0x0001..0x0020` remain unchanged; `applist/appstart/appstop` append `0x0021..0x0023`. BIN is `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; SRAM is `10032/20480`; minimum observed task0/task1 margins are `272/424` bytes. Gate 3 and physical OLED Gate 4 are PASS.
 
 Initial Gate 1 source boundary is exactly new `include/kernel/application_runtime.h`, new `src/kernel/application_runtime.c`, plus `include/kernel/command_service.h`, `src/kernel/command_service.c`, and `src/kernel.c`.
 
-After application-runtime publication, production Windows USB follows in `USB_MANAGEMENT_DEVICE_FOUNDATION` using vendor-specific WinUSB `Deus OS Device` identity rather than COM-port-first CDC.
+After application-runtime publication, `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is mandatory before new feature growth. It must reduce `src/kernel.c` integration/diagnostic concentration without semantic change and without introducing a catch-all god object. Only after that accepted cleanup does production Windows USB proceed in `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 

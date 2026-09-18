@@ -212,34 +212,43 @@ Boundary ID: `APPLICATION_RUNTIME_FOUNDATION`.
 Gate order:
 
 - [x] Gate 0 application-runtime architecture/source-boundary freeze — **PASS**.
-- [ ] Gate 1 source implementation + deterministic/static proof — **NEXT**.
-- [ ] Gate 2 fresh GNU build/link/resource/stack validation.
-- [ ] Gate 3 retained hardware/runtime + application lifecycle/event proof.
-- [ ] Gate 4 physical OLED application-view regression.
-- [ ] Gate 5 docs/evidence finalization.
-- [ ] Gate 6 local acceptance commit.
+- [x] Gate 1 source implementation + deterministic/static proof — **PASS**.
+- [x] Gate 2 fresh GNU build/link/resource/stack validation — **PASS / V3 CANDIDATE**.
+- [x] Gate 3 retained hardware/runtime + application lifecycle/event proof — **PASS / V5 EVIDENCE**.
+- [x] Gate 4 physical OLED application-view regression — **PASS / `PHYSICAL_OLED=PASS`**.
+- [x] Gate 5 docs/evidence finalization — **PASS**.
+- [ ] Gate 6 local acceptance commit — **NEXT**.
 - [ ] Gate 7 ordinary non-force publication.
 
 Canonical design: `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`.
 Canonical acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.
+Mandatory next-boundary decision: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`.
 
-Gate 0 freeze:
+Accepted Gate 1–4 evidence:
 
-- [x] static apps `system.home=0x0001`, `device.info=0x0002`;
-- [x] one foreground application and explicit `REGISTERED=0 / STOPPED=1 / STARTING=2 / RUNNING=3 / BLOCKED=4 / STOPPING=5 / FAILED=6` lifecycle; `BLOCKED` is reserved in the initial ABI and never aliases scheduler task state;
-- [x] task0 / Thread-PSP only application callback/event dispatch;
-- [x] fixed pointer-free semantic application events separate from scheduler wake bits;
-- [x] bounded system/time/USB/network service snapshot;
-- [x] exactly three application content rows; status bar remains system-owned;
-- [x] `system.home` preserves `DEUS OS / DESKTOP / READY`;
-- [x] `device.info` view is `DEUS OS / DEVICE INFO / STM32F103`;
-- [x] existing RPC IDs `0x0001..0x0020` frozen; append only `applist=0x0021`, `appstart=0x0022`, `appstop=0x0023`;
-- [x] command-service foundation version advances to `2`; binary frame protocol remains v1;
-- [x] initial source boundary exactly five paths: two new application-runtime files plus command-service header/source and `src/kernel.c`;
-- [x] no heap, queue, mutex, generic timer, new task/SVC, dynamic loader, filesystem or USB redesign;
-- [x] Gate 2 budgets frozen at Flash <= `48656`, SRAM <= `10104`, task stacks exactly `1024 / 512`, runtime margins >= `256` bytes.
+- [x] exact five-path source candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`;
+- [x] BIN `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`;
+- [x] ELF `77836` bytes / `E05725E7D1C5EC21619578A2CE8AEA873F6A3CE2D0D5DC4C75588FD4E65D09C6`;
+- [x] MAP `43CFA7528043649C7D8A871D9EBC6FC6A5F9137105137A51FE25B9DA8627D7D4`;
+- [x] Flash `48604 / 65536`, SRAM `10032 / 20480`, named runtime static state `184` bytes;
+- [x] task stacks unchanged at `1024 / 512`; minimum observed task0/task1 margins after full application/binary activity `272 / 424` bytes;
+- [x] application ABI v1: `system.home=0x0001`, `device.info=0x0002`, lifecycle values `0..6`, pointer-free 12-byte semantic event, 3x21 content view;
+- [x] RPC IDs `0x0001..0x0020` unchanged; `applist/appstart/appstop = 0x0021/0x0022/0x0023`; command-service version `2`, binary frame protocol v1;
+- [x] text and binary lifecycle semantics, repeated-start idempotence, invalid-start no-mutation and `uiruntime` active-app restore PASS;
+- [x] real minute semantic event increments event state without application rerender;
+- [x] physical micro-USB unplug/reconnect accepted as power-cycle recovery plus USB configured/default-home proof; live `USB_STATE_CHANGED` is not asserted across reset because the sole-power unplug destroys volatile previous state;
+- [x] CDC/UART/binary pressure `128/128`, malformed-frame recovery and IWDG recovery PASS;
+- [x] final Flash readback exact;
+- [x] Gate 1 evidence `BC62687D179141D9B578FAFFF448135C71C9A5D223273D03018C87B848CBA2F3`;
+- [x] Gate 2 evidence `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`;
+- [x] Gate 3 log `703C41A7493D078E456A5721EAFEFF821A152D217FB3F30AB8C809D7452A6B36`;
+- [x] Gate 3 evidence `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`;
+- [x] Gate 4 evidence `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`;
+- [x] physical OLED `PHYSICAL_OLED=PASS`.
 
-After publication, exact next boundary is `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+Architecture review outcome: `src/kernel.c` is not classified as spaghetti, but its `5100` lines and concentration of composition, command/diagnostic, UI/application integration and low-level glue constitute a god-module risk. No additional feature may extend it before `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is accepted. Do not replace it with a catch-all god object.
+
+After publication, exact next boundary is `KERNEL_COMPOSITION_ROOT_DECOMPOSITION`.
 
 Permanent constraints retained:
 

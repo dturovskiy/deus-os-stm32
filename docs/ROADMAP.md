@@ -103,22 +103,26 @@ Canonical design/acceptance/backlog:
 
 ### Current implementation boundary — Application runtime foundation
 
-`APPLICATION_RUNTIME_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 NEXT**.
+`APPLICATION_RUNTIME_FOUNDATION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
 
-Gate 0 freezes a static two-application v1 runtime: `system.home=0x0001` and `device.info=0x0002`, one foreground application, explicit lifecycle state, task0-only callback/event dispatch, fixed pointer-free semantic events, a bounded system-state snapshot and a three-row application view under the existing system-owned status bar. Existing RPC IDs `0x0001..0x0020` remain stable; `applist/appstart/appstop` append exactly `0x0021..0x0023`. No heap, queue, new task/SVC, dynamic loader, filesystem or USB redesign is introduced.
+Accepted candidate: tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c`; BIN `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; ELF `77836` bytes / `E05725E7D1C5EC21619578A2CE8AEA873F6A3CE2D0D5DC4C75588FD4E65D09C6`; MAP `43CFA7528043649C7D8A871D9EBC6FC6A5F9137105137A51FE25B9DA8627D7D4`; Flash `48604/65536`; SRAM `10032/20480`; named runtime static state `184` bytes. Hardware accepted text/binary lifecycle, idempotent/invalid-start behavior, minute semantic-event delivery without rerender, CDC/UART/binary pressure `128/128`, power-cycle USB recovery, IWDG recovery and final exact Flash readback. Minimum observed task0/task1 margins after full application/binary activity are `272/424` bytes. Gate 4 is `PHYSICAL_OLED=PASS`.
 
 Canonical design/acceptance:
 `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`
 `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`
 
+Architectural follow-up:
+`docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`
+
 Implementation order:
 
-1. `APPLICATION_RUNTIME_FOUNDATION` — Gate 0 accepted; Gate 1 source implementation next;
-2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
-3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
-4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
-5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-6. networking/service extensions.
+1. `APPLICATION_RUNTIME_FOUNDATION` — Gates 0–5 accepted; Gate 6/7 publication next;
+2. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — mandatory behavior-preserving decomposition of the measured `src/kernel.c` god-module concentration before any new feature growth;
+3. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
+4. `HOST_CONTROL_APPLICATION_FOUNDATION`;
+5. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
+6. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+7. networking/service extensions.
 
 Deferred optimization/robustness items are trigger-driven, not new immediate roadmap boundaries: I2C IRQ/DMA only after measured bus pressure; scheduler ready-set acceleration only after materially larger task count and measured overhead; CRC acceleration only for measured streaming cost; bounded minimal-copy/backpressure for WinUSB and transfer paths; tickless only for a real power requirement; structured binary event tracing rather than printf-heavy logging; bounded storage/block-device layers when a consumer exists.
 
