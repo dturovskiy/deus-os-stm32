@@ -111,9 +111,9 @@ Canonical design/acceptance:
 `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`
 `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-### Current implementation boundary — Kernel composition-root decomposition
+### Published boundary — Kernel composition-root decomposition
 
-`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATES 0–7 ACCEPTED / PUBLISHED `fa75307fb392718a1d10d52770a6a111c97208e7`**.
 
 The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state/event snapshot/view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. Root-private production scheduler observability remains in the composition root. No universal `kernel_context_t`, service locator, hidden extracted-state extern, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
 
@@ -124,10 +124,16 @@ Canonical decision/design/acceptance:
 `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`
 `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`
 
+### Current implementation boundary — USB management device foundation
+
+`USB_MANAGEMENT_DEVICE_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 SOURCE IMPLEMENTATION NEXT**.
+
+Frozen Gate 0 topology: composite private-test `1209:000C` / `Deus OS Device`; CDC interfaces 0–1 retained as secondary diagnostics; vendor interface 2 bound to WinUSB over EP4 OUT/IN bulk 64; Microsoft OS 2.0 descriptors; stable device-interface GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`; current binary RPC v1 / command-service v2 / 35-method registry reused unchanged. Canonical design/acceptance: `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md` and `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`.
+
 Implementation order:
 
-1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–5 accepted; Gate 6 local acceptance commit next;
-2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
+1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–7 accepted / published `fa75307fb392718a1d10d52770a6a111c97208e7`;
+2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — Gate 0 accepted; Gate 1 source implementation next;
 3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
 4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
 5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;

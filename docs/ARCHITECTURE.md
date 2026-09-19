@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`APPLICATION_RUNTIME_FOUNDATION` published at `25752fba557b1a1b518265a93bde05d3a6a3f9ad`; `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` Gates 0–5 accepted / Gate 6 next**
+Status: **`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` published at `fa75307fb392718a1d10d52770a6a111c97208e7`; `USB_MANAGEMENT_DEVICE_FOUNDATION` Gate 0 accepted / Gate 1 next**
 
 ## Current foundation completeness constraints
 

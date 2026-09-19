@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 
 <!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
-## Current execution state — 2026-09-18
+## Current execution state — 2026-09-19
 
 This section is authoritative.
 
@@ -20,7 +20,7 @@ Published commit/tree: `25752fba557b1a1b518265a93bde05d3a6a3f9ad` / `24624db7092
 
 Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a live `USB_STATE_CHANGED` edge proof, because micro-USB is the sole target power source. Dynamic semantic-event delivery/no-rerender is independently proven by the real minute transition.
 
-### Current boundary — kernel composition-root decomposition — Gates 0–5 accepted / Gate 6 next
+### Published boundary — kernel composition-root decomposition — Gates 0–7 accepted
 
 - [x] measured god-module trigger recorded: parent `src/kernel.c = 5100` lines, `console_execute_request = 8644` linked bytes, task0 minimum accepted margin `272` bytes;
 - [x] behavior-preserving decomposition only; no feature work;
@@ -30,7 +30,22 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] Gate 2 fresh GNU build/resource acceptance PASS; candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`, Flash `48636/48656`, SRAM `10032/10104`;
 - [x] Gate 3 hardware/runtime equivalence PASS; final task0/task1 margins `384/424`;
 - [x] Gate 4 `PHYSICAL_OLED=PASS`; Gate 5 canonical docs/evidence finalization PASS;
-- [ ] Gate 6 local acceptance commit — NEXT.
+- [x] Gate 6 local acceptance commit — PASS / `fa75307fb392718a1d10d52770a6a111c97208e7`;
+- [x] Gate 7 ordinary non-force publication — PASS; final `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`.
+
+### Current boundary — USB management device foundation — Gate 0 accepted / Gate 1 next
+
+- [x] Gate 0 Windows/USB architecture and exact source boundary frozen;
+- [x] private-test identity `1209:000C`, product `Deus OS Device`;
+- [x] composite `EF/02/01`, `bcdUSB 0x0210`;
+- [x] CDC interfaces 0–1 retained under IAD;
+- [x] vendor WinUSB interface 2 with EP4 OUT `0x04` / IN `0x84`, bulk 64;
+- [x] PMA `EP4 RX=0x180`, `EP4 TX=0x1C0`, exact end `0x200`;
+- [x] MS OS 2.0 BOS/vendor-request binding frozen;
+- [x] stable management GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`;
+- [x] binary protocol v1 / command service v2 / 35 RPC registry retained;
+- [x] initial Gate 1 source boundary exactly five paths;
+- [ ] Gate 1 source implementation — NEXT.
 
 ### Published baseline — binary framed transport foundation
 

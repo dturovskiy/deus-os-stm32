@@ -24,12 +24,12 @@ Product   Deus OS CDC Console
 Status    published CDC profile / private-test identity
 ```
 
-Both `0x000A` and `0x000B` are pid.codes private **Test PID** allocations under VID `0x1209`. They may be used for private testing only; they must not be used for redistributed, sold, or manufactured devices and are not globally unique product identities.
+`0x000A`, `0x000B`, and `0x000C` are pid.codes private **Test PID** allocations under VID `0x1209`. They may be used for private testing only; they must not be used for redistributed, sold, or manufactured devices and are not globally unique product identities.
 
 Authoritative allocation references:
 
 - `https://pid.codes/1209/000A/`
-- `https://pid.codes/1209/` (Test PID list including `0x000B`)
+- `https://pid.codes/1209/` (Test PID list including `0x000B` and `0x000C`)
 
 USB-IF remains the authority for USB Vendor IDs. This project does not claim ownership of VID `0x1209`; it uses only the private-test permission granted by that VID owner for these Test PIDs.
 
@@ -37,12 +37,30 @@ USB-IF remains the authority for USB Vendor IDs. This project does not claim own
 
 The CDC ACM descriptor/class topology and Windows driver binding differ materially from the published vendor-specific core profile. Reusing `1209:000A` could cause host-side device-node/descriptor/driver cache ambiguity during development. `1209:000B` gives the CDC profile a clean private-test identity while preserving the published `000A` evidence unchanged.
 
+## USB management-device development profile
+
+The `USB_MANAGEMENT_DEVICE_FOUNDATION` uses a third, distinct private-test topology identity:
+
+```text
+Boundary  USB_MANAGEMENT_DEVICE_FOUNDATION
+VID       0x1209
+PID       0x000C
+Product   Deus OS Device
+Status    private-test composite CDC + WinUSB management profile
+```
+
+The new PID is required because the host-visible topology changes from CDC-only to a composite device with a vendor-specific WinUSB management interface. Reusing `0x000B` would risk Windows device-node/driver-cache ambiguity.
+
+The stable management device-interface GUID is not the USB product identity. It is a host discovery ABI for the WinUSB management interface:
+
+`{C8B05EDE-1683-5002-81F0-95636B89CEC6}`
+
 ## Hard restrictions
 
 - private bench/development testing only;
-- no redistribution of firmware/devices configured with either Test PID as a product identity;
+- no redistribution of firmware/devices configured with these Test PIDs as a product identity;
 - no sale or manufacturing with these identities;
-- no claim that either profile is globally unique;
+- no claim that any private-test profile is globally unique;
 - no use of ST, ST-LINK, Arduino, or unrelated third-party VID/PID values;
 - production/release identity requires a separately authorized VID/PID before release.
 
@@ -56,4 +74,4 @@ A boundary that changes USB class topology in a way that changes host binding sh
 
 ## Gate effect
 
-This document authorizes private testing only. For `USB_CDC_ACM_CONSOLE_FOUNDATION`, Gate 1 source mutation may use `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`; it does not authorize any production/distribution use.
+This document authorizes private testing only. The published CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. For `USB_MANAGEMENT_DEVICE_FOUNDATION`, Gate 1 may use `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`, only within the frozen composite-management boundary. None of these Test PIDs authorize production/distribution use.

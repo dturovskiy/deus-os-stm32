@@ -1,6 +1,6 @@
 # Deus OS — Kernel Composition-Root Decomposition Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED — `fa75307fb392718a1d10d52770a6a111c97208e7`**
 
 Boundary ID:
 

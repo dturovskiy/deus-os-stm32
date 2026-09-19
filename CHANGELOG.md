@@ -16,9 +16,15 @@ Acceptance-model clarification: with micro-USB as the sole target power source, 
 
 Gate 5 evidence SHA-256 `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`. Gate 6 committed the exact accepted source/docs set as `25752fba557b1a1b518265a93bde05d3a6a3f9ad`, tree `24624db70923bdaa77f134cc956423511785c199`; Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`. Gate 7 published by ordinary non-force fast-forward; Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`; final ahead/behind `0/0`.
 
+### Gate 0 accepted — USB management device foundation
+
+Boundary: `USB_MANAGEMENT_DEVICE_FOUNDATION` — Gate 0 architecture/source boundary frozen; Gate 1 source implementation next.
+
+Frozen private-test topology is composite `1209:000C` / `Deus OS Device`: CDC interfaces 0–1 remain secondary diagnostics, vendor interface 2 is the primary WinUSB management path over EP4 bulk OUT/IN 64, PMA consumes the remaining `0x180..0x1FF`, and Microsoft OS 2.0 descriptors register stable management GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`. Binary framed RPC v1 and command service v2 / 35-method registry are reused unchanged. Initial Gate 1 source boundary is exactly new `include/kernel/usb_management.h`, new `src/kernel/usb_management.c`, plus `include/drivers/usb_device.h`, `src/drivers/usb_device.c`, and `src/kernel.c`.
+
 ### Gate 5 accepted — kernel composition-root decomposition
 
-Boundary: `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–5 accepted; Gate 6 local acceptance commit next.
+Boundary: `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–7 accepted and published at `fa75307fb392718a1d10d52770a6a111c97208e7`.
 
 The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state, semantic-event snapshotting and application-view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. The composition root retains top-level initialization/wiring, production task binding/start, top-level IRQ/exception glue and production scheduler observability that depends on root-private production state. No universal `kernel_context_t`, service locator, hidden extracted-module extern state, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
 

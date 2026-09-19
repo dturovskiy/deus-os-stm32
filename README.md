@@ -63,9 +63,9 @@ Canonical design/acceptance:
 - `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md`
 - `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Current implementation boundary:
+Published decomposition boundary:
 
-`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATES 0–5 ACCEPTED / GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**.
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATES 0–7 ACCEPTED / PUBLISHED `fa75307fb392718a1d10d52770a6a111c97208e7`**.
 
 The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state, semantic-event snapshotting and application-view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. The composition root retains top-level initialization/wiring, production task binding/start, top-level IRQ/exception glue and production scheduler observability that depends on root-private production state. No universal `kernel_context_t`, service locator, hidden extracted-module extern state, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
 
@@ -81,7 +81,7 @@ Implementation order:
 
 `OLED_DIRTY_REGION_OPTIMIZATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` -> `USB_MANAGEMENT_DEVICE_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
 
-`USB_MANAGEMENT_DEVICE_FOUNDATION` will make the production Windows-facing device a vendor-specific WinUSB management device rather than a COM-port-first CDC console. The existing binary framed RPC remains the management protocol above the transport; production USB naming/identity, Microsoft OS descriptors, a stable device-interface GUID and WinUSB bulk transport belong to that boundary. CDC may remain only as an explicit debug/recovery profile if later justified.
+Current implementation boundary is `USB_MANAGEMENT_DEVICE_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 SOURCE IMPLEMENTATION NEXT**. It freezes a composite `Deus OS Device` private-test profile `1209:000C`: CDC interfaces 0–1 remain secondary diagnostics, vendor interface 2 becomes the primary WinUSB management API over EP4 bulk OUT/IN, and the accepted binary framed RPC v1 remains the management protocol above transport. Microsoft OS 2.0 descriptors register stable management GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}` without a custom INF. Canonical design/acceptance are `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md` and `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
 The preceding docs-only application/UI foundation is fully accepted and was published by ordinary non-force fast-forward at commit `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
