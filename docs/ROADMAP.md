@@ -134,7 +134,7 @@ Implementation order:
 
 1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–7 accepted / published `fa75307fb392718a1d10d52770a6a111c97208e7`;
 2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — Gates 0–7 accepted / published `1f88083843c6aae9fd228ad2d677f9252b889a11`;
-3. `HOST_CONTROL_APPLICATION_FOUNDATION` — **NEXT**; Gate 0 freezes host discovery, target identity/capability discovery, binary-RPC client API, diagnostics/application-control UX boundary, and exact source/tooling ownership before implementation;
+3. `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 SOURCE IMPLEMENTATION NEXT**; C#/.NET 10 transport-neutral Core + CLI + Avalonia desktop, Windows WinUSB and Linux libusb adapters, additive `sysinfo=0x0024`, command-service v3 / registry 36 and exact identity/capability/session contracts are frozen;
 4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
 5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
 6. networking/service extensions.
@@ -224,15 +224,15 @@ Target progression:
 6. Boot/desktop UI foundation — published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`.
 7. OLED dirty-region optimization — published at `39690c9ef103cbcf93272df8bad0359a934b7dc1`; exact changed page/column spans retained with one 512-byte framebuffer.
 8. Static application runtime foundation — published at `25752fba557b1a1b518265a93bde05d3a6a3f9ad`.
-9. Kernel composition-root decomposition — Gates 0–5 accepted; Gate 6 next.
-10. Production USB management-device foundation: vendor-specific WinUSB `Deus OS Device`, Microsoft OS descriptors, stable interface GUID and the accepted binary RPC above transport; CDC becomes debug/recovery rather than the primary production API.
-11. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); it manages the stable firmware runtime rather than defining it.
+9. Kernel composition-root decomposition — published at `fa75307fb392718a1d10d52770a6a111c97208e7`.
+10. Production USB management-device foundation — published at `1f88083843c6aae9fd228ad2d677f9252b889a11`; vendor-specific WinUSB `Deus OS Device`, Microsoft OS descriptors, stable interface GUID and accepted binary RPC above transport; CDC is debug/recovery rather than the primary production API.
+11. Cross-platform Windows/Linux host application — **Gate 0 accepted / Gate 1 next**. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); C#/.NET 10 Core/CLI + Avalonia desktop, Windows WinUSB/Linux libusb adapters and system identity/capability discovery are frozen.
 12. Add bounded versioned asset/configuration transfer for non-executable packages.
 13. Add a recoverable USB firmware-update path and small bootloader as a separate safety boundary.
 14. Add networking/service extensions over the same application/service model.
 15. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
 
-Production Windows integration should avoid a custom kernel-mode driver while also avoiding COM-port-first product identity. `USB_MANAGEMENT_DEVICE_FOUNDATION` therefore targets the Windows inbox WinUSB stack with firmware-supplied device identity/interface metadata. CDC remains valuable as an explicit development/debug/recovery profile, not as the final management surface.
+Production Windows integration uses the accepted inbox WinUSB stack without a custom kernel-mode driver or COM-port-first product identity. `USB_MANAGEMENT_DEVICE_FOUNDATION` supplies the firmware device/interface metadata; CDC remains an explicit development/debug/recovery profile, not the primary management surface. `HOST_CONTROL_APPLICATION_FOUNDATION` now consumes that accepted interface.
 
 Constraint: STM32F103C8 is a USB Device target here, not a general USB Host platform. Keyboard/mouse emulation is possible as USB HID device behavior; directly hosting commodity USB peripherals is outside the baseline architecture.
 <!-- END STM32_OS_USB_STRATEGY -->

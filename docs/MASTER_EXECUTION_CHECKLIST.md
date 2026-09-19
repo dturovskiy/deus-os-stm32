@@ -51,7 +51,26 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] Gate 5 canonical docs/current-state finalization — **PASS / docs-only**; accepted source hashes unchanged.
 - [x] Gate 6 local acceptance commit — **PASS / `1f88083843c6aae9fd228ad2d677f9252b889a11`**, tree `931f1cbce8bc7c043bf27626c6127ac7cab9acb9`.
 - [x] Gate 7 ordinary non-force publication — **PASS**; fresh fetch proved `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`.
-- [ ] Next boundary: `HOST_CONTROL_APPLICATION_FOUNDATION` Gate 0 — freeze host discovery/system-identity/capability/client contract before host UX implementation.
+- [x] Next boundary selected: `HOST_CONTROL_APPLICATION_FOUNDATION`.
+
+### Current boundary — host control application foundation — Gate 0 accepted / Gate 1 next
+
+- [x] Gate 0 host architecture/source-boundary freeze — **PASS**.
+- [x] host runtime: C# / .NET 10; desktop shell: Avalonia 12.x; Core remains UI-independent.
+- [x] Windows primary discovery uses accepted WinUSB interface GUID; no COM-first product discovery.
+- [x] Linux transport uses libusb-1.0 and claims management IF2 only; CDC IF0/1 remain untouched.
+- [x] Core owns framing/CRC/request correlation/session/reconnect/sysinfo parsing; CLI is reference integration client; Desktop consumes Core.
+- [x] firmware additive identity RPC frozen as `sysinfo=0x0024`; binary protocol stays v1; command-service v2 -> v3; registry 35 -> 36.
+- [x] exact identity contract and capability mask frozen; no stable physical unit identity/MCU UID in v1.
+- [x] exact five-path firmware Gate-1 source boundary frozen plus exact `host/` project tree, .NET pin/package manifests and host-scoped `.gitignore` support.
+- [x] transfer/update/network/plugin/security expansion remains outside this boundary.
+- [ ] Gate 1 source implementation/static review — **NEXT**.
+- [ ] Gate 2 fresh firmware + host build/unit/resource acceptance.
+- [ ] Gate 3 Windows hardware/CLI acceptance.
+- [ ] Gate 4 Windows desktop acceptance.
+- [ ] Gate 5 Linux hardware/cross-platform acceptance.
+- [ ] Gate 6 docs finalization + local acceptance commit.
+- [ ] Gate 7 ordinary non-force publication.
 
 ### Published baseline — binary framed transport foundation
 

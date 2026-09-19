@@ -14,6 +14,14 @@ Gate 5 finalized canonical docs without source mutation. Gate 6 committed the ex
 
 A post-publication audit found stale status-only documentation: several canonical files still said Gate 6 was next, `README.md` still described USB Gate 0/1 as current, and an older kernel-decomposition checklist still left its already-published Gate 6/7 unchecked. This reconciliation updates status/checklist/history text only; no firmware/source/header/linker behavior changes.
 
+### Gate 0 accepted — Host control application foundation
+
+Boundary: `HOST_CONTROL_APPLICATION_FOUNDATION` — Gate 0 architecture/source contract accepted; Gate 1 source implementation next.
+
+The frozen host baseline is C# / .NET 10 with a transport-neutral `DeusOs.Control.Core`, CLI reference client, direct Windows WinUSB adapter, Linux libusb-1.0 adapter and Avalonia 12.x desktop shell. GUI code cannot own framing/CRC/request correlation. The first target identity addition is safe zero-argument `sysinfo=0x0024`; binary frame protocol stays v1, command-service version advances `2 -> 3`, registry count `35 -> 36`, application-runtime ABI stays v1. `sysinfo` freezes stable OS/platform/architecture/source-tree/capability fields and explicitly reports no stable physical unit identity in v1.
+
+Canonical design/acceptance: `docs/HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md` and `docs/HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md`. Gate 1 target mutation is limited to new `include/kernel/system_identity.h`, new `src/kernel/system_identity.c`, and modifications to `include/kernel/command_service.h`, `src/kernel/command_service.c`, `src/kernel.c`, plus the exact new `host/` solution tree. Transfer/update/network/plugin/security expansion remains out of scope.
+
 ## 2026-09-18
 
 ### Published — Application runtime foundation — Gates 0–7 accepted

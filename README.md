@@ -14,7 +14,7 @@ Canonical design/acceptance:
 - `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md`
 - `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Current next boundary: `HOST_CONTROL_APPLICATION_FOUNDATION` — Gate 0 contract freeze. Host work must first freeze device discovery, build/platform/system identity and capability discovery, binary-RPC client semantics, diagnostics/application-control UX ownership and exact host/firmware source boundaries before implementation.
+Current boundary: `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 SOURCE IMPLEMENTATION NEXT**. Gate 0 freezes C#/.NET 10 host architecture, Avalonia desktop separation, Windows WinUSB/Linux libusb transport ownership, CLI-first protocol acceptance, additive `sysinfo=0x0024`, command-service v3 / registry 36, exact system identity/capability semantics, reconnect behavior and exact host/firmware source boundaries.
 
 ### Historical accepted-state context — 2026-09-17
 
@@ -96,7 +96,7 @@ Implementation order:
 
 `OLED_DIRTY_REGION_OPTIMIZATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` -> `USB_MANAGEMENT_DEVICE_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
 
-`USB_MANAGEMENT_DEVICE_FOUNDATION` is now published at `1f88083843c6aae9fd228ad2d677f9252b889a11`. The current implementation boundary is `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATE 0 CONTRACT FREEZE NEXT**. Do not begin host GUI implementation by hard-coding USB/RPC assumptions: first freeze device discovery, target system/build/platform identity and capability discovery, client framing/error semantics, supported diagnostics/application-control operations and exact host/firmware source ownership.
+`USB_MANAGEMENT_DEVICE_FOUNDATION` is published at `1f88083843c6aae9fd228ad2d677f9252b889a11`. `HOST_CONTROL_APPLICATION_FOUNDATION` Gate 0 is now accepted; Gate 1 source implementation is next. Canonical host design/acceptance are `docs/HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md` and `docs/HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md`. The host protocol core remains independent of GUI technology and the STM32 remains independently operational without the Control Panel.
 
 The preceding docs-only application/UI foundation is fully accepted and was published by ordinary non-force fast-forward at commit `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
@@ -205,7 +205,7 @@ source -> build -> ELF/bin validation -> ST-LINK flash -> verify -> reset -> UAR
 
 Current USART1 is bidirectional at 115200 8N1 and is part of the automated hardware acceptance loop.
 
-Native USB is planned to eventually consolidate normal console/control/update traffic onto the board's micro-USB connector. The provisional Windows/Linux host application name is **Deus OS CP** (`Deus OS Control Panel`); naming may be revised later.
+Native USB management is now published on the board micro-USB connector through the composite `Deus OS Device` profile: WinUSB is the primary management API while CDC remains diagnostics/recovery. The current host boundary is `HOST_CONTROL_APPLICATION_FOUNDATION`; provisional Windows/Linux application name remains **Deus OS CP** (`Deus OS Control Panel`).
 <!-- END STM32_OS_DEV_LOOP -->
 
 <!-- BEGIN STM32_OS_SCHED_WAIT_WAKE_ACCEPTED_20260913 -->
