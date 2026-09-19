@@ -160,7 +160,7 @@ The vendor control request for the descriptor set is device-to-host vendor reque
 The MS OS 2.0 descriptor set targets management interface 2 only and contains:
 
 1. set header;
-2. configuration subset header for configuration 0;
+2. configuration subset header with `bConfigurationValue = 1` for the device's sole configuration;
 3. function subset header for first interface 2;
 4. compatible-ID feature descriptor with `WINUSB`;
 5. registry-property feature descriptor:
