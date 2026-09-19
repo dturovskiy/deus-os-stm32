@@ -92,14 +92,66 @@ Repository line endings are policy, not a developer-machine preference. `.gitatt
 
 Known LF->CRLF Git warnings may be suppressed from operator-facing logs only when exact raw stderr is still preserved in evidence. Other stderr must remain visible. Perform normalization deliberately; do not mix unrelated EOL churn into firmware changes.
 
-## 7. Roadmap placement
+## 7. Post-decomposition architecture debt
 
-These deferred items do not insert speculative boundaries before `APPLICATION_RUNTIME_FOUNDATION`.
+The accepted `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is a material ownership improvement, not a claim that `src/kernel.c` has reached its final composition-root form. The accepted implementation deliberately stopped before creating speculative abstractions or exposing root-private state merely to reduce line count.
+
+The remaining architecture debt is deferred and trigger-driven:
+
+### Composition-root convergence
+
+`src/kernel.c` still owns more than final composition-root responsibilities. Future extraction candidates remain:
+
+- transport-neutral command execution/domain dispatch that is still rooted in the historical `console_*` implementation;
+- production task/liveness glue when its bounded state can move with a coherent owner instead of being exported through hidden `extern` state or a catch-all context;
+- low-level RCC/GPIO/UART/I2C/register helpers when a natural platform/driver owner exists.
+
+Do not reopen decomposition merely to reduce line count. Revisit this debt when a new feature would otherwise add another independent reason to change `src/kernel.c`, when host/management work would duplicate domain dispatch, or when low-level platform code blocks clean driver/service layering.
+
+Historical `console_*` naming on transport-neutral dispatch is not itself a functional defect and is not sufficient reason for a rename-only boundary.
+
+### System/service state must remain upstream of presentation
+
+The current boot/desktop integration reconstructs `application_service_snapshot_t` from `boot_desktop_ui_snapshot_t`. This is behaviorally valid for the accepted single OLED presentation path, but it must not become the long-term dependency direction.
+
+Before system state gains multiple presentation/management consumers, the intended direction is:
+
+`system/service state -> bounded semantic service snapshot -> application runtime and presentation consumers`.
+
+UI indicator state must not become the authoritative source of system health, USB state, network state or future host-visible service state. Revisit this before a second presentation target, richer host-control state, networking state, or other non-OLED consumer is introduced.
+
+### Application runtime bridge presentation coupling
+
+`application_runtime_bridge` currently owns both runtime/event integration state and adaptation of the application view into `oled_console_t`. This is acceptable while OLED is the only target presentation consumer and avoids a speculative renderer abstraction.
+
+If a second renderer/presentation consumer appears, split runtime/service ownership from OLED-specific presentation adaptation instead of expanding the bridge into a generic UI god object.
+
+### Scheduler diagnostic binding lifetime
+
+`scheduler_diagnostics_execute_diagnostic()` borrows one binding for the synchronous diagnostic execution, including nested diagnostic scheduler tasks. The module-static binding pointer is therefore valid only under the current serialized/non-reentrant diagnostic contract.
+
+Do not reuse this mechanism as a concurrent diagnostic service, retain the borrowed binding beyond the call, or allow unrelated concurrent diagnostic execution. If diagnostics become concurrent/long-lived, introduce an explicit bounded ownership model in a dedicated reviewed boundary.
+
+### Application stop-failure semantics
+
+The v1 built-in applications do not own independent peripherals/resources, so their stop callbacks are bounded and effectively trivial. Before an application may own a resource whose release can fail, freeze explicit fail-closed lifecycle semantics for a failed current-application `stop()`.
+
+In particular, do not implicitly start a replacement application after an unresolved resource-release failure unless the ownership transition is proven safe. The policy must define resulting lifecycle state, fallback behavior and resource ownership before resource-owning applications are accepted.
+
+### Anti-goals for all follow-up work
+
+None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
+
+These items do **not** block the current `USB_MANAGEMENT_DEVICE_FOUNDATION` Gate 1. That boundary should continue to reuse the accepted command/binary-RPC domain and add only the explicitly frozen USB-management transport/runtime wiring.
+
+## 8. Roadmap placement
+
+These deferred items do not change current roadmap ordering.
 
 Current intended order remains:
 
 1. `APPLICATION_RUNTIME_FOUNDATION`;
-2. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — mandatory architecture cleanup after measured god-module concentration in `src/kernel.c`;
+2. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — accepted/published architecture cleanup after measured god-module concentration in `src/kernel.c`;
 3. `USB_MANAGEMENT_DEVICE_FOUNDATION`;
 4. `HOST_CONTROL_APPLICATION_FOUNDATION`;
 5. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` when a real consumer exists;

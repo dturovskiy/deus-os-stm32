@@ -55,6 +55,7 @@ Examples:
 - CH340 not `OK`.
 - STM32CubeProgrammer GUI owns ST-LINK and CLI returns `DEV_CONNECT_ERR`.
 - Wrong ST-LINK identity or firmware.
+- Target powered only through unintended signal/reference backfeed while the board's normal supply is absent; an ST-LINK voltage reading alone is not proof that the MCU is validly powered. Hardware gates must separately record host USB presence (when USB is the normal board supply), target voltage, and SWD core access before classifying a physical-link failure.
 - Tool executable/path missing.
 
 ### EVIDENCE / STATE DRIFT
@@ -169,6 +170,44 @@ Functions that may receive empty values must use appropriate attributes:
 Always materialize pipeline results explicitly with `@(...)` when an empty result is valid.
 
 Never assume an empty pipeline becomes an empty array.
+
+External Windows tools routinely emit legitimate blank stdout/stderr lines. Any generic logging/capture helper that accepts external command output must permit empty strings (`[AllowEmptyString()]`) and preferably serialize them explicitly as `<blank>` in the chronological log. A blank line from STM32CubeProgrammer, Git, a compiler, or a host bridge must never become a parameter-binding failure. Capture the complete native-command output to its own evidence file before interpreting exit status or replaying lines to the human-readable log. This failure class is `PWR-EMPTY-OUTPUT-LOGGING-01`.
+
+Do not recursively `ConvertTo-Json` arbitrary `Get-PnpDeviceProperty`, registry, WMI/CIM or provider objects in an acceptance harness. Their `Data`/provider metadata can contain deeply nested objects or cycles, causing truncation warnings, excessive CPU/memory use, or apparent hangs. Flatten evidence first to primitive strings/arrays (CSV/TSV or explicit ordered scalar objects), bound any SetupAPI log scan to a recent tail/window, and keep host-diagnostic collection time-bounded. This failure class is `PWR-RECURSIVE-PROVIDER-SERIALIZATION-01`.
+
+USB bulk transfer boundaries are transport boundaries, never application-frame boundaries. A WinUSB `ReadPipe` may return a partial protocol frame, exactly one frame, or bytes spanning the end of one frame and the beginning of the next. Hardware acceptance harnesses for framed protocols must use a persistent stream decoder that accumulates arbitrary read chunks, extracts complete frames by protocol length/CRC, and preserves surplus bytes for the next frame. Never pass one raw USB read directly to a whole-frame parser or claim that every 64-byte transfer must equal one frame. This failure class is `PWR-USB-BULK-TRANSFER-FRAME-ASSUMPTION-01`.
+
+Do not declare PowerShell parameters or working variables using names that collide case-insensitively with automatic variables. The hard blacklist for acceptance harness declarations/assignments includes at least `$args`, `$input`, `$error`, `$matches`, `$pwd`, `$home`, `$host`, `$pid`, `$profile`, `$pshome`, `$psscriptroot`, `$pscommandpath`, `$myinvocation`, `$lastexitcode`, `$executioncontext`, `$foreach`, `$switch`, `$this`, `$true`, `$false`, and `$null`. In particular, protocol helpers must not use a formal `$Args` parameter, and ordinary state variables must not use names such as `$home`: PowerShell automatic-variable names are case-insensitive and some are read-only. Use explicit names such as `$RpcArgs` and `$homeState`, invoke helpers with named parameters for nontrivial protocol requests, statically scan every formal parameter and assignment target against the blacklist, and run exact host-side self-tests before any target I/O. This failure class is `PWR-POWERSHELL-AUTOMATIC-VARIABLE-COLLISION-01`.
+
+PowerShell evaluates ordinary function-call argument expressions before entering the callee. Therefore an assertion helper such as `Assert-Gate $condition ("...{0}" -f $possiblyNull.Type)` can itself fail while constructing the failure message even when the condition is true. Under StrictMode, any diagnostic message that dereferences an object must be guarded before property access or constructed lazily. Never dereference the object that is expected to be `$null` in a success-path no-response assertion. This failure class is `PWR-EAGER-ASSERT-MESSAGE-DEREFERENCE-01`.
+
+Acceptance harnesses must pin `Set-StrictMode` to a deterministic version (currently `3.0`) rather than `Latest`; Microsoft documents `Latest` as intentionally non-deterministic across future PowerShell releases. Unexpected uncategorized PowerShell exceptions are harness failures until proven otherwise, not product failures.
+
+Before a long hardware-runtime gate, preflight every host resource required later in the same run. If UART acceptance is mandatory, prove that a non-target CDC serial adapter is enumerated before SWD/programming/reconnect/IWDG work begins; otherwise stop early with an environment classification. Keep adapter VCC disconnected when the board has its own normal supply.
+
+A retryable probe must not poison the final failure classification. If a temporary `Open-DeusWinUsb`, serial-port, SWD or enumeration attempt is expected to fail and be retried, either use a non-asserting probe helper or save/restore the global classification inside the retry boundary. Only the terminal failed condition may set the final class.
+
+Do not collapse layered boot readiness into one signal. Transport recovery (`USB enumerated`, `WinUSB opens`, `ping works`) does not prove higher-level runtime readiness. If product code has an explicit boot/splash/state-machine delay, a post-reset acceptance test must poll the actual higher-level state with a bounded deadline derived from that contract. For the current STM32 application runtime, reset sets `active_id=0`, the boot UI holds SPLASH for at least 1000 ms, and `system.home` is started only when the UI reaches HOME; therefore an immediate `APP_ACTIVE_ID=1` assertion after the first recovered ping is a harness race. Capture every polled application state and fail only after the bounded home deadline.
+
+When a hardware gate has already completed an irreversible or operator-heavy acceptance step (for example a required physical USB disconnect/reconnect) on the exact same source/Flash candidate and later fails solely because of a proven harness defect, a continuation run may consume that earlier step instead of repeating it. The continuation must embed or otherwise cryptographically bind the prior evidence/log, verify the exact candidate/Flash again, explicitly list which earlier assertions are inherited, execute all remaining assertions, and produce a composite final record. Do not use continuation to bypass an unresolved product/environment failure.
+
+Do not then re-wrap an already materialized array as a single pipeline object when returning from a helper. In particular, `return ,$output` turns a command result array into one nested `Object[]`; downstream regex/line parsers then see the array object instead of individual output lines. Command-capture helpers must return `$output`, while callers that require array semantics use `@(...)` at the call site. This failure class is `PWR-ARRAY-MATERIALIZATION-01`.
+
+### Gate outcome vs process failure
+
+An expected acceptance result such as `PRODUCT_RESOURCE_BUDGET`, protocol rejection, hardware mismatch, or other successfully classified gate FAIL is not a harness crash. Once `run.log`, `outcome.txt` and the evidence archive have been written successfully, the operator-facing script must terminate normally and print the gate outcome/classification. Do not `throw` merely to convert an accepted `OUTCOME=FAIL` into process exit code 1; that can cause terminal wrappers to close/restart and obscures the distinction between product failure and harness execution failure. Reserve process-level failure for cases where trustworthy evidence could not be produced or package/AST/prestate integrity itself failed before normal evidence finalization. This failure class is `HARNESS-EXIT-SEMANTICS-01`.
+
+### Operator-facing terminal structure
+
+The chronological `run.log` remains authoritative, but the terminal must not present a wall of undifferentiated command lines. Every acceptance harness must emit visible section headers for at least `PRESTATE`, `BUILD`, `STATIC`, `RESOURCES`, `ARTIFACTS`, and `RESULT`; hardware gates add `TARGET`, `ENUMERATION`, `RUNTIME`, and `READBACK` as applicable. Each section prints concise PASS/FAIL status while detailed command stdout/stderr continues into `run.log`.
+
+The final terminal result must be visually dominant and color-coded with `Write-Host`: green foreground for PASS, red foreground for FAIL, yellow for classified warnings/skips. The final block must include gate name, `RESULT=PASS|FAIL`, classification, candidate identity and the most important resource/runtime figures, followed by the result log/evidence paths. Do not rely on an uncolored prose line buried after command output. If `$Host.UI` coloring is unavailable, print an ASCII banner such as `========== GATE 2 PASS ==========` as a non-color fallback.
+
+A categorized summary is presentation only; evidence ownership remains unchanged: raw chronological commands stay in `run.log`, structured final state stays in `outcome.txt`, artifact identity stays in hash/candidate files.
+
+Reserve the words `PASS` and `FAIL` for the final gate result. Intermediate successful checks print `[OK]`; recoverable/nonfatal differences print `[WARN]`; an intermediate blocking check prints `[ERROR]`. This prevents a log from appearing to contain both a gate PASS and a gate FAIL when an early subcheck succeeds but the gate later stops.
+
+For a hardware gate that consumes an already accepted build candidate, source identity is owned by the accepted Git candidate tree, not by raw filesystem SHA-256 of individual working-tree files. Recompute the candidate with a temporary Git index over the authorized source paths and require the exact accepted tree hash. Raw filesystem hashes may be captured diagnostically, but must not independently fail the hardware gate when the normalized candidate tree, dirty set and real index are exact; line-ending/encoding filters can change raw bytes without changing Git content identity. This failure class is `PRESTATE-RAW-HASH-OWNER-01`.
 
 ### String matching
 

@@ -33,7 +33,7 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] Gate 6 local acceptance commit — PASS / `fa75307fb392718a1d10d52770a6a111c97208e7`;
 - [x] Gate 7 ordinary non-force publication — PASS; final `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`.
 
-### Current boundary — USB management device foundation — Gate 0 accepted / Gate 1 next
+### Current boundary — USB management device foundation — Gates 2–5 accepted / Gate 6 next
 
 - [x] Gate 0 Windows/USB architecture and exact source boundary frozen;
 - [x] private-test identity `1209:000C`, product `Deus OS Device`;
@@ -41,11 +41,13 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] CDC interfaces 0–1 retained under IAD;
 - [x] vendor WinUSB interface 2 with EP4 OUT `0x04` / IN `0x84`, bulk 64;
 - [x] PMA `EP4 RX=0x180`, `EP4 TX=0x1C0`, exact end `0x200`;
-- [x] MS OS 2.0 BOS/vendor-request binding frozen;
+- [x] MS OS 2.0 BOS/vendor-request binding frozen: Windows floor `0x0A000000`, vendor code `0x20`, exact set length `178`, configuration subset selector `0` for the first configuration while standard USB `bConfigurationValue` remains `1`;
 - [x] stable management GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`;
 - [x] binary protocol v1 / command service v2 / 35 RPC registry retained;
-- [x] initial Gate 1 source boundary exactly five paths;
-- [ ] Gate 1 source implementation — NEXT.
+- [x] Gate 1 exact five-path source implementation/static proof — PASS; IRQ owns EP4/PMA/rings only, task0 owns management parser/RPC execution, fast bus-reset generation resets management protocol state;
+- [x] Gate 2 fresh GNU build/link/resource/static candidate — **PASS** on repaired MS OS 2.0 descriptor candidate. Accepted tree `46841b52d351277deb134a6f4709619087b477af`; BIN `50172` / `FD0A8049193772892C2A3DC1CF2B24FA17BCC83FC4B0F55A22AA6A4962C864FB`; Flash/SRAM `50172/11728` within frozen ceilings `54780/11824`; task stacks `1024/512`; undefined symbols `0`; stack-usage `21/21`; real Git index untouched; no Flash. Evidence `B6101C2FAD615DC41856BD1DE88C46E92517759EC3AC1F56ACB2030B89252AF3`; log `245F15303355C47473C15CB05838DB495764F97D228DB1113B3C7693765D429F`.
+- [x] Gate 3 Windows + target hardware/runtime — **PASS / COMPOSITE V11+V14**. `REV_0102`; interface 2 -> inbox `WINUSB`; WinUSB `128/128`; UART `32/32`; management RX/TX drops `0/0`; physical USB reconnect PASS; IWDG recovery PASS; task margins `448/424`; canaries intact/faults zero; final Flash exact accepted BIN. Evidence `1EF8595E85F088F0D3870CA5D880631342AD795FDB94C05EAB9BBC3566A3DCC6`; log `083C9B66B7225D3FF37845996B62991C7DE8E84332BD3C8B059F1B8A6569797B`.
+- [x] Gate 4 OLED disposition — **PASS / `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`**; management boundary does not change OLED/UI/application rendering.
 
 ### Published baseline — binary framed transport foundation
 

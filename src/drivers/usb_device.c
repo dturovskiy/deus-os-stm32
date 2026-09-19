@@ -91,9 +91,17 @@
 #define USB_CDC_NOTIFY_EP       1u
 #define USB_CDC_OUT_EP          2u
 #define USB_CDC_IN_EP           3u
+#define USB_MANAGEMENT_EP       4u
 #define USB_EP0_MAX_PACKET      64u
 #define USB_CDC_DATA_MAX_PACKET 64u
 #define USB_CDC_NOTIFY_PACKET   16u
+
+#define USB_MS_OS_20_VENDOR_CODE            0x20u
+#define USB_MS_OS_20_DESCRIPTOR_INDEX       0x0007u
+#define USB_MS_OS_20_SET_TOTAL_LENGTH       178u
+#define USB_MS_OS_20_CONFIG_SUBSET_LENGTH   168u
+#define USB_MS_OS_20_FUNCTION_SUBSET_LENGTH 160u
+#define USB_MS_OS_20_REG_PROPERTY_LENGTH    132u
 
 /*
  * PMA local byte addresses. CPU-visible PMA addresses use a doubled stride:
@@ -105,6 +113,8 @@
 #define USB_EP1_TX_LOCAL        0x0C0u
 #define USB_EP2_RX_LOCAL        0x100u
 #define USB_EP3_TX_LOCAL        0x140u
+#define USB_EP4_RX_LOCAL        0x180u
+#define USB_EP4_TX_LOCAL        0x1C0u
 
 #define USB_BTABLE_EP_TX_ADDR(ep) \
     (USB_BTABLE_LOCAL + ((uint16_t)(ep) * 8u) + 0u)
@@ -125,11 +135,17 @@
 #define USB_CDC_TX_RING_CAPACITY 2048u
 #define USB_CDC_TX_RING_MASK     (USB_CDC_TX_RING_CAPACITY - 1u)
 
+#define USB_MANAGEMENT_RX_RING_CAPACITY 512u
+#define USB_MANAGEMENT_RX_RING_MASK     (USB_MANAGEMENT_RX_RING_CAPACITY - 1u)
+#define USB_MANAGEMENT_TX_RING_CAPACITY 1024u
+#define USB_MANAGEMENT_TX_RING_MASK     (USB_MANAGEMENT_TX_RING_CAPACITY - 1u)
+
 /* USB standard request fields. */
 #define USB_REQ_DIR_IN          0x80u
 #define USB_REQ_TYPE_MASK       0x60u
 #define USB_REQ_TYPE_STANDARD   0x00u
 #define USB_REQ_TYPE_CLASS      0x20u
+#define USB_REQ_TYPE_VENDOR     0x40u
 #define USB_REQ_RECIP_MASK      0x1Fu
 #define USB_REQ_RECIP_DEVICE    0x00u
 #define USB_REQ_RECIP_INTERFACE 0x01u
@@ -153,6 +169,7 @@
 #define USB_DESC_DEVICE        1u
 #define USB_DESC_CONFIGURATION 2u
 #define USB_DESC_STRING        3u
+#define USB_DESC_BOS           15u
 
 #define USB_CONFIGURATION_NONE 0u
 #define USB_CONFIGURATION_ONE  1u
@@ -183,18 +200,18 @@ typedef enum
 static const uint8_t usb_device_descriptor[] =
 {
     18u, USB_DESC_DEVICE,
-    0x00u, 0x02u,             /* bcdUSB 2.00 */
-    0x02u,                    /* CDC Communications Device Class */
-    0x02u,                    /* Abstract Control Model */
-    0x00u,
+    0x10u, 0x02u,             /* bcdUSB 2.10: BOS supported */
+    0xEFu,                    /* Miscellaneous Device Class */
+    0x02u,                    /* Common Class */
+    0x01u,                    /* Interface Association Descriptor protocol */
     USB_EP0_MAX_PACKET,
     (uint8_t)(USB_DEVICE_DEVELOPMENT_VID & 0xFFu),
     (uint8_t)(USB_DEVICE_DEVELOPMENT_VID >> 8),
     (uint8_t)(USB_DEVICE_DEVELOPMENT_PID & 0xFFu),
     (uint8_t)(USB_DEVICE_DEVELOPMENT_PID >> 8),
-    0x01u, 0x01u,             /* bcdDevice 1.01 */
+    0x02u, 0x01u,             /* bcdDevice 1.02: WinUSB descriptor repair revision */
     0u,                       /* no manufacturer string */
-    1u,                       /* development product string */
+    1u,                       /* product string */
     0u,                       /* no serial number */
     1u                        /* one configuration */
 };
@@ -203,12 +220,21 @@ static const uint8_t usb_configuration_descriptor[] =
 {
     /* Configuration descriptor. */
     9u, USB_DESC_CONFIGURATION,
-    67u, 0u,                  /* wTotalLength */
-    2u,                       /* CDC control + CDC data interfaces */
+    98u, 0u,                  /* wTotalLength */
+    3u,                       /* CDC control/data + management */
     USB_CONFIGURATION_ONE,
     0u,
     0x80u,                    /* bus powered */
     50u,                      /* 100 mA */
+
+    /* CDC Interface Association Descriptor: interfaces 0 and 1. */
+    8u, 11u,
+    USB_CDC_CONTROL_INTERFACE,
+    2u,
+    0x02u,
+    0x02u,
+    0x01u,
+    0u,
 
     /* CDC Communication Class Interface. */
     9u, 4u,
@@ -255,7 +281,98 @@ static const uint8_t usb_configuration_descriptor[] =
     /* EP3 IN: device -> host bulk data. */
     7u, 5u, 0x83u, 0x02u,
     USB_CDC_DATA_MAX_PACKET, 0u,
+    0u,
+
+    /* Vendor-specific management interface 2. */
+    9u, 4u,
+    USB_MANAGEMENT_INTERFACE_NUMBER,
+    0u,
+    2u,
+    0xFFu,
+    0x00u,
+    0x00u,
+    0u,
+
+    /* EP4 OUT: host -> management bulk data. */
+    7u, 5u, USB_MANAGEMENT_OUT_ENDPOINT, 0x02u,
+    USB_MANAGEMENT_MAX_PACKET, 0u,
+    0u,
+
+    /* EP4 IN: management -> host bulk data. */
+    7u, 5u, USB_MANAGEMENT_IN_ENDPOINT, 0x02u,
+    USB_MANAGEMENT_MAX_PACKET, 0u,
     0u
+};
+
+static const uint8_t usb_bos_descriptor[] =
+{
+    /* BOS header: one Microsoft OS 2.0 platform capability. */
+    5u, USB_DESC_BOS,
+    33u, 0u,
+    1u,
+
+    /* Microsoft OS 2.0 Platform Capability Descriptor. */
+    28u, 16u, 5u, 0u,
+    0xDFu, 0x60u, 0xDDu, 0xD8u,
+    0x89u, 0x45u, 0xC7u, 0x4Cu,
+    0x9Cu, 0xD2u, 0x65u, 0x9Du,
+    0x9Eu, 0x64u, 0x8Au, 0x9Fu,
+    0x00u, 0x00u, 0x00u, 0x0Au, /* Windows 10 */
+    (uint8_t)(USB_MS_OS_20_SET_TOTAL_LENGTH & 0xFFu),
+    (uint8_t)(USB_MS_OS_20_SET_TOTAL_LENGTH >> 8),
+    USB_MS_OS_20_VENDOR_CODE,
+    0u                              /* alternate enumeration disabled */
+};
+
+static const uint8_t usb_ms_os_20_descriptor_set[] =
+{
+    /* Microsoft OS 2.0 Descriptor Set Header. */
+    0x0Au, 0x00u,
+    0x00u, 0x00u,
+    0x00u, 0x00u, 0x00u, 0x0Au, /* Windows 10 */
+    (uint8_t)(USB_MS_OS_20_SET_TOTAL_LENGTH & 0xFFu),
+    (uint8_t)(USB_MS_OS_20_SET_TOTAL_LENGTH >> 8),
+
+    /* Configuration subset: zero-based index 0 selects the first USB configuration. */
+    0x08u, 0x00u,
+    0x01u, 0x00u,
+    0x00u,
+    0x00u,
+    (uint8_t)(USB_MS_OS_20_CONFIG_SUBSET_LENGTH & 0xFFu),
+    (uint8_t)(USB_MS_OS_20_CONFIG_SUBSET_LENGTH >> 8),
+
+    /* Function subset: management interface 2 only. */
+    0x08u, 0x00u,
+    0x02u, 0x00u,
+    USB_MANAGEMENT_INTERFACE_NUMBER,
+    0x00u,
+    (uint8_t)(USB_MS_OS_20_FUNCTION_SUBSET_LENGTH & 0xFFu),
+    (uint8_t)(USB_MS_OS_20_FUNCTION_SUBSET_LENGTH >> 8),
+
+    /* Compatible ID feature: WINUSB. */
+    0x14u, 0x00u,
+    0x03u, 0x00u,
+    'W', 'I', 'N', 'U', 'S', 'B', 0x00u, 0x00u,
+    0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
+
+    /* Registry property feature: DeviceInterfaceGUIDs, REG_MULTI_SZ. */
+    (uint8_t)(USB_MS_OS_20_REG_PROPERTY_LENGTH & 0xFFu),
+    (uint8_t)(USB_MS_OS_20_REG_PROPERTY_LENGTH >> 8),
+    0x04u, 0x00u,
+    0x07u, 0x00u,
+    0x2Au, 0x00u,
+    'D', 0u, 'e', 0u, 'v', 0u, 'i', 0u, 'c', 0u, 'e', 0u,
+    'I', 0u, 'n', 0u, 't', 0u, 'e', 0u, 'r', 0u, 'f', 0u,
+    'a', 0u, 'c', 0u, 'e', 0u, 'G', 0u, 'U', 0u, 'I', 0u,
+    'D', 0u, 's', 0u, 0x00u, 0x00u,
+    0x50u, 0x00u,
+    '{', 0u, 'C', 0u, '8', 0u, 'B', 0u, '0', 0u, '5', 0u,
+    'E', 0u, 'D', 0u, 'E', 0u, '-', 0u, '1', 0u, '6', 0u,
+    '8', 0u, '3', 0u, '-', 0u, '5', 0u, '0', 0u, '0', 0u,
+    '2', 0u, '-', 0u, '8', 0u, '1', 0u, 'F', 0u, '0', 0u,
+    '-', 0u, '9', 0u, '5', 0u, '6', 0u, '3', 0u, '6', 0u,
+    'B', 0u, '8', 0u, '9', 0u, 'C', 0u, 'E', 0u, 'C', 0u,
+    '6', 0u, '}', 0u, 0x00u, 0x00u, 0x00u, 0x00u
 };
 
 static const uint8_t usb_string_language[] =
@@ -265,36 +382,75 @@ static const uint8_t usb_string_language[] =
 
 static const uint8_t usb_string_product[] =
 {
-    40u, USB_DESC_STRING,
+    30u, USB_DESC_STRING,
     'D', 0u, 'e', 0u, 'u', 0u, 's', 0u,
     ' ', 0u, 'O', 0u, 'S', 0u, ' ', 0u,
-    'C', 0u, 'D', 0u, 'C', 0u, ' ', 0u,
-    'C', 0u, 'o', 0u, 'n', 0u, 's', 0u,
-    'o', 0u, 'l', 0u, 'e', 0u
+    'D', 0u, 'e', 0u, 'v', 0u, 'i', 0u,
+    'c', 0u, 'e', 0u
 };
 
 _Static_assert(sizeof(usb_device_descriptor) == 18u,
     "USB device descriptor must be 18 bytes");
-_Static_assert(sizeof(usb_configuration_descriptor) == 67u,
-    "USB CDC configuration tree must be 67 bytes");
+_Static_assert(sizeof(usb_configuration_descriptor) == 98u,
+    "USB composite configuration tree must be 98 bytes");
+_Static_assert(sizeof(usb_bos_descriptor) == 33u,
+    "USB BOS descriptor must be 33 bytes");
+_Static_assert(sizeof(usb_ms_os_20_descriptor_set) == USB_MS_OS_20_SET_TOTAL_LENGTH,
+    "MS OS 2.0 descriptor set length must match BOS capability");
+_Static_assert(
+    (10u + USB_MS_OS_20_CONFIG_SUBSET_LENGTH) ==
+        USB_MS_OS_20_SET_TOTAL_LENGTH,
+    "MS OS 2.0 configuration subset length must match set length");
+_Static_assert(
+    (8u + USB_MS_OS_20_FUNCTION_SUBSET_LENGTH) ==
+        USB_MS_OS_20_CONFIG_SUBSET_LENGTH,
+    "MS OS 2.0 function subset must fill configuration subset");
+_Static_assert(
+    (8u + 20u + USB_MS_OS_20_REG_PROPERTY_LENGTH) ==
+        USB_MS_OS_20_FUNCTION_SUBSET_LENGTH,
+    "MS OS 2.0 function subset feature lengths must match");
 _Static_assert(sizeof(usb_string_language) == 4u,
     "USB language string descriptor must be 4 bytes");
-_Static_assert(sizeof(usb_string_product) == 40u,
-    "USB product string descriptor must be 40 bytes");
+_Static_assert(sizeof(usb_string_product) == 30u,
+    "USB product string descriptor must be 30 bytes");
 _Static_assert((USB_BTABLE_LOCAL & 0x7u) == 0u,
     "USB BTABLE must be 8-byte aligned");
+_Static_assert(
+    (USB_BTABLE_LOCAL + ((USB_MANAGEMENT_EP + 1u) * 8u)) <=
+        USB_EP0_TX_LOCAL,
+    "USB BTABLE overlaps EP0 TX PMA");
+_Static_assert((USB_EP0_TX_LOCAL + USB_EP0_MAX_PACKET) <= USB_EP0_RX_LOCAL,
+    "USB EP0 TX overlaps EP0 RX PMA");
 _Static_assert((USB_EP0_RX_LOCAL + USB_EP0_MAX_PACKET) <= USB_EP1_TX_LOCAL,
     "USB EP0 RX overlaps EP1 TX PMA");
 _Static_assert((USB_EP1_TX_LOCAL + USB_CDC_NOTIFY_PACKET) <= USB_EP2_RX_LOCAL,
     "USB EP1 TX overlaps EP2 RX PMA");
 _Static_assert((USB_EP2_RX_LOCAL + USB_CDC_DATA_MAX_PACKET) <= USB_EP3_TX_LOCAL,
     "USB EP2 RX overlaps EP3 TX PMA");
-_Static_assert((USB_EP3_TX_LOCAL + USB_CDC_DATA_MAX_PACKET) <= USB_PMA_LOGICAL_BYTES,
-    "USB CDC PMA allocation exceeds STM32F103 packet memory");
+_Static_assert((USB_EP3_TX_LOCAL + USB_CDC_DATA_MAX_PACKET) <= USB_EP4_RX_LOCAL,
+    "USB EP3 TX overlaps EP4 RX PMA");
+_Static_assert((USB_EP4_RX_LOCAL + USB_MANAGEMENT_MAX_PACKET) <= USB_EP4_TX_LOCAL,
+    "USB EP4 RX overlaps EP4 TX PMA");
+_Static_assert((USB_EP4_TX_LOCAL + USB_MANAGEMENT_MAX_PACKET) <= USB_PMA_LOGICAL_BYTES,
+    "USB PMA allocation exceeds STM32F103 packet memory");
 _Static_assert((USB_CDC_RX_RING_CAPACITY & (USB_CDC_RX_RING_CAPACITY - 1u)) == 0u,
     "USB CDC RX ring capacity must be power-of-two");
 _Static_assert((USB_CDC_TX_RING_CAPACITY & (USB_CDC_TX_RING_CAPACITY - 1u)) == 0u,
     "USB CDC TX ring capacity must be power-of-two");
+_Static_assert(USB_MANAGEMENT_OUT_ENDPOINT == USB_MANAGEMENT_EP,
+    "USB management OUT address must target EP4");
+_Static_assert(USB_MANAGEMENT_IN_ENDPOINT == (0x80u | USB_MANAGEMENT_EP),
+    "USB management IN address must target EP4");
+_Static_assert(USB_MANAGEMENT_RX_RING_CAPACITY == 512u,
+    "USB management RX ring must remain 512 bytes");
+_Static_assert(USB_MANAGEMENT_TX_RING_CAPACITY == 1024u,
+    "USB management TX ring must remain 1024 bytes");
+_Static_assert((USB_MANAGEMENT_RX_RING_CAPACITY &
+    (USB_MANAGEMENT_RX_RING_CAPACITY - 1u)) == 0u,
+    "USB management RX ring capacity must be power-of-two");
+_Static_assert((USB_MANAGEMENT_TX_RING_CAPACITY &
+    (USB_MANAGEMENT_TX_RING_CAPACITY - 1u)) == 0u,
+    "USB management TX ring capacity must be power-of-two");
 
 volatile usb_device_diagnostics_t usb_device_diagnostics;
 
@@ -331,6 +487,16 @@ static volatile uint8_t usb_cdc_tx_active;
 static volatile uint8_t usb_cdc_notify_active;
 static volatile uint8_t usb_cdc_notify_pending;
 static usb_cdc_rx_notify_t usb_cdc_rx_notify;
+
+static volatile uint8_t usb_management_rx_ring[USB_MANAGEMENT_RX_RING_CAPACITY];
+static volatile uint32_t usb_management_rx_head;
+static volatile uint32_t usb_management_rx_tail;
+static volatile uint8_t usb_management_tx_ring[USB_MANAGEMENT_TX_RING_CAPACITY];
+static volatile uint32_t usb_management_tx_head;
+static volatile uint32_t usb_management_tx_tail;
+static volatile uint16_t usb_management_tx_inflight;
+static volatile uint8_t usb_management_tx_active;
+static usb_management_rx_notify_t usb_management_rx_notify;
 
 static void usb_pma_write16(uint16_t local_byte_offset, uint16_t value)
 {
@@ -636,6 +802,16 @@ static void usb_cdc_reset_rings(void)
     usb_cdc_tx_active = 0u;
     usb_cdc_notify_active = 0u;
     usb_cdc_notify_pending = 0u;
+}
+
+static void usb_management_reset_rings(void)
+{
+    usb_management_rx_head = 0u;
+    usb_management_rx_tail = 0u;
+    usb_management_tx_head = 0u;
+    usb_management_tx_tail = 0u;
+    usb_management_tx_inflight = 0u;
+    usb_management_tx_active = 0u;
 }
 
 static int usb_cdc_line_coding_valid(const uint8_t *coding)
@@ -963,6 +1139,195 @@ static void usb_cdc_handle_ctr(uint8_t endpoint)
     }
 }
 
+static void usb_management_endpoints_disable(void)
+{
+    usb_ep_runtime_reset(USB_MANAGEMENT_EP, USB_EP_TYPE_BULK);
+    USB_EP_REG(USB_MANAGEMENT_EP) = 0u;
+    usb_management_reset_rings();
+    usb_device_diagnostics.management_configured = 0u;
+}
+
+static void usb_management_endpoints_enable(void)
+{
+    usb_pma_write16(
+        USB_BTABLE_EP_TX_ADDR(USB_MANAGEMENT_EP),
+        USB_EP4_TX_LOCAL);
+    usb_pma_write16(
+        USB_BTABLE_EP_TX_COUNT(USB_MANAGEMENT_EP),
+        0u);
+    usb_pma_write16(
+        USB_BTABLE_EP_RX_ADDR(USB_MANAGEMENT_EP),
+        USB_EP4_RX_LOCAL);
+    usb_pma_write16(
+        USB_BTABLE_EP_RX_COUNT(USB_MANAGEMENT_EP),
+        USB_RX_COUNT_64);
+
+    usb_ep_runtime_reset(
+        USB_MANAGEMENT_EP,
+        USB_EP_TYPE_BULK);
+
+    usb_ep_set_tx_status(USB_MANAGEMENT_EP, USB_EP_STAT_TX_NAK);
+    usb_ep_set_rx_status(USB_MANAGEMENT_EP, USB_EP_STAT_RX_VALID);
+
+    usb_management_reset_rings();
+    usb_device_diagnostics.management_configured = 1u;
+}
+
+static void usb_management_tx_kick(void)
+{
+    uint32_t available;
+    uint16_t length;
+    uint16_t index;
+
+    if (
+        (usb_device_diagnostics.configuration != USB_CONFIGURATION_ONE) ||
+        (usb_device_diagnostics.management_configured == 0u) ||
+        (usb_management_tx_active != 0u)
+    ) {
+        return;
+    }
+
+    available = usb_management_tx_head - usb_management_tx_tail;
+    if (available == 0u)
+    {
+        return;
+    }
+
+    length = (available > USB_MANAGEMENT_MAX_PACKET) ?
+        USB_MANAGEMENT_MAX_PACKET :
+        (uint16_t)available;
+
+    for (index = 0u; index < length; index = (uint16_t)(index + 2u))
+    {
+        uint16_t word =
+            usb_management_tx_ring[
+                (usb_management_tx_tail + index) &
+                USB_MANAGEMENT_TX_RING_MASK];
+
+        if ((uint16_t)(index + 1u) < length)
+        {
+            word |=
+                (uint16_t)(
+                    (uint16_t)usb_management_tx_ring[
+                        (usb_management_tx_tail + index + 1u) &
+                        USB_MANAGEMENT_TX_RING_MASK]
+                    << 8);
+        }
+
+        usb_pma_write16(
+            (uint16_t)(USB_EP4_TX_LOCAL + index),
+            word);
+    }
+
+    usb_pma_write16(
+        USB_BTABLE_EP_TX_COUNT(USB_MANAGEMENT_EP),
+        length);
+    usb_management_tx_inflight = length;
+    usb_management_tx_active = 1u;
+    usb_ep_set_tx_status(USB_MANAGEMENT_EP, USB_EP_STAT_TX_VALID);
+}
+
+static void usb_management_handle_out(void)
+{
+    const uint16_t count =
+        (uint16_t)(
+            usb_pma_read16(USB_BTABLE_EP_RX_COUNT(USB_MANAGEMENT_EP)) &
+            USB_COUNT_MASK);
+    uint16_t index;
+    uint16_t word = 0u;
+    uint32_t accepted = 0u;
+
+    usb_ep_clear_ctr_rx(USB_MANAGEMENT_EP);
+    ++usb_device_diagnostics.management_rx_packet_count;
+    usb_device_diagnostics.management_rx_byte_count += count;
+
+    for (index = 0u; index < count; ++index)
+    {
+        const uint32_t depth =
+            usb_management_rx_head - usb_management_rx_tail;
+        uint8_t byte;
+
+        if ((index & 1u) == 0u)
+        {
+            word = usb_pma_read16((uint16_t)(USB_EP4_RX_LOCAL + index));
+            byte = (uint8_t)(word & 0xFFu);
+        }
+        else
+        {
+            byte = (uint8_t)(word >> 8);
+        }
+
+        if (depth < USB_MANAGEMENT_RX_RING_CAPACITY)
+        {
+            const uint32_t next_depth = depth + 1u;
+
+            usb_management_rx_ring[
+                usb_management_rx_head &
+                USB_MANAGEMENT_RX_RING_MASK] = byte;
+            ++usb_management_rx_head;
+            ++accepted;
+
+            if (next_depth >
+                usb_device_diagnostics.management_rx_high_water)
+            {
+                usb_device_diagnostics.management_rx_high_water =
+                    next_depth;
+            }
+        }
+        else
+        {
+            ++usb_device_diagnostics.management_rx_drop_count;
+        }
+    }
+
+    usb_pma_write16(
+        USB_BTABLE_EP_RX_COUNT(USB_MANAGEMENT_EP),
+        USB_RX_COUNT_64);
+    usb_ep_set_rx_status(USB_MANAGEMENT_EP, USB_EP_STAT_RX_VALID);
+
+    if (
+        (accepted != 0u) &&
+        (usb_management_rx_notify != (usb_management_rx_notify_t)0)
+    ) {
+        usb_management_rx_notify();
+    }
+}
+
+static void usb_management_handle_in(void)
+{
+    usb_ep_clear_ctr_tx(USB_MANAGEMENT_EP);
+
+    if (usb_management_tx_active != 0u)
+    {
+        usb_management_tx_tail += usb_management_tx_inflight;
+        ++usb_device_diagnostics.management_tx_packet_count;
+        usb_device_diagnostics.management_tx_byte_count +=
+            usb_management_tx_inflight;
+        usb_management_tx_inflight = 0u;
+        usb_management_tx_active = 0u;
+    }
+
+    usb_ep_set_tx_status(USB_MANAGEMENT_EP, USB_EP_STAT_TX_NAK);
+    usb_management_tx_kick();
+}
+
+static void usb_management_handle_ctr(void)
+{
+    uint16_t endpoint_value = USB_EP_REG(USB_MANAGEMENT_EP);
+
+    if ((endpoint_value & USB_EP_CTR_RX) != 0u)
+    {
+        usb_management_handle_out();
+    }
+
+    endpoint_value = USB_EP_REG(USB_MANAGEMENT_EP);
+
+    if ((endpoint_value & USB_EP_CTR_TX) != 0u)
+    {
+        usb_management_handle_in();
+    }
+}
+
 static int usb_get_descriptor(
     const usb_setup_packet_t *setup,
     const uint8_t **data,
@@ -991,6 +1356,13 @@ static int usb_get_descriptor(
     {
         *data = usb_configuration_descriptor;
         *length = (uint16_t)sizeof(usb_configuration_descriptor);
+        return 1;
+    }
+
+    if ((descriptor_type == USB_DESC_BOS) && (descriptor_index == 0u))
+    {
+        *data = usb_bos_descriptor;
+        *length = (uint16_t)sizeof(usb_bos_descriptor);
         return 1;
     }
 
@@ -1070,7 +1442,8 @@ static int usb_ep0_standard_in(
             (usb_device_diagnostics.configuration ==
                 USB_CONFIGURATION_ONE) &&
             ((setup->w_index == USB_CDC_CONTROL_INTERFACE) ||
-             (setup->w_index == USB_CDC_DATA_INTERFACE))
+             (setup->w_index == USB_CDC_DATA_INTERFACE) ||
+             (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER))
         ) {
             usb_ep0_start_in(
                 zero_status,
@@ -1086,7 +1459,9 @@ static int usb_ep0_standard_in(
              ((usb_device_diagnostics.configuration == USB_CONFIGURATION_ONE) &&
               ((setup->w_index == 0x0081u) ||
                (setup->w_index == 0x0002u) ||
-               (setup->w_index == 0x0083u))))
+               (setup->w_index == 0x0083u) ||
+               (setup->w_index == USB_MANAGEMENT_OUT_ENDPOINT) ||
+               (setup->w_index == USB_MANAGEMENT_IN_ENDPOINT))))
         ) {
             usb_ep0_start_in(
                 zero_status,
@@ -1120,7 +1495,8 @@ static int usb_ep0_standard_in(
         (setup->bm_request_type == 0x81u) &&
         (setup->w_value == 0u) &&
         ((setup->w_index == USB_CDC_CONTROL_INTERFACE) ||
-         (setup->w_index == USB_CDC_DATA_INTERFACE)) &&
+         (setup->w_index == USB_CDC_DATA_INTERFACE) ||
+         (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER)) &&
         (setup->w_length == 1u) &&
         (usb_device_diagnostics.configuration ==
             USB_CONFIGURATION_ONE)
@@ -1179,7 +1555,8 @@ static int usb_ep0_standard_out(
         (setup->bm_request_type == 0x01u) &&
         (setup->w_value == 0u) &&
         ((setup->w_index == USB_CDC_CONTROL_INTERFACE) ||
-         (setup->w_index == USB_CDC_DATA_INTERFACE)) &&
+         (setup->w_index == USB_CDC_DATA_INTERFACE) ||
+         (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER)) &&
         (setup->w_length == 0u) &&
         (usb_device_diagnostics.configuration ==
             USB_CONFIGURATION_ONE)
@@ -1263,6 +1640,25 @@ static int usb_ep0_class_out(const usb_setup_packet_t *setup)
     return 0;
 }
 
+static int usb_ep0_vendor_in(const usb_setup_packet_t *setup)
+{
+    if (
+        (setup->bm_request_type != 0xC0u) ||
+        (setup->b_request != USB_MS_OS_20_VENDOR_CODE) ||
+        (setup->w_value != 0u) ||
+        (setup->w_index != USB_MS_OS_20_DESCRIPTOR_INDEX)
+    ) {
+        return 0;
+    }
+
+    ++usb_device_diagnostics.management_ms_os_20_request_count;
+    usb_ep0_start_in(
+        usb_ms_os_20_descriptor_set,
+        (uint16_t)sizeof(usb_ms_os_20_descriptor_set),
+        setup->w_length);
+    return 1;
+}
+
 static void usb_ep0_handle_setup(void)
 {
     usb_setup_packet_t setup;
@@ -1307,6 +1703,10 @@ static void usb_ep0_handle_setup(void)
         else if ((setup.bm_request_type & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS)
         {
             handled = usb_ep0_class_in(&setup);
+        }
+        else if ((setup.bm_request_type & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_VENDOR)
+        {
+            handled = usb_ep0_vendor_in(&setup);
         }
 
         if (handled == 0)
@@ -1413,6 +1813,7 @@ static void usb_ep0_apply_pending_status_action(void)
         if (usb_pending_address == 0u)
         {
             usb_cdc_endpoints_disable();
+            usb_management_endpoints_disable();
             usb_device_diagnostics.configuration =
                 USB_CONFIGURATION_NONE;
         }
@@ -1424,10 +1825,12 @@ static void usb_ep0_apply_pending_status_action(void)
         {
             usb_device_diagnostics.configuration = USB_CONFIGURATION_ONE;
             usb_cdc_endpoints_enable();
+            usb_management_endpoints_enable();
         }
         else
         {
             usb_cdc_endpoints_disable();
+            usb_management_endpoints_disable();
             usb_device_diagnostics.configuration = USB_CONFIGURATION_NONE;
         }
 
@@ -1562,6 +1965,7 @@ static void usb_bus_reset(void)
 
     usb_ep0_reset_transfer_state();
     usb_cdc_endpoints_disable();
+    usb_management_endpoints_disable();
 
     usb_line_coding[0] = 0x00u;
     usb_line_coding[1] = 0xC2u;
@@ -1678,9 +2082,21 @@ int usb_device_init(uint32_t core_clock_hz)
     usb_device_diagnostics.cdc_line_coding_stop_bits = 0u;
     usb_device_diagnostics.cdc_line_coding_parity = 0u;
     usb_device_diagnostics.cdc_line_coding_data_bits = 8u;
+    usb_device_diagnostics.management_configured = 0u;
+    usb_device_diagnostics.management_rx_packet_count = 0u;
+    usb_device_diagnostics.management_rx_byte_count = 0u;
+    usb_device_diagnostics.management_rx_drop_count = 0u;
+    usb_device_diagnostics.management_rx_high_water = 0u;
+    usb_device_diagnostics.management_tx_packet_count = 0u;
+    usb_device_diagnostics.management_tx_byte_count = 0u;
+    usb_device_diagnostics.management_tx_drop_count = 0u;
+    usb_device_diagnostics.management_tx_high_water = 0u;
+    usb_device_diagnostics.management_ms_os_20_request_count = 0u;
 
     usb_cdc_rx_notify = (usb_cdc_rx_notify_t)0;
+    usb_management_rx_notify = (usb_management_rx_notify_t)0;
     usb_cdc_reset_rings();
+    usb_management_reset_rings();
     usb_ep0_reset_transfer_state();
 
     usb_force_host_disconnect(core_clock_hz);
@@ -1818,6 +2234,80 @@ int usb_cdc_write_span_atomic(const uint8_t *data, uint32_t length)
     return 1;
 }
 
+void usb_management_set_rx_notify(usb_management_rx_notify_t notify)
+{
+    usb_management_rx_notify = notify;
+}
+
+int usb_management_is_configured(void)
+{
+    return
+        (usb_device_diagnostics.configuration == USB_CONFIGURATION_ONE) &&
+        (usb_device_diagnostics.management_configured != 0u);
+}
+
+int usb_management_try_getc(uint8_t *byte_out)
+{
+    const uint32_t tail = usb_management_rx_tail;
+
+    if ((byte_out == (uint8_t *)0) || (tail == usb_management_rx_head))
+    {
+        return 0;
+    }
+
+    *byte_out =
+        usb_management_rx_ring[tail & USB_MANAGEMENT_RX_RING_MASK];
+    usb_management_rx_tail = tail + 1u;
+    return 1;
+}
+
+int usb_management_write_span_atomic(
+    const uint8_t *data,
+    uint32_t length)
+{
+    const uint32_t head = usb_management_tx_head;
+    const uint32_t depth = head - usb_management_tx_tail;
+    uint32_t index;
+    uint32_t next_depth;
+
+    if (length == 0u)
+    {
+        return 1;
+    }
+
+    if ((data == (const uint8_t *)0) ||
+        (usb_management_is_configured() == 0) ||
+        (length > USB_MANAGEMENT_TX_RING_CAPACITY) ||
+        (depth > USB_MANAGEMENT_TX_RING_CAPACITY) ||
+        (length > (USB_MANAGEMENT_TX_RING_CAPACITY - depth)))
+    {
+        usb_device_diagnostics.management_tx_drop_count += length;
+        return 0;
+    }
+
+    /*
+     * One Thread-mode producer publishes complete binary wire frames by a
+     * single head update. USB IRQ may drain older bytes but cannot observe a
+     * partial newly enqueued frame.
+     */
+    for (index = 0u; index < length; ++index)
+    {
+        usb_management_tx_ring[
+            (head + index) & USB_MANAGEMENT_TX_RING_MASK] = data[index];
+    }
+
+    usb_management_tx_head = head + length;
+    next_depth = depth + length;
+
+    if (next_depth > usb_device_diagnostics.management_tx_high_water)
+    {
+        usb_device_diagnostics.management_tx_high_water = next_depth;
+    }
+
+    usb_management_tx_kick();
+    return 1;
+}
+
 void USB_LP_CAN1_RX0_IRQHandler(void)
 {
     uint16_t status = USB_ISTR;
@@ -1845,6 +2335,12 @@ void USB_LP_CAN1_RX0_IRQHandler(void)
              (endpoint == USB_CDC_IN_EP))
         ) {
             usb_cdc_handle_ctr(endpoint);
+        }
+        else if (
+            (usb_device_diagnostics.management_configured != 0u) &&
+            (endpoint == USB_MANAGEMENT_EP)
+        ) {
+            usb_management_handle_ctr();
         }
         else
         {

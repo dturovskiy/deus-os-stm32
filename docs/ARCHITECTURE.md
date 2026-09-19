@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` published at `fa75307fb392718a1d10d52770a6a111c97208e7`; `USB_MANAGEMENT_DEVICE_FOUNDATION` Gate 0 accepted / Gate 1 next**
+Status: **`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` published at `fa75307fb392718a1d10d52770a6a111c97208e7`; `USB_MANAGEMENT_DEVICE_FOUNDATION` Gates 2–5 accepted / Gate 6 local acceptance commit next**
 
 ## Current foundation completeness constraints
 
@@ -56,9 +56,9 @@ The command/RPC surface is extended additively, not renumbered: existing IDs `0x
 
 Initial Gate 1 source boundary is limited to new `include/kernel/application_runtime.h` / `src/kernel/application_runtime.c` plus `include/kernel/command_service.h`, `src/kernel/command_service.c` and `src/kernel.c`. Production WinUSB management USB remains the later `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 
-## Current boundary — Kernel composition-root decomposition
+## Published boundary — Kernel composition-root decomposition
 
-`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is accepted through Gate 5; Gate 6 local acceptance commit is next.
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is accepted and published as `fa75307fb392718a1d10d52770a6a111c97208e7`. The current implementation boundary is `USB_MANAGEMENT_DEVICE_FOUNDATION`; Gates 2–4 are accepted on repaired descriptor candidate tree `46841b52d351277deb134a6f4709619087b477af`, BIN `50172` / SHA-256 `FD0A8049193772892C2A3DC1CF2B24FA17BCC83FC4B0F55A22AA6A4962C864FB`, at Flash/SRAM `50172/11728` within frozen ceilings `54780/11824`. Gate 3 composite hardware acceptance (`v11+v14`) proves `REV_0102`, automatic inbox `winusb.inf` binding on interface 2, exact HELLO/RPC/application lifecycle and malformed-frame recovery, physical USB reconnect, authorized IWDG recovery, 128/128 unique WinUSB pings with management RX/TX drops `0/0`, CDC isolation/binary continuity, UART `32/32`, task0/task1 margins `448/424`, zero scheduler faults/canary failures, and final Flash equal to the accepted BIN. Gate 3 evidence SHA-256 is `1EF8595E85F088F0D3870CA5D880631342AD795FDB94C05EAB9BBC3566A3DCC6`; log SHA-256 is `083C9B66B7225D3FF37845996B62991C7DE8E84332BD3C8B059F1B8A6569797B`. OLED/UI/application rendering remained unchanged, so Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`. Gate 5 documentation finalization is next.
 
 The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state, semantic-event snapshotting and application-view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. The composition root retains top-level initialization/wiring, production task binding/start, top-level IRQ/exception glue and production scheduler observability that depends on root-private production state. No universal `kernel_context_t`, service locator, hidden extracted-module extern state, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
 
@@ -67,6 +67,8 @@ Accepted candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; BIN `48636` 
 Linked ownership movement is measurable rather than cosmetic: `console_execute_request 8644 -> 6780`, `boot_desktop_ui_render 1420 -> 804`, `kernel_main 1116 -> 1112`; scheduler diagnostic orchestration moved from former monolithic `console_execute_scheduler_diagnostic=3284` into `scheduler_diagnostics_execute_diagnostic=3312`. Explicit owner entry points include `application_commands_execute=776`, `application_runtime_bridge_service=316`, and `application_runtime_bridge_apply_view=216` bytes.
 
 Gate 2 evidence SHA-256 `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`; Gate 3 evidence SHA-256 `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`; Gate 4 `PHYSICAL_OLED=PASS`.
+
+The accepted decomposition is substantial but intentionally not treated as the terminal shape of `src/kernel.c`. Remaining trigger-driven architecture debt is canonicalized in `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`: further composition-root convergence, service-state direction independent of UI presentation, conditional separation of OLED adaptation from the application runtime bridge, the synchronous/non-reentrant scheduler-diagnostic binding contract, and explicit stop-failure semantics before resource-owning applications. These are deferred follow-ups, not blockers for the current USB-management boundary, and they do not authorize speculative framework/HAL/god-context work.
 
 ## C4.0 accepted IWDG liveness record
 

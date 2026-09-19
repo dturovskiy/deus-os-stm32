@@ -11,6 +11,18 @@ typedef char binary_rpc_request_shape_must_fit_132[
     ((4u + (COMMAND_SERVICE_MAX_ARGS * (1u + BINARY_RPC_MAX_ARG_BYTES))) ==
      BINARY_RPC_REQUEST_PAYLOAD_MAX) ? 1 : -1];
 
+typedef char binary_rpc_workspace_wire_must_match_response_max[
+    ((BINARY_FRAME_FIXED_PREFIX_BYTES +
+      BINARY_RPC_DATA_PAYLOAD_MAX +
+      BINARY_FRAME_CRC_BYTES) ==
+     BINARY_RPC_DATA_WIRE_MAX) ? 1 : -1];
+
+typedef char binary_rpc_chunk_length_must_fit_u8[
+    (BINARY_RPC_DATA_CHUNK_MAX <= 0xFFu) ? 1 : -1];
+
+_Static_assert(sizeof(binary_rpc_workspace_t) == 192u,
+    "binary RPC shared workspace must remain 192 bytes");
+
 typedef enum
 {
     BINARY_RPC_DECODE_OK = 0,
@@ -38,36 +50,54 @@ static uint16_t binary_rpc_get_u16(const uint8_t *source)
         (uint16_t)((uint16_t)source[1] << 8);
 }
 
-static int binary_rpc_send_frame(
+static int binary_rpc_send_workspace_frame(
     binary_rpc_state_t *state,
     uint8_t frame_type,
     uint16_t request_id,
-    const uint8_t *payload,
     uint16_t payload_length)
 {
+    uint8_t *wire;
+    uint16_t crc;
     uint32_t wire_length;
 
     if ((state == (binary_rpc_state_t *)0) ||
+        (state->workspace == (binary_rpc_workspace_t *)0) ||
         (state->active_binding == (const binary_rpc_binding_t *)0) ||
-        (state->active_binding->send_wire == (binary_rpc_send_wire_t)0))
+        (state->active_binding->send_wire == (binary_rpc_send_wire_t)0) ||
+        (payload_length > BINARY_RPC_DATA_PAYLOAD_MAX))
     {
         return 0;
     }
 
-    wire_length = binary_frame_encode(
-        frame_type,
-        0u,
-        request_id,
-        payload,
-        payload_length,
-        state->wire,
-        (uint32_t)sizeof(state->wire));
+    wire = state->workspace->wire;
+    wire[0] = BINARY_FRAME_MAGIC0;
+    wire[1] = BINARY_FRAME_MAGIC1;
+    wire[2] = BINARY_FRAME_PROTOCOL_VERSION;
+    wire[3] = frame_type;
+    wire[4] = 0u;
+    wire[5] = 0u;
+    wire[6] = (uint8_t)(request_id & 0xFFu);
+    wire[7] = (uint8_t)(request_id >> 8);
+    wire[8] = (uint8_t)(payload_length & 0xFFu);
+    wire[9] = (uint8_t)(payload_length >> 8);
 
-    if ((wire_length == 0u) ||
-        (state->active_binding->send_wire(
+    crc = binary_frame_crc16_ccitt_false(
+        &wire[2],
+        8u + (uint32_t)payload_length);
+    wire[BINARY_FRAME_FIXED_PREFIX_BYTES + payload_length] =
+        (uint8_t)(crc & 0xFFu);
+    wire[BINARY_FRAME_FIXED_PREFIX_BYTES + payload_length + 1u] =
+        (uint8_t)(crc >> 8);
+
+    wire_length =
+        BINARY_FRAME_FIXED_PREFIX_BYTES +
+        (uint32_t)payload_length +
+        BINARY_FRAME_CRC_BYTES;
+
+    if (state->active_binding->send_wire(
             state->active_binding->send_context,
-            state->wire,
-            wire_length) == 0))
+            wire,
+            wire_length) == 0)
     {
         ++state->diagnostics.tx_failures;
         state->tx_failed = 1u;
@@ -83,21 +113,22 @@ static int binary_rpc_send_protocol_error(
     uint8_t code,
     uint8_t observed)
 {
-    state->frame_payload[0] = code;
-    state->frame_payload[1] = observed;
+    uint8_t *payload = &state->workspace->wire[BINARY_FRAME_FIXED_PREFIX_BYTES];
+
+    payload[0] = code;
+    payload[1] = observed;
     ++state->diagnostics.protocol_errors;
 
-    return binary_rpc_send_frame(
+    return binary_rpc_send_workspace_frame(
         state,
         BINARY_FRAME_TYPE_PROTOCOL_ERROR,
         request_id,
-        state->frame_payload,
         2u);
 }
 
 static int binary_rpc_flush_data(binary_rpc_state_t *state)
 {
-    uint32_t index;
+    uint8_t *payload;
     uint16_t payload_length;
 
     if (state->data_chunk_length == 0u)
@@ -105,21 +136,15 @@ static int binary_rpc_flush_data(binary_rpc_state_t *state)
         return 1;
     }
 
-    binary_rpc_put_u16(&state->frame_payload[0], state->active_rpc_id);
-    binary_rpc_put_u16(&state->frame_payload[2], state->sequence);
-
-    for (index = 0u; index < state->data_chunk_length; ++index)
-    {
-        state->frame_payload[4u + index] = state->data_chunk[index];
-    }
-
+    payload = &state->workspace->wire[BINARY_FRAME_FIXED_PREFIX_BYTES];
+    binary_rpc_put_u16(&payload[0], state->active_rpc_id);
+    binary_rpc_put_u16(&payload[2], state->sequence);
     payload_length = (uint16_t)(4u + state->data_chunk_length);
 
-    if (binary_rpc_send_frame(
+    if (binary_rpc_send_workspace_frame(
             state,
             BINARY_FRAME_TYPE_RPC_DATA,
             state->active_request_id,
-            state->frame_payload,
             payload_length) == 0)
     {
         return 0;
@@ -135,8 +160,11 @@ static int binary_rpc_flush_data(binary_rpc_state_t *state)
 static int binary_rpc_output_write_byte(void *context, uint8_t byte)
 {
     binary_rpc_state_t *state = (binary_rpc_state_t *)context;
+    uint8_t *payload;
 
-    if ((state == (binary_rpc_state_t *)0) || (state->tx_failed != 0u))
+    if ((state == (binary_rpc_state_t *)0) ||
+        (state->workspace == (binary_rpc_workspace_t *)0) ||
+        (state->tx_failed != 0u))
     {
         return 0;
     }
@@ -149,7 +177,8 @@ static int binary_rpc_output_write_byte(void *context, uint8_t byte)
         }
     }
 
-    state->data_chunk[state->data_chunk_length] = byte;
+    payload = &state->workspace->wire[BINARY_FRAME_FIXED_PREFIX_BYTES];
+    payload[4u + state->data_chunk_length] = byte;
     ++state->data_chunk_length;
 
     if ((state->data_chunk_length == BINARY_RPC_DATA_CHUNK_MAX) ||
@@ -170,22 +199,23 @@ static int binary_rpc_send_end(
     uint8_t status_domain,
     uint8_t status_code)
 {
-    binary_rpc_put_u16(&state->frame_payload[0], rpc_id);
-    binary_rpc_put_u16(&state->frame_payload[2], chunk_count);
-    binary_rpc_put_u32(&state->frame_payload[4], total_output_bytes);
-    state->frame_payload[8] = status_domain;
-    state->frame_payload[9] = status_code;
+    uint8_t *payload = &state->workspace->wire[BINARY_FRAME_FIXED_PREFIX_BYTES];
+
+    binary_rpc_put_u16(&payload[0], rpc_id);
+    binary_rpc_put_u16(&payload[2], chunk_count);
+    binary_rpc_put_u32(&payload[4], total_output_bytes);
+    payload[8] = status_domain;
+    payload[9] = status_code;
 
     if (status_domain == BINARY_RPC_STATUS_DOMAIN_PROTOCOL)
     {
         ++state->diagnostics.protocol_errors;
     }
 
-    if (binary_rpc_send_frame(
+    if (binary_rpc_send_workspace_frame(
             state,
             BINARY_FRAME_TYPE_RPC_END,
             request_id,
-            state->frame_payload,
             10u) == 0)
     {
         return 0;
@@ -216,31 +246,32 @@ static int binary_rpc_send_hello(
     binary_rpc_state_t *state,
     uint16_t request_id)
 {
-    state->frame_payload[0] = BINARY_FRAME_PROTOCOL_VERSION;
-    state->frame_payload[1] = COMMAND_SERVICE_FOUNDATION_VERSION;
-    state->frame_payload[2] = COMMAND_SERVICE_MAX_ARGS;
-    state->frame_payload[3] = 0u;
+    uint8_t *payload = &state->workspace->wire[BINARY_FRAME_FIXED_PREFIX_BYTES];
+
+    payload[0] = BINARY_FRAME_PROTOCOL_VERSION;
+    payload[1] = COMMAND_SERVICE_FOUNDATION_VERSION;
+    payload[2] = COMMAND_SERVICE_MAX_ARGS;
+    payload[3] = 0u;
     binary_rpc_put_u16(
-        &state->frame_payload[4],
+        &payload[4],
         (uint16_t)COMMAND_SERVICE_LINE_CAPACITY);
     binary_rpc_put_u16(
-        &state->frame_payload[6],
+        &payload[6],
         (uint16_t)BINARY_RPC_REQUEST_PAYLOAD_MAX);
     binary_rpc_put_u16(
-        &state->frame_payload[8],
+        &payload[8],
         (uint16_t)BINARY_RPC_DATA_CHUNK_MAX);
     binary_rpc_put_u16(
-        &state->frame_payload[10],
+        &payload[10],
         (uint16_t)command_service_registry_count());
     binary_rpc_put_u32(
-        &state->frame_payload[12],
+        &payload[12],
         BINARY_RPC_CAPABILITY_FLAGS);
 
-    return binary_rpc_send_frame(
+    return binary_rpc_send_workspace_frame(
         state,
         BINARY_FRAME_TYPE_HELLO_RESPONSE,
         request_id,
-        state->frame_payload,
         16u);
 }
 
@@ -248,7 +279,8 @@ static binary_rpc_decode_result_t binary_rpc_decode_request(
     binary_rpc_state_t *state,
     const binary_frame_view_t *frame,
     uint16_t *rpc_id,
-    uint32_t *argc)
+    uint32_t *argc,
+    command_service_request_t *request)
 {
     uint32_t declared_argc;
     uint32_t offset;
@@ -270,13 +302,13 @@ static binary_rpc_decode_result_t binary_rpc_decode_request(
         return BINARY_RPC_DECODE_MALFORMED;
     }
 
-    state->request.descriptor = (const command_service_descriptor_t *)0;
-    state->request.argc = declared_argc;
+    request->descriptor = (const command_service_descriptor_t *)0;
+    request->argc = declared_argc;
 
     for (arg_index = 0u; arg_index < COMMAND_SERVICE_MAX_ARGS; ++arg_index)
     {
-        state->request.argv[arg_index] = (const char *)0;
-        state->argument_storage[arg_index][0] = '\0';
+        request->argv[arg_index] = (const char *)0;
+        state->workspace->argument_storage[arg_index][0] = '\0';
     }
 
     if (declared_argc > COMMAND_SERVICE_MAX_ARGS)
@@ -322,12 +354,12 @@ static binary_rpc_decode_result_t binary_rpc_decode_request(
         {
             for (byte_index = 0u; byte_index < argument_length; ++byte_index)
             {
-                state->argument_storage[arg_index][byte_index] =
+                state->workspace->argument_storage[arg_index][byte_index] =
                     (char)frame->payload[offset + byte_index];
             }
 
-            state->argument_storage[arg_index][argument_length] = '\0';
-            state->request.argv[arg_index] = state->argument_storage[arg_index];
+            state->workspace->argument_storage[arg_index][argument_length] = '\0';
+            request->argv[arg_index] = state->workspace->argument_storage[arg_index];
         }
 
         offset += argument_length;
@@ -347,6 +379,7 @@ static int binary_rpc_handle_rpc_request(
     const binary_rpc_binding_t *binding)
 {
     command_service_context_t command_context;
+    command_service_request_t request;
     const command_service_descriptor_t *descriptor;
     command_service_status_t status;
     binary_rpc_decode_result_t decode_result;
@@ -376,7 +409,12 @@ static int binary_rpc_handle_rpc_request(
             frame->flags);
     }
 
-    decode_result = binary_rpc_decode_request(state, frame, &rpc_id, &argc);
+    decode_result = binary_rpc_decode_request(
+        state,
+        frame,
+        &rpc_id,
+        &argc,
+        &request);
 
     if (decode_result == BINARY_RPC_DECODE_MALFORMED)
     {
@@ -431,8 +469,8 @@ static int binary_rpc_handle_rpc_request(
             BINARY_RPC_PROTOCOL_DESTRUCTIVE_CONFIRM_REQUIRED);
     }
 
-    state->request.descriptor = descriptor;
-    state->request.argc = argc;
+    request.descriptor = descriptor;
+    request.argc = argc;
     state->active_rpc_id = rpc_id;
     state->active_request_id = frame->request_id;
     state->sequence = 0u;
@@ -446,7 +484,7 @@ static int binary_rpc_handle_rpc_request(
     command_context.write_failed = 0u;
 
     status = command_service_execute(
-        &state->request,
+        &request,
         &command_context,
         binding->command_handler,
         binding->command_handler_context);
@@ -472,14 +510,17 @@ static int binary_rpc_handle_rpc_request(
         (uint8_t)status);
 }
 
-void binary_rpc_init(binary_rpc_state_t *state)
+void binary_rpc_init(
+    binary_rpc_state_t *state,
+    binary_rpc_workspace_t *workspace)
 {
-    uint32_t index;
-
-    if (state == (binary_rpc_state_t *)0)
+    if ((state == (binary_rpc_state_t *)0) ||
+        (workspace == (binary_rpc_workspace_t *)0))
     {
         return;
     }
+
+    state->workspace = workspace;
 
     state->diagnostics.hello_requests = 0u;
     state->diagnostics.rpc_requests = 0u;
@@ -487,15 +528,6 @@ void binary_rpc_init(binary_rpc_state_t *state)
     state->diagnostics.response_data_frames = 0u;
     state->diagnostics.response_end_frames = 0u;
     state->diagnostics.tx_failures = 0u;
-    state->request.descriptor = (const command_service_descriptor_t *)0;
-    state->request.argc = 0u;
-
-    for (index = 0u; index < COMMAND_SERVICE_MAX_ARGS; ++index)
-    {
-        state->request.argv[index] = (const char *)0;
-        state->argument_storage[index][0] = '\0';
-    }
-
     state->active_binding = (const binary_rpc_binding_t *)0;
     state->active_rpc_id = 0u;
     state->active_request_id = 0u;
@@ -513,6 +545,7 @@ int binary_rpc_handle_frame(
     int result;
 
     if ((state == (binary_rpc_state_t *)0) ||
+        (state->workspace == (binary_rpc_workspace_t *)0) ||
         (frame == (const binary_frame_view_t *)0) ||
         (binding == (const binary_rpc_binding_t *)0) ||
         (binding->send_wire == (binary_rpc_send_wire_t)0) ||

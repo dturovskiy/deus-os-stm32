@@ -17,6 +17,7 @@
 #include "kernel/application_commands.h"
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
+#include "kernel/usb_management.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 #define REG8(addr)  (*(volatile uint8_t *)(addr))
@@ -134,10 +135,13 @@
 #define PRODUCTION_IWDG_PRESCALER IWDG_PRESCALER_DIV256
 #define PRODUCTION_IWDG_RELOAD 1249u
 #define PRODUCTION_IWDG_SPIN_LIMIT 1000000u
-#define PRODUCTION_UART_RX_EVENT         (1u << 0)
-#define PRODUCTION_USB_CDC_RX_EVENT      (1u << 1)
-#define PRODUCTION_CONSOLE_RX_EVENTS     \
-    (PRODUCTION_UART_RX_EVENT | PRODUCTION_USB_CDC_RX_EVENT)
+#define PRODUCTION_UART_RX_EVENT           (1u << 0)
+#define PRODUCTION_USB_CDC_RX_EVENT        (1u << 1)
+#define PRODUCTION_USB_MANAGEMENT_RX_EVENT (1u << 2)
+#define PRODUCTION_CONSOLE_RX_EVENTS       \
+    (PRODUCTION_UART_RX_EVENT | \
+     PRODUCTION_USB_CDC_RX_EVENT | \
+     PRODUCTION_USB_MANAGEMENT_RX_EVENT)
 #define BOOT_DESKTOP_UI_SPLASH_MIN_MS    1000u
 #define BOOT_DESKTOP_UI_POLL_MS          250u
 #define BOOT_DESKTOP_UI_MAX_MINUTES      5999u
@@ -445,8 +449,18 @@ static int binary_rpc_usb_send_wire(
     return usb_cdc_write_span_atomic(data, length);
 }
 
+static int binary_rpc_management_send_wire(
+    void *context,
+    const uint8_t *data,
+    uint32_t length)
+{
+    (void)context;
+    return usb_management_write_span_atomic(data, length);
+}
+
 static binary_frame_parser_t usb_cdc_binary_parser;
 static binary_rpc_state_t usb_cdc_binary_rpc_state;
+static binary_rpc_workspace_t production_binary_rpc_workspace;
 
 static const binary_rpc_binding_t usb_cdc_binary_rpc_binding =
 {
@@ -455,6 +469,15 @@ static const binary_rpc_binding_t usb_cdc_binary_rpc_binding =
     console_execute_request,
     (void *)0,
     PRODUCTION_USB_CDC_RX_EVENT
+};
+
+static const binary_rpc_binding_t usb_management_binary_rpc_binding =
+{
+    binary_rpc_management_send_wire,
+    (void *)0,
+    console_execute_request,
+    (void *)0,
+    PRODUCTION_USB_MANAGEMENT_RX_EVENT
 };
 
 static void console_write(
@@ -542,6 +565,11 @@ void USART1_IRQHandler(void)
 static void usb_cdc_rx_event_notify(void)
 {
     scheduler_event_signal(PRODUCTION_USB_CDC_RX_EVENT);
+}
+
+static void usb_management_rx_event_notify(void)
+{
+    scheduler_event_signal(PRODUCTION_USB_MANAGEMENT_RX_EVENT);
 }
 
 static void uart_emergency_write(const char *text)
@@ -3054,6 +3082,9 @@ static void production_console_task(void *argument)
     {
         console_drain_uart_rx();
         console_drain_usb_cdc_rx();
+        production_console_command_count +=
+            usb_management_runtime_service(
+                &usb_management_binary_rpc_binding);
         production_watchdog_reload();
         boot_desktop_ui_service();
 
@@ -3275,10 +3306,11 @@ void kernel_main(void)
      * PSP tasks with disjoint responsibilities.
      *
      * Task 0 owns the production console/runtime path. USART1 IRQ remains the
-     * sole USART DR reader, while the USB device IRQ owns CDC endpoint/PMA
-     * service. Both IRQ paths publish bytes to independent bounded RX rings
-     * before signalling transport-specific scheduler events. Task 0 drains
-     * both authoritative rings before each combined event wait.
+     * sole USART DR reader, while the USB device IRQ owns CDC and
+     * management endpoint/PMA service. IRQ paths publish bytes to independent
+     * bounded RX rings before signalling transport-specific scheduler events.
+     * Task 0 drains all authoritative transport rings before each combined
+     * event wait; management parsing/RPC execution therefore remains Thread/PSP.
      *
      * Task 1 owns normal-runtime PC13 heartbeat policy. It sleeps on the
      * scheduler clock and performs one short GPIO update per wake. SysTick
@@ -3297,13 +3329,23 @@ void kernel_main(void)
     }
 
     usb_cdc_set_rx_notify(usb_cdc_rx_event_notify);
+    usb_management_set_rx_notify(usb_management_rx_event_notify);
 
     uart_command_state.length = 0u;
     uart_command_state.context.write_failed = 0u;
     usb_cdc_command_state.length = 0u;
     usb_cdc_command_state.context.write_failed = 0u;
     binary_frame_parser_init(&usb_cdc_binary_parser);
-    binary_rpc_init(&usb_cdc_binary_rpc_state);
+    binary_rpc_init(
+        &usb_cdc_binary_rpc_state,
+        &production_binary_rpc_workspace);
+
+    if (usb_management_runtime_init(
+            &production_binary_rpc_workspace) == 0)
+    {
+        production_fail_closed(
+            "USB_MANAGEMENT_RUNTIME_INIT_ERR");
+    }
 
     production_console_task_started = 0u;
     production_console_wait_count = 0u;

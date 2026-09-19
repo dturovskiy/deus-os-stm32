@@ -51,22 +51,26 @@ typedef struct
 
 typedef struct
 {
-    binary_rpc_diagnostics_t diagnostics;
-    command_service_request_t request;
     char argument_storage[COMMAND_SERVICE_MAX_ARGS][BINARY_RPC_MAX_ARG_BYTES + 1u];
-    uint8_t data_chunk[BINARY_RPC_DATA_CHUNK_MAX];
-    uint8_t frame_payload[BINARY_RPC_DATA_PAYLOAD_MAX];
     uint8_t wire[BINARY_RPC_DATA_WIRE_MAX];
+} binary_rpc_workspace_t;
+
+typedef struct
+{
+    binary_rpc_diagnostics_t diagnostics;
+    binary_rpc_workspace_t *workspace;
     const binary_rpc_binding_t *active_binding;
+    uint32_t total_output_bytes;
     uint16_t active_rpc_id;
     uint16_t active_request_id;
     uint16_t sequence;
-    uint32_t total_output_bytes;
-    uint32_t data_chunk_length;
-    uint32_t tx_failed;
+    uint8_t data_chunk_length;
+    uint8_t tx_failed;
 } binary_rpc_state_t;
 
-void binary_rpc_init(binary_rpc_state_t *state);
+void binary_rpc_init(
+    binary_rpc_state_t *state,
+    binary_rpc_workspace_t *workspace);
 int binary_rpc_handle_frame(
     binary_rpc_state_t *state,
     const binary_frame_view_t *frame,

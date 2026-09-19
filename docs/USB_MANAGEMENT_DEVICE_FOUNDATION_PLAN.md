@@ -1,6 +1,6 @@
 # Deus OS — USB Management Device Foundation Plan
 
-Status: **GATE 0 ARCHITECTURE / SOURCE BOUNDARY FROZEN — GATE 1 NEXT**
+Status: **GATES 2–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
 
 Boundary ID:
 
@@ -151,16 +151,16 @@ The device exposes a BOS descriptor containing the Microsoft OS 2.0 Platform Cap
 The BOS capability declares:
 
 - Windows version floor appropriate to Windows 10;
-- one fixed vendor request code owned by this boundary;
-- exact MS OS 2.0 descriptor-set length;
+- fixed vendor request code `0x20` owned by this boundary;
+- exact MS OS 2.0 descriptor-set length `178` bytes (`0x00B2`);
 - alternate enumeration disabled.
 
-The vendor control request for the descriptor set is device-to-host vendor request with `wIndex = 0x0007`.
+The vendor control request for the descriptor set is exactly `bmRequestType=0xC0`, `bRequest=0x20`, `wValue=0x0000`, `wIndex=0x0007`; the device returns at most the host-requested prefix of the 178-byte descriptor set.
 
 The MS OS 2.0 descriptor set targets management interface 2 only and contains:
 
 1. set header;
-2. configuration subset header with `bConfigurationValue = 1` for the device's sole configuration;
+2. configuration subset header with `bConfigurationValue = 0` to select the first configuration subset; the standard USB configuration descriptor remains `bConfigurationValue = 1`;
 3. function subset header for first interface 2;
 4. compatible-ID feature descriptor with `WINUSB`;
 5. registry-property feature descriptor:
@@ -372,7 +372,7 @@ published SRAM   10032
 Gate 2 SRAM max  11824   (+1792)
 ```
 
-The SRAM allowance covers exactly 1536 bytes of management rings plus at most 256 bytes of management/descriptor/runtime state.
+Gate 2 initially reproduced the published baseline exactly at Flash/SRAM `48636/10032` and measured the first management candidate at `50740/12232`, which exceeded the frozen SRAM ceiling by `408` bytes. The authorized SRAM remediation extended the source set only into `include/kernel/binary_rpc.h` and `src/kernel/binary_rpc.c`: per-transport persistent RPC state remains independent, while request/output scratch storage is moved into one bounded task0-owned workspace because RPC execution is synchronous and serialized by the single production task0 owner. The response builder reuses one 64-byte wire buffer in place instead of duplicating 48-byte data-chunk + 52-byte payload + 64-byte wire scratch per transport. After hardware Gate 3 exposed Windows Code 28 on management interface 2, the MS OS 2.0 first-configuration subset selector was corrected to `0` and `bcdDevice` advanced to `1.02`. Gate 2 rebuild evidence passes with candidate tree `46841b52d351277deb134a6f4709619087b477af`, BIN `50172` / SHA-256 `FD0A8049193772892C2A3DC1CF2B24FA17BCC83FC4B0F55A22AA6A4962C864FB`, Flash/SRAM `50172/11728` against frozen ceilings `54780/11824`, task stacks `1024/512`, undefined symbols `0`, stack-usage files `21/21`, no Flash and no real Git-index mutation. Evidence SHA-256 `B6101C2FAD615DC41856BD1DE88C46E92517759EC3AC1F56ACB2030B89252AF3`; log SHA-256 `245F15303355C47473C15CB05838DB495764F97D228DB1113B3C7693765D429F`. Gate 3 composite hardware/runtime acceptance (`v11+v14`) now also passes: evidence `1EF8595E85F088F0D3870CA5D880631342AD795FDB94C05EAB9BBC3566A3DCC6`, log `083C9B66B7225D3FF37845996B62991C7DE8E84332BD3C8B059F1B8A6569797B`, WinUSB `128/128`, UART `32/32`, drops `0/0`, task margins `448/424`, physical reconnect PASS, IWDG recovery PASS, final Flash exact.
 
 Task stacks stay exactly 1024 / 512 bytes. Hardware minimum margins remain >=256 bytes.
 
@@ -409,11 +409,11 @@ Windows 10 must prove after a physical USB reconnect:
 
 OLED/UI source is frozen by this boundary.
 
-Default Gate 4 disposition:
+Accepted Gate 4 disposition:
 
 `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`
 
-Escalate to explicit physical OLED observation only if Gate 1 unexpectedly touches UI/OLED/application-rendering sources or Gate 3 finds a visible regression.
+Gate 1/2/3 source diffs do not modify OLED/UI/application-rendering logic, and Gate 3 found no visible-regression signal. No additional physical OLED run is required.
 
 ## 16. Gates 5–7
 

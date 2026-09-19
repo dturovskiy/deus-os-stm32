@@ -126,14 +126,14 @@ Canonical decision/design/acceptance:
 
 ### Current implementation boundary — USB management device foundation
 
-`USB_MANAGEMENT_DEVICE_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 SOURCE IMPLEMENTATION NEXT**.
+`USB_MANAGEMENT_DEVICE_FOUNDATION` — **GATES 2–5 ACCEPTED / GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**.
 
-Frozen Gate 0 topology: composite private-test `1209:000C` / `Deus OS Device`; CDC interfaces 0–1 retained as secondary diagnostics; vendor interface 2 bound to WinUSB over EP4 OUT/IN bulk 64; Microsoft OS 2.0 descriptors; stable device-interface GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`; current binary RPC v1 / command-service v2 / 35-method registry reused unchanged. Canonical design/acceptance: `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md` and `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`.
+Frozen topology is hardware-accepted on candidate tree `46841b52d351277deb134a6f4709619087b477af`, BIN `50172` / `FD0A8049193772892C2A3DC1CF2B24FA17BCC83FC4B0F55A22AA6A4962C864FB`: composite private-test `1209:000C` / `Deus OS Device`; CDC interfaces 0–1 retained as secondary diagnostics; vendor interface 2 automatically bound to inbox WinUSB over EP4 OUT/IN bulk64; Microsoft OS 2.0 first-configuration subset selector `0`; stable device-interface GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`; binary RPC v1 / command-service v2 / 35 methods unchanged. Gate 3 composite evidence/log are `1EF8595E85F088F0D3870CA5D880631342AD795FDB94C05EAB9BBC3566A3DCC6` / `083C9B66B7225D3FF37845996B62991C7DE8E84332BD3C8B059F1B8A6569797B`; WinUSB `128/128`, UART `32/32`, management drops `0/0`, task margins `448/424`, physical reconnect and IWDG recovery PASS, final Flash exact. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`. Canonical design/acceptance: `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md` and `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
 Implementation order:
 
 1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–7 accepted / published `fa75307fb392718a1d10d52770a6a111c97208e7`;
-2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — Gate 0 accepted; Gate 1 source implementation next;
+2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — Gates 2–5 accepted; Gate 6 local acceptance commit next;
 3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
 4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
 5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
