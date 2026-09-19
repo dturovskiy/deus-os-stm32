@@ -113,9 +113,11 @@ Canonical design/acceptance:
 
 ### Current implementation boundary — Kernel composition-root decomposition
 
-`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATE 0 ACCEPTED / GATE 1 NEXT**.
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATES 0–5 ACCEPTED / GATE 6 NEXT**.
 
-The accepted firmware is not classified as spaghetti, but the `5100`-line `src/kernel.c` has measured god-module concentration across composition/bootstrap, command/diagnostic dispatch, UI/application integration and low-level glue. This boundary is behavior-preserving cleanup only: extract coherent ownership, preserve one-way dependencies, and do not replace the god-module with a catch-all context/service-locator god object.
+The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state/event snapshot/view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. Root-private production scheduler observability remains in the composition root. No universal `kernel_context_t`, service locator, hidden extracted-state extern, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
+
+Accepted candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; BIN `48636` bytes / `51083C63652DCFCCC479604CA09E191EAB43561C496E2D6F1E5DAABC10CC9766`; ELF `83FD4C9B9589A7E1B619A3B0C82BF2AB9050D5B4572DAD30BA1414CA8354CF8B`; MAP `0BB014FAA418374AFDC77EE9389B3D7BCE631FB0D33EA451952142F78DCC2AD8`; Flash `48636/65536`, SRAM `10032/20480`, final task margins `384/424`. Gate 2 evidence `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`; Gate 3 evidence `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`; Gate 4 `PHYSICAL_OLED=PASS`.
 
 Canonical decision/design/acceptance:
 `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`
@@ -124,7 +126,7 @@ Canonical decision/design/acceptance:
 
 Implementation order:
 
-1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gate 0 accepted; Gate 1 source decomposition next;
+1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–5 accepted; Gate 6 local acceptance commit next;
 2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — production Windows-facing vendor-specific WinUSB device (`Deus OS Device`), stable device-interface GUID, Microsoft OS descriptors, accepted binary RPC reused above transport; CDC/COM no longer the primary production host API;
 3. `HOST_CONTROL_APPLICATION_FOUNDATION`;
 4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
@@ -215,13 +217,14 @@ Target progression:
 5. Deus OS product/application/UI model freeze — published at `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`.
 6. Boot/desktop UI foundation — published at `d1d2230ef70c3e7ffc6e8e01eec82e17dbf8a6e8`.
 7. OLED dirty-region optimization — published at `39690c9ef103cbcf93272df8bad0359a934b7dc1`; exact changed page/column spans retained with one 512-byte framebuffer.
-8. Static application runtime foundation — Gate 0 accepted; Gate 1 next.
-9. Production USB management-device foundation: vendor-specific WinUSB `Deus OS Device`, Microsoft OS descriptors, stable interface GUID and the accepted binary RPC above transport; CDC becomes debug/recovery rather than the primary production API.
-10. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); it manages the stable firmware runtime rather than defining it.
-11. Add bounded versioned asset/configuration transfer for non-executable packages.
-12. Add a recoverable USB firmware-update path and small bootloader as a separate safety boundary.
-13. Add networking/service extensions over the same application/service model.
-14. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
+8. Static application runtime foundation — published at `25752fba557b1a1b518265a93bde05d3a6a3f9ad`.
+9. Kernel composition-root decomposition — Gates 0–5 accepted; Gate 6 next.
+10. Production USB management-device foundation: vendor-specific WinUSB `Deus OS Device`, Microsoft OS descriptors, stable interface GUID and the accepted binary RPC above transport; CDC becomes debug/recovery rather than the primary production API.
+11. Cross-platform Windows/Linux host application. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); it manages the stable firmware runtime rather than defining it.
+12. Add bounded versioned asset/configuration transfer for non-executable packages.
+13. Add a recoverable USB firmware-update path and small bootloader as a separate safety boundary.
+14. Add networking/service extensions over the same application/service model.
+15. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
 
 Production Windows integration should avoid a custom kernel-mode driver while also avoiding COM-port-first product identity. `USB_MANAGEMENT_DEVICE_FOUNDATION` therefore targets the Windows inbox WinUSB stack with firmware-supplied device identity/interface metadata. CDC remains valuable as an explicit development/debug/recovery profile, not as the final management surface.
 

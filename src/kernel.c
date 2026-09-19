@@ -10,8 +10,11 @@
 #include "kernel/oled_status_bar.h"
 #include "kernel/oled_ui_layout.h"
 #include "kernel/scheduler.h"
+#include "kernel/scheduler_diagnostics.h"
 #include "kernel/command_service.h"
 #include "kernel/application_runtime.h"
+#include "kernel/application_runtime_bridge.h"
+#include "kernel/application_commands.h"
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
 
@@ -118,7 +121,6 @@
 #define I2C1_CCR_100KHZ   180u
 #define I2C1_TRISE_100KHZ 37u
 #define I2C_SPIN_LIMIT    100000u
-#define SCHED_WORKLOAD_PEER_SPINS 1000000u
 
 #define PRODUCTION_CONSOLE_STACK_WORDS 256u
 #define PRODUCTION_CONSOLE_STACK_BYTES \
@@ -132,16 +134,10 @@
 #define PRODUCTION_IWDG_PRESCALER IWDG_PRESCALER_DIV256
 #define PRODUCTION_IWDG_RELOAD 1249u
 #define PRODUCTION_IWDG_SPIN_LIMIT 1000000u
-#define SCHED_CONSOLE_PROBE_COMMAND_COUNT 17u
-#define SCHED_ISOLATION_DIAGNOSTIC_COUNT 7u
 #define PRODUCTION_UART_RX_EVENT         (1u << 0)
 #define PRODUCTION_USB_CDC_RX_EVENT      (1u << 1)
 #define PRODUCTION_CONSOLE_RX_EVENTS     \
     (PRODUCTION_UART_RX_EVENT | PRODUCTION_USB_CDC_RX_EVENT)
-#define SCHED_WAIT_WAKE_SENTINEL         0x57u
-#define SCHED_TIMED_SLEEP_MS             50u
-#define SCHED_TIMED_TIMEOUT_MS           50u
-#define SCHED_TIMED_EVENT_TIMEOUT_MS     500u
 #define BOOT_DESKTOP_UI_SPLASH_MIN_MS    1000u
 #define BOOT_DESKTOP_UI_POLL_MS          250u
 #define BOOT_DESKTOP_UI_MAX_MINUTES      5999u
@@ -161,11 +157,6 @@ typedef struct
     uint8_t network_indicator;
     uint32_t total_minutes;
 } boot_desktop_ui_snapshot_t;
-
-typedef char application_view_rows_must_match_oled_console[
-    (APPLICATION_VIEW_ROWS == OLED_CONSOLE_ROWS) ? 1 : -1];
-typedef char application_view_columns_must_match_oled_console[
-    (APPLICATION_VIEW_COLUMNS == OLED_CONSOLE_COLUMNS) ? 1 : -1];
 
 /*
  * PCLK2 = 72 MHz.
@@ -259,16 +250,6 @@ static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
 static oled_console_t oled_console_state;
 static oled_status_bar_t boot_desktop_ui_status;
-static application_runtime_t application_runtime_state;
-static application_service_snapshot_t application_runtime_last_service_snapshot;
-static uint32_t application_runtime_service_snapshot_valid;
-static uint32_t application_runtime_ready_event_sent;
-
-static volatile uint32_t scheduler_workload_task0_started;
-static volatile uint32_t scheduler_workload_task0_done;
-static volatile uint32_t scheduler_workload_peer_overlap;
-static volatile uint32_t scheduler_workload_peer_done;
-static volatile uint32_t scheduler_workload_ui_result;
 
 static uint32_t production_console_stack
     [PRODUCTION_CONSOLE_STACK_WORDS]
@@ -305,42 +286,10 @@ static uint32_t boot_desktop_ui_snapshot_valid;
 static uint32_t boot_desktop_ui_panel_initialized;
 static boot_desktop_ui_snapshot_t boot_desktop_ui_last_snapshot;
 
-static volatile uint32_t scheduler_console_probe_task_started;
-static volatile uint32_t scheduler_console_probe_task_done;
-static volatile uint32_t scheduler_console_probe_peer_overlap;
-static volatile uint32_t scheduler_console_probe_peer_done;
-static volatile uint32_t scheduler_console_probe_completed_count;
-static volatile uint32_t scheduler_console_probe_ui_restore_result;
-
-static volatile uint32_t scheduler_isolation_task_started;
-static volatile uint32_t scheduler_isolation_task_done;
-static volatile uint32_t scheduler_isolation_peer_overlap;
-static volatile uint32_t scheduler_isolation_peer_done;
-static volatile uint32_t scheduler_isolation_init_reject;
-static volatile uint32_t scheduler_isolation_active_preserved;
-static volatile uint32_t scheduler_diagnostic_busy_count;
-
-static volatile uint32_t scheduler_wait_wake_task_started;
-static volatile uint32_t scheduler_wait_wake_task_resumed;
-static volatile uint32_t scheduler_wait_wake_peer_done;
-static volatile uint32_t scheduler_wait_wake_events;
-static volatile uint32_t scheduler_wait_wake_byte;
-static volatile uint32_t scheduler_wait_wake_byte_ok;
-static volatile uint32_t scheduler_wait_wake_framing_bytes;
-
 static command_service_status_t console_execute_request(
     const command_service_request_t *request,
     command_service_context_t *context,
     void *handler_context);
-static command_service_status_t console_execute_scheduler_diagnostic(
-    const command_service_request_t *request,
-    command_service_context_t *context);
-static void console_production_scheduler_stats(command_service_context_t *context);
-static void console_scheduler_console_probe_test(command_service_context_t *context);
-static void console_scheduler_isolation_test(command_service_context_t *context);
-static void console_scheduler_wait_wake_test(command_service_context_t *context);
-static void console_scheduler_timed_test(command_service_context_t *context);
-static void console_scheduler_priority_test(command_service_context_t *context);
 
 kernel_time_ms_t kernel_time_now(void)
 {
@@ -1540,8 +1489,6 @@ static void boot_desktop_ui_initialize(void)
     boot_desktop_ui_uptime_saturated = 0u;
     boot_desktop_ui_snapshot_valid = 0u;
     boot_desktop_ui_panel_initialized = 0u;
-    application_runtime_service_snapshot_valid = 0u;
-    application_runtime_ready_event_sent = 0u;
     oled_status_bar_init(&boot_desktop_ui_status);
     boot_desktop_ui_initialized = 1u;
 }
@@ -1643,31 +1590,6 @@ static void boot_desktop_ui_application_snapshot_build(
     application_snapshot->reserved = 0u;
 }
 
-static int boot_desktop_ui_application_dispatch_event(
-    uint16_t type,
-    uint16_t source,
-    uint32_t value0,
-    uint32_t value1,
-    const application_service_snapshot_t *services)
-{
-    application_event_t event;
-
-    if (services == (const application_service_snapshot_t *)0)
-    {
-        return 0;
-    }
-
-    event.type = type;
-    event.source = source;
-    event.value0 = value0;
-    event.value1 = value1;
-
-    return application_runtime_dispatch_event(
-        &application_runtime_state,
-        &event,
-        services);
-}
-
 static int boot_desktop_ui_application_service(
     const boot_desktop_ui_snapshot_t *ui_snapshot)
 {
@@ -1683,104 +1605,9 @@ static int boot_desktop_ui_application_service(
         return 1;
     }
 
-    if (application_runtime_is_initialized(&application_runtime_state) == 0)
-    {
-        return 0;
-    }
-
     boot_desktop_ui_application_snapshot_build(ui_snapshot, &current);
 
-    if (application_runtime_active_id(&application_runtime_state) == 0u)
-    {
-        if (application_runtime_start(
-                &application_runtime_state,
-                APPLICATION_ID_SYSTEM_HOME,
-                &current) == 0)
-        {
-            return 0;
-        }
-    }
-
-    if (application_runtime_ready_event_sent == 0u)
-    {
-        if (boot_desktop_ui_application_dispatch_event(
-                APPLICATION_EVENT_RUNTIME_READY,
-                APPLICATION_EVENT_SOURCE_RUNTIME,
-                application_runtime_active_id(&application_runtime_state),
-                0u,
-                &current) == 0)
-        {
-            return 0;
-        }
-
-        application_runtime_ready_event_sent = 1u;
-    }
-
-    if (application_runtime_service_snapshot_valid != 0u)
-    {
-        if (current.displayed_minute !=
-            application_runtime_last_service_snapshot.displayed_minute)
-        {
-            if (boot_desktop_ui_application_dispatch_event(
-                    APPLICATION_EVENT_UPTIME_MINUTE_CHANGED,
-                    APPLICATION_EVENT_SOURCE_TIME,
-                    current.displayed_minute,
-                    application_runtime_last_service_snapshot.displayed_minute,
-                    &current) == 0)
-            {
-                return 0;
-            }
-        }
-
-        if (current.system_healthy !=
-            application_runtime_last_service_snapshot.system_healthy)
-        {
-            if (boot_desktop_ui_application_dispatch_event(
-                    APPLICATION_EVENT_SYSTEM_HEALTH_CHANGED,
-                    APPLICATION_EVENT_SOURCE_SYSTEM,
-                    current.system_healthy,
-                    application_runtime_last_service_snapshot.system_healthy,
-                    &current) == 0)
-            {
-                return 0;
-            }
-        }
-
-        if (current.usb_configured !=
-            application_runtime_last_service_snapshot.usb_configured)
-        {
-            if (boot_desktop_ui_application_dispatch_event(
-                    APPLICATION_EVENT_USB_STATE_CHANGED,
-                    APPLICATION_EVENT_SOURCE_USB,
-                    current.usb_configured,
-                    application_runtime_last_service_snapshot.usb_configured,
-                    &current) == 0)
-            {
-                return 0;
-            }
-        }
-
-        if (current.network_online !=
-            application_runtime_last_service_snapshot.network_online)
-        {
-            if (boot_desktop_ui_application_dispatch_event(
-                    APPLICATION_EVENT_NETWORK_STATE_CHANGED,
-                    APPLICATION_EVENT_SOURCE_NETWORK,
-                    current.network_online,
-                    application_runtime_last_service_snapshot.network_online,
-                    &current) == 0)
-            {
-                return 0;
-            }
-        }
-    }
-
-    application_runtime_last_service_snapshot = current;
-    application_runtime_service_snapshot_valid = 1u;
-
-    return application_runtime_service(
-        &application_runtime_state,
-        &current);
+    return application_runtime_bridge_service(&current);
 }
 
 static int boot_desktop_ui_application_snapshot_current(
@@ -1791,71 +1618,13 @@ static int boot_desktop_ui_application_snapshot_current(
     if (
         (snapshot == (application_service_snapshot_t *)0) ||
         (boot_desktop_ui_state != BOOT_DESKTOP_UI_HOME) ||
-        (application_runtime_is_initialized(&application_runtime_state) == 0)
+        (application_runtime_bridge_is_initialized() == 0)
     ) {
         return 0;
     }
 
     boot_desktop_ui_snapshot_build(&ui_snapshot);
     boot_desktop_ui_application_snapshot_build(&ui_snapshot, snapshot);
-    return 1;
-}
-
-static int boot_desktop_ui_apply_application_view(uint32_t force_rows)
-{
-    const application_view_t *view;
-    uint32_t row;
-    uint32_t column;
-    uint8_t dirty_rows = 0u;
-
-    view = application_runtime_view_get(&application_runtime_state);
-    if (view == (const application_view_t *)0)
-    {
-        return 0;
-    }
-
-    if ((force_rows != 0u) || (oled_console_state.first_row != 0u))
-    {
-        dirty_rows =
-            (uint8_t)((1u << APPLICATION_VIEW_ROWS) - 1u);
-    }
-
-    oled_console_state.first_row = 0u;
-
-    for (row = 0u; row < APPLICATION_VIEW_ROWS; ++row)
-    {
-        uint32_t text_ended = 0u;
-
-        for (column = 0u; column < APPLICATION_VIEW_COLUMNS; ++column)
-        {
-            char desired = ' ';
-
-            if (text_ended == 0u)
-            {
-                char source = view->rows[row][column];
-
-                if (source == '\0')
-                {
-                    text_ended = 1u;
-                }
-                else
-                {
-                    desired = source;
-                }
-            }
-
-            if (oled_console_state.cells[row][column] != desired)
-            {
-                oled_console_state.cells[row][column] = desired;
-                dirty_rows |= (uint8_t)(1u << row);
-            }
-        }
-    }
-
-    oled_console_state.cursor_x = 0u;
-    oled_console_state.cursor_y = (uint8_t)OLED_CONSOLE_ROWS;
-    oled_console_state.dirty_rows |= dirty_rows;
-
     return 1;
 }
 
@@ -1884,7 +1653,7 @@ static int boot_desktop_ui_render(int force)
     if (
         (force == 0) &&
         (boot_desktop_ui_snapshot_valid != 0u) &&
-        (application_runtime_view_dirty(&application_runtime_state) == 0) &&
+        (application_runtime_bridge_view_dirty() == 0) &&
         (boot_desktop_ui_snapshot_equal(
             &snapshot,
             &boot_desktop_ui_last_snapshot) != 0)
@@ -1979,11 +1748,12 @@ static int boot_desktop_ui_render(int force)
         (snapshot.state == BOOT_DESKTOP_UI_HOME) &&
         (
             (full_compose != 0u) ||
-            (application_runtime_view_dirty(
-                &application_runtime_state) != 0)
+            (application_runtime_bridge_view_dirty() != 0)
         )
     ) {
-        if (boot_desktop_ui_apply_application_view(full_compose) == 0)
+        if (application_runtime_bridge_apply_view(
+                &oled_console_state,
+                full_compose) == 0)
         {
             boot_desktop_ui_snapshot_valid = 0u;
             return 0;
@@ -2025,7 +1795,7 @@ static int boot_desktop_ui_render(int force)
 
     if (snapshot.state == BOOT_DESKTOP_UI_HOME)
     {
-        application_runtime_view_consumed(&application_runtime_state);
+        application_runtime_bridge_view_consumed();
     }
 
     if (
@@ -2050,37 +1820,6 @@ static int oled_runtime_ui_show(void)
 static void boot_desktop_ui_service(void)
 {
     (void)boot_desktop_ui_render(0);
-}
-
-static void scheduler_workload_oled_task(void *argument)
-{
-    (void)argument;
-
-    scheduler_workload_task0_started = 1u;
-    scheduler_workload_ui_result =
-        (oled_runtime_ui_show() != 0) ? 1u : 0u;
-    scheduler_workload_task0_done = 1u;
-}
-
-static void scheduler_workload_cpu_peer_task(void *argument)
-{
-    uint32_t i;
-
-    (void)argument;
-
-    for (i = 0u; i < SCHED_WORKLOAD_PEER_SPINS; ++i)
-    {
-        if (
-            (scheduler_workload_task0_started != 0u) &&
-            (scheduler_workload_task0_done == 0u)
-        ) {
-            scheduler_workload_peer_overlap = 1u;
-        }
-
-        __asm volatile ("nop");
-    }
-
-    scheduler_workload_peer_done = 1u;
 }
 
 
@@ -2403,243 +2142,6 @@ static void console_write_fault(command_service_context_t *context)
     console_write(context, "\r\n");
 }
 
-static void console_scheduler_test(command_service_context_t *context)
-{
-    if (scheduler_self_test() != 0)
-    {
-        console_write_line(context, "SCHED_FOUNDATION_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_FOUNDATION_ERR");
-    }
-}
-
-static void console_scheduler_cooperative_test(command_service_context_t *context)
-{
-    if (scheduler_cooperative_self_test() != 0)
-    {
-        console_write_line(context, "SCHED_COOP_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_COOP_ERR");
-    }
-}
-
-static void console_scheduler_preemptive_test(command_service_context_t *context)
-{
-    if (scheduler_preemptive_self_test() != 0)
-    {
-        console_write_line(context, "SCHED_PREEMPT_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_PREEMPT_ERR");
-    }
-}
-
-static void console_scheduler_stack_water_test(command_service_context_t *context)
-{
-    uint32_t coop_used0;
-    uint32_t coop_used1;
-    uint32_t preempt_used0;
-    uint32_t preempt_used1;
-    uint32_t capacity0;
-    uint32_t capacity1;
-    int coop_canary0;
-    int coop_canary1;
-    int preempt_canary0;
-    int preempt_canary1;
-    int coop_result;
-    int preempt_result;
-    int passed;
-
-    coop_result = scheduler_cooperative_self_test();
-    coop_used0 = scheduler_stack_high_water_bytes(0u);
-    coop_used1 = scheduler_stack_high_water_bytes(1u);
-    coop_canary0 = scheduler_stack_canary_intact(0u);
-    coop_canary1 = scheduler_stack_canary_intact(1u);
-
-    preempt_result = scheduler_preemptive_self_test();
-    preempt_used0 = scheduler_stack_high_water_bytes(0u);
-    preempt_used1 = scheduler_stack_high_water_bytes(1u);
-    preempt_canary0 = scheduler_stack_canary_intact(0u);
-    preempt_canary1 = scheduler_stack_canary_intact(1u);
-
-    capacity0 = scheduler_stack_capacity_bytes(0u);
-    capacity1 = scheduler_stack_capacity_bytes(1u);
-
-    console_write(context, "STACK_CAPACITY=");
-    console_write_hex32(context, capacity0);
-    console_write(context, "\r\n");
-
-    console_write(context, "STACK_COOP_T0_USED=");
-    console_write_hex32(context, coop_used0);
-    console_write(context, "\r\n");
-
-    console_write(context, "STACK_COOP_T1_USED=");
-    console_write_hex32(context, coop_used1);
-    console_write(context, "\r\n");
-
-    console_write(context, "STACK_PREEMPT_T0_USED=");
-    console_write_hex32(context, preempt_used0);
-    console_write(context, "\r\n");
-
-    console_write(context, "STACK_PREEMPT_T1_USED=");
-    console_write_hex32(context, preempt_used1);
-    console_write(context, "\r\n");
-
-    passed =
-        (coop_result != 0) &&
-        (preempt_result != 0) &&
-        (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
-        (capacity1 == capacity0) &&
-        (coop_used0 >= 64u) &&
-        (coop_used0 < capacity0) &&
-        (coop_used1 >= 64u) &&
-        (coop_used1 < capacity1) &&
-        (preempt_used0 >= 64u) &&
-        (preempt_used0 < capacity0) &&
-        (preempt_used1 >= 64u) &&
-        (preempt_used1 < capacity1) &&
-        (coop_canary0 != 0) &&
-        (coop_canary1 != 0) &&
-        (preempt_canary0 != 0) &&
-        (preempt_canary1 != 0);
-
-    if (passed != 0)
-    {
-        console_write_line(context, "SCHED_STACK_WATER_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_STACK_WATER_ERR");
-    }
-}
-
-static void console_scheduler_workload_test(command_service_context_t *context)
-{
-    const scheduler_task_t *task0;
-    const scheduler_task_t *task1;
-    uint32_t used0;
-    uint32_t used1;
-    uint32_t capacity0;
-    uint32_t capacity1;
-    uint32_t switches;
-    int canary0;
-    int canary1;
-    int start_result;
-    int passed;
-
-    if (scheduler_init() == 0)
-    {
-        console_write_line(context, "SCHED_WORKLOAD_PREPARE_ERR");
-        return;
-    }
-
-    scheduler_workload_task0_started = 0u;
-    scheduler_workload_task0_done = 0u;
-    scheduler_workload_peer_overlap = 0u;
-    scheduler_workload_peer_done = 0u;
-    scheduler_workload_ui_result = 0u;
-
-    if (
-        scheduler_task_prepare(
-            0u,
-            scheduler_workload_oled_task,
-            (void *)0) == 0
-    ) {
-        console_write_line(context, "SCHED_WORKLOAD_PREPARE_ERR");
-        return;
-    }
-
-    if (
-        scheduler_task_prepare(
-            1u,
-            scheduler_workload_cpu_peer_task,
-            (void *)0) == 0
-    ) {
-        console_write_line(context, "SCHED_WORKLOAD_PREPARE_ERR");
-        return;
-    }
-
-    start_result = scheduler_start_preemptive();
-
-    used0 = scheduler_stack_high_water_bytes(0u);
-    used1 = scheduler_stack_high_water_bytes(1u);
-    capacity0 = scheduler_stack_capacity_bytes(0u);
-    capacity1 = scheduler_stack_capacity_bytes(1u);
-    canary0 = scheduler_stack_canary_intact(0u);
-    canary1 = scheduler_stack_canary_intact(1u);
-    switches = scheduler_preempt_switch_count_get();
-
-    task0 = scheduler_task_get(0u);
-    task1 = scheduler_task_get(1u);
-
-    console_write(context, "WORKLOAD_CAPACITY=");
-    console_write_hex32(context, capacity0);
-    console_write(context, "\r\n");
-
-    console_write(context, "WORKLOAD_T0_USED=");
-    console_write_hex32(context, used0);
-    console_write(context, "\r\n");
-
-    console_write(context, "WORKLOAD_T1_USED=");
-    console_write_hex32(context, used1);
-    console_write(context, "\r\n");
-
-    console_write(context, "WORKLOAD_SWITCHES=");
-    console_write_hex32(context, switches);
-    console_write(context, "\r\n");
-
-    console_write(context, "WORKLOAD_UI_RESULT=");
-    console_write_hex32(context, scheduler_workload_ui_result);
-    console_write(context, "\r\n");
-
-    console_write(context, "WORKLOAD_PEER_OVERLAP=");
-    console_write_hex32(context, scheduler_workload_peer_overlap);
-    console_write(context, "\r\n");
-
-    console_write(context, "WORKLOAD_CANARY_T0=");
-    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
-
-    console_write(context, "WORKLOAD_CANARY_T1=");
-    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
-
-    passed =
-        (start_result != 0) &&
-        (scheduler_workload_task0_started != 0u) &&
-        (scheduler_workload_task0_done != 0u) &&
-        (scheduler_workload_peer_done != 0u) &&
-        (scheduler_workload_peer_overlap != 0u) &&
-        (scheduler_workload_ui_result != 0u) &&
-        (switches >= 2u) &&
-        (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
-        (capacity1 == capacity0) &&
-        (used0 >= 64u) &&
-        (used0 < capacity0) &&
-        (used1 >= 64u) &&
-        (used1 < capacity1) &&
-        (canary0 != 0) &&
-        (canary1 != 0) &&
-        (task0 != (const scheduler_task_t *)0) &&
-        (task1 != (const scheduler_task_t *)0) &&
-        (task0->state == SCHEDULER_TASK_DONE) &&
-        (task1->state == SCHEDULER_TASK_DONE);
-
-    if (passed != 0)
-    {
-        console_write_line(context, "SCHED_WORKLOAD_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_WORKLOAD_ERR");
-    }
-}
-
 static void console_uart_rx_stats(command_service_context_t *context)
 {
     const uint32_t head = uart_rx_head;
@@ -2822,699 +2324,135 @@ static void console_msp_stack_stats(command_service_context_t *context)
     }
 }
 
-static const char * const scheduler_console_probe_commands
-    [SCHED_CONSOLE_PROBE_COMMAND_COUNT] =
+static void console_usb_cdc_stats(command_service_context_t *context)
 {
-    "ping",
-    "uptime",
-    "health",
-    "rxstat",
-    "mspstat",
-    "fault",
-    "i2cscan",
-    "oledping",
-    "oledtest",
-    "oledtext",
-    "oledrender",
-    "oledconsole",
-    "oledscroll",
-    "oleddirty",
-    "oleduiupdate",
-    "uiruntime",
-    "oledstatus"
-};
+    console_write(context, "USB_CDC_CONFIGURED=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_configured);
+    console_write(context, " CONFIGURATION=");
+    console_write_hex32(context, usb_device_diagnostics.configuration);
+    console_write(context, " RX_PACKETS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_rx_packet_count);
+    console_write(context, " RX_BYTES=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_rx_byte_count);
+    console_write(context, " RX_DROPS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_rx_drop_count);
+    console_write(context, " RX_HIGH_WATER=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_rx_high_water);
+    console_write(context, " TX_PACKETS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_tx_packet_count);
+    console_write(context, " TX_BYTES=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_tx_byte_count);
+    console_write(context, " TX_DROPS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_tx_drop_count);
+    console_write(context, " TX_HIGH_WATER=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_tx_high_water);
+    console_write(context, " CONTROL=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_control_line_state);
+    console_write(context, " BAUD=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_baud);
+    console_write(context, " STOP=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_stop_bits);
+    console_write(context, " PARITY=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_parity);
+    console_write(context, " DATA_BITS=");
+    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_data_bits);
+    console_write(context, "\r\n");
+}
 
-static void scheduler_console_probe_task(void *argument)
+static void console_write_command_descriptor(
+    command_service_context_t *context,
+    const command_service_descriptor_t *descriptor)
 {
-    command_service_context_t *context =
-        (command_service_context_t *)argument;
-    uint32_t index;
-
-    if (context == (command_service_context_t *)0)
+    if (descriptor == (const command_service_descriptor_t *)0)
     {
-        scheduler_console_probe_task_done = 1u;
         return;
     }
 
-    scheduler_console_probe_task_started = 1u;
+    console_write(context, "HELP_METHOD=");
+    console_write(context, descriptor->name);
+    console_write(context, " CLASS=");
+    console_write(context, command_service_class_name(descriptor->command_class));
+    console_write(context, " MIN_ARGS=");
+    console_write_hex32(context, descriptor->min_args);
+    console_write(context, " MAX_ARGS=");
+    console_write_hex32(context, descriptor->max_args);
+    console_write(context, "\r\n");
+}
 
-    for (index = 0u;
-         index < SCHED_CONSOLE_PROBE_COMMAND_COUNT;
-         ++index)
+static command_service_status_t console_command_help(
+    const command_service_request_t *request,
+    command_service_context_t *context)
+{
+    if (request->argc == 0u)
     {
-        command_service_request_t request =
+        const uint32_t count = command_service_registry_count();
+
+        console_write(context, "HELP_COUNT=");
+        console_write_hex32(context, count);
+        console_write(context, "\r\nHELP_METHODS=");
+
+        for (uint32_t index = 0u; index < count; ++index)
         {
-            command_service_find(scheduler_console_probe_commands[index]),
-            0u,
-            { (const char *)0 }
-        };
+            const command_service_descriptor_t *descriptor =
+                command_service_registry_at(index);
 
-        if (
-            (request.descriptor != (const command_service_descriptor_t *)0) &&
-            (console_execute_request(&request, context, (void *)0) ==
-                COMMAND_SERVICE_STATUS_OK)
-        ) {
-            ++scheduler_console_probe_completed_count;
-        }
-    }
+            if (descriptor == (const command_service_descriptor_t *)0)
+            {
+                return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+            }
 
-    scheduler_console_probe_ui_restore_result =
-        (oled_runtime_ui_show() != 0) ? 1u : 0u;
+            if (index != 0u)
+            {
+                console_write(context, " ");
+            }
 
-    scheduler_console_probe_task_done = 1u;
-}
-
-static void scheduler_console_probe_peer_task(void *argument)
-{
-    volatile uint32_t spin;
-
-    if (argument != (void *)0)
-    {
-        scheduler_console_probe_peer_done = 1u;
-        return;
-    }
-
-    for (spin = 0u;
-         spin < SCHED_WORKLOAD_PEER_SPINS;
-         ++spin)
-    {
-        if (
-            (scheduler_console_probe_task_started != 0u) &&
-            (scheduler_console_probe_task_done == 0u)
-        ) {
-            scheduler_console_probe_peer_overlap = 1u;
+            console_write(context, descriptor->name);
         }
 
-        __asm volatile ("nop");
+        console_write(context, "\r\n");
+        return COMMAND_SERVICE_STATUS_OK;
     }
 
-    scheduler_console_probe_peer_done = 1u;
+    if (request->argc == 1u)
+    {
+        const command_service_descriptor_t *descriptor =
+            command_service_find(request->argv[0]);
+
+        if (descriptor == (const command_service_descriptor_t *)0)
+        {
+            return COMMAND_SERVICE_STATUS_NOT_FOUND;
+        }
+
+        console_write_command_descriptor(context, descriptor);
+        return COMMAND_SERVICE_STATUS_OK;
+    }
+
+    return COMMAND_SERVICE_STATUS_BAD_ARGS;
 }
 
-static void console_scheduler_console_probe_test(command_service_context_t *context)
+static command_service_status_t console_execute_application_method(
+    const command_service_request_t *request,
+    command_service_context_t *context)
 {
-    const scheduler_task_t *task0;
-    const scheduler_task_t *task1;
-    uint32_t used0;
-    uint32_t used1;
-    uint32_t capacity0;
-    uint32_t capacity1;
-    uint32_t margin0;
-    uint32_t switches;
-    int canary0;
-    int canary1;
-    int bind_result;
-    int prepare0;
-    int prepare1;
-    int start_result;
-    int passed;
-
-    if (scheduler_init() == 0)
-    {
-        console_write_line(context, "SCHED_CONSOLE_PROBE_PREPARE_ERR");
-        return;
-    }
-
-    scheduler_console_probe_task_started = 0u;
-    scheduler_console_probe_task_done = 0u;
-    scheduler_console_probe_peer_overlap = 0u;
-    scheduler_console_probe_peer_done = 0u;
-    scheduler_console_probe_completed_count = 0u;
-    scheduler_console_probe_ui_restore_result = 0u;
-
-    bind_result =
-        scheduler_task_stack_bind(
-            0u,
-            production_console_stack,
-            PRODUCTION_CONSOLE_STACK_WORDS);
-
-    prepare0 =
-        scheduler_task_prepare(
-            0u,
-            scheduler_console_probe_task,
-            (void *)context);
-
-    prepare1 =
-        scheduler_task_prepare(
-            1u,
-            scheduler_console_probe_peer_task,
-            (void *)0);
+    application_service_snapshot_t services;
+    const application_service_snapshot_t *services_ptr =
+        (const application_service_snapshot_t *)0;
 
     if (
-        (bind_result == 0) ||
-        (prepare0 == 0) ||
-        (prepare1 == 0)
+        (request->descriptor->method_id == COMMAND_SERVICE_METHOD_APPSTART) ||
+        (request->descriptor->method_id == COMMAND_SERVICE_METHOD_APPSTOP)
     ) {
-        console_write_line(context, "SCHED_CONSOLE_PROBE_PREPARE_ERR");
-        return;
-    }
-
-    start_result = scheduler_start_preemptive();
-
-    used0 = scheduler_stack_high_water_bytes(0u);
-    used1 = scheduler_stack_high_water_bytes(1u);
-    capacity0 = scheduler_stack_capacity_bytes(0u);
-    capacity1 = scheduler_stack_capacity_bytes(1u);
-    margin0 = (used0 < capacity0) ? (capacity0 - used0) : 0u;
-    canary0 = scheduler_stack_canary_intact(0u);
-    canary1 = scheduler_stack_canary_intact(1u);
-    switches = scheduler_preempt_switch_count_get();
-
-    task0 = scheduler_task_get(0u);
-    task1 = scheduler_task_get(1u);
-
-    console_write(context, "CONSOLE_PROBE_CAPACITY=");
-    console_write_hex32(context, capacity0);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_USED=");
-    console_write_hex32(context, used0);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_MARGIN=");
-    console_write_hex32(context, margin0);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_PEER_CAPACITY=");
-    console_write_hex32(context, capacity1);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_PEER_USED=");
-    console_write_hex32(context, used1);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_SWITCHES=");
-    console_write_hex32(context, switches);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_OVERLAP=");
-    console_write_hex32(context, scheduler_console_probe_peer_overlap);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_SURFACE_COUNT=");
-    console_write_hex32(context, SCHED_CONSOLE_PROBE_COMMAND_COUNT);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_COMPLETED=");
-    console_write_hex32(context, scheduler_console_probe_completed_count);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_UI_RESTORE=");
-    console_write_hex32(context, scheduler_console_probe_ui_restore_result);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_CANARY=");
-    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
-
-    console_write(context, "CONSOLE_PROBE_PEER_CANARY=");
-    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
-
-    passed =
-        (start_result != 0) &&
-        (scheduler_console_probe_task_started != 0u) &&
-        (scheduler_console_probe_task_done != 0u) &&
-        (scheduler_console_probe_peer_done != 0u) &&
-        (scheduler_console_probe_peer_overlap != 0u) &&
-        (scheduler_console_probe_completed_count ==
-            SCHED_CONSOLE_PROBE_COMMAND_COUNT) &&
-        (scheduler_console_probe_ui_restore_result != 0u) &&
-        (switches >= 2u) &&
-        (capacity0 == PRODUCTION_CONSOLE_STACK_BYTES) &&
-        (capacity1 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
-        (used0 >= 64u) &&
-        (used0 < capacity0) &&
-        (margin0 >= PRODUCTION_CONSOLE_MIN_MARGIN_BYTES) &&
-        (used1 >= 64u) &&
-        (used1 < capacity1) &&
-        (canary0 != 0) &&
-        (canary1 != 0) &&
-        (task0 != (const scheduler_task_t *)0) &&
-        (task1 != (const scheduler_task_t *)0) &&
-        (task0->state == SCHEDULER_TASK_DONE) &&
-        (task1->state == SCHEDULER_TASK_DONE);
-
-    if (passed != 0)
-    {
-        console_write_line(context, "SCHED_CONSOLE_PROBE_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_CONSOLE_PROBE_ERR");
-    }
-}
-
-static void scheduler_wait_wake_task(void *argument)
-{
-    command_service_context_t *context =
-        (command_service_context_t *)argument;
-    uint32_t events;
-    char byte = 0;
-
-    if (context == (command_service_context_t *)0)
-    {
-        scheduler_wait_wake_task_resumed = 1u;
-        return;
-    }
-
-    scheduler_wait_wake_task_started = 1u;
-
-    /*
-     * console_drain_uart_rx() executes a UART command as soon as it consumes
-     * CR or LF.
-     * With a normal CRLF host line, the second delimiter can still be queued
-     * when this scheduler diagnostic starts. Framing bytes are not payload.
-     */
-    while (uart_try_getc(&byte) != 0)
-    {
-        if ((byte == '\r') || (byte == '\n'))
+        if (boot_desktop_ui_application_snapshot_current(&services) != 0)
         {
-            ++scheduler_wait_wake_framing_bytes;
-            continue;
-        }
-
-        scheduler_wait_wake_byte =
-            (uint32_t)(uint8_t)byte;
-        scheduler_wait_wake_task_resumed = 1u;
-        return;
-    }
-
-    /*
-     * This token now means the scheduler is active and the wait task itself
-     * has reached the wait protocol. A UART event racing with the following
-     * SVC is safely latched by scheduler_event_signal().
-     */
-    console_write_line(context, "SCHED_WAIT_WAKE_ARMED");
-
-    for (;;)
-    {
-        events =
-            scheduler_wait_events(
-                PRODUCTION_UART_RX_EVENT);
-
-        scheduler_wait_wake_events |= events;
-
-        if ((events & PRODUCTION_UART_RX_EVENT) == 0u)
-        {
-            break;
-        }
-
-        while (uart_try_getc(&byte) != 0)
-        {
-            if ((byte == '\r') || (byte == '\n'))
-            {
-                ++scheduler_wait_wake_framing_bytes;
-                continue;
-            }
-
-            scheduler_wait_wake_byte =
-                (uint32_t)(uint8_t)byte;
-
-            if (
-                (uint32_t)(uint8_t)byte ==
-                SCHED_WAIT_WAKE_SENTINEL
-            ) {
-                scheduler_wait_wake_byte_ok = 1u;
-            }
-
-            scheduler_wait_wake_task_resumed = 1u;
-            return;
+            services_ptr = &services;
         }
     }
 
-    scheduler_wait_wake_task_resumed = 1u;
+    return application_commands_execute(
+        request,
+        context,
+        services_ptr);
 }
-
-static void scheduler_wait_wake_peer_task(void *argument)
-{
-    if (argument == (void *)0)
-    {
-        scheduler_wait_wake_peer_done = 1u;
-    }
-}
-
-static void console_scheduler_wait_wake_test(command_service_context_t *context)
-{
-    const scheduler_task_t *task0;
-    const scheduler_task_t *task1;
-    uint32_t used0;
-    uint32_t used1;
-    uint32_t capacity0;
-    uint32_t capacity1;
-    uint32_t idle_waits;
-    int canary0;
-    int canary1;
-    int prepare0;
-    int prepare1;
-    int start_result;
-    int passed;
-
-    if (scheduler_init() == 0)
-    {
-        console_write_line(context, "SCHED_WAIT_WAKE_PREPARE_ERR");
-        return;
-    }
-
-    scheduler_wait_wake_task_started = 0u;
-    scheduler_wait_wake_task_resumed = 0u;
-    scheduler_wait_wake_peer_done = 0u;
-    scheduler_wait_wake_events = 0u;
-    scheduler_wait_wake_byte = 0u;
-    scheduler_wait_wake_byte_ok = 0u;
-    scheduler_wait_wake_framing_bytes = 0u;
-
-    prepare0 =
-        scheduler_task_prepare(
-            0u,
-            scheduler_wait_wake_task,
-            (void *)context);
-
-    prepare1 =
-        scheduler_task_prepare(
-            1u,
-            scheduler_wait_wake_peer_task,
-            (void *)0);
-
-    if ((prepare0 == 0) || (prepare1 == 0))
-    {
-        console_write_line(context, "SCHED_WAIT_WAKE_PREPARE_ERR");
-        return;
-    }
-
-    start_result = scheduler_start_preemptive();
-
-    used0 = scheduler_stack_high_water_bytes(0u);
-    used1 = scheduler_stack_high_water_bytes(1u);
-    capacity0 = scheduler_stack_capacity_bytes(0u);
-    capacity1 = scheduler_stack_capacity_bytes(1u);
-    canary0 = scheduler_stack_canary_intact(0u);
-    canary1 = scheduler_stack_canary_intact(1u);
-    idle_waits = scheduler_idle_wait_count_get();
-
-    task0 = scheduler_task_get(0u);
-    task1 = scheduler_task_get(1u);
-
-    console_write(context, "SCHED_WAIT_WAKE_EVENTS=");
-    console_write_hex32(context, scheduler_wait_wake_events);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_WAIT_WAKE_BYTE=");
-    console_write_hex32(context, scheduler_wait_wake_byte);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_WAIT_WAKE_FRAMING_BYTES=");
-    console_write_hex32(context, scheduler_wait_wake_framing_bytes);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_WAIT_WAKE_IDLE_WAITS=");
-    console_write_hex32(context, idle_waits);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_WAIT_WAKE_USED_T0=");
-    console_write_hex32(context, used0);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_WAIT_WAKE_USED_T1=");
-    console_write_hex32(context, used1);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_WAIT_WAKE_CANARY_T0=");
-    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_WAIT_WAKE_CANARY_T1=");
-    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
-
-    passed =
-        (start_result != 0) &&
-        (scheduler_wait_wake_task_started != 0u) &&
-        (scheduler_wait_wake_task_resumed != 0u) &&
-        (scheduler_wait_wake_peer_done != 0u) &&
-        (scheduler_wait_wake_events ==
-            PRODUCTION_UART_RX_EVENT) &&
-        (scheduler_wait_wake_byte_ok != 0u) &&
-        (idle_waits != 0u) &&
-        (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
-        (capacity1 == capacity0) &&
-        (used0 >= 64u) &&
-        (used0 < capacity0) &&
-        (used1 >= 64u) &&
-        (used1 < capacity1) &&
-        (canary0 != 0) &&
-        (canary1 != 0) &&
-        (task0 != (const scheduler_task_t *)0) &&
-        (task1 != (const scheduler_task_t *)0) &&
-        (task0->state == SCHEDULER_TASK_DONE) &&
-        (task1->state == SCHEDULER_TASK_DONE) &&
-        (task0->wait_events == 0u) &&
-        (task1->wait_events == 0u) &&
-        (scheduler_is_active() == 0);
-
-    if (passed != 0)
-    {
-        console_write_line(context, "SCHED_WAIT_WAKE_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_WAIT_WAKE_ERR");
-    }
-}
-
-static const char * const scheduler_isolation_diagnostic_commands
-    [SCHED_ISOLATION_DIAGNOSTIC_COUNT] =
-{
-    "schedtest",
-    "schedcoop",
-    "schedpreempt",
-    "schedstack",
-    "schedworkload",
-    "schedconsoleprobe",
-    "schedwaitwake"
-};
-
-static void scheduler_isolation_task(void *argument)
-{
-    command_service_context_t *context =
-        (command_service_context_t *)argument;
-    uint32_t index;
-
-    if (context == (command_service_context_t *)0)
-    {
-        scheduler_isolation_active_preserved = 0u;
-        scheduler_isolation_task_done = 1u;
-        return;
-    }
-
-    scheduler_isolation_task_started = 1u;
-
-    if (scheduler_init() == 0)
-    {
-        scheduler_isolation_init_reject = 1u;
-    }
-
-    if (scheduler_is_active() == 0)
-    {
-        scheduler_isolation_active_preserved = 0u;
-    }
-
-    for (index = 0u;
-         index < SCHED_ISOLATION_DIAGNOSTIC_COUNT;
-         ++index)
-    {
-        command_service_request_t request =
-        {
-            command_service_find(scheduler_isolation_diagnostic_commands[index]),
-            0u,
-            { (const char *)0 }
-        };
-
-        if (
-            (request.descriptor == (const command_service_descriptor_t *)0) ||
-            (console_execute_scheduler_diagnostic(&request, context) !=
-                COMMAND_SERVICE_STATUS_BUSY)
-        ) {
-            scheduler_isolation_active_preserved = 0u;
-        }
-
-        if (scheduler_is_active() == 0)
-        {
-            scheduler_isolation_active_preserved = 0u;
-        }
-    }
-
-    scheduler_isolation_task_done = 1u;
-}
-
-static void scheduler_isolation_peer_task(void *argument)
-{
-    volatile uint32_t spin;
-
-    if (argument != (void *)0)
-    {
-        scheduler_isolation_peer_done = 1u;
-        return;
-    }
-
-    for (spin = 0u;
-         spin < SCHED_WORKLOAD_PEER_SPINS;
-         ++spin)
-    {
-        if (
-            (scheduler_isolation_task_started != 0u) &&
-            (scheduler_isolation_task_done == 0u)
-        ) {
-            scheduler_isolation_peer_overlap = 1u;
-        }
-
-        __asm volatile ("nop");
-    }
-
-    scheduler_isolation_peer_done = 1u;
-}
-
-static void console_scheduler_isolation_test(command_service_context_t *context)
-{
-    const scheduler_task_t *task0;
-    const scheduler_task_t *task1;
-    uint32_t used0;
-    uint32_t used1;
-    uint32_t capacity0;
-    uint32_t capacity1;
-    uint32_t switches;
-    int canary0;
-    int canary1;
-    int prepare0;
-    int prepare1;
-    int start_result;
-    int passed;
-
-    if (scheduler_init() == 0)
-    {
-        console_write_line(context, "SCHED_ISOLATE_PREPARE_ERR");
-        return;
-    }
-
-    scheduler_isolation_task_started = 0u;
-    scheduler_isolation_task_done = 0u;
-    scheduler_isolation_peer_overlap = 0u;
-    scheduler_isolation_peer_done = 0u;
-    scheduler_isolation_init_reject = 0u;
-    scheduler_isolation_active_preserved = 1u;
-    scheduler_diagnostic_busy_count = 0u;
-
-    prepare0 =
-        scheduler_task_prepare(
-            0u,
-            scheduler_isolation_task,
-            (void *)context);
-
-    prepare1 =
-        scheduler_task_prepare(
-            1u,
-            scheduler_isolation_peer_task,
-            (void *)0);
-
-    if ((prepare0 == 0) || (prepare1 == 0))
-    {
-        console_write_line(context, "SCHED_ISOLATE_PREPARE_ERR");
-        return;
-    }
-
-    start_result = scheduler_start_preemptive();
-
-    used0 = scheduler_stack_high_water_bytes(0u);
-    used1 = scheduler_stack_high_water_bytes(1u);
-    capacity0 = scheduler_stack_capacity_bytes(0u);
-    capacity1 = scheduler_stack_capacity_bytes(1u);
-    canary0 = scheduler_stack_canary_intact(0u);
-    canary1 = scheduler_stack_canary_intact(1u);
-    switches = scheduler_preempt_switch_count_get();
-
-    task0 = scheduler_task_get(0u);
-    task1 = scheduler_task_get(1u);
-
-    console_write(context, "SCHED_ISOLATE_CAPACITY_T0=");
-    console_write_hex32(context, capacity0);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_USED_T0=");
-    console_write_hex32(context, used0);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_CAPACITY_T1=");
-    console_write_hex32(context, capacity1);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_USED_T1=");
-    console_write_hex32(context, used1);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_SWITCHES=");
-    console_write_hex32(context, switches);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_INIT_REJECT=");
-    console_write_hex32(context, scheduler_isolation_init_reject);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_BLOCKED_DIAGNOSTICS=");
-    console_write_hex32(context, scheduler_diagnostic_busy_count);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_ACTIVE_PRESERVED=");
-    console_write_hex32(context, scheduler_isolation_active_preserved);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_OVERLAP=");
-    console_write_hex32(context, scheduler_isolation_peer_overlap);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_CANARY_T0=");
-    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_ISOLATE_CANARY_T1=");
-    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
-
-    passed =
-        (start_result != 0) &&
-        (scheduler_isolation_task_started != 0u) &&
-        (scheduler_isolation_task_done != 0u) &&
-        (scheduler_isolation_peer_done != 0u) &&
-        (scheduler_isolation_init_reject != 0u) &&
-        (scheduler_diagnostic_busy_count ==
-            SCHED_ISOLATION_DIAGNOSTIC_COUNT) &&
-        (scheduler_isolation_active_preserved != 0u) &&
-        (scheduler_isolation_peer_overlap != 0u) &&
-        (switches >= 2u) &&
-        (capacity0 == (SCHEDULER_TASK_STACK_WORDS * 4u)) &&
-        (capacity1 == capacity0) &&
-        (used0 >= 64u) &&
-        (used0 < capacity0) &&
-        (used1 >= 64u) &&
-        (used1 < capacity1) &&
-        (canary0 != 0) &&
-        (canary1 != 0) &&
-        (task0 != (const scheduler_task_t *)0) &&
-        (task1 != (const scheduler_task_t *)0) &&
-        (task0->state == SCHEDULER_TASK_DONE) &&
-        (task1->state == SCHEDULER_TASK_DONE) &&
-        (scheduler_is_active() == 0);
-
-    if (passed != 0)
-    {
-        console_write_line(context, "SCHED_ISOLATE_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_ISOLATE_ERR");
-    }
-}
-
-
 
 static uint32_t cpu_control_get(void)
 {
@@ -3724,7 +2662,7 @@ static void console_production_scheduler_stats(command_service_context_t *contex
     console_write(context, "\r\n");
 
     console_write(context, "SCHED_PROD_DIAG_BUSY_COUNT=");
-    console_write_hex32(context, scheduler_diagnostic_busy_count);
+    console_write_hex32(context, scheduler_diagnostics_busy_count());
     console_write(context, "\r\n");
 
     console_write(context, "SCHED_PROD_PREEMPT_SWITCHES=");
@@ -3770,595 +2708,28 @@ static void console_production_scheduler_stats(command_service_context_t *contex
     }
 }
 
-static void console_scheduler_priority_test(command_service_context_t *context)
-{
-    const scheduler_task_t *task0 = scheduler_task_get(0u);
-    const scheduler_task_t *task1 = scheduler_task_get(1u);
-    uint32_t task0_priority_before = 0xFFFFFFFFu;
-    uint32_t task0_priority_after = 0xFFFFFFFFu;
-    uint32_t task1_priority_before = 0xFFFFFFFFu;
-    uint32_t task1_priority_after = 0xFFFFFFFFu;
-    uint32_t self_test;
-    int task0_active_set_result;
-    int task1_active_set_result;
-    int passed = 1;
-
-    if (task0 != (const scheduler_task_t *)0)
-    {
-        task0_priority_before = task0->priority;
-    }
-
-    if (task1 != (const scheduler_task_t *)0)
-    {
-        task1_priority_before = task1->priority;
-    }
-
-    self_test = scheduler_priority_self_test();
-
-    task0_active_set_result =
-        scheduler_task_priority_set(
-            0u,
-            SCHEDULER_PRIORITY_HIGHEST);
-
-    task1_active_set_result =
-        scheduler_task_priority_set(
-            1u,
-            SCHEDULER_PRIORITY_DEFAULT);
-
-    task0 = scheduler_task_get(0u);
-    task1 = scheduler_task_get(1u);
-
-    if (task0 != (const scheduler_task_t *)0)
-    {
-        task0_priority_after = task0->priority;
-    }
-
-    if (task1 != (const scheduler_task_t *)0)
-    {
-        task1_priority_after = task1->priority;
-    }
-
-    console_write_line(context, "SCHED_PRIO_POLICY=LOWER_VALUE_HIGHER");
-
-    console_write(context, "SCHED_PRIO_HIGHEST=");
-    console_write_hex32(context, SCHEDULER_PRIORITY_HIGHEST);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_PRIO_DEFAULT=");
-    console_write_hex32(context, SCHEDULER_PRIORITY_DEFAULT);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_PRIO_LOWEST=");
-    console_write_hex32(context, SCHEDULER_PRIORITY_LOWEST);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_PRIO_TASK0=");
-    console_write_hex32(context, task0_priority_after);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_PRIO_TASK1=");
-    console_write_hex32(context, task1_priority_after);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_PRIO_SELFTEST=");
-    console_write_hex32(context, self_test);
-    console_write(context, "\r\n");
-
-    if (
-        (scheduler_is_active() != 0) &&
-        (task0_active_set_result == 0) &&
-        (task1_active_set_result == 0) &&
-        (task0_priority_before == SCHEDULER_PRIORITY_DEFAULT) &&
-        (task1_priority_before == SCHEDULER_PRIORITY_LOWEST) &&
-        (task0_priority_after == task0_priority_before) &&
-        (task1_priority_after == task1_priority_before)
-    ) {
-        console_write_line(context, "SCHED_PRIO_ACTIVE_SET_REJECT_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_PRIO_ACTIVE_SET_REJECT_ERR");
-        passed = 0;
-    }
-
-    if (
-        (task0_priority_after != SCHEDULER_PRIORITY_DEFAULT) ||
-        (task1_priority_after != SCHEDULER_PRIORITY_LOWEST) ||
-        (self_test != 0x0000003Fu)
-    ) {
-        passed = 0;
-    }
-
-    if (passed != 0)
-    {
-        console_write_line(context, "SCHED_PRIO_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_PRIO_ERR");
-    }
-}
-
-static void console_scheduler_timed_test(command_service_context_t *context)
-{
-    const uint32_t rx_event =
-        context->source_rx_event_mask;
-    kernel_time_ms_t start;
-    kernel_time_ms_t elapsed;
-    uint32_t events;
-    int passed = 1;
-
-    if (scheduler_sleep_ms(0u) != 0)
-    {
-        console_write_line(context, "SCHED_TIMED_ZERO_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_TIMED_ZERO_ERR");
-        passed = 0;
-    }
-
-    start = kernel_time_now();
-
-    if (scheduler_sleep_ms(SCHED_TIMED_SLEEP_MS) == 0)
-    {
-        console_write_line(context, "SCHED_TIMED_SLEEP_ERR");
-        passed = 0;
-    }
-
-    elapsed =
-        (kernel_time_ms_t)(kernel_time_now() - start);
-
-    console_write(context, "SCHED_TIMED_SLEEP_ELAPSED=");
-    console_write_hex32(context, elapsed);
-    console_write(context, "\r\n");
-
-    if (elapsed >= SCHED_TIMED_SLEEP_MS)
-    {
-        console_write_line(context, "SCHED_TIMED_SLEEP_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_TIMED_SLEEP_ERR");
-        passed = 0;
-    }
-
-    /* Consume a stale notification from the transport that started this test. */
-    (void)scheduler_wait_events_timeout(
-        rx_event,
-        0u);
-
-    start = kernel_time_now();
-
-    events =
-        scheduler_wait_events_timeout(
-            rx_event,
-            SCHED_TIMED_TIMEOUT_MS);
-
-    elapsed =
-        (kernel_time_ms_t)(kernel_time_now() - start);
-
-    console_write(context, "SCHED_TIMED_TIMEOUT_ELAPSED=");
-    console_write_hex32(context, elapsed);
-    console_write(context, "\r\n");
-
-    if (
-        (events == 0u) &&
-        (elapsed >= SCHED_TIMED_TIMEOUT_MS)
-    ) {
-        console_write_line(context, "SCHED_TIMED_TIMEOUT_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_TIMED_TIMEOUT_ERR");
-        passed = 0;
-    }
-
-    (void)scheduler_wait_events_timeout(
-        rx_event,
-        0u);
-
-    console_write_line(context, "SCHED_TIMED_EVENT_ARMED");
-    start = kernel_time_now();
-
-    events =
-        scheduler_wait_events_timeout(
-            rx_event,
-            SCHED_TIMED_EVENT_TIMEOUT_MS);
-
-    elapsed =
-        (kernel_time_ms_t)(kernel_time_now() - start);
-
-    console_write(context, "SCHED_TIMED_EVENT_EVENTS=");
-    console_write_hex32(context, events);
-    console_write(context, "\r\n");
-
-    console_write(context, "SCHED_TIMED_EVENT_ELAPSED=");
-    console_write_hex32(context, elapsed);
-    console_write(context, "\r\n");
-
-    if (
-        (events == rx_event) &&
-        (elapsed < SCHED_TIMED_EVENT_TIMEOUT_MS)
-    ) {
-        console_write_line(context, "SCHED_TIMED_EVENT_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_TIMED_EVENT_ERR");
-        passed = 0;
-    }
-
-    if (passed != 0)
-    {
-        console_write_line(context, "SCHED_TIMED_OK");
-    }
-    else
-    {
-        console_write_line(context, "SCHED_TIMED_ERR");
-    }
-}
-
-static void console_usb_cdc_stats(command_service_context_t *context)
-{
-    console_write(context, "USB_CDC_CONFIGURED=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_configured);
-    console_write(context, " CONFIGURATION=");
-    console_write_hex32(context, usb_device_diagnostics.configuration);
-    console_write(context, " RX_PACKETS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_rx_packet_count);
-    console_write(context, " RX_BYTES=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_rx_byte_count);
-    console_write(context, " RX_DROPS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_rx_drop_count);
-    console_write(context, " RX_HIGH_WATER=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_rx_high_water);
-    console_write(context, " TX_PACKETS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_tx_packet_count);
-    console_write(context, " TX_BYTES=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_tx_byte_count);
-    console_write(context, " TX_DROPS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_tx_drop_count);
-    console_write(context, " TX_HIGH_WATER=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_tx_high_water);
-    console_write(context, " CONTROL=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_control_line_state);
-    console_write(context, " BAUD=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_baud);
-    console_write(context, " STOP=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_stop_bits);
-    console_write(context, " PARITY=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_parity);
-    console_write(context, " DATA_BITS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_data_bits);
-    console_write(context, "\r\n");
-}
-
-static void console_write_command_descriptor(
-    command_service_context_t *context,
-    const command_service_descriptor_t *descriptor)
-{
-    if (descriptor == (const command_service_descriptor_t *)0)
-    {
-        return;
-    }
-
-    console_write(context, "HELP_METHOD=");
-    console_write(context, descriptor->name);
-    console_write(context, " CLASS=");
-    console_write(context, command_service_class_name(descriptor->command_class));
-    console_write(context, " MIN_ARGS=");
-    console_write_hex32(context, descriptor->min_args);
-    console_write(context, " MAX_ARGS=");
-    console_write_hex32(context, descriptor->max_args);
-    console_write(context, "\r\n");
-}
-
-static command_service_status_t console_command_help(
-    const command_service_request_t *request,
-    command_service_context_t *context)
-{
-    if (request->argc == 0u)
-    {
-        const uint32_t count = command_service_registry_count();
-
-        console_write(context, "HELP_COUNT=");
-        console_write_hex32(context, count);
-        console_write(context, "\r\nHELP_METHODS=");
-
-        for (uint32_t index = 0u; index < count; ++index)
-        {
-            const command_service_descriptor_t *descriptor =
-                command_service_registry_at(index);
-
-            if (descriptor == (const command_service_descriptor_t *)0)
-            {
-                return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
-            }
-
-            if (index != 0u)
-            {
-                console_write(context, " ");
-            }
-
-            console_write(context, descriptor->name);
-        }
-
-        console_write(context, "\r\n");
-        return COMMAND_SERVICE_STATUS_OK;
-    }
-
-    if (request->argc == 1u)
-    {
-        const command_service_descriptor_t *descriptor =
-            command_service_find(request->argv[0]);
-
-        if (descriptor == (const command_service_descriptor_t *)0)
-        {
-            return COMMAND_SERVICE_STATUS_NOT_FOUND;
-        }
-
-        console_write_command_descriptor(context, descriptor);
-        return COMMAND_SERVICE_STATUS_OK;
-    }
-
-    return COMMAND_SERVICE_STATUS_BAD_ARGS;
-}
-
-static int console_parse_application_id(
-    const char *text,
-    uint16_t *id_out)
-{
-    uint32_t value = 0u;
-    uint32_t base = 10u;
-    uint32_t index = 0u;
-    uint32_t digits = 0u;
-
-    if ((text == (const char *)0) || (id_out == (uint16_t *)0))
-    {
-        return 0;
-    }
-
-    if ((text[0] == '0') && ((text[1] == 'x') || (text[1] == 'X')))
-    {
-        base = 16u;
-        index = 2u;
-    }
-
-    while (text[index] != '\0')
-    {
-        uint32_t digit;
-        char c = text[index];
-
-        if ((c >= '0') && (c <= '9'))
-        {
-            digit = (uint32_t)(c - '0');
-        }
-        else if ((base == 16u) && (c >= 'a') && (c <= 'f'))
-        {
-            digit = 10u + (uint32_t)(c - 'a');
-        }
-        else if ((base == 16u) && (c >= 'A') && (c <= 'F'))
-        {
-            digit = 10u + (uint32_t)(c - 'A');
-        }
-        else
-        {
-            return 0;
-        }
-
-        if (digit >= base)
-        {
-            return 0;
-        }
-
-        value = (value * base) + digit;
-        if (value > 0xFFFFu)
-        {
-            return 0;
-        }
-
-        ++digits;
-        ++index;
-    }
-
-    if ((digits == 0u) || (value == 0u))
-    {
-        return 0;
-    }
-
-    *id_out = (uint16_t)value;
-    return 1;
-}
-
-static command_service_status_t console_command_applist(
-    command_service_context_t *context)
-{
-    uint32_t index;
-    uint16_t active_id =
-        application_runtime_active_id(&application_runtime_state);
-
-    console_write(context, "APP_RUNTIME_ABI=");
-    console_write_hex32(context, APPLICATION_RUNTIME_ABI_VERSION);
-    console_write(context, " APP_REGISTRY_COUNT=");
-    console_write_hex32(context, application_runtime_registry_count());
-    console_write(context, " APP_ACTIVE_ID=");
-    console_write_hex32(context, active_id);
-    console_write(context, " APP_FAULT_COUNT=");
-    console_write_hex32(
-        context,
-        application_runtime_fault_count(&application_runtime_state));
-    console_write(context, " APP_EVENT_COUNT=");
-    console_write_hex32(
-        context,
-        application_runtime_event_count(&application_runtime_state));
-    console_write(context, " APP_VIEW_REVISION=");
-    console_write_hex32(
-        context,
-        application_runtime_view_revision(&application_runtime_state));
-    console_write(context, " APP_LAST_EVENT_TYPE=");
-    console_write_hex32(
-        context,
-        application_runtime_last_event_type(&application_runtime_state));
-    console_write(context, " APP_LAST_EVENT_SOURCE=");
-    console_write_hex32(
-        context,
-        application_runtime_last_event_source(&application_runtime_state));
-    console_write(context, "\r\n");
-
-    for (index = 0u; index < application_runtime_registry_count(); ++index)
-    {
-        const application_descriptor_t *descriptor =
-            application_runtime_registry_at(index);
-        application_lifecycle_state_t state;
-
-        if ((descriptor == (const application_descriptor_t *)0) ||
-            (application_runtime_state_get(
-                &application_runtime_state,
-                descriptor->id,
-                &state) == 0))
-        {
-            return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
-        }
-
-        console_write(context, "APP_ID=");
-        console_write_hex32(context, descriptor->id);
-        console_write(context, " NAME=");
-        console_write(context, descriptor->name);
-        console_write(context, " ABI=");
-        console_write_hex32(context, descriptor->abi_version);
-        console_write(context, " FLAGS=");
-        console_write_hex32(context, descriptor->flags);
-        console_write(context, " STATE=");
-        console_write(context, application_runtime_state_name(state));
-        console_write(context, " STATE_ID=");
-        console_write_hex32(context, (uint32_t)state);
-        console_write(context, " ACTIVE=");
-        console_write_hex32(
-            context,
-            (descriptor->id == active_id) ? 1u : 0u);
-        console_write(context, "\r\n");
-    }
-
-    return COMMAND_SERVICE_STATUS_OK;
-}
-
-static command_service_status_t console_command_appstart(
-    const command_service_request_t *request,
-    command_service_context_t *context)
-{
-    application_service_snapshot_t services;
-    uint16_t id;
-
-    if ((request == (const command_service_request_t *)0) ||
-        (request->argc != 1u) ||
-        (console_parse_application_id(request->argv[0], &id) == 0) ||
-        (application_runtime_find(id) == (const application_descriptor_t *)0))
-    {
-        return COMMAND_SERVICE_STATUS_BAD_ARGS;
-    }
-
-    if (boot_desktop_ui_application_snapshot_current(&services) == 0)
-    {
-        console_write_line(context, "APP_RUNTIME_BUSY");
-        return COMMAND_SERVICE_STATUS_BUSY;
-    }
-
-    if (application_runtime_start(
-            &application_runtime_state,
-            id,
-            &services) == 0)
-    {
-        return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
-    }
-
-    console_write(context, "APP_START_OK ID=");
-    console_write_hex32(context, id);
-    console_write(context, " ACTIVE_ID=");
-    console_write_hex32(
-        context,
-        application_runtime_active_id(&application_runtime_state));
-    console_write(context, "\r\n");
-
-    return COMMAND_SERVICE_STATUS_OK;
-}
-
-static command_service_status_t console_command_appstop(
-    command_service_context_t *context)
-{
-    application_service_snapshot_t services;
-
-    if (boot_desktop_ui_application_snapshot_current(&services) == 0)
-    {
-        console_write_line(context, "APP_RUNTIME_BUSY");
-        return COMMAND_SERVICE_STATUS_BUSY;
-    }
-
-    if (application_runtime_stop(
-            &application_runtime_state,
-            &services) == 0)
-    {
-        return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
-    }
-
-    console_write(context, "APP_STOP_OK ACTIVE_ID=");
-    console_write_hex32(
-        context,
-        application_runtime_active_id(&application_runtime_state));
-    console_write(context, "\r\n");
-
-    return COMMAND_SERVICE_STATUS_OK;
-}
-
-static command_service_status_t console_command_rpcinfo(command_service_context_t *context)
-{
-    console_write(context, "RPC_FOUNDATION_VERSION=");
-    console_write_hex32(context, COMMAND_SERVICE_FOUNDATION_VERSION);
-    console_write(context, " REGISTRY_COUNT=");
-    console_write_hex32(context, command_service_registry_count());
-    console_write(context, " LINE_CAPACITY=");
-    console_write_hex32(context, COMMAND_SERVICE_LINE_CAPACITY);
-    console_write(context, " MAX_ARGS=");
-    console_write_hex32(context, COMMAND_SERVICE_MAX_ARGS);
-    console_write(context, " APP_RUNTIME_ABI=");
-    console_write_hex32(context, APPLICATION_RUNTIME_ABI_VERSION);
-    console_write(context, " APP_REGISTRY_COUNT=");
-    console_write_hex32(context, application_runtime_registry_count());
-    console_write(context, " APP_ACTIVE_ID=");
-    console_write_hex32(
-        context,
-        application_runtime_active_id(&application_runtime_state));
-    console_write(context, " APP_FAULT_COUNT=");
-    console_write_hex32(
-        context,
-        application_runtime_fault_count(&application_runtime_state));
-    console_write(context, " APP_EVENT_COUNT=");
-    console_write_hex32(
-        context,
-        application_runtime_event_count(&application_runtime_state));
-    console_write(context, " APP_VIEW_REVISION=");
-    console_write_hex32(
-        context,
-        application_runtime_view_revision(&application_runtime_state));
-    console_write(context, " APP_LAST_EVENT_TYPE=");
-    console_write_hex32(
-        context,
-        application_runtime_last_event_type(&application_runtime_state));
-    console_write(context, " APP_LAST_EVENT_SOURCE=");
-    console_write_hex32(
-        context,
-        application_runtime_last_event_source(&application_runtime_state));
-    console_write(context, "\r\n");
-
-    return COMMAND_SERVICE_STATUS_OK;
-}
-
 static command_service_status_t console_execute_safe_method(
     const command_service_request_t *request,
     command_service_context_t *context)
 {
     switch (request->descriptor->method_id)
     {
+        case COMMAND_SERVICE_METHOD_RPCINFO:
+        case COMMAND_SERVICE_METHOD_APPLIST:
+        case COMMAND_SERVICE_METHOD_APPSTART:
+        case COMMAND_SERVICE_METHOD_APPSTOP:
+            return console_execute_application_method(request, context);
+
+        case COMMAND_SERVICE_METHOD_SCHEDPROD:
+            console_production_scheduler_stats(context);
+            return COMMAND_SERVICE_STATUS_OK;
+
+        case COMMAND_SERVICE_METHOD_SCHEDTIMED:
+            return scheduler_diagnostics_execute_timed(context);
+
+        case COMMAND_SERVICE_METHOD_SCHEDPRIO:
+            return scheduler_diagnostics_execute_priority(context);
+
         case COMMAND_SERVICE_METHOD_PING:
             console_write_line(context, "PONG");
             break;
@@ -4395,18 +2766,6 @@ static command_service_status_t console_execute_safe_method(
 
         case COMMAND_SERVICE_METHOD_MSPSTAT:
             console_msp_stack_stats(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDPROD:
-            console_production_scheduler_stats(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDTIMED:
-            console_scheduler_timed_test(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDPRIO:
-            console_scheduler_priority_test(context);
             break;
 
         case COMMAND_SERVICE_METHOD_FAULT:
@@ -4460,86 +2819,32 @@ static command_service_status_t console_execute_safe_method(
         case COMMAND_SERVICE_METHOD_HELP:
             return console_command_help(request, context);
 
-        case COMMAND_SERVICE_METHOD_RPCINFO:
-            return console_command_rpcinfo(context);
-
-        case COMMAND_SERVICE_METHOD_APPLIST:
-            return console_command_applist(context);
-
-        case COMMAND_SERVICE_METHOD_APPSTART:
-            return console_command_appstart(request, context);
-
-        case COMMAND_SERVICE_METHOD_APPSTOP:
-            return console_command_appstop(context);
-
         default:
             return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
     }
 
     return COMMAND_SERVICE_STATUS_OK;
-}
-
-static int console_scheduler_diagnostic_block_if_active(command_service_context_t *context)
-{
-    if (scheduler_is_active() == 0)
-    {
-        return 0;
-    }
-
-    ++scheduler_diagnostic_busy_count;
-    console_write_line(context, "SCHED_DIAG_BUSY");
-
-    return 1;
 }
 
 static command_service_status_t console_execute_scheduler_diagnostic(
     const command_service_request_t *request,
     command_service_context_t *context)
 {
-    if (console_scheduler_diagnostic_block_if_active(context) != 0)
+    static const scheduler_diagnostics_bindings_t bindings =
     {
-        return COMMAND_SERVICE_STATUS_BUSY;
-    }
+        console_execute_request,
+        oled_runtime_ui_show,
+        uart_try_getc,
+        production_console_stack,
+        PRODUCTION_CONSOLE_STACK_WORDS,
+        PRODUCTION_CONSOLE_MIN_MARGIN_BYTES,
+        PRODUCTION_UART_RX_EVENT
+    };
 
-    switch (request->descriptor->method_id)
-    {
-        case COMMAND_SERVICE_METHOD_SCHEDTEST:
-            console_scheduler_test(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDCOOP:
-            console_scheduler_cooperative_test(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDPREEMPT:
-            console_scheduler_preemptive_test(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDSTACK:
-            console_scheduler_stack_water_test(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDWORKLOAD:
-            console_scheduler_workload_test(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDCONSOLEPROBE:
-            console_scheduler_console_probe_test(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDWAITWAKE:
-            console_scheduler_wait_wake_test(context);
-            break;
-
-        case COMMAND_SERVICE_METHOD_SCHEDISOLATE:
-            console_scheduler_isolation_test(context);
-            break;
-
-        default:
-            return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
-    }
-
-    return COMMAND_SERVICE_STATUS_OK;
+    return scheduler_diagnostics_execute_diagnostic(
+        request,
+        context,
+        &bindings);
 }
 
 static void console_watchdog_trip(command_service_context_t *context)
@@ -4737,7 +3042,7 @@ static void production_console_task(void *argument)
 
     production_console_task_started = 1u;
 
-    if (application_runtime_initialize(&application_runtime_state) == 0)
+    if (application_runtime_bridge_initialize() == 0)
     {
         production_console_fault = 1u;
         return;
@@ -4944,7 +3249,7 @@ void kernel_main(void)
         SSD1306_WIDTH,
         SSD1306_HEIGHT);
     oled_console_init(&oled_console_state);
-    application_runtime_reset(&application_runtime_state);
+    application_runtime_bridge_reset();
     faults_init();
     if (usb_device_init(core_clock_hz) == 0)
     {

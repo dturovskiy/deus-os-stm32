@@ -1,6 +1,8 @@
 # Deus OS — Kernel composition-root decomposition decision
 
-Status: **ARCHITECTURAL GROWTH STOP — NEXT BOUNDARY REQUIRED BEFORE NEW FEATURES**
+Status: **DECISION SATISFIED THROUGH GATE 5 — GATE 6/7 PUBLICATION PENDING**
+
+Outcome note: the growth stop remains in force until ordinary publication completes. The accepted decomposition candidate reduces `src/kernel.c` from `5100` to `3405` lines, preserves the frozen public/hardware behavior, and introduces no universal context/service locator or hidden extracted-module state. Gate 2/3 are accepted on candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; Gate 4 is `PHYSICAL_OLED=PASS`. The trigger analysis below is retained as the historical basis for the decision.
 
 Decision ID:
 

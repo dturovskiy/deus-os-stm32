@@ -20,15 +20,17 @@ Published commit/tree: `25752fba557b1a1b518265a93bde05d3a6a3f9ad` / `24624db7092
 
 Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a live `USB_STATE_CHANGED` edge proof, because micro-USB is the sole target power source. Dynamic semantic-event delivery/no-rerender is independently proven by the real minute transition.
 
-### Current boundary — kernel composition-root decomposition — Gate 0 accepted / Gate 1 next
+### Current boundary — kernel composition-root decomposition — Gates 0–5 accepted / Gate 6 next
 
-- [x] measured god-module trigger recorded: `src/kernel.c = 5100` lines, `console_execute_request = 8644` linked bytes, task0 minimum accepted margin `272` bytes;
+- [x] measured god-module trigger recorded: parent `src/kernel.c = 5100` lines, `console_execute_request = 8644` linked bytes, task0 minimum accepted margin `272` bytes;
 - [x] behavior-preserving decomposition only; no feature work;
 - [x] no universal `kernel_context_t`, service locator or catch-all god object;
 - [x] public application/RPC/binary/USB/scheduler/IWDG/OLED/startup behavior frozen;
-- [x] initial source boundary and resource ceilings frozen in `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`;
-- [x] Gate 0 acceptance frozen in `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`;
-- [ ] Gate 1 source decomposition — NEXT.
+- [x] exact seven-path source decomposition accepted; `src/kernel.c = 3405` lines (-33.235%);
+- [x] Gate 2 fresh GNU build/resource acceptance PASS; candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`, Flash `48636/48656`, SRAM `10032/10104`;
+- [x] Gate 3 hardware/runtime equivalence PASS; final task0/task1 margins `384/424`;
+- [x] Gate 4 `PHYSICAL_OLED=PASS`; Gate 5 canonical docs/evidence finalization PASS;
+- [ ] Gate 6 local acceptance commit — NEXT.
 
 ### Published baseline — binary framed transport foundation
 
@@ -282,12 +284,12 @@ Boundary ID: `KERNEL_COMPOSITION_ROOT_DECOMPOSITION`.
 Gate order:
 
 - [x] Gate 0 architecture/source-boundary freeze — **PASS**.
-- [ ] Gate 1 behavior-preserving source decomposition + static dependency proof — **NEXT**.
-- [ ] Gate 2 fresh build/link/resource/structure validation.
-- [ ] Gate 3 hardware/runtime equivalence.
-- [ ] Gate 4 physical OLED equivalence if UI/application integration moves.
-- [ ] Gate 5 docs/evidence finalization.
-- [ ] Gate 6 local acceptance commit.
+- [x] Gate 1 behavior-preserving source decomposition + static dependency proof — **PASS**.
+- [x] Gate 2 fresh build/link/resource/structure validation — **PASS**.
+- [x] Gate 3 hardware/runtime equivalence — **PASS**.
+- [x] Gate 4 physical OLED equivalence — **PASS (`PHYSICAL_OLED=PASS`)**.
+- [x] Gate 5 docs/evidence finalization — **PASS**.
+- [ ] Gate 6 local acceptance commit — **NEXT**.
 - [ ] Gate 7 ordinary non-force publication.
 
 Canonical decision: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`.
@@ -306,6 +308,17 @@ Gate 0 freeze:
 - [x] initially authorized modified files: `src/kernel.c`, with command-service header/source only if relocation requires it without public ABI change;
 - [x] Flash <= `48656`, SRAM <= `10104`, task stacks exactly `1024 / 512`, runtime margins >= `256` bytes;
 - [x] target material `kernel.c` reduction (~30% expected) is subordinate to coherent ownership/dependency quality, not line-count gaming.
+
+Accepted Gates 1–5 record:
+
+- [x] exact seven-source-path boundary: `src/kernel.c` plus application-command, application-runtime-bridge and scheduler-diagnostics header/source pairs;
+- [x] `src/kernel.c 5100 -> 3405` lines (-33.235%);
+- [x] linked sizes: `console_execute_request 8644 -> 6780`, `boot_desktop_ui_render 1420 -> 804`, `kernel_main 1116 -> 1112`, extracted `scheduler_diagnostics_execute_diagnostic=3312` versus former monolithic diagnostic `3284`;
+- [x] candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; BIN `48636` / `51083C63652DCFCCC479604CA09E191EAB43561C496E2D6F1E5DAABC10CC9766`; Flash `48636/65536`; SRAM `10032/20480`; final task margins `384/424`;
+- [x] Gate 2 evidence `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`;
+- [x] Gate 3 evidence `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`, pressure `128/128` on CDC/UART/binary, faults zero and exact Flash readback;
+- [x] Gate 4 `PHYSICAL_OLED=PASS`;
+- [x] no god object/service locator, hidden extracted-state extern, heap/new task/SVC/queue/mutex/timer/DMA/persistence mechanism.
 
 After decomposition publication, exact next feature boundary is `USB_MANAGEMENT_DEVICE_FOUNDATION`.
 

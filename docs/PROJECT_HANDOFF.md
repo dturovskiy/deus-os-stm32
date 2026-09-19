@@ -195,13 +195,19 @@ Gate 5 added the canonical deferred optimization/robustness/observability/storag
 
 ### Current implementation boundary
 
-**`APPLICATION_RUNTIME_FOUNDATION` — Gates 0–7 accepted / published `25752fba557b1a1b518265a93bde05d3a6a3f9ad`. Current boundary is `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` Gate 0 accepted / Gate 1 source decomposition next.**
+**`APPLICATION_RUNTIME_FOUNDATION` — Gates 0–7 accepted / published `25752fba557b1a1b518265a93bde05d3a6a3f9ad`. Current boundary is `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` Gates 0–5 accepted / Gate 6 local acceptance commit next.**
 
 Accepted runtime candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c` implements static `system.home=0x0001` and `device.info=0x0002`, one foreground application, explicit lifecycle states, task0-only callback/event dispatch, fixed pointer-free semantic events, a bounded system-state snapshot, and a three-row application view beneath the system-owned status bar. Existing RPC IDs `0x0001..0x0020` remain unchanged; `applist/appstart/appstop` append `0x0021..0x0023`. BIN is `48604` bytes / `2D6994532ABB82B7CA478E416ABC984F7E0DAFF98A07414FF974A3885DCC95D2`; SRAM is `10032/20480`; minimum observed task0/task1 margins are `272/424` bytes. Gate 3 and physical OLED Gate 4 are PASS. Evidence SHA-256: Gate 2 `75719A35004401F9A941E187EC93978961252388B03F892DE98CBA40479492A6`; Gate 3 `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`; Gate 3 log `703C41A7493D078E456A5721EAFEFF821A152D217FB3F30AB8C809D7452A6B36`; Gate 4 `ED0F022A60174AEEA487B64216885AFA72D768CA81CF60E14A347DEAC58B2F86`.
 
 Initial Gate 1 source boundary is exactly new `include/kernel/application_runtime.h`, new `src/kernel/application_runtime.c`, plus `include/kernel/command_service.h`, `src/kernel/command_service.c`, and `src/kernel.c`.
 
 Application Runtime publication commit/tree: `25752fba557b1a1b518265a93bde05d3a6a3f9ad` / `24624db70923bdaa77f134cc956423511785c199`; ordinary non-force push complete; final ahead/behind `0/0`. Gate 5 evidence `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`; Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`; Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`. Current Gate 0 decomposition design: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`; acceptance: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`.
+
+Current decomposition acceptance: `src/kernel.c 5100 -> 3405` lines (-33.235%). `application_runtime_bridge` owns mutable application runtime integration state/event snapshot/view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration; root-private production scheduler observability remains in the composition root. Exact source boundary is seven paths and no command-service expansion was needed.
+
+Accepted candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; BIN `48636` / `51083C63652DCFCCC479604CA09E191EAB43561C496E2D6F1E5DAABC10CC9766`; ELF `83FD4C9B9589A7E1B619A3B0C82BF2AB9050D5B4572DAD30BA1414CA8354CF8B`; MAP `0BB014FAA418374AFDC77EE9389B3D7BCE631FB0D33EA451952142F78DCC2AD8`; Flash `48636/65536`, SRAM `10032/20480`, final task margins `384/424`. Gate 3 retained text/binary lifecycle, diagnostic BUSY `8/8`, CDC/UART/binary pressure `128/128`, malformed/CRC/oversize/split recovery, physical reconnect, IWDG recovery, zero faults and exact final Flash readback.
+
+Evidence SHA-256: Gate 2 `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`; Gate 2 authoritative build log `88A0AEA8569D404FC8F498124F042F2142EA43440CF9D9CF4096A3C3D12585E0`; Gate 2 evidence-repair log `904C5C476D3A4ED29CAB80532B30FE5B1DD757DF770CC8B1ACEA6AEC1C18A25F`; Gate 3 `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`; Gate 3 log `4F3714F2D8772F032D3D15CFA5C3A61E69B53D69C60E8D0E77101297153D5856`; Gate 4 `PHYSICAL_OLED=PASS`. Gate 6/7 are not yet claimed.
 <!-- END STM32_OS_CURRENT_HANDOFF_2026_09_13 -->
 ## Project identity
 

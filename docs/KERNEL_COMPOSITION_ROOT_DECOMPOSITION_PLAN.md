@@ -1,6 +1,6 @@
 # Deus OS — Kernel Composition-Root Decomposition Plan
 
-Status: **GATE 0 ACCEPTED — GATE 1 SOURCE DECOMPOSITION NEXT**
+Status: **GATES 0–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
 
 Boundary ID:
 
@@ -162,7 +162,23 @@ Gate 3 must retain:
 
 Gate 4 physical OLED review remains mandatory if code movement touches UI/application integration paths, even when intended behavior is unchanged.
 
-## 10. Next feature boundary
+## 10. Accepted Gates 1–5 result
+
+The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state, semantic-event snapshotting and application-view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. The composition root retains top-level initialization/wiring, production task binding/start, top-level IRQ/exception glue and production scheduler observability that depends on root-private production state.
+
+Exact source boundary: modified `src/kernel.c`; added `include/kernel/application_commands.h`, `src/kernel/application_commands.c`, `include/kernel/application_runtime_bridge.h`, `src/kernel/application_runtime_bridge.c`, `include/kernel/scheduler_diagnostics.h`, `src/kernel/scheduler_diagnostics.c`. No command-service file expansion was required.
+
+Measured linked result: `console_execute_request 8644 -> 6780`; `boot_desktop_ui_render 1420 -> 804`; `kernel_main 1116 -> 1112`; former monolithic `console_execute_scheduler_diagnostic=3284` is replaced by module-owned `scheduler_diagnostics_execute_diagnostic=3312`; `application_commands_execute=776`, `application_runtime_bridge_service=316`, `application_runtime_bridge_apply_view=216` bytes.
+
+Accepted candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; BIN `48636` bytes / SHA-256 `51083C63652DCFCCC479604CA09E191EAB43561C496E2D6F1E5DAABC10CC9766`; ELF SHA-256 `83FD4C9B9589A7E1B619A3B0C82BF2AB9050D5B4572DAD30BA1414CA8354CF8B`; MAP SHA-256 `0BB014FAA418374AFDC77EE9389B3D7BCE631FB0D33EA451952142F78DCC2AD8`; Flash `48636/65536` against ceiling `48656`; SRAM `10032/20480` against ceiling `10104`; final task0/task1 margins `384/424`.
+
+Gate 3 retained boot/scheduler/IWDG/USB startup, text+binary lifecycle/idempotence/invalid-start-no-mutation, minute-event/no-rerender behavior, text and binary scheduler diagnostic BUSY `8/8`, CDC/UART/binary pressure `128/128`, malformed/CRC/oversize/split recovery, physical reconnect, authorized IWDG recovery, zero production/application faults and exact final Flash readback.
+
+Gate 2 evidence SHA-256 `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549` (authoritative build log `88A0AEA8569D404FC8F498124F042F2142EA43440CF9D9CF4096A3C3D12585E0`; evidence-repair log `904C5C476D3A4ED29CAB80532B30FE5B1DD757DF770CC8B1ACEA6AEC1C18A25F`); Gate 3 evidence SHA-256 `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42` (log `4F3714F2D8772F032D3D15CFA5C3A61E69B53D69C60E8D0E77101297153D5856`); Gate 4 `PHYSICAL_OLED=PASS`.
+
+No universal `kernel_context_t`, service locator, hidden extracted-module extern state, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
+
+## 11. Next feature boundary
 
 Only after this decomposition is accepted and published does roadmap order resume with:
 

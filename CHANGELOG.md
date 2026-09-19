@@ -16,15 +16,19 @@ Acceptance-model clarification: with micro-USB as the sole target power source, 
 
 Gate 5 evidence SHA-256 `817D12D74D88F1C0F31C502B0715F038FF356382E56FC0D5421DC237239D78BC`. Gate 6 committed the exact accepted source/docs set as `25752fba557b1a1b518265a93bde05d3a6a3f9ad`, tree `24624db70923bdaa77f134cc956423511785c199`; Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`. Gate 7 published by ordinary non-force fast-forward; Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`; final ahead/behind `0/0`.
 
-### Gate 0 accepted — kernel composition-root decomposition
+### Gate 5 accepted — kernel composition-root decomposition
 
-Canonical design: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`; acceptance: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`.
+Boundary: `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–5 accepted; Gate 6 local acceptance commit next.
 
-### Architecture decision — kernel composition-root decomposition required next
+The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state, semantic-event snapshotting and application-view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. The composition root retains top-level initialization/wiring, production task binding/start, top-level IRQ/exception glue and production scheduler observability that depends on root-private production state. No universal `kernel_context_t`, service locator, hidden extracted-module extern state, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
 
-`src/kernel.c` is now exactly `5100` lines and concentrates composition/bootstrap, command/diagnostic dispatch, UI/application integration and low-level glue. The accepted firmware is not classified as spaghetti code, and `application_runtime_t` remains bounded/cohesive, but the integration translation unit is now a god-module risk. No new feature may extend it before `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is accepted. The cleanup must preserve behavior and must not merely replace the god-module with a catch-all `kernel_context_t` god object.
+Linked before/after measurements: `console_execute_request 8644 -> 6780`, `boot_desktop_ui_render 1420 -> 804`, `kernel_main 1116 -> 1112`; the former `console_execute_scheduler_diagnostic=3284` monolithic responsibility is now owned by `scheduler_diagnostics_execute_diagnostic=3312`. New owner entry points include `application_commands_execute=776`, `application_runtime_bridge_service=316` and `application_runtime_bridge_apply_view=216` bytes.
 
-Canonical decision: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`.
+Accepted candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; BIN `48636` bytes / SHA-256 `51083C63652DCFCCC479604CA09E191EAB43561C496E2D6F1E5DAABC10CC9766`; ELF SHA-256 `83FD4C9B9589A7E1B619A3B0C82BF2AB9050D5B4572DAD30BA1414CA8354CF8B`; MAP SHA-256 `0BB014FAA418374AFDC77EE9389B3D7BCE631FB0D33EA451952142F78DCC2AD8`; Flash `48636/65536` against ceiling `48656`; SRAM `10032/20480` against ceiling `10104`; final task0/task1 margins `384/424` bytes.
+
+Gate 3 retained boot/scheduler/IWDG/USB behavior, text+binary lifecycle/idempotence/invalid-start-no-mutation, minute-event/no-rerender behavior, text and binary diagnostic BUSY `8/8`, CDC/UART/binary pressure `128/128`, malformed/CRC/oversize/split recovery, physical reconnect, authorized IWDG recovery, zero production/application faults and exact final Flash readback. Gate 2 evidence SHA-256 `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549` (authoritative build log `88A0AEA8569D404FC8F498124F042F2142EA43440CF9D9CF4096A3C3D12585E0`; evidence-repair log `904C5C476D3A4ED29CAB80532B30FE5B1DD757DF770CC8B1ACEA6AEC1C18A25F`); Gate 3 evidence SHA-256 `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42` (log `4F3714F2D8772F032D3D15CFA5C3A61E69B53D69C60E8D0E77101297153D5856`); Gate 4 is `PHYSICAL_OLED=PASS`.
+
+Canonical decision/design/acceptance: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`, `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`, `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md`.
 
 ## 2026-09-17
 

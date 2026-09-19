@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`APPLICATION_RUNTIME_FOUNDATION` published at `25752fba557b1a1b518265a93bde05d3a6a3f9ad`; `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` Gate 0 accepted / Gate 1 next**
+Status: **`APPLICATION_RUNTIME_FOUNDATION` published at `25752fba557b1a1b518265a93bde05d3a6a3f9ad`; `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` Gates 0–5 accepted / Gate 6 next**
 
 ## Current foundation completeness constraints
 
@@ -12,7 +12,7 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - `APPLICATION_RUNTIME_FOUNDATION` owns a bounded semantic application event/service contract;
 - generic timers, queues, synchronization primitives and runtime statistics remain consumer-driven extensions; scheduler-internal PRIMASK save/restore is not a public mutex/semaphore API;
 - host-facing system identity must eventually distinguish firmware/build/platform/service/application capabilities from USB identity and protocol capability flags;
-- accepted `APPLICATION_RUNTIME_FOUNDATION` candidate tree `ba8b7066c8c435b7bca4fdef3932f27c5055761c` uses Flash `48604/65536`, SRAM `10032/20480`, and minimum observed task0/task1 margins `272/424`; Gate 3 evidence is `1158485D1A0C90FA4931589F10298154E6522A568220A48C4A6BE67EFA54FC52`, Gate 4 is `PHYSICAL_OLED=PASS`; after this boundary, `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` must reduce the measured `src/kernel.c` god-module concentration without changing behavior or replacing it with a universal god object; only then does `USB_MANAGEMENT_DEVICE_FOUNDATION` own the production Windows USB profile: vendor-specific WinUSB management transport with explicit product identity/device-interface GUID, reusing the accepted binary RPC above transport; CDC/COM must not remain the primary production host API;
+- accepted `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a` uses Flash `48636/65536`, SRAM `10032/20480`, and final task0/task1 margins `384/424`; `src/kernel.c` is reduced from `5100` to `3405` lines with application bridge, application command and scheduler diagnostic ownership extracted without a universal god object or hidden cross-module state; Gate 2 evidence is `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`, Gate 3 evidence is `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`, and Gate 4 is `PHYSICAL_OLED=PASS`; after publication, `USB_MANAGEMENT_DEVICE_FOUNDATION` owns the production Windows USB profile: vendor-specific WinUSB management transport with explicit product identity/device-interface GUID, reusing the accepted binary RPC above transport; CDC/COM must not remain the primary production host API;
 - persistent target state requires versioning, integrity, atomic commit/recovery and Flash wear policy before acceptance;
 - current `fault_record` is normal `.bss` runtime state and is cleared by reset; bounded previous-boot crash/reset retention is later observability work;
 - CRC-16 and explicit destructive intent are not authentication; trust-sensitive network mutation and firmware update require a separate security/authenticity contract;
@@ -55,6 +55,18 @@ Canonical acceptance: `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md`.
 The command/RPC surface is extended additively, not renumbered: existing IDs `0x0001..0x0020` remain unchanged and `applist/appstart/appstop` use `0x0021..0x0023`. The command-service foundation version advances to `2` while binary frame protocol v1 remains unchanged. No heap, event queue, mutex, new task/SVC, dynamic loader, filesystem or USB redesign is part of the boundary.
 
 Initial Gate 1 source boundary is limited to new `include/kernel/application_runtime.h` / `src/kernel/application_runtime.c` plus `include/kernel/command_service.h`, `src/kernel/command_service.c` and `src/kernel.c`. Production WinUSB management USB remains the later `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+
+## Current boundary — Kernel composition-root decomposition
+
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is accepted through Gate 5; Gate 6 local acceptance commit is next.
+
+The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state, semantic-event snapshotting and application-view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. The composition root retains top-level initialization/wiring, production task binding/start, top-level IRQ/exception glue and production scheduler observability that depends on root-private production state. No universal `kernel_context_t`, service locator, hidden extracted-module extern state, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
+
+Accepted candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; BIN `48636` bytes / SHA-256 `51083C63652DCFCCC479604CA09E191EAB43561C496E2D6F1E5DAABC10CC9766`; ELF SHA-256 `83FD4C9B9589A7E1B619A3B0C82BF2AB9050D5B4572DAD30BA1414CA8354CF8B`; MAP SHA-256 `0BB014FAA418374AFDC77EE9389B3D7BCE631FB0D33EA451952142F78DCC2AD8`; Flash `48636/65536`, SRAM `10032/20480`, final task0/task1 margins `384/424`.
+
+Linked ownership movement is measurable rather than cosmetic: `console_execute_request 8644 -> 6780`, `boot_desktop_ui_render 1420 -> 804`, `kernel_main 1116 -> 1112`; scheduler diagnostic orchestration moved from former monolithic `console_execute_scheduler_diagnostic=3284` into `scheduler_diagnostics_execute_diagnostic=3312`. Explicit owner entry points include `application_commands_execute=776`, `application_runtime_bridge_service=316`, and `application_runtime_bridge_apply_view=216` bytes.
+
+Gate 2 evidence SHA-256 `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`; Gate 3 evidence SHA-256 `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`; Gate 4 `PHYSICAL_OLED=PASS`.
 
 ## C4.0 accepted IWDG liveness record
 

@@ -65,9 +65,11 @@ Canonical design/acceptance:
 
 Current implementation boundary:
 
-`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATE 0 ACCEPTED / GATE 1 NEXT**.
+`KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — **GATES 0–5 ACCEPTED / GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**.
 
-This boundary is behavior-preserving architecture cleanup triggered by measured integration concentration in the `5100`-line `src/kernel.c`. It must extract coherent application bridge, application command, scheduler diagnostic and production-glue responsibilities while preserving all accepted public/hardware behavior. It must not replace the god-module with a universal `kernel_context_t` or service-locator god object.
+The accepted decomposition reduces `src/kernel.c` from `5100` to `3405` lines (-33.235%). `application_runtime_bridge` owns mutable application-runtime integration state, semantic-event snapshotting and application-view adaptation; `application_commands` owns `rpcinfo/applist/appstart/appstop`; `scheduler_diagnostics` owns diagnostic orchestration. The composition root retains top-level initialization/wiring, production task binding/start, top-level IRQ/exception glue and production scheduler observability that depends on root-private production state. No universal `kernel_context_t`, service locator, hidden extracted-module extern state, heap, new task/SVC/queue/mutex/generic timer/DMA/persistence machinery or dependency cycle was introduced.
+
+Accepted candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; BIN `48636` bytes / SHA-256 `51083C63652DCFCCC479604CA09E191EAB43561C496E2D6F1E5DAABC10CC9766`; ELF SHA-256 `83FD4C9B9589A7E1B619A3B0C82BF2AB9050D5B4572DAD30BA1414CA8354CF8B`; MAP SHA-256 `0BB014FAA418374AFDC77EE9389B3D7BCE631FB0D33EA451952142F78DCC2AD8`; Flash `48636/65536` against ceiling `48656`; SRAM `10032/20480` against ceiling `10104`; final task0/task1 margins `384/424` bytes. Gate 2 evidence SHA-256 `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`; Gate 3 evidence SHA-256 `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`; Gate 4 `PHYSICAL_OLED=PASS`.
 
 Canonical decision/design/acceptance:
 
@@ -145,7 +147,8 @@ Built locally:
 - [x] Normal-boot scheduler ownership migration
 - [x] Boot splash / desktop runtime UI foundation (hardware + physical OLED accepted)
 - [x] OLED dirty-region transfer optimization (Gates 0–7 accepted / published)
-- [ ] Application runtime foundation (Gate 0 accepted / Gate 1 next)
+- [x] Application runtime foundation (Gates 0–7 accepted / published)
+- [x] Kernel composition-root decomposition (Gates 0–5 accepted; Gate 6 next)
 - [ ] IPC primitives
 - [ ] ESP8266 networking
 
