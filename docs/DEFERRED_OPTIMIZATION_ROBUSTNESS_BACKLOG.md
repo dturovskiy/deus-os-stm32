@@ -142,7 +142,7 @@ In particular, do not implicitly start a replacement application after an unreso
 
 None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
 
-These items do **not** block the current `USB_MANAGEMENT_DEVICE_FOUNDATION` Gate 1. That boundary should continue to reuse the accepted command/binary-RPC domain and add only the explicitly frozen USB-management transport/runtime wiring.
+These items did **not** block the now-published `USB_MANAGEMENT_DEVICE_FOUNDATION`; that boundary reused the accepted command/binary-RPC domain and added only the explicitly frozen USB-management transport/runtime wiring. They likewise do not authorize speculative kernel expansion before the next `HOST_CONTROL_APPLICATION_FOUNDATION` boundary.
 
 ## 8. Roadmap placement
 

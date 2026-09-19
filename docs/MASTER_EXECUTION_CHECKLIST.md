@@ -33,7 +33,7 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] Gate 6 local acceptance commit — PASS / `fa75307fb392718a1d10d52770a6a111c97208e7`;
 - [x] Gate 7 ordinary non-force publication — PASS; final `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`.
 
-### Current boundary — USB management device foundation — Gates 2–5 accepted / Gate 6 next
+### Published boundary — USB management device foundation — Gates 0–7 accepted / published
 
 - [x] Gate 0 Windows/USB architecture and exact source boundary frozen;
 - [x] private-test identity `1209:000C`, product `Deus OS Device`;
@@ -48,6 +48,10 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] Gate 2 fresh GNU build/link/resource/static candidate — **PASS** on repaired MS OS 2.0 descriptor candidate. Accepted tree `46841b52d351277deb134a6f4709619087b477af`; BIN `50172` / `FD0A8049193772892C2A3DC1CF2B24FA17BCC83FC4B0F55A22AA6A4962C864FB`; Flash/SRAM `50172/11728` within frozen ceilings `54780/11824`; task stacks `1024/512`; undefined symbols `0`; stack-usage `21/21`; real Git index untouched; no Flash. Evidence `B6101C2FAD615DC41856BD1DE88C46E92517759EC3AC1F56ACB2030B89252AF3`; log `245F15303355C47473C15CB05838DB495764F97D228DB1113B3C7693765D429F`.
 - [x] Gate 3 Windows + target hardware/runtime — **PASS / COMPOSITE V11+V14**. `REV_0102`; interface 2 -> inbox `WINUSB`; WinUSB `128/128`; UART `32/32`; management RX/TX drops `0/0`; physical USB reconnect PASS; IWDG recovery PASS; task margins `448/424`; canaries intact/faults zero; final Flash exact accepted BIN. Evidence `1EF8595E85F088F0D3870CA5D880631342AD795FDB94C05EAB9BBC3566A3DCC6`; log `083C9B66B7225D3FF37845996B62991C7DE8E84332BD3C8B059F1B8A6569797B`.
 - [x] Gate 4 OLED disposition — **PASS / `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`**; management boundary does not change OLED/UI/application rendering.
+- [x] Gate 5 canonical docs/current-state finalization — **PASS / docs-only**; accepted source hashes unchanged.
+- [x] Gate 6 local acceptance commit — **PASS / `1f88083843c6aae9fd228ad2d677f9252b889a11`**, tree `931f1cbce8bc7c043bf27626c6127ac7cab9acb9`.
+- [x] Gate 7 ordinary non-force publication — **PASS**; fresh fetch proved `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`.
+- [ ] Next boundary: `HOST_CONTROL_APPLICATION_FOUNDATION` Gate 0 — freeze host discovery/system-identity/capability/client contract before host UX implementation.
 
 ### Published baseline — binary framed transport foundation
 
@@ -306,8 +310,8 @@ Gate order:
 - [x] Gate 3 hardware/runtime equivalence — **PASS**.
 - [x] Gate 4 physical OLED equivalence — **PASS (`PHYSICAL_OLED=PASS`)**.
 - [x] Gate 5 docs/evidence finalization — **PASS**.
-- [ ] Gate 6 local acceptance commit — **NEXT**.
-- [ ] Gate 7 ordinary non-force publication.
+- [x] Gate 6 local acceptance commit — **PASS / `fa75307fb392718a1d10d52770a6a111c97208e7`**, commit tree `54fe7dc3d059e0d39d0b659f2ab8e7d1c677c01c`.
+- [x] Gate 7 ordinary non-force publication — **PASS**; final local/remote state clean at ahead/behind `0/0`.
 
 Canonical decision: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md`.
 Canonical design: `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md`.
@@ -337,7 +341,7 @@ Accepted Gates 1–5 record:
 - [x] Gate 4 `PHYSICAL_OLED=PASS`;
 - [x] no god object/service locator, hidden extracted-state extern, heap/new task/SVC/queue/mutex/timer/DMA/persistence mechanism.
 
-After decomposition publication, exact next feature boundary is `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+After decomposition publication, the next feature boundary was `USB_MANAGEMENT_DEVICE_FOUNDATION`; it is now also accepted/published. Current next boundary is `HOST_CONTROL_APPLICATION_FOUNDATION`.
 
 Permanent constraints retained:
 

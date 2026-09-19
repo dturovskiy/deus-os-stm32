@@ -74,4 +74,4 @@ A boundary that changes USB class topology in a way that changes host binding sh
 
 ## Gate effect
 
-This document authorizes private testing only. The published CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. For `USB_MANAGEMENT_DEVICE_FOUNDATION`, Gate 1 may use `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`, only within the frozen composite-management boundary. None of these Test PIDs authorize production/distribution use.
+This document authorizes private testing only. The historical published CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. The accepted/published `USB_MANAGEMENT_DEVICE_FOUNDATION` uses `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`, only within the frozen composite-management boundary. None of these Test PIDs authorize production/distribution use.

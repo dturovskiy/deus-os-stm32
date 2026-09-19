@@ -1,3 +1,19 @@
+## 2026-09-19
+
+### Published — USB management device foundation — Gates 0–7 accepted
+
+Boundary: `USB_MANAGEMENT_DEVICE_FOUNDATION`.
+
+Accepted hardware candidate tree `46841b52d351277deb134a6f4709619087b477af`; BIN `50172` bytes / SHA-256 `FD0A8049193772892C2A3DC1CF2B24FA17BCC83FC4B0F55A22AA6A4962C864FB`; Flash/SRAM `50172/11728`; task stacks remain `1024/512`. The accepted composite identity is private-test `1209:000C` / `Deus OS Device`, CDC interfaces 0–1 under IAD plus management interface 2 `FF/00/00` over EP4 OUT/IN `0x04/0x84` bulk64. Microsoft OS 2.0 uses vendor code `0x20`, set length `178`, first-configuration subset selector `0`, inbox `WINUSB` on IF2 and stable interface GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`.
+
+Gate 3 is PASS as composite `v11+v14`: full WinUSB RPC/application/error-recovery coverage, physical USB reconnect, authorized IWDG reset/recovery with bounded return to `system.home`, WinUSB pressure `128/128`, UART `32/32`, management RX/TX drops `0/0`, task0/task1 margins `448/424`, intact canaries/zero scheduler faults and final exact Flash readback. Gate 3 evidence/log SHA-256: `1EF8595E85F088F0D3870CA5D880631342AD795FDB94C05EAB9BBC3566A3DCC6` / `083C9B66B7225D3FF37845996B62991C7DE8E84332BD3C8B059F1B8A6569797B`. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
+
+Gate 5 finalized canonical docs without source mutation. Gate 6 committed the exact accepted source/docs set as `1f88083843c6aae9fd228ad2d677f9252b889a11`, commit tree `931f1cbce8bc7c043bf27626c6127ac7cab9acb9`. Gate 7 used an ordinary non-force push; fresh fetch proved `HEAD == origin/main == FETCH_HEAD` and clean ahead/behind `0/0`. Exact next boundary: `HOST_CONTROL_APPLICATION_FOUNDATION` Gate 0 contract freeze.
+
+### Post-publication documentation reconciliation
+
+A post-publication audit found stale status-only documentation: several canonical files still said Gate 6 was next, `README.md` still described USB Gate 0/1 as current, and an older kernel-decomposition checklist still left its already-published Gate 6/7 unchecked. This reconciliation updates status/checklist/history text only; no firmware/source/header/linker behavior changes.
+
 ## 2026-09-18
 
 ### Published — Application runtime foundation — Gates 0–7 accepted

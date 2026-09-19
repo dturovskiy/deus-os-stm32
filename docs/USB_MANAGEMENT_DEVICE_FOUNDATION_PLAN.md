@@ -1,6 +1,6 @@
 # Deus OS — USB Management Device Foundation Plan
 
-Status: **GATES 2–5 ACCEPTED — GATE 6 LOCAL ACCEPTANCE COMMIT NEXT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `1f88083843c6aae9fd228ad2d677f9252b889a11` — NEXT `HOST_CONTROL_APPLICATION_FOUNDATION`**
 
 Boundary ID:
 
@@ -431,6 +431,8 @@ Gate 7:
 - ordinary non-force push;
 - fresh post-push fetch;
 - prove `HEAD == origin/main`, clean, ahead/behind `0/0`.
+
+Accepted publication result: Gate 5 PASS (docs-only, accepted source unchanged); Gate 6 PASS at commit `1f88083843c6aae9fd228ad2d677f9252b889a11`, commit tree `931f1cbce8bc7c043bf27626c6127ac7cab9acb9`; Gate 7 PASS by ordinary non-force push with fresh post-push `HEAD == origin/main == FETCH_HEAD` and clean ahead/behind `0/0`.
 
 Next boundary after publication:
 

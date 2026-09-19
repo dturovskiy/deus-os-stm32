@@ -1,9 +1,24 @@
 # STM32 OS
 
 <!-- BEGIN STM32_OS_ACCEPTED_STATE_2026_09_14 -->
-## Accepted project state — 2026-09-17
+## Accepted project state — 2026-09-19
 
-Published firmware/source baseline:
+Latest published firmware boundary:
+
+`USB_MANAGEMENT_DEVICE_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `1f88083843c6aae9fd228ad2d677f9252b889a11`**.
+
+Published commit tree `931f1cbce8bc7c043bf27626c6127ac7cab9acb9`; hardware-accepted candidate tree `46841b52d351277deb134a6f4709619087b477af`; BIN `50172` bytes / SHA-256 `FD0A8049193772892C2A3DC1CF2B24FA17BCC83FC4B0F55A22AA6A4962C864FB`; Flash/SRAM `50172/11728`; final task0/task1 margins `448/424`. The composite `1209:000C` `Deus OS Device` retains CDC diagnostics and adds primary WinUSB management interface 2 over EP4 bulk64 with inbox Windows binding, stable GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`, binary protocol v1 and command-service v2 / 35 methods. Gate 3 composite evidence/log SHA-256 are `1EF8595E85F088F0D3870CA5D880631342AD795FDB94C05EAB9BBC3566A3DCC6` / `083C9B66B7225D3FF37845996B62991C7DE8E84332BD3C8B059F1B8A6569797B`; WinUSB `128/128`, UART `32/32`, management drops `0/0`, physical reconnect PASS, IWDG recovery PASS, final Flash exact. Gate 4 is `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`. Gate 7 ordinary non-force publication completed with fresh `HEAD == origin/main == FETCH_HEAD` and a clean repository.
+
+Canonical design/acceptance:
+
+- `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md`
+- `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`
+
+Current next boundary: `HOST_CONTROL_APPLICATION_FOUNDATION` — Gate 0 contract freeze. Host work must first freeze device discovery, build/platform/system identity and capability discovery, binary-RPC client semantics, diagnostics/application-control UX ownership and exact host/firmware source boundaries before implementation.
+
+### Historical accepted-state context — 2026-09-17
+
+Published predecessor firmware/source baseline:
 
 `39690c9ef103cbcf93272df8bad0359a934b7dc1` — `feat: optimize OLED dirty region updates`
 
@@ -25,7 +40,7 @@ Accepted firmware:
 - final Flash readback exact;
 - ordinary non-force publication complete; local/remote ahead-behind `0/0`.
 
-Latest published architecture foundation:
+Published architecture-model foundation:
 
 `OS_APPLICATION_AND_UI_MODEL_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`**
 
@@ -52,7 +67,7 @@ The accepted revision-2 implementation provides a nonblocking `BOOT_SPLASH -> DE
 
 Accepted Gate 2/3 candidate: tree `41e0c7cd345dd64d3b5336abf2fc46d446f19ecb`, BIN `41520` bytes / SHA-256 `A9E3A929118C32A836CE069FC0D18828A8776A9A648EB4B228060D2336E5CC42`, ELF `70700` bytes / SHA-256 `62A827893CC1EF44B18025E87B8299792636CA2D93093ED569F27F08A0B09F02`, Flash `41520 / 65536`, SRAM `9792 / 20480`. Gate 3 retained CDC/UART/binary pressure, reconnect, IWDG recovery and exact final Flash readback all passed. Gate 4 is operator-confirmed `PHYSICAL_OLED=PASS`: minute/text transitions are clean, with no blank pulse, flicker, stale pixels or unintended redraw artifacts.
 
-Latest published firmware boundary:
+Published predecessor application-runtime boundary:
 
 `APPLICATION_RUNTIME_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `25752fba557b1a1b518265a93bde05d3a6a3f9ad`**.
 
@@ -81,7 +96,7 @@ Implementation order:
 
 `OLED_DIRTY_REGION_OPTIMIZATION` -> `APPLICATION_RUNTIME_FOUNDATION` -> `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` -> `USB_MANAGEMENT_DEVICE_FOUNDATION` -> `HOST_CONTROL_APPLICATION_FOUNDATION` -> asset/config transfer -> recoverable firmware update/bootloader -> networking extensions.
 
-Current implementation boundary is `USB_MANAGEMENT_DEVICE_FOUNDATION` — **GATE 0 ACCEPTED / GATE 1 SOURCE IMPLEMENTATION NEXT**. It freezes a composite `Deus OS Device` private-test profile `1209:000C`: CDC interfaces 0–1 remain secondary diagnostics, vendor interface 2 becomes the primary WinUSB management API over EP4 bulk OUT/IN, and the accepted binary framed RPC v1 remains the management protocol above transport. Microsoft OS 2.0 descriptors register stable management GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}` without a custom INF. Canonical design/acceptance are `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md` and `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`.
+`USB_MANAGEMENT_DEVICE_FOUNDATION` is now published at `1f88083843c6aae9fd228ad2d677f9252b889a11`. The current implementation boundary is `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATE 0 CONTRACT FREEZE NEXT**. Do not begin host GUI implementation by hard-coding USB/RPC assumptions: first freeze device discovery, target system/build/platform identity and capability discovery, client framing/error semantics, supported diagnostics/application-control operations and exact host/firmware source ownership.
 
 The preceding docs-only application/UI foundation is fully accepted and was published by ordinary non-force fast-forward at commit `3dac2c4528fc77e87e1374ff47f56223d2b44e2c`, tree `ff63c349a54a508725a460ce2c0d23d28fe1ec33`.
 <!-- END STM32_OS_ACCEPTED_STATE_2026_09_14 -->
