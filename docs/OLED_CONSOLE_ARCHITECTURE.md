@@ -6,7 +6,7 @@
 > material below is deferred planning and must not override the accepted baseline.
 # OLED Console Architecture
 
-Status: ACTIVE / RETAINED 21x3 CONSOLE HARDWARE-ACCEPTED
+Status: ACCEPTED REFERENCE ARCHITECTURE / RETAINED 21x3 CONSOLE
 
 ## 1. Goal
 

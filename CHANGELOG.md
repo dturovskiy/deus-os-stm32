@@ -16,6 +16,10 @@ Exact next boundary: `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 contract f
 
 A post-publication audit found that `README.md`, the top execution-checklist block, roadmap status, architecture status and current handoff still mixed historical snapshots with current state. This reconciliation makes `README.md` a short project landing page, keeps dated history in `CHANGELOG.md`, keeps gate history in `docs/MASTER_EXECUTION_CHECKLIST.md`, and keeps detailed live engineering state in `docs/PROJECT_HANDOFF.md`. A follow-up full-document audit also corrected stale decomposition/USB-management status headers, stale Host Gate-1 wording in architecture/implementation docs, resolved-vs-pending entries in the foundation gap review, and stale OLED checklist summary items. Exact live repository HEAD is intentionally no longer hard-coded into current-state docs, preventing every docs-only commit from immediately making those docs stale. No firmware, host source, protocol, hardware or accepted candidate bytes are changed.
 
+### Documentation source-of-truth consolidation
+
+A full audit of all plans, acceptance plans, checklists, handoff material, deferred UI plans and engineering playbook established `docs/CURRENT_STATE.md` as the sole global project-state source and `docs/DOCUMENTATION_MODEL.md` as canonical documentation governance. `ARCHITECTURE.md`, `ROADMAP.md`, boundary plans/acceptance plans, evidence, backlog, changelog, execution ledger and handoff now have non-overlapping roles. Historical umbrella/OLED plans were explicitly classified as historical or deferred; stale `COMM/UART`, static-time, UART-first configurator and UI-specific Flash persistence assumptions were reconciled with the accepted SYSTEM/USB/NETWORK/uptime and host Core/RPC/WinUSB architecture. The harness playbook now prefers direct `@DEUS MCP` repository operations for repo-only work and reserves operator-run ZIP packages for local Windows/hardware/toolchain execution or operations unavailable through the connected repository tool.
+
 ## 2026-09-19
 
 ### Published — USB management device foundation — Gates 0–7 accepted

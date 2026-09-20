@@ -1,7 +1,11 @@
 # Roadmap
 
+Status: **CANONICAL FORWARD SEQUENCING — CURRENT PROJECT STATE IS OWNED BY `docs/CURRENT_STATE.md`**
+
+The roadmap defines ordering and prerequisites. It does not independently define which boundary is active.
+
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
-## Current roadmap checkpoint — 2026-09-17
+## Published boundary chronology and forward order
 
 ### Native USB Device core foundation — PUBLISHED
 
@@ -138,7 +142,7 @@ Implementation order:
 1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–7 accepted / published `fa75307fb392718a1d10d52770a6a111c97208e7`;
 2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — Gates 0–7 accepted / published `1f88083843c6aae9fd228ad2d677f9252b889a11`;
 3. `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `e0f49f168542fa1cf49bca451e01b0c077aa8d18`**; accepted firmware/host trees `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`; Windows CLI + Desktop and real Linux libusb runtime/reconnect PASS; final management/CDC drops `0/0`, final Flash exact;
-4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATE 0 CONTRACT FREEZE NEXT**;
+4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — ordered after Host Control; activation/current gate is tracked only in `docs/CURRENT_STATE.md`;
 5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
 6. networking/service extensions.
 
@@ -256,7 +260,9 @@ Completed:
 
 Accepted candidate: `19932` bytes, SHA-256 `C21915F3DFA898C8E9F2FC601BC9E0FDA4ABE8EBB23528BF14F25D82FE28CE81`.
 
-### Next
+### Historical next steps from this 2026-09-13 checkpoint
+
+All items below were subsequently implemented through later accepted/published boundaries; they are retained only as chronology.
 
 1. **Normal-boot production task ownership / migration**
    - move from the current MSP-owned normal boot to deliberate production task ownership;

@@ -6,7 +6,7 @@
 > material below is deferred planning and must not override the accepted baseline.
 # OLED UI Layout and Customization Plan
 
-Status: PLANNED / SUPERSEDES PIXEL-BY-PIXEL MANUAL UI TUNING
+Status: **DEFERRED FUTURE UI/CONFIGURATION CONSUMER — NOT AN ACTIVE ROADMAP BOUNDARY; CURRENT STATE IN `docs/CURRENT_STATE.md`**
 
 This document defines a configurable UI composition layer for the native
 128x32 OLED.
@@ -178,7 +178,7 @@ Runtime-editable layout.
 
 It starts from a valid preset and receives explicit parameter changes.
 
-## 7. Current visual experiment status
+## 7. Historical visual experiment status
 
 The first static status-bar experiment proved:
 
@@ -316,41 +316,30 @@ ui set border_bottom on|off
 ui reset
 ```
 
-Initial configuration lives in RAM only.
+Initial runtime configuration may live in RAM only.
 
-Later:
-
-```text
-ui save
-ui load
-```
-
-may persist a validated configuration in Flash.
+Persistent save/load is not defined by this deferred UI plan. If promoted later,
+layout persistence must consume the accepted `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`
+record/version/integrity/atomic-recovery contract rather than creating a parallel
+Flash format.
 
 ## 12. Transport independence
 
-Today:
+The accepted product management architecture is transport-neutral above the host
+transport adapter:
 
 ```text
-PC keyboard
- -> terminal
- -> HW-193 UART
- -> command parser
- -> UI config API
+Control Panel / host tool
+ -> shared host Core / RPC
+ -> WinUSB or libusb management interface
+ -> target configuration service/API
 ```
 
-Later:
+UART remains emergency text diagnostics and CDC remains secondary diagnostics.
+Neither UART nor CDC owns UI configuration semantics.
 
-```text
-PC keyboard / configurator
- -> USB CDC
- -> same command parser
- -> same UI config API
-```
-
-Therefore the UI command parser must not depend directly on UART registers.
-
-UART and USB CDC are transports, not UI semantics.
+The target UI/configuration API must not depend on UART registers, COM-port identity,
+WinUSB calls, libusb calls, or any single host transport.
 
 No physical keyboard or mouse needs to be connected to the STM32 for normal
 configuration.
@@ -381,12 +370,14 @@ CLI.
 
 `oled_status_bar` remains a semantic renderer.
 
-It owns:
+It owns presentation only:
 
-- COMM state;
-- time state;
 - micro-font/icons;
-- rendering inside the clip it receives.
+- rendering inside the clip it receives;
+- presentation-local dirty tracking derived from changed displayed values.
+
+Authoritative SYSTEM/USB/NETWORK/time state remains upstream of presentation and is
+provided through the accepted system/service state model.
 
 It must NOT own:
 
@@ -437,12 +428,12 @@ Scope:
 - add validated `oled_ui_layout_t`;
 - add `minimal`, `boxed`, `compact` presets;
 - move frame/separator/region placement out of ad-hoc command code;
-- retain 3x4 micro-font + static `12:34`;
-- retain real COMM/UART icon;
+- retain the accepted status micro-font/icon rendering capability;
+- preserve accepted SYSTEM/USB/NETWORK/uptime semantics;
 - render status and console from selected layout;
 - add runtime preset switching;
-- no persistence;
-- no uptime integration yet.
+- no persistence in the layout-engine slice;
+- no semantic status-model change.
 
 Acceptance includes physical comparison of at least two presets.
 
@@ -462,32 +453,33 @@ Acceptance:
 - valid one-pixel changes are visible immediately after explicit redraw;
 - console/status semantic state survives layout changes.
 
-### Slice 4B.3 — uptime integration
+### Historical Slice 4B.3 objective — uptime integration already satisfied
 
-Scope:
+Monotonic status `HH:MM` and update-on-displayed-minute-change behavior were
+subsequently implemented and hardware-accepted in `BOOT_DESKTOP_UI_FOUNDATION`.
+A future layout boundary must preserve that accepted behavior; it must not reintroduce
+COMM/UART as authoritative status semantics.
 
-- status `HH:MM` from uptime;
-- update status state only when displayed minute changes;
-- COMM state reflects real UART availability;
-- layout remains independent.
+### Slice 4B.4 — host import/configurator protocol
 
-### Slice 4B.4 — desktop import/configurator protocol
+Only after the target-side configuration contract is stable and this deferred work
+is explicitly promoted:
 
-Only after target-side config API is stable:
+- define a bounded PC interchange format;
+- implement preview/converter/sender behavior in the existing host-control architecture;
+- use the shared host Core/RPC model over the accepted management transport;
+- keep UART/CDC diagnostic transports semantically independent.
 
-- define PC interchange format;
-- implement converter/sender;
-- use UART first;
-- USB CDC later uses the same API.
+### Slice 4B.5 — optional persistence consumer
 
-### Slice 4B.5 — optional persistence
+Only after `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` is accepted and runtime layout
+configuration semantics are stable:
 
-Only when runtime configuration semantics are stable:
-
-- versioned Flash record;
-- validation on load;
-- CRC/check value;
-- safe fallback to built-in preset.
+- consume the accepted versioned configuration record/storage contract;
+- validate layout data after transfer/load;
+- preserve integrity/atomic-recovery guarantees from the persistence foundation;
+- fall back safely to a built-in preset on invalid/incompatible layout data;
+- do not define a UI-specific parallel Flash transaction format.
 
 ## 18. Acceptance invariants
 

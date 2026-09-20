@@ -175,16 +175,16 @@ baseline:
 - runtime custom geometry editing;
 - PC layout configurator/import;
 - layout persistence;
-- uptime-driven `HH:MM`;
-- RTC-backed time.
+- RTC-backed wall-clock time.
+
+Monotonic uptime `HH:MM` was subsequently implemented and hardware-accepted in `BOOT_DESKTOP_UI_FOUNDATION`; it is no longer deferred.
 
 If any of these are resumed later, they must begin from this accepted baseline and
 must not silently change its geometry.
 
-## Next active OLED console work
+## Historical OLED continuation record
 
-UI styling is closed. Continue with the console/system roadmap, beginning with the
-next non-UI behavior slice (retained circular scrolling / `first_row` behavior).
+At this historical checkpoint, UI styling was closed and the console/system roadmap continued with retained circular scrolling / `first_row` behavior. The following slices were subsequently accepted and are retained as chronology, not active work.
 ## Slice 5 circular retained console scroll — ACCEPTED 2026-09-11
 
 Circular retained scrolling is now hardware accepted.
@@ -232,7 +232,7 @@ framebuffer   : 512 bytes
 console state : 67 bytes
 ```
 
-Next active OLED slice: dirty-page present optimization.
+Historical next slice at that checkpoint: dirty-page present optimization — subsequently accepted.
 ## Slice 6 dirty-page SSD1306 present — ACCEPTED 2026-09-11
 
 Dirty-page presentation is hardware accepted.
@@ -292,7 +292,7 @@ console state : 67 bytes
 fault_record  : 0x20000270
 ```
 
-Next active OLED slice: integrate dirty-page present into the normal UI update path.
+Historical next slice at that checkpoint: integrate dirty-page present into the normal UI update path — subsequently accepted.
 ## Accepted Slice 7: dirty-page UI integration
 
 Accepted physical and protocol result:
@@ -367,7 +367,7 @@ The frozen UI implementation itself did not change. In particular:
 - console clip remains `x=1, y=10, width=126, height=22`;
 - console remains 21x3 using compact `5x6` glyphs / `6x7` cells;
 - notification reservation remains `x=20..107, y=2..6`;
-- uptime/RTC-driven clock behavior remains deferred.
+- monotonic uptime `HH:MM` was subsequently accepted; RTC-backed wall-clock behavior remains deferred.
 
 Accepted normal boot proof includes:
 

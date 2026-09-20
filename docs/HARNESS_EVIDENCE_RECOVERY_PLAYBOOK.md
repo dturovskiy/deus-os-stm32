@@ -427,7 +427,7 @@ A repeated class of harness failure must be added to this playbook before contin
 | PWR-PARSER-01 | package runner fails before line 1 execution | interpolated `$variable:` parsed as scoped-variable syntax | AST-parse `apply.ps1` before execution; use `${variable}:` or format operator |
 | DOC-CHECK-01 | correct finalized document rejected by package validator | validator searched case-sensitive prose (`normal-boot` vs `Normal-boot`) even though payload SHA was exact | validate exact post-SHA plus unique structural milestone markers; do not re-parse prose semantics with brittle substrings |
 | UNTRACKED-CHECK-01 | finalization passes `git diff --check`, commit gate later finds whitespace in a new file | ordinary `git diff --check` does not include untracked files | validate the full would-be commit through a temporary Git index and run `git diff --cached --check` there before accepting finalization |
-| DOC-CURRENT-STATE-01 | new chat reads contradictory current state | older top/current checkpoint still names a superseded baseline while newer acceptance is appended later | when a milestone is published, replace/update authoritative current-state blocks across MASTER / IMPLEMENTATION / HANDOFF / ROADMAP / README; do not rely on a later appended section to override stale top text |
+| DOC-CURRENT-STATE-01 | new chat reads contradictory current state | several documents independently claimed global current/next authority | `docs/CURRENT_STATE.md` is the sole global project-state source; other docs keep scoped roles and link to it rather than duplicating current-state blocks |
 | PWR-CMDTOKEN-01 | AST parse passes but runner fails with “term is not recognized” for a helper/built-in command | PowerShell command name was immediately adjacent to its first argument (`Write-Host"..."`, `L'...'`, `Sha$p`, `SaveEvidence'PASS'`), so tokenization produced a different command name | require whitespace between a command name and every argument; generator statically rejects adjacent-argument calls for all package helper commands and critical built-ins |
 
 ---
@@ -446,39 +446,53 @@ A next step is clean only if:
 
 ---
 
-## 15. Delivery package standard
+## 15. Delivery / execution standard
 
-The primary operator-facing artifact for source/documentation changes is a **single ZIP package**, not a standalone PowerShell script.
+Use the narrowest execution path that can prove the required result.
 
-Operator workflow:
+### Direct repository operations
 
-1. download the ZIP to `C:\Users\DETU\Downloads\`;
-2. run the single PowerShell command provided with that package;
-3. the command automatically extracts the package to a disposable run directory and invokes the packaged `apply.ps1`;
-4. send back the resulting `.log` + evidence `.zip`, or the terminal error if extraction/launch itself fails.
+When `@DEUS MCP` (or an equivalent authorized repository tool) can safely perform a repo-only task, use it directly for:
 
-The operator does **not** manually unpack, copy, rename, merge, or edit payload files.
+- documentation edits/reconciliation;
+- source edits that do not require the operator's local hardware/toolchain;
+- Git inspection, staging, commits, fetch and ordinary non-force publication;
+- read-only repository audits.
+
+Do **not** generate a ZIP merely to make the operator apply changes that the connected repository tool can perform directly.
+
+Direct repo mutation still requires:
+
+- exact prestate validation;
+- exact changed/staged path review;
+- `git diff --check` / staged check as appropriate;
+- clean commit scope;
+- fresh-fetch/direct-parent proof before publication;
+- ordinary non-force push only;
+- fresh post-push fetch and clean `0/0` proof.
+
+### Operator-run package
+
+Use a self-contained ZIP runner when the task materially requires the operator's local Windows environment or physical target, for example:
+
+- firmware build/toolchain execution unavailable through the connected repo tool;
+- STM32CubeProgrammer / SWD / UART / USB hardware acceptance;
+- Windows-specific WinUSB/Desktop acceptance;
+- evidence collection that must occur on the operator machine;
+- a required operation that the connected repository tool cannot execute.
+
+For such packages the operator workflow remains download -> one PowerShell command -> return `.log` + evidence `.zip`. The operator must not manually merge or edit payload files.
 
 Every delivery ZIP must contain:
 
 - `apply.ps1` — package runner/orchestrator;
 - `manifest.json` — package identity, expected repository prestate, payload file hashes and roles;
-- `payload/` — complete ready-to-install files under their repository-relative paths;
+- `payload/` when repository files must be installed;
 - `PACKAGE_README.txt` — short human-readable identity and scope.
 
-Package application rules:
+Package application rules remain fail-closed: validate package/prestate, mutate only declared scope, validate poststate, restore exact prestate on pre-Flash failure where possible, and produce sufficient PASS/FAIL evidence.
 
-- validate package payload hashes before repository mutation;
-- validate exact repository prestate before repository mutation;
-- back up every path that can be replaced;
-- install payload files by repository-relative path;
-- validate exact poststate hashes and Git file set;
-- on failure before Flash, restore exact prestate bytes;
-- produce evidence ZIP on PASS and FAIL;
-- package scripts must not embed large source/document bodies when those files can live directly in `payload/`;
-- source, documentation and procedural playbook changes belonging to one accepted milestone should travel together in the same delivery package.
-
-This packaging rule changes delivery mechanics only. Existing separation of build, hardware acceptance, documentation finalization, commit and push gates remains in force unless a specific package explicitly declares a narrower safe scope.
+Delivery mechanics do not weaken the separation of build, hardware acceptance, documentation finalization, commit and publication gates.
 
 ### Mandatory PowerShell parser preflight
 
@@ -523,21 +537,20 @@ This check must cover tracked modifications and newly added files together.
 
 ### Canonical current-state synchronization
 
-When a milestone becomes the published baseline, authoritative "current state" blocks must be synchronized in the same documentation planning/finalization payload.
+`docs/CURRENT_STATE.md` is the sole global project-state document.
 
-At minimum inspect:
+When a product boundary is published:
 
-- `docs/MASTER_EXECUTION_CHECKLIST.md`
-- `docs/IMPLEMENTATION_PLAN.md`
-- `docs/PROJECT_HANDOFF.md`
-- `docs/ARCHITECTURE.md`
-- `docs/ROADMAP.md`
-- `README.md`
-- `CHANGELOG.md`
+1. update `docs/CURRENT_STATE.md` with the newly completed boundary and the newly active next boundary;
+2. update `CHANGELOG.md` for chronology;
+3. update `docs/ROADMAP.md` only if sequencing/completion history materially changes;
+4. update `docs/ARCHITECTURE.md` only when stable architecture/invariants changed;
+5. update the completed boundary plan/acceptance with its scoped accepted facts where required;
+6. update historical ledgers/handoff only when useful, without creating another current-state authority.
 
-A later appended acceptance section is not sufficient if an earlier/top block still claims an older HEAD or an already-closed next gate.
+`README.md`, `MASTER_EXECUTION_CHECKLIST.md`, `IMPLEMENTATION_PLAN.md` and `PROJECT_HANDOFF.md` must link to `CURRENT_STATE.md` rather than independently repeating the current boundary/next gate.
 
-Specialized subsystem acceptance documents should remain unchanged when their accepted contract is preserved; do not churn unrelated docs merely to touch every file.
+Specialized subsystem acceptance documents remain unchanged when their accepted contract is preserved; do not churn unrelated docs merely to touch every file.
 
 ### PowerShell command-token spacing
 

@@ -6,7 +6,7 @@
 > material below is deferred planning and must not override the accepted baseline.
 # OLED Console API Contract
 
-Status: ACTIVE / NATIVE 128x32 / SLICE 4 ACCEPTED
+Status: ACCEPTED REFERENCE CONTRACT / NATIVE 128x32 / SLICE 4 BASELINE
 
 ## 1. `mono_fb`
 

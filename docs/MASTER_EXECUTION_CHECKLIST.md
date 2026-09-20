@@ -1,9 +1,9 @@
 > [!IMPORTANT]
 
 <!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE -->
-## Current execution state
+## Execution ledger summary
 
-This section is authoritative.
+This file is a historical execution/checklist ledger. It is **not** the global current-state authority. Current project state and the active next boundary are owned by `docs/CURRENT_STATE.md`.
 
 ### Published boundary — application runtime foundation — Gates 0–7 accepted
 
@@ -67,15 +67,9 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] identity/capability contract: HELLO protocol `1`, service `3`, registry `36`; system capabilities `0x0000001F`.
 - [x] Gate 7 evidence SHA-256 `638569FE26600013B3B6717C76DEBF3251980B06D0B493B835D96CB4BC0CFD8F`.
 
-### Current boundary — asset/configuration transfer foundation — Gate 0 next
+### Project-state pointer
 
-- [ ] Freeze the real v1 asset/configuration consumer and bounded transfer semantics.
-- [ ] Freeze schema/version, exact maximum size and Flash ownership region.
-- [ ] Freeze CRC/integrity, atomic commit and reset/power-loss recovery.
-- [ ] Freeze default/previous recovery, erase/program alignment and Flash wear budget.
-- [ ] Freeze incompatible-version migration/rejection.
-- [ ] Keep non-executable configuration/assets separate from firmware/update state.
-- [ ] Do not introduce a general filesystem without a concrete consumer.
+This historical ledger does not own the active boundary checklist. See `docs/CURRENT_STATE.md` for the active next boundary. When that boundary begins, its dedicated `*_PLAN.md` / `*_ACCEPTANCE_PLAN.md` pair owns the gate checklist.
 
 ### Published baseline — binary framed transport foundation
 
@@ -365,7 +359,7 @@ Accepted Gates 1–5 record:
 - [x] Gate 4 `PHYSICAL_OLED=PASS`;
 - [x] no god object/service locator, hidden extracted-state extern, heap/new task/SVC/queue/mutex/timer/DMA/persistence mechanism.
 
-After decomposition publication, the next feature boundary was `USB_MANAGEMENT_DEVICE_FOUNDATION`, followed by `HOST_CONTROL_APPLICATION_FOUNDATION`; both are now accepted/published. Current next boundary is `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 contract freeze.
+After decomposition publication, the next feature boundary was `USB_MANAGEMENT_DEVICE_FOUNDATION`, followed by `HOST_CONTROL_APPLICATION_FOUNDATION`; both are now accepted/published. The subsequently selected Asset/Configuration boundary is tracked as active/current only in `docs/CURRENT_STATE.md`.
 
 Permanent constraints retained:
 
@@ -396,9 +390,9 @@ Canonical acceptance:
 > `BOOT_DESKTOP_UI_FOUNDATION` is the dedicated boundary allowed to evolve runtime-owned content/status semantics while preserving that geometry. Configurable-layout, preset, custom-layout, persistence, or alternate-geometry material remains deferred and must not override the accepted baseline.
 # Master Execution Checklist
 
-This file is the canonical execution gate for the STM32 OS project.
+This file is the historical execution/checklist ledger for the STM32 OS project. Global current state is owned by `docs/CURRENT_STATE.md`; unchecked historical items are not automatically active work.
 
-## Current hardware baseline
+## Accepted hardware baseline
 
 MCU:
 
@@ -493,7 +487,7 @@ Console UI is not aligned to SSD1306 pages.
 - [x] Slice 3B: generic opaque text renderer.
 - [x] Slice 3C: framebuffer-equivalent aligned fast path.
 - [x] Slice 4: retained 21x3 console without scrolling + accepted reference UI.
-- [ ] Slice 4B: configurable UI layout + status bar.
+- [ ] Deferred candidate: Slice 4B configurable UI layout + status bar — not active unless promoted by `docs/CURRENT_STATE.md` and a dedicated accepted boundary.
   - [x] 4B.0: initial status architecture/acceptance plan.
   - [x] 4B.0a: static status prototype protocol/isolation proof.
   - [x] 4B.0b: visually reject hardcoded full-frame composition; do not commit it.
@@ -502,7 +496,7 @@ Console UI is not aligned to SSD1306 pages.
   - [ ] 4B.1: add `minimal`, `boxed`, `compact` presets.
   - [ ] 4B.1: move borders/separator/regions into layout data.
   - [ ] 4B.1: keep 21x3 console with glyph-based horizontal fit.
-  - [ ] 4B.1: retain 3x4 status font + COMM/UART + static `12:34`.
+  - [ ] 4B.1: preserve accepted SYSTEM/USB/NETWORK/uptime semantics while allowing layout/style changes.
   - [ ] 4B.1: add runtime preset selection.
   - [ ] 4B.1: physically compare at least minimal vs boxed.
   - [ ] 4B.1: accept one or more presets, then commit/push.
@@ -510,10 +504,10 @@ Console UI is not aligned to SSD1306 pages.
   - [ ] 4B.2: prove atomic rejection of invalid custom layouts.
   - [x] 4B.3 uptime `HH:MM` objective — implemented and hardware-accepted in `BOOT_DESKTOP_UI_FOUNDATION`.
   - [x] 4B.3 visible-change update objective — implemented and later optimized in `OLED_DIRTY_REGION_OPTIMIZATION`; accepted semantics use real SYSTEM/USB state rather than the old prototype COMM label.
-  - [ ] 4B.4: define PC interchange/converter/configurator protocol.
-  - [ ] 4B.4: send layout through UART first.
-  - [ ] 4B.4: later reuse the same API through USB CDC.
-  - [ ] 4B.5: optional versioned Flash persistence after runtime semantics stabilize.
+  - [ ] 4B.4: define bounded host interchange/converter/configurator protocol if this deferred work is promoted.
+  - [ ] 4B.4: use shared host Core/RPC over the accepted management transport; do not define a UART-first UI contract.
+  - [ ] 4B.4: keep UART/CDC diagnostic transports independent of UI configuration semantics.
+  - [ ] 4B.5: optional persistence only as a consumer of the accepted Asset/Configuration persistence contract; no UI-specific parallel Flash format.
 - [x] Slice 5: circular 3-row scroll — accepted; detailed proof retained below.
 - [x] Slice 6: dirty-page presentation optimization — accepted and later superseded by the published `OLED_DIRTY_REGION_OPTIMIZATION` boundary.
 - [ ] Optional kernel-log integration — deferred; not part of the accepted numbered Slice 7 dirty-page UI-integration record below.

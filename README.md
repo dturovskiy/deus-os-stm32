@@ -4,56 +4,29 @@ A small bare-metal operating-system project for STM32F103 / ARM Cortex-M3.
 
 The target firmware is written without STM32 HAL, Arduino, FreeRTOS, a heap, or a dynamic process loader. The project uses direct-register drivers, a bounded static scheduler/runtime, native USB, UART diagnostics, an SSD1306 local UI, and a C#/.NET host control application.
 
-## Current published state
+## Start here
 
-Live repository HEAD is intentionally not hard-coded in this file because documentation-only reconciliation commits may advance it without changing the accepted product boundary. Verify live Git state directly when exact repository identity is required.
+For the **current project state**, use exactly one source:
 
-Latest completed product boundary commit:
+- `docs/CURRENT_STATE.md`
 
-`e0f49f168542fa1cf49bca451e01b0c077aa8d18` — `feat: add host control application foundation`
+For documentation roles and precedence:
 
-Latest completed boundary:
+- `docs/DOCUMENTATION_MODEL.md`
 
-`HOST_CONTROL_APPLICATION_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED**
+For stable architecture/invariants:
 
-Accepted target firmware:
+- `docs/ARCHITECTURE.md`
 
-- firmware candidate tree: `b895955f7738aceb6fca0272d510cc433378c6ab`
-- BIN: `50652` bytes
-- BIN SHA-256: `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F`
-- Flash/SRAM: `50652 / 11728`
-- task stacks: `1024 / 512`
+For forward sequencing:
 
-Accepted host foundation:
+- `docs/ROADMAP.md`
 
-- C# / `net10.0`
-- transport-neutral Core
-- Windows WinUSB adapter
-- Linux libusb adapter
-- Avalonia `12.1.2` desktop
-- Core tests `21/21`
-- Transport tests `5/5`
+For historical changes:
 
-Published management transport:
+- `CHANGELOG.md`
 
-- USB identity `1209:000C` / `Deus OS Device`
-- CDC interfaces 0–1 retained for diagnostics
-- management interface 2 over EP4 bulk64
-- Windows binding: WinUSB
-- stable management GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`
-- binary framing protocol v1
-- command service v3 / registry 36
-- system capability mask `0x0000001F`
-
-Final Host foundation hardware acceptance includes Windows CLI/Desktop, real Linux libusb runtime, application lifecycle, reconnect with fresh negotiation, 128 unique management pings, zero management/CDC drops, and exact final Flash readback.
-
-## Next boundary
-
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **Gate 0 contract freeze next**
-
-Before any persistent target write, Gate 0 must freeze a bounded persistence contract covering schema/version, exact size and Flash ownership, CRC/integrity, atomic commit and power-loss recovery, default/previous recovery, erase/program alignment, wear budget, incompatible-version policy, and strict separation of configuration/assets from firmware/update state.
-
-A general filesystem remains deferred until a concrete consumer requires one.
+README is an entry point only. It is **not** an authoritative current-state, acceptance, roadmap or evidence document.
 
 ## Target
 
@@ -67,11 +40,11 @@ A general filesystem remains deferred until a concrete consumer requires one.
 - secondary USB diagnostics: CDC ACM
 - local display: SSD1306-class 128x32 OLED
 
-## Implemented foundations
+## Implemented foundation areas
 
 - startup/vector table/reset and fault handling
 - clock + monotonic kernel time
-- static PSP scheduler with block/event wake and IWDG liveness
+- static PSP scheduler with blocking/event wake and IWDG liveness
 - USART1 IRQ/ring diagnostic console
 - native USB Device + CDC ACM
 - transport-neutral command service
@@ -82,6 +55,8 @@ A general filesystem remains deferred until a concrete consumer requires one.
 - kernel composition-root decomposition
 - USB management device
 - Windows/Linux host control application
+
+Exact accepted product state, candidate hashes and the active next boundary live in `docs/CURRENT_STATE.md`.
 
 ## Project structure
 
@@ -95,27 +70,20 @@ OS/
 └── src/
 ```
 
-## Documentation
+## Documentation classes
 
-Authoritative current state:
-
-- `docs/ARCHITECTURE.md`
-- `docs/ROADMAP.md`
-- `docs/MASTER_EXECUTION_CHECKLIST.md`
-- `docs/PROJECT_HANDOFF.md`
-
-Historical changes:
-
-- `CHANGELOG.md`
-
-Current Host foundation design/acceptance:
-
-- `docs/HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md`
-- `docs/HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md`
-
-Persistence prerequisites for the next boundary:
-
-- `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`
+- current project state: `docs/CURRENT_STATE.md`
+- documentation governance/index: `docs/DOCUMENTATION_MODEL.md`
+- architecture: `docs/ARCHITECTURE.md`
+- roadmap: `docs/ROADMAP.md`
+- per-boundary design: `docs/*_PLAN.md`
+- per-boundary acceptance: `docs/*_ACCEPTANCE_PLAN.md`
+- deferred/trigger-driven engineering: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
+- execution history: `docs/MASTER_EXECUTION_CHECKLIST.md`
+- operator/handoff reference: `docs/PROJECT_HANDOFF.md`
+- historical umbrella implementation notes: `docs/IMPLEMENTATION_PLAN.md`
+- harness/evidence rules: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`
+- chronology: `CHANGELOG.md`
 
 ## Design principles
 
@@ -125,6 +93,7 @@ Persistence prerequisites for the next boundary:
 - Keep platform/register code below kernel/service/application semantics.
 - Measure before optimizing.
 - Do not invent connectivity, identity or runtime state that hardware cannot truthfully report.
+- Promote deferred ideas only when a real consumer/problem exists and a dedicated boundary freezes scope and acceptance.
 - Add filesystem, networking, update/security and other large subsystems only against a concrete product consumer.
 
 ## License

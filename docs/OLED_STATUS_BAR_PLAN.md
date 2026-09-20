@@ -1,138 +1,129 @@
 > [!IMPORTANT]
-> **OLED UI status: ACCEPTED / FROZEN (2026-09-11).**
-> The authoritative hardware-accepted geometry and firmware fingerprint are in
+> **Accepted OLED geometry/rendering baseline remains frozen.**
+> The hardware-accepted geometry and firmware fingerprint are in
 > [`OLED_UI_ACCEPTED_BASELINE.md`](OLED_UI_ACCEPTED_BASELINE.md).
-> Any configurable-layout, preset, custom-layout, persistence, or alternate-geometry
-> material below is deferred planning and must not override the accepted baseline.
+> This file is deferred future design. It does not authorize implementation and
+> must not override accepted SYSTEM/USB/NETWORK/uptime semantics.
+
 # OLED Status Bar Plan
 
-Status: PLANNED / OWNED BY CONFIGURABLE UI LAYOUT
+Status: **DEFERRED FUTURE UI CONSUMER — NOT AN ACTIVE ROADMAP BOUNDARY; CURRENT STATE IN `docs/CURRENT_STATE.md`**
 
-The status bar remains a semantic component, but its screen placement is now
-owned by `docs/OLED_UI_LAYOUT_PLAN.md`.
+The purpose of this plan is limited: if configurable UI layout work is promoted
+later, status-bar **placement/style** may become configurable without moving
+system/service truth into the presentation layer.
 
 ## 1. Semantic responsibility
 
-The status component owns:
+The status renderer may own:
 
-- COMM state;
-- time state;
-- 3x4 digit/colon rendering;
-- COMM icon rendering;
-- dirty semantic state.
+- tiny glyph/icon rendering;
+- rendering inside the clip supplied by the layout/composition layer;
+- presentation-local dirty tracking derived from changed displayed values.
 
-It does not own global coordinates.
+It must not own:
 
-## 2. Information model
+- scheduler/system health truth;
+- USB state truth;
+- network-service truth;
+- timekeeping truth;
+- transport discovery/session state;
+- global layout coordinates;
+- I2C/panel presentation.
 
-Left field:
+Authoritative system/service state remains upstream of the OLED presentation.
 
-```text
-COMM
-```
+## 2. Accepted information model
 
-Initial real state:
+Future layout work must preserve the accepted status semantics unless a separate
+boundary explicitly changes them.
 
-- none;
-- UART/serial available.
+Current accepted semantic fields are:
 
-Do not display a fake network/Wi-Fi state.
+- **SYSTEM** — scheduler/task/watchdog readiness;
+- **USB** — actual target USB/service state used by the accepted runtime;
+- **NETWORK** — inactive until a real network service exists;
+- **time** — monotonic uptime `HH:MM`, saturating according to the accepted UI contract.
 
-Right field:
+Do not invent “connected” state for UART or ST-LINK.
 
-```text
-HH:MM
-```
+Do not display fake Wi-Fi/network state.
 
-Initial source after layout acceptance:
+A future RTC wall clock may reuse the time field only after a dedicated time/RTC
+contract is accepted.
 
-- uptime.
+## 3. Rendering contract
 
-Future source:
-
-- RTC wall clock using the same geometry.
-
-## 3. Micro-font
-
-Required immutable font:
-
-```text
-glyph size: 3x4
-required glyphs:
-0 1 2 3 4 5 6 7 8 9 :
-```
-
-The COMM mark is an icon, not a text glyph.
-
-## 4. Rendering contract
-
-The status renderer receives a clip from the UI layout layer.
+The renderer receives a validated clip from the UI layout layer.
 
 It may modify pixels only inside that clip.
 
 It must not:
 
-- draw outer borders;
-- draw the global separator;
-- move the console;
+- draw global borders/separators;
+- move application/console content;
 - perform I2C;
 - flush/present the OLED;
-- know SSD1306 page layout.
+- know SSD1306 page layout;
+- infer system/service state from already-rendered pixels.
 
-## 5. Current prototype
+## 4. Historical prototype note
 
-The uncommitted Slice 4B.1 prototype proved:
+An early Slice 4B.1 experiment proved:
 
-- 3x4 rendering;
-- `12:34`;
-- real COMM/UART icon;
+- 3x4 digit rendering;
 - pixel isolation;
-- `OLED_STATUS_OK`.
+- status rendering mechanics.
 
-The protocol proof is useful.
+Its `COMM/UART` icon and static `12:34` semantics are historical prototype material
+and are **not** the current product status model.
 
-The visual composition is rejected as a final layout because the full outer
-frame is considered too heavy.
+The visual composition was not accepted as the final configurable layout.
 
-Do not commit that prototype as the final UI.
+## 5. Future acceptance if this work is promoted
 
-## 6. Next acceptance
+Before implementation, create a dedicated accepted boundary or explicitly include
+this work in a promoted UI/configuration boundary.
 
-The next status-bar acceptance occurs through the configurable layout engine.
+Acceptance must prove at least:
 
-At least these visual styles must be compared physically:
+- accepted SYSTEM/USB/NETWORK/time semantics are preserved;
+- layout/style changes do not change authoritative service state;
+- at least two materially different presets are physically compared if presets are in scope;
+- invalid configuration is rejected atomically;
+- no blank pulse/stale pixels/console corruption;
+- no new transport-specific UI configuration logic.
 
-```text
-minimal
-boxed
-```
+Uptime integration is already complete and is **not** a future prerequisite.
 
-`compact` should also be included if it differs meaningfully.
+## 6. Refresh policy
 
-Only after a preset is physically accepted should uptime integration begin.
+Status presentation becomes dirty only when a displayed value or its layout changes.
 
-## 7. Refresh policy
+Examples:
 
-Status state becomes dirty only when its displayed value changes.
+- displayed minute changes -> dirty;
+- SYSTEM/USB/NETWORK displayed state changes -> dirty;
+- layout/preset changes -> dirty.
 
-For `HH:MM` uptime:
+No 1 Hz OLED flush is required merely because a clock exists.
 
-- minute change -> dirty;
-- COMM state change -> dirty.
+Presentation remains caller/orchestrator controlled.
 
-No 1 Hz OLED flush is required.
+## 7. External customization
 
-Presentation remains caller-controlled.
+PC tools may create exact `128x32` previews and validated layout parameters.
 
-## 8. External customization
+The MCU must receive bounded validated configuration/assets, not PNG/SVG editor files
+or arbitrary executable content.
 
-Pixel mockups may be created on PC at exact `128x32` resolution.
+Any persistent layout storage must consume the accepted
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` contract. This plan must not define a
+parallel Flash format.
 
-The board receives validated layout parameters and preconverted assets, not
-PNG/SVG editor files directly.
+Host transfer should use the existing transport-neutral management/RPC architecture;
+UART remains emergency diagnostics and CDC remains secondary diagnostics.
 
 See:
 
-```text
-docs/OLED_UI_LAYOUT_PLAN.md
-```
+`docs/OLED_UI_LAYOUT_PLAN.md`

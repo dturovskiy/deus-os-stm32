@@ -1,13 +1,11 @@
 # STM32 OS — Implementation Plan
 
 <!-- BEGIN STM32_OS_IMPLEMENTATION_CHECKPOINT -->
-## Current implementation checkpoint
+Status: **HISTORICAL UMBRELLA IMPLEMENTATION PLAN — CURRENT STATE IS OWNED BY `docs/CURRENT_STATE.md`; ACTIVE ORDERING BY `docs/ROADMAP.md`**
 
-Live repository HEAD is intentionally not hard-coded here because documentation-only reconciliation commits may advance it independently of product-boundary acceptance. Verify exact live Git identity directly when required.
+## Historical implementation chronology
 
-Latest completed product boundary: `HOST_CONTROL_APPLICATION_FOUNDATION` Gates 0–7 accepted / published at `e0f49f168542fa1cf49bca451e01b0c077aa8d18`, tree `42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`.
-
-Current next boundary: `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — Gate 0 contract freeze before any persistent target write.
+This file preserves early implementation rationale and milestone chronology. Statements below that say “next”, “deferred”, or describe an old phase sequence are historical unless they are explicitly promoted by `docs/CURRENT_STATE.md` and a dedicated boundary plan.
 
 ### Historical published boundary sequence
 
@@ -314,21 +312,23 @@ For each slice:
 9. verify physical behavior
 10. update PROJECT_HANDOFF.md after acceptance
 
-## Deferred topics
+## Historical deferred-topic snapshot
 
-Do not implement yet:
+This list reflected the early umbrella plan and is retained for rationale, not current prioritization.
 
-- dynamic heap allocator
-- filesystem
-- USB stack implementation (architecture planned; implementation deferred until the current scheduler lifecycle boundary is closed)
-- TCP/IP directly on STM32
-- user/kernel privilege separation
-- MPU isolation
-- firmware update protocol
-- multicore support
-- graphical game engine
+Subsequent status:
 
-These can be revisited only after the scheduler and diagnostics baseline is stable.
+- native USB device support — **implemented/published**;
+- scheduler lifecycle/timed blocking/priorities — **implemented/published**;
+- firmware update — **planned later as `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, not active yet**;
+- dynamic heap allocator — deferred until a concrete consumer proves it necessary;
+- general filesystem — deferred; bounded persistence does not imply a filesystem;
+- direct TCP/IP expansion on STM32F103 — not part of the current baseline;
+- user/kernel privilege separation / MPU isolation — deferred;
+- multicore support — outside STM32F103 scope;
+- graphical game engine — outside current product roadmap.
+
+Current prioritization is owned by `docs/CURRENT_STATE.md`, `docs/ROADMAP.md` and the deferred backlog.
 
 <!-- BEGIN STM32_OS_SCHED_WAIT_WAKE_IMPLEMENTATION_ACCEPTED_20260913 -->
 ## Accepted scheduler steady-state wait/wake foundation — 2026-09-13
@@ -347,7 +347,7 @@ The scheduler now has the minimum accepted production blocking model required be
 
 Hardware proof covers repeated block -> idle -> UART IRQ -> wake -> resume cycles, canaries, stack margins, lifecycle isolation, legacy scheduler regressions, RX pressure, MSP telemetry, OLED runtime restoration, target Flash identity, and manual physical OLED acceptance.
 
-### Next implementation slice
+### Historical next implementation slice — subsequently completed
 
 **Normal-boot production task ownership / migration**
 
@@ -361,9 +361,11 @@ keeps host MSP as scheduler idle owner using WFE. The task drains the RX ring
 before waiting on the UART event. Initial OLED composition remains bootstrap
 work; runtime OLED/I2C application calls move with console ownership to PSP.
 
-Still deferred to later independent gates:
+Subsequent outcome:
 
-- `sleep()` / timer-backed blocking on top of the accepted event model;
-- scheduler priorities;
-- broader application/task topology changes.
+- timer-backed blocking was implemented/published through `SCHEDULER_TIMED_BLOCKING`;
+- scheduler priorities were implemented/published through `SCHEDULER_FIXED_PRIORITY`;
+- broader application/runtime topology work was implemented through later ownership and `APPLICATION_RUNTIME_FOUNDATION` boundaries.
+
+This section is historical and does not define current work.
 <!-- END STM32_OS_SCHED_WAIT_WAKE_IMPLEMENTATION_ACCEPTED_20260913 -->
