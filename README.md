@@ -66,7 +66,6 @@ OS/
 ├── host/
 ├── include/
 ├── linker/
-├── scripts/
 └── src/
 ```
 

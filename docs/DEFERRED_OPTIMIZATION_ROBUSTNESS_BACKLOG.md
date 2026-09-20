@@ -142,20 +142,12 @@ In particular, do not implicitly start a replacement application after an unreso
 
 None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
 
-These items did **not** block the now-published `USB_MANAGEMENT_DEVICE_FOUNDATION`; that boundary reused the accepted command/binary-RPC domain and added only the explicitly frozen USB-management transport/runtime wiring. They likewise do not authorize speculative kernel expansion before the next `HOST_CONTROL_APPLICATION_FOUNDATION` boundary.
+These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION` or `HOST_CONTROL_APPLICATION_FOUNDATION`. They do not authorize speculative kernel expansion or become active work merely by appearing in this backlog.
 
 ## 8. Roadmap placement
 
-These deferred items do not change current roadmap ordering.
+This backlog does not own current roadmap state or activation. `docs/CURRENT_STATE.md` is authoritative for the active boundary and `docs/ROADMAP.md` owns forward sequencing.
 
-Current intended order remains:
-
-1. `APPLICATION_RUNTIME_FOUNDATION`;
-2. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — accepted/published architecture cleanup after measured god-module concentration in `src/kernel.c`;
-3. `USB_MANAGEMENT_DEVICE_FOUNDATION`;
-4. `HOST_CONTROL_APPLICATION_FOUNDATION`;
-5. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` when a real consumer exists;
-6. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-7. networking/service extensions.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` must still identify a real consumer before implementation; if Gate 0 cannot name one, the storage/transfer implementation remains deferred rather than becoming an abstract framework.
 
 Optimization rule: remove unnecessary work first, measure next, add complexity only against an observed bottleneck.

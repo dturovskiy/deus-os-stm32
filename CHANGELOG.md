@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Pre-feature readiness documentation audit
+
+A follow-up readiness review corrected three residual documentation inconsistencies before the next product boundary: README no longer lists a non-existent `scripts/` directory; the deferred backlog no longer claims stale current/next roadmap authority and explicitly keeps Asset/Configuration implementation deferred if Gate 0 cannot identify a real consumer; and the canonical binary protocol-v1 document now reflects its transport-neutral reuse over the dedicated management interface plus the accepted additive command-service v3 / registry 36 / RPC IDs `0x0021..0x0024`, without changing the v1 wire envelope.
+
 ### Repository hygiene / public GitHub audit
 
 The public repository tree and full 63-commit history were audited for generated build/evidence paths and high-confidence secret patterns. No tracked or historical `build/`, `bin/obj/TestResults`, firmware image/object outputs (`.bin/.elf/.map/.hex/.o`), logs/ZIP evidence, `.env`, private-key/certificate bundles or credential/secrets files were found. Content-history scans found no private-key PEM markers, GitHub/OpenAI/AWS/Slack/Google token patterns, literal password/API-key assignments or credential-bearing URLs.

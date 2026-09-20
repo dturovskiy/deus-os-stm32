@@ -1,6 +1,6 @@
 # STM32 OS — Binary Framed Transport Protocol v1
 
-Status: **PROTOCOL V1 ACCEPTED / PUBLISHED — `2fde9025a51021511e73a76b561f7983ca655e2f`**
+Status: **PROTOCOL ENVELOPE V1 ACCEPTED / PUBLISHED — WIRE V1 REMAINS CURRENT; COMMAND SERVICE HAS ADDITIVELY ADVANCED TO V3 / REGISTRY 36**
 
 Boundary ID:
 
@@ -10,11 +10,11 @@ This document is normative for protocol version `1`.
 
 ## 1. Transport and coexistence
 
-Protocol v1 runs over the already published USB CDC ACM byte stream. It does not change USB descriptors, endpoint numbers, PMA ownership, Windows `usbser` binding, or the UART emergency console.
+The v1 binary frame envelope is transport-neutral above a reliable byte-stream/bulk carrier. It was originally accepted over USB CDC ACM and was later reused unchanged by the dedicated USB management interface (IF2) carried through WinUSB on Windows and libusb on Linux. The envelope itself does not own USB descriptors, endpoint allocation, PMA ownership, host-driver binding, discovery policy, or UART semantics.
 
-UART remains text-only in this boundary.
+UART remains the emergency text path and is not a binary management carrier in the accepted product baseline.
 
-CDC carries both the existing human text shell and binary frames. Binary traffic is claimed only by the reserved two-byte magic prefix:
+CDC retains accepted text/binary coexistence for diagnostics compatibility; the dedicated management interface carries binary management traffic without a human text shell. On a coexistence carrier, binary traffic is claimed only by the reserved two-byte magic prefix:
 
 ```text
 A5 5A
@@ -74,7 +74,7 @@ Unknown nonzero flag bits, nonzero reserved bytes, oversized payloads, malformed
 0x84  PROTOCOL_ERROR
 ```
 
-No telemetry/event/file/update frame type is implemented in v1. Their future addition must not reinterpret these frame types.
+No telemetry/event/asset-transfer/firmware-update frame type is implemented in the currently accepted v1 envelope. Future additions must be additive, capability-negotiated and backward-compatible with the accepted frame types, or explicitly advance the protocol version; they must never reinterpret existing frame-type values.
 
 ## 5. Flags
 
@@ -98,13 +98,13 @@ All flags are zero for v1 `HELLO_REQUEST` and response frames.
 ```text
 offset  size  field
 0       1     protocol_version = 1
-1       1     command_service_version = 1
+1       1     command_service_version (current accepted value = 3)
 2       1     command_max_args = 4
 3       1     reserved = 0
 4       2     text_line_capacity = 32
 6       2     rpc_request_payload_max = 132
 8       2     rpc_data_chunk_max = 48
-10      2     registry_count = 32
+10      2     registry_count (current accepted value = 36)
 12      4     capability_flags
 ```
 
@@ -189,9 +189,13 @@ These IDs are public protocol ABI. They are not the internal C dispatch enum and
 0x001E wdogtrip
 0x001F help
 0x0020 rpcinfo
+0x0021 applist
+0x0022 appstart
+0x0023 appstop
+0x0024 sysinfo
 ```
 
-Existing names remain the text-shell ABI. These numeric IDs are the binary ABI. Renaming a text method or changing an internal dispatch enum does not silently renumber an accepted RPC ID.
+Existing names remain the text-shell ABI. These numeric IDs are the binary ABI. Renaming a text method or changing an internal dispatch enum does not silently renumber an accepted RPC ID. IDs `0x0021..0x0024` were added by later accepted service boundaries without changing binary frame protocol version 1.
 
 ## 9. Chunked response data
 
