@@ -322,7 +322,7 @@ Architecture review outcome: `src/kernel.c` is not classified as spaghetti, but 
 
 Publication commit/tree: `25752fba557b1a1b518265a93bde05d3a6a3f9ad` / `24624db70923bdaa77f134cc956423511785c199`; ordinary non-force publication complete; final repository ahead/behind `0/0`. Gate 6 evidence `203F9A99E09F76C7F99B6C06EF073BE4F55949545188F7302E394AB20AEED068`; Gate 7 evidence `855FC891003E1A67EBF6C5FDE559EEF0F1450A83828FCF66EFC6D00DB3C51EBB`.
 
-### Current boundary — Kernel composition-root decomposition
+### Historical boundary record — Kernel composition-root decomposition
 
 Boundary ID: `KERNEL_COMPOSITION_ROOT_DECOMPOSITION`.
 
@@ -365,7 +365,7 @@ Accepted Gates 1–5 record:
 - [x] Gate 4 `PHYSICAL_OLED=PASS`;
 - [x] no god object/service locator, hidden extracted-state extern, heap/new task/SVC/queue/mutex/timer/DMA/persistence mechanism.
 
-After decomposition publication, the next feature boundary was `USB_MANAGEMENT_DEVICE_FOUNDATION`; it is now also accepted/published. Current next boundary is `HOST_CONTROL_APPLICATION_FOUNDATION`.
+After decomposition publication, the next feature boundary was `USB_MANAGEMENT_DEVICE_FOUNDATION`, followed by `HOST_CONTROL_APPLICATION_FOUNDATION`; both are now accepted/published. Current next boundary is `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 contract freeze.
 
 Permanent constraints retained:
 
@@ -388,7 +388,7 @@ Canonical design:
 
 Canonical acceptance:
 `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md`
-<!-- END STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
+<!-- END STM32_OS_CURRENT_EXECUTION_STATE -->
 
 > **OLED geometry/rendering baseline: ACCEPTED / FROZEN (2026-09-11).**
 > The authoritative hardware-accepted geometry and firmware fingerprint are in
@@ -483,7 +483,7 @@ No 2x text workaround.
 No 128x64 assumptions.
 Console UI is not aligned to SSD1306 pages.
 
-## Current implementation sequence
+## OLED implementation / deferred sequence summary
 
 - [x] Slice 0: restore known-good baseline.
 - [x] Slice 1: isolate SSD1306 driver.
@@ -508,15 +508,15 @@ Console UI is not aligned to SSD1306 pages.
   - [ ] 4B.1: accept one or more presets, then commit/push.
   - [ ] 4B.2: add `ui show` and validated RAM-only `ui set`.
   - [ ] 4B.2: prove atomic rejection of invalid custom layouts.
-  - [ ] 4B.3: integrate uptime `HH:MM`.
-  - [ ] 4B.3: update only on displayed minute/COMM changes.
+  - [x] 4B.3 uptime `HH:MM` objective — implemented and hardware-accepted in `BOOT_DESKTOP_UI_FOUNDATION`.
+  - [x] 4B.3 visible-change update objective — implemented and later optimized in `OLED_DIRTY_REGION_OPTIMIZATION`; accepted semantics use real SYSTEM/USB state rather than the old prototype COMM label.
   - [ ] 4B.4: define PC interchange/converter/configurator protocol.
   - [ ] 4B.4: send layout through UART first.
   - [ ] 4B.4: later reuse the same API through USB CDC.
   - [ ] 4B.5: optional versioned Flash persistence after runtime semantics stabilize.
-- [ ] Slice 5: circular 3-row scroll.
-- [ ] Slice 6: dirty-page presentation optimization.
-- [ ] Slice 7: optional kernel-log integration.
+- [x] Slice 5: circular 3-row scroll — accepted; detailed proof retained below.
+- [x] Slice 6: dirty-page presentation optimization — accepted and later superseded by the published `OLED_DIRTY_REGION_OPTIMIZATION` boundary.
+- [ ] Optional kernel-log integration — deferred; not part of the accepted numbered Slice 7 dirty-page UI-integration record below.
 
 ## Development loop
 
@@ -649,7 +649,8 @@ Deferred, not blocking the current roadmap:
 - [ ] Runtime/custom layout editing — deferred.
 - [ ] PC configurator/import — deferred.
 - [ ] UI persistence — deferred.
-- [ ] Uptime/RTC clock behavior — deferred.
+- [x] Uptime `HH:MM` behavior — accepted in `BOOT_DESKTOP_UI_FOUNDATION`.
+- [ ] RTC wall-clock source — deferred.
 
 - [x] Center status-bar field reserved for notifications:
   `x=20..107, y=2..6`, with guard columns `x=19` and `x=108`.

@@ -14,7 +14,7 @@ Exact next boundary: `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 contract f
 
 ### Documentation structure reconciliation
 
-A post-publication audit found that `README.md`, the top execution-checklist block, roadmap status, architecture status and current handoff still mixed historical snapshots with current state. This reconciliation makes `README.md` a short project landing page, keeps dated history in `CHANGELOG.md`, keeps gate history in `docs/MASTER_EXECUTION_CHECKLIST.md`, and keeps detailed live engineering state in `docs/PROJECT_HANDOFF.md`. No firmware, host source, protocol, hardware or accepted candidate bytes are changed.
+A post-publication audit found that `README.md`, the top execution-checklist block, roadmap status, architecture status and current handoff still mixed historical snapshots with current state. This reconciliation makes `README.md` a short project landing page, keeps dated history in `CHANGELOG.md`, keeps gate history in `docs/MASTER_EXECUTION_CHECKLIST.md`, and keeps detailed live engineering state in `docs/PROJECT_HANDOFF.md`. A follow-up full-document audit also corrected stale decomposition/USB-management status headers, stale Host Gate-1 wording in architecture/implementation docs, resolved-vs-pending entries in the foundation gap review, and stale OLED checklist summary items. Exact live repository HEAD is intentionally no longer hard-coded into current-state docs, preventing every docs-only commit from immediately making those docs stale. No firmware, host source, protocol, hardware or accepted candidate bytes are changed.
 
 ## 2026-09-19
 

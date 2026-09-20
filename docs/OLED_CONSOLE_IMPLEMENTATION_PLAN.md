@@ -6,7 +6,7 @@
 > material below is deferred planning and must not override the accepted baseline.
 # OLED Console Implementation Plan
 
-Status: ACTIVE PLAN / NATIVE 128x32
+Status: HISTORICAL IMPLEMENTATION PLAN / NATIVE 128x32 / ACCEPTED BASELINE
 
 ## Completed and accepted
 

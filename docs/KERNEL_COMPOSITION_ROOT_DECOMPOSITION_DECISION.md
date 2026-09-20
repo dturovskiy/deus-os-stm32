@@ -1,8 +1,8 @@
 # Deus OS — Kernel composition-root decomposition decision
 
-Status: **DECISION SATISFIED THROUGH GATE 5 — GATE 6/7 PUBLICATION PENDING**
+Status: **DECISION SATISFIED / GATES 0–7 ACCEPTED / PUBLISHED `fa75307fb392718a1d10d52770a6a111c97208e7`**
 
-Outcome note: the growth stop remains in force until ordinary publication completes. The accepted decomposition candidate reduces `src/kernel.c` from `5100` to `3405` lines, preserves the frozen public/hardware behavior, and introduces no universal context/service locator or hidden extracted-module state. Gate 2/3 are accepted on candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; Gate 4 is `PHYSICAL_OLED=PASS`. The trigger analysis below is retained as the historical basis for the decision.
+Outcome note: the growth stop was satisfied by the published decomposition. The accepted candidate reduces `src/kernel.c` from `5100` to `3405` lines, preserves the frozen public/hardware behavior, and introduces no universal context/service locator or hidden extracted-module state. Gate 2/3 are accepted on candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a`; Gate 4 is `PHYSICAL_OLED=PASS`; Gates 6/7 completed at `fa75307fb392718a1d10d52770a6a111c97208e7`. The trigger analysis below is retained as the historical basis for the decision.
 
 Decision ID:
 

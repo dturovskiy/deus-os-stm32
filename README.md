@@ -6,13 +6,11 @@ The target firmware is written without STM32 HAL, Arduino, FreeRTOS, a heap, or 
 
 ## Current published state
 
-Published repository commit:
+Live repository HEAD is intentionally not hard-coded in this file because documentation-only reconciliation commits may advance it without changing the accepted product boundary. Verify live Git state directly when exact repository identity is required.
+
+Latest completed product boundary commit:
 
 `e0f49f168542fa1cf49bca451e01b0c077aa8d18` — `feat: add host control application foundation`
-
-Commit tree:
-
-`42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`
 
 Latest completed boundary:
 

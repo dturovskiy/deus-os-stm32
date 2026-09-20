@@ -1,6 +1,6 @@
 # Deus OS — Foundation Architecture Gap Review
 
-Status: **NORMATIVE GAP REVIEW FOR `OS_APPLICATION_AND_UI_MODEL_FOUNDATION`**
+Status: **HISTORICAL NORMATIVE GAP REVIEW — APPLICATION EVENT + SYSTEM IDENTITY GAPS RESOLVED; PERSISTENCE CONTRACT ACTIVE NEXT**
 
 Published source baseline reviewed:
 
@@ -11,7 +11,7 @@ Published source baseline reviewed:
 
 This review asks one question: **is the lower kernel/foundation map complete enough that future product direction can change without forcing a rewrite of the accepted substrate?**
 
-Conclusion: **yes, with a small set of additional contracts that must be explicitly retained in the roadmap.** There is no missing kernel mechanism that blocks the current `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` direction. The missing items are primarily architectural contracts and later service boundaries, not reasons to add speculative RTOS machinery now.
+Original conclusion: **yes, with a small set of additional contracts that must be explicitly retained in the roadmap.** No missing kernel mechanism blocked the then-current `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` direction. Since this review, the semantic application-event contract was accepted in `APPLICATION_RUNTIME_FOUNDATION` and the system identity/capability gap was closed by `HOST_CONTROL_APPLICATION_FOUNDATION` through `sysinfo=0x0024`. The active unresolved prerequisite for the next boundary is bounded recoverable persistence before any Flash-resident configuration/assets.
 
 ## 1. Verified foundation already present
 
@@ -46,8 +46,8 @@ Therefore the next product/application work does not require a scheduler rewrite
 | Message queues | Not implemented | Correctly deferred until a real producer/consumer payload boundary exists. |
 | Synchronization primitives | No public mutex/semaphore layer; scheduler has internal IRQ critical sections | Correctly deferred. Do not expose raw scheduler critical sections as application synchronization. Add bounded primitives only with a concrete shared-ownership consumer. |
 | Runtime statistics | Partial counters/high-water diagnostics exist | Keep later observability slice; do not block app/runtime work. |
-| System identity / capabilities | Protocol HELLO exposes transport/protocol capabilities only | Missing explicit system contract. Before mature host tooling, expose firmware/build/platform/device identity and service/application capability discovery. |
-| Application event/service model | Application `event()` is planned, but public event semantics are not yet frozen | Must be part of `APPLICATION_RUNTIME_FOUNDATION`. Scheduler wake bits are kernel notification state, not public application ABI. |
+| System identity / capabilities | Resolved by published Host Control foundation: HELLO remains transport/protocol negotiation and `sysinfo=0x0024` exposes stable OS/platform/architecture/source-tree/service/runtime/capability identity | **Resolved for v1.** Stable physical unit identity/MCU UID remains intentionally absent until a real multi-unit/privacy requirement exists. |
+| Application event/service model | Resolved by published `APPLICATION_RUNTIME_FOUNDATION`: bounded pointer-free semantic application events are separate from scheduler wake bits | **Resolved.** Scheduler wake bits remain kernel notification state, not public application ABI. |
 | Persistent settings/state | Persistent-storage policy is planned for asset/config transfer | Expand into a versioned bounded persistence contract before first Flash-resident settings/packages: schema/version, integrity, atomic commit, recovery and wear budget. |
 | Crash/reset retention | Fault capture exists; current `fault_record` is normal BSS and is cleared on reset | Missing later observability contract. Add retained crash/boot diagnostics so post-reset tooling can recover the previous failure/reset reason. |
 | Structured logs/telemetry | Existing command diagnostics and counters are ad hoc but useful | Add a later bounded structured observability model for host TUI/Control Panel; do not replace emergency UART/fault paths. |
@@ -69,7 +69,7 @@ IRQ / producer
 
 This remains an internal scheduling/wake primitive. It must not become the application/service ABI.
 
-`APPLICATION_RUNTIME_FOUNDATION` must define a separate bounded semantic event contract. Initial vocabulary may include concepts such as:
+This requirement was satisfied by the published `APPLICATION_RUNTIME_FOUNDATION`, which defines a separate bounded semantic event contract rather than exposing scheduler wake bits. The original vocabulary considered concepts such as:
 
 ```text
 APP_EVENT_TIMER
@@ -95,9 +95,9 @@ A message queue is therefore not required merely to define application events. I
 
 ## 4. System identity and capability discovery
 
-Binary RPC v1 HELLO currently exposes protocol version, command-service version, bounds, registry count and protocol capability flags. That is sufficient for the binary transport foundation, but not sufficient as long-term device identity for `deus` TUI/Control Panel or multiple hardware ports.
+At the time of this review, binary RPC v1 HELLO exposed only protocol/service bounds and protocol capability flags. That gap is now resolved by the published `HOST_CONTROL_APPLICATION_FOUNDATION`: HELLO remains transport/protocol negotiation, while `sysinfo=0x0024` exposes stable OS/platform/architecture/source-tree/service/runtime/capability identity. Stable physical unit identity and MCU UID remain intentionally outside v1 until a real multi-unit/privacy requirement exists.
 
-Before host tooling depends on product identity, define a versioned system identity/capability contract containing only fields that have stable meaning. Candidate information includes:
+The accepted v1 identity contract follows the original stable-meaning rule and includes:
 
 - Deus OS firmware semantic/build version;
 - build/source identity suitable for diagnostics;
@@ -224,7 +224,7 @@ OS_APPLICATION_AND_UI_MODEL_FOUNDATION
  -> USB_MANAGEMENT_DEVICE_FOUNDATION
       production WinUSB management transport reusing accepted binary RPC semantics
  -> HOST_CONTROL_APPLICATION_FOUNDATION
-      requires usable system identity/capability discovery
+      system identity/capability discovery resolved by published `sysinfo=0x0024`
  -> ASSET_CONFIGURATION_TRANSFER_FOUNDATION
       requires bounded persistence contract before Flash-resident settings/packages
  -> FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION

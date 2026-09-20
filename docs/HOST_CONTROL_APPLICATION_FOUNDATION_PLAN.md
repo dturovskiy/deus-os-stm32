@@ -595,4 +595,4 @@ Not part of this boundary:
 
 `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`
 
-That boundary may begin only after this host foundation is published and the bounded persistence contract is frozen.
+That boundary begins with a documentation-only Gate 0 that freezes the bounded persistence contract. No source mutation or persistent target write is authorized before Gate 0 acceptance.

@@ -1,6 +1,6 @@
 # Deus OS — USB Management Device Foundation Acceptance Plan
 
-Status: **GATES 0–7 ACCEPTED / PUBLISHED `1f88083843c6aae9fd228ad2d677f9252b889a11` — NEXT `HOST_CONTROL_APPLICATION_FOUNDATION`**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `1f88083843c6aae9fd228ad2d677f9252b889a11`**
 
 Boundary:
 
