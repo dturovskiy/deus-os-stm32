@@ -1,6 +1,6 @@
 # Deus OS — Host Control Application Foundation Acceptance Plan
 
-Status: **GATES 0–6 ACCEPTED — GATE 7 ORDINARY NON-FORCE PUBLICATION NEXT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `e0f49f168542fa1cf49bca451e01b0c077aa8d18`**
 
 Boundary:
 

@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`USB_MANAGEMENT_DEVICE_FOUNDATION` published at `1f88083843c6aae9fd228ad2d677f9252b889a11`; `HOST_CONTROL_APPLICATION_FOUNDATION` Gates 0–6 accepted / Gate 7 ordinary non-force publication next**
+Status: **`HOST_CONTROL_APPLICATION_FOUNDATION` Gates 0–7 accepted / published `e0f49f168542fa1cf49bca451e01b0c077aa8d18`; `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 contract freeze next**
 
 ## Current foundation completeness constraints
 
@@ -11,7 +11,7 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - scheduler event bits are internal wake notifications and must not become stable application event IDs;
 - `APPLICATION_RUNTIME_FOUNDATION` owns a bounded semantic application event/service contract;
 - generic timers, queues, synchronization primitives and runtime statistics remain consumer-driven extensions; scheduler-internal PRIMASK save/restore is not a public mutex/semaphore API;
-- host-facing system identity must eventually distinguish firmware/build/platform/service/application capabilities from USB identity and protocol capability flags;
+- host-facing system identity is explicit through `sysinfo` and remains distinct from USB identity and transport protocol capability flags;
 - accepted `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a` uses Flash `48636/65536`, SRAM `10032/20480`, and final task0/task1 margins `384/424`; `src/kernel.c` is reduced from `5100` to `3405` lines with application bridge, application command and scheduler diagnostic ownership extracted without a universal god object or hidden cross-module state; Gate 2 evidence is `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`, Gate 3 evidence is `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`, and Gate 4 is `PHYSICAL_OLED=PASS`; after publication, `USB_MANAGEMENT_DEVICE_FOUNDATION` owns the production Windows USB profile: vendor-specific WinUSB management transport with explicit product identity/device-interface GUID, reusing the accepted binary RPC above transport; CDC/COM must not remain the primary production host API;
 - persistent target state requires versioning, integrity, atomic commit/recovery and Flash wear policy before acceptance;
 - current `fault_record` is normal `.bss` runtime state and is cleared by reset; bounded previous-boot crash/reset retention is later observability work;
@@ -20,9 +20,9 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - startup/context-switch/register drivers remain arch/platform-specific while kernel/services/apps/UI/protocol semantics should avoid leaking STM32 register details upward;
 - heap, filesystem, generic DMA framework, RTC, MPU isolation and broad power-management facilities are not current prerequisites.
 
-## Accepted boundary candidate — Host control application foundation
+## Published boundary — Host control application foundation
 
-`HOST_CONTROL_APPLICATION_FOUNDATION` is hardware-accepted through Gate 5 and locally accepted by Gate 6; ordinary non-force publication remains Gate 7. The accepted firmware/host source identities are `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`. The host is C# / `net10.0`, with transport-neutral Core + CLI + Avalonia `12.1.2` Desktop, direct Windows WinUSB and Linux libusb adapters over the existing management interface 2. `sysinfo=0x0024` advances command service to v3 / registry 36 while binary framing remains v1.
+`HOST_CONTROL_APPLICATION_FOUNDATION` is accepted through Gate 7 and published at `e0f49f168542fa1cf49bca451e01b0c077aa8d18`, tree `42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`. The accepted firmware/host source identities are `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`. The host is C# / `net10.0`, with transport-neutral Core + CLI + Avalonia `12.1.2` Desktop, direct Windows WinUSB and Linux libusb adapters over the existing management interface 2. `sysinfo=0x0024` advances command service to v3 / registry 36 while binary framing remains v1.
 
 Hardware acceptance proves exact identity/capability negotiation, application list/start/stop, typed failure behavior, 128 unique management pings, Windows Desktop behavior, Linux IF2-only claiming with CDC IF0/1 untouched, and fresh-session reconnect on both operating systems. Linux reconnect survives USB enumeration-address change by using current physical bus+port session identity (`usb:001:8` in acceptance), not a fabricated serial identity. Final target diagnostics have USB errors/PMA overruns `0/0`, management drops `0/0`, CDC drops `0/0`, and final Flash exactly matches accepted BIN SHA-256 `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F`. Transfer/update/network/plugin/security work remains outside this boundary.
 ## Published boundary — Boot / desktop UI foundation

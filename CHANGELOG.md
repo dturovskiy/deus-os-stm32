@@ -1,3 +1,21 @@
+## 2026-09-20
+
+### Published — Host control application foundation — Gates 0–7 accepted
+
+Boundary: `HOST_CONTROL_APPLICATION_FOUNDATION`.
+
+The accepted firmware candidate is tree `b895955f7738aceb6fca0272d510cc433378c6ab`; BIN `50652` bytes / SHA-256 `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F`; Flash/SRAM `50652/11728`. The accepted host candidate is tree `2c5afd9914851300aed15e321cf69c3a2c3daeed`, targeting `net10.0` with transport-neutral Core, Windows WinUSB, Linux libusb and Avalonia `12.1.2`; Core/Transport tests are `21/21` and `5/5`.
+
+Windows CLI/hardware, Windows Desktop and real Ubuntu 26.04.1/libusb acceptance all pass. Linux claims management IF2 only and preserves CDC IF0/1; physical reconnect changed USB enumeration address `007 -> 008` while stable locator remained `usb:001:8`; fresh HELLO + `sysinfo` negotiation recovered the session. Final diagnostics show USB errors/PMA overruns `0/0`, management packets RX/TX `13/113`, management drops `0/0`, CDC drops `0/0`, and final Flash exactly matches the accepted BIN.
+
+Gate 6 created one normal local acceptance commit `e0f49f168542fa1cf49bca451e01b0c077aa8d18`, tree `42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`, direct parent `61d8e138e7ca44aefbad546e0a4ad5561848a260`. Gate 7 used one ordinary non-force push; fresh post-push fetch proved `HEAD == origin/main == FETCH_HEAD`, clean repository and ahead/behind `0/0`. Gate 7 evidence/log SHA-256 are `638569FE26600013B3B6717C76DEBF3251980B06D0B493B835D96CB4BC0CFD8F` / `5BCA12F1E58C2749DD41C81469EA9875DE1877EEF75F306FD622399F569FE5E7`.
+
+Exact next boundary: `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 contract freeze.
+
+### Documentation structure reconciliation
+
+A post-publication audit found that `README.md`, the top execution-checklist block, roadmap status, architecture status and current handoff still mixed historical snapshots with current state. This reconciliation makes `README.md` a short project landing page, keeps dated history in `CHANGELOG.md`, keeps gate history in `docs/MASTER_EXECUTION_CHECKLIST.md`, and keeps detailed live engineering state in `docs/PROJECT_HANDOFF.md`. No firmware, host source, protocol, hardware or accepted candidate bytes are changed.
+
 ## 2026-09-19
 
 ### Published — USB management device foundation — Gates 0–7 accepted

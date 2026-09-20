@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 
-<!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE_2026_09_14 -->
-## Current execution state — 2026-09-19
+<!-- BEGIN STM32_OS_CURRENT_EXECUTION_STATE -->
+## Current execution state
 
 This section is authoritative.
 
@@ -53,19 +53,29 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] Gate 7 ordinary non-force publication — **PASS**; fresh fetch proved `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`.
 - [x] Next boundary selected: `HOST_CONTROL_APPLICATION_FOUNDATION`.
 
-### Current boundary — host control application foundation — Gates 0–6 accepted / Gate 7 next
+### Published boundary — host control application foundation — Gates 0–7 accepted / published
 
 - [x] Gate 0 host architecture/source-boundary freeze — **PASS**.
-- [x] Gate 1 source implementation/static review — **PASS**; exact five-path firmware boundary + exact `host/` tree retained.
-- [x] Gate 2 fresh firmware + host build/unit/resource acceptance — **PASS**; firmware tree `b895955f7738aceb6fca0272d510cc433378c6ab`, host tree ultimately `2c5afd9914851300aed15e321cf69c3a2c3daeed`, BIN/ELF/MAP `50652/483488/207952`, Flash/SRAM `50652/11728`, Core `21/21`, Transport `5/5`.
-- [x] Gate 3 Windows hardware/CLI acceptance — **PASS**; exact WinUSB IF2/EP4, lifecycle, 128-ping pressure, malformed vectors/recovery, management drops `0/0`.
-- [x] Gate 4 Windows desktop acceptance — **PASS**; same Core session, capability-driven UI, reconnect/fresh negotiation, no stale READY.
-- [x] Gate 5 Linux hardware/cross-platform acceptance — **PASS / COMPOSITE**; Ubuntu 26.04.1 + libusb, IF2-only claim, CDC retained, 128 unique pings, same-port physical reconnect PASS, final management/CDC drops `0/0`, final Flash exact. Evidence `564BF507C54D802ACD590012384A6FA2BE7483C40F94654802C5316071702BFE`.
-- [x] Gate 6 docs finalization + local acceptance commit — **PASS by this normal local commit**; accepted source bytes unchanged and exact canonical docs synchronized.
-- [ ] Gate 7 ordinary non-force publication — **NEXT**; fresh fetch/direct-parent proof required before ordinary push.
-- [x] host runtime: C# / `net10.0`; Avalonia `12.1.2`; Core UI-independent; Windows WinUSB + Linux libusb adapters.
-- [x] exact identity/capability contract: HELLO protocol `1` / service `3` / registry `36`; system capabilities `0x0000001F`; no stable physical unit identity/MCU UID in v1.
-- [x] transfer/update/network/plugin/security expansion remains outside this boundary.
+- [x] Gate 1 source implementation/static review — **PASS**.
+- [x] Gate 2 firmware + host build/unit/resource acceptance — **PASS**; firmware tree `b895955f7738aceb6fca0272d510cc433378c6ab`, host tree `2c5afd9914851300aed15e321cf69c3a2c3daeed`, BIN/ELF/MAP `50652/483488/207952`, Flash/SRAM `50652/11728`, Core `21/21`, Transport `5/5`.
+- [x] Gate 3 Windows hardware/CLI acceptance — **PASS**; WinUSB IF2/EP4, lifecycle/error recovery, 128 unique pings and zero management drops.
+- [x] Gate 4 Windows Desktop acceptance — **PASS**; shared Core session, capability-driven UI and reconnect/fresh negotiation.
+- [x] Gate 5 real Linux hardware/cross-platform acceptance — **PASS / COMPOSITE**; Ubuntu 26.04.1 + libusb, IF2-only claim, CDC retained, 128 unique pings, same-port reconnect, final management/CDC drops `0/0`, final Flash exact.
+- [x] Gate 6 docs finalization + one normal local acceptance commit — **PASS** / `e0f49f168542fa1cf49bca451e01b0c077aa8d18`, tree `42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`.
+- [x] Gate 7 ordinary non-force publication — **PASS**; final `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`.
+- [x] host runtime: C# / `net10.0`; Avalonia `12.1.2`; Windows WinUSB + Linux libusb.
+- [x] identity/capability contract: HELLO protocol `1`, service `3`, registry `36`; system capabilities `0x0000001F`.
+- [x] Gate 7 evidence SHA-256 `638569FE26600013B3B6717C76DEBF3251980B06D0B493B835D96CB4BC0CFD8F`.
+
+### Current boundary — asset/configuration transfer foundation — Gate 0 next
+
+- [ ] Freeze the real v1 asset/configuration consumer and bounded transfer semantics.
+- [ ] Freeze schema/version, exact maximum size and Flash ownership region.
+- [ ] Freeze CRC/integrity, atomic commit and reset/power-loss recovery.
+- [ ] Freeze default/previous recovery, erase/program alignment and Flash wear budget.
+- [ ] Freeze incompatible-version migration/rejection.
+- [ ] Keep non-executable configuration/assets separate from firmware/update state.
+- [ ] Do not introduce a general filesystem without a concrete consumer.
 
 ### Published baseline — binary framed transport foundation
 
