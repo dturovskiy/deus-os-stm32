@@ -14,3 +14,9 @@ Thumbs.db
 # Tool scratch files
 *.tmp
 *.bak
+
+# Host .NET generated artifacts
+host/**/bin/
+host/**/obj/
+host/**/TestResults/
+host/**/.vs/

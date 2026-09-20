@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>DeusOs.Control.Transport.Linux</AssemblyName>
+    <RootNamespace>DeusOs.Control.Transport.Linux</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DeusOs.Control.Core/DeusOs.Control.Core.csproj" />
+    <InternalsVisibleTo Include="DeusOs.Control.Transport.Tests" />
+  </ItemGroup>
+</Project>

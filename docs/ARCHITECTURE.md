@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **`USB_MANAGEMENT_DEVICE_FOUNDATION` published at `1f88083843c6aae9fd228ad2d677f9252b889a11`; `HOST_CONTROL_APPLICATION_FOUNDATION` Gate 0 accepted / Gate 1 source implementation next**
+Status: **`USB_MANAGEMENT_DEVICE_FOUNDATION` published at `1f88083843c6aae9fd228ad2d677f9252b889a11`; `HOST_CONTROL_APPLICATION_FOUNDATION` Gates 0–6 accepted / Gate 7 ordinary non-force publication next**
 
 ## Current foundation completeness constraints
 
@@ -20,6 +20,11 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - startup/context-switch/register drivers remain arch/platform-specific while kernel/services/apps/UI/protocol semantics should avoid leaking STM32 register details upward;
 - heap, filesystem, generic DMA framework, RTC, MPU isolation and broad power-management facilities are not current prerequisites.
 
+## Accepted boundary candidate — Host control application foundation
+
+`HOST_CONTROL_APPLICATION_FOUNDATION` is hardware-accepted through Gate 5 and locally accepted by Gate 6; ordinary non-force publication remains Gate 7. The accepted firmware/host source identities are `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`. The host is C# / `net10.0`, with transport-neutral Core + CLI + Avalonia `12.1.2` Desktop, direct Windows WinUSB and Linux libusb adapters over the existing management interface 2. `sysinfo=0x0024` advances command service to v3 / registry 36 while binary framing remains v1.
+
+Hardware acceptance proves exact identity/capability negotiation, application list/start/stop, typed failure behavior, 128 unique management pings, Windows Desktop behavior, Linux IF2-only claiming with CDC IF0/1 untouched, and fresh-session reconnect on both operating systems. Linux reconnect survives USB enumeration-address change by using current physical bus+port session identity (`usb:001:8` in acceptance), not a fabricated serial identity. Final target diagnostics have USB errors/PMA overruns `0/0`, management drops `0/0`, CDC drops `0/0`, and final Flash exactly matches accepted BIN SHA-256 `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F`. Transfer/update/network/plugin/security work remains outside this boundary.
 ## Published boundary — Boot / desktop UI foundation
 
 Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`.

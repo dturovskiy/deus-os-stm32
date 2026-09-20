@@ -18,6 +18,7 @@
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
 #include "kernel/usb_management.h"
+#include "kernel/system_identity.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
 #define REG8(addr)  (*(volatile uint8_t *)(addr))
@@ -2747,6 +2748,9 @@ static command_service_status_t console_execute_safe_method(
         case COMMAND_SERVICE_METHOD_APPSTART:
         case COMMAND_SERVICE_METHOD_APPSTOP:
             return console_execute_application_method(request, context);
+
+        case COMMAND_SERVICE_METHOD_SYSINFO:
+            return system_identity_write(context);
 
         case COMMAND_SERVICE_METHOD_SCHEDPROD:
             console_production_scheduler_stats(context);

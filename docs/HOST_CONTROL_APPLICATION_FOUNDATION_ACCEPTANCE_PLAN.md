@@ -1,6 +1,6 @@
 # Deus OS — Host Control Application Foundation Acceptance Plan
 
-Status: **GATE 0 ACCEPTED — GATE 1 SOURCE IMPLEMENTATION NEXT**
+Status: **GATES 0–6 ACCEPTED — GATE 7 ORDINARY NON-FORCE PUBLICATION NEXT**
 
 Boundary:
 
@@ -357,6 +357,23 @@ ENVIRONMENT_BLOCKED
 
 Classified gate FAIL must still finalize trustworthy logs/evidence and terminate normally. Process-level failure is reserved for inability to produce trustworthy evidence/package/prestate.
 
+Gate 5 accepted result entering Gate 6:
+
+- firmware candidate tree `b895955f7738aceb6fca0272d510cc433378c6ab`;
+- host candidate tree `2c5afd9914851300aed15e321cf69c3a2c3daeed`;
+- BIN/ELF/MAP sizes `50652 / 483488 / 207952`;
+- BIN/ELF/MAP SHA-256 `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F` / `978CC710497F79E9A3AFBAFE3E0CD3AE10BA2B6CF0FE6AA7518B7AC5BC5E524C` / `F9806E2A71476D6D2DAC2CD481A6C491BACD18CADD713813BB69AF9DA608C032`;
+- Flash/SRAM `50652/11728`, ceilings `54780/11824`, task stacks `1024/512`, task margins `424/424`, scheduler faults `0`;
+- .NET target `net10.0`, Windows SDK `10.0.201`, Linux SDK `10.0.112`, Avalonia `12.1.2`, xUnit MTP `4.0.1`;
+- Core `21/21`; Transport `5/5`;
+- Windows Gate 3 hardware/CLI acceptance evidence/log `50CB913F5E09CBF0531583B109B3650899AC39209A6F172DAD87B6EAD3C0C139` / `863F482CE40311E82F4C9D92B6DFD877DDE6024EFAD7C022CBF6B0F2037D70AA`;
+- malformed-vector amendment evidence/log `5C537438A2353621A627708A7F15ECCBBD0A60BD23ABF4116326AEC2B535362` / `020796469F67878FD13763D222B966BA05C9F8BF5DE9D0FBEE5BA497981ACC4C`;
+- Windows Gate 4 Desktop evidence/log `8D58EAE457C2A2DCD19B581D445CA192D9F190CF2BA8A34FF95CC2C3B8B9E8EC` / `58AD1BA2B6AC95C1BA85FC088ACF1527721018BF364EBA04F68C51255CB53A88`;
+- Linux Gate 5 runtime evidence/log `1FAAFDFE40B34D20D69AE59369CABBCCDB07567A276B2E3ADAA7B819335F379D` / `00E3310932CC2115B8728FAD4484B3D2FCCA698304C2C4186B7F5BE52DC75218`;
+- final Gate 5 composite evidence/log `564BF507C54D802ACD590012384A6FA2BE7483C40F94654802C5316071702BFE` / `BFF093889489077BBF60B97E083D34082ECF8AE40322E2710EA2B77FF2893591`;
+- Windows/Linux reconnect PASS with fresh negotiation; Linux enumeration address changed `007 -> 008` while stable locator remained `usb:001:8`;
+- final management/CDC RX/TX drops all zero; USB error/PMA counters zero; final Flash exact accepted Gate-2 BIN;
+- `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`.
 ## 17. Gate 6 documentation finalization
 
 After Windows/Linux acceptance, update canonical docs with exact:

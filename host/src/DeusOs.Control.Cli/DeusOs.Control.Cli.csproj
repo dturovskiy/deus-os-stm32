@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>deus-cp</AssemblyName>
+    <RootNamespace>DeusOs.Control.Cli</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DeusOs.Control.Core/DeusOs.Control.Core.csproj" />
+    <ProjectReference Include="../DeusOs.Control.Transport.Windows/DeusOs.Control.Transport.Windows.csproj" />
+    <ProjectReference Include="../DeusOs.Control.Transport.Linux/DeusOs.Control.Transport.Linux.csproj" />
+  </ItemGroup>
+</Project>

@@ -53,24 +53,19 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] Gate 7 ordinary non-force publication — **PASS**; fresh fetch proved `HEAD == origin/main == FETCH_HEAD`, clean, ahead/behind `0/0`.
 - [x] Next boundary selected: `HOST_CONTROL_APPLICATION_FOUNDATION`.
 
-### Current boundary — host control application foundation — Gate 0 accepted / Gate 1 next
+### Current boundary — host control application foundation — Gates 0–6 accepted / Gate 7 next
 
 - [x] Gate 0 host architecture/source-boundary freeze — **PASS**.
-- [x] host runtime: C# / .NET 10; desktop shell: Avalonia 12.x; Core remains UI-independent.
-- [x] Windows primary discovery uses accepted WinUSB interface GUID; no COM-first product discovery.
-- [x] Linux transport uses libusb-1.0 and claims management IF2 only; CDC IF0/1 remain untouched.
-- [x] Core owns framing/CRC/request correlation/session/reconnect/sysinfo parsing; CLI is reference integration client; Desktop consumes Core.
-- [x] firmware additive identity RPC frozen as `sysinfo=0x0024`; binary protocol stays v1; command-service v2 -> v3; registry 35 -> 36.
-- [x] exact identity contract and capability mask frozen; no stable physical unit identity/MCU UID in v1.
-- [x] exact five-path firmware Gate-1 source boundary frozen plus exact `host/` project tree, .NET pin/package manifests and host-scoped `.gitignore` support.
+- [x] Gate 1 source implementation/static review — **PASS**; exact five-path firmware boundary + exact `host/` tree retained.
+- [x] Gate 2 fresh firmware + host build/unit/resource acceptance — **PASS**; firmware tree `b895955f7738aceb6fca0272d510cc433378c6ab`, host tree ultimately `2c5afd9914851300aed15e321cf69c3a2c3daeed`, BIN/ELF/MAP `50652/483488/207952`, Flash/SRAM `50652/11728`, Core `21/21`, Transport `5/5`.
+- [x] Gate 3 Windows hardware/CLI acceptance — **PASS**; exact WinUSB IF2/EP4, lifecycle, 128-ping pressure, malformed vectors/recovery, management drops `0/0`.
+- [x] Gate 4 Windows desktop acceptance — **PASS**; same Core session, capability-driven UI, reconnect/fresh negotiation, no stale READY.
+- [x] Gate 5 Linux hardware/cross-platform acceptance — **PASS / COMPOSITE**; Ubuntu 26.04.1 + libusb, IF2-only claim, CDC retained, 128 unique pings, same-port physical reconnect PASS, final management/CDC drops `0/0`, final Flash exact. Evidence `564BF507C54D802ACD590012384A6FA2BE7483C40F94654802C5316071702BFE`.
+- [x] Gate 6 docs finalization + local acceptance commit — **PASS by this normal local commit**; accepted source bytes unchanged and exact canonical docs synchronized.
+- [ ] Gate 7 ordinary non-force publication — **NEXT**; fresh fetch/direct-parent proof required before ordinary push.
+- [x] host runtime: C# / `net10.0`; Avalonia `12.1.2`; Core UI-independent; Windows WinUSB + Linux libusb adapters.
+- [x] exact identity/capability contract: HELLO protocol `1` / service `3` / registry `36`; system capabilities `0x0000001F`; no stable physical unit identity/MCU UID in v1.
 - [x] transfer/update/network/plugin/security expansion remains outside this boundary.
-- [ ] Gate 1 source implementation/static review — **NEXT**.
-- [ ] Gate 2 fresh firmware + host build/unit/resource acceptance.
-- [ ] Gate 3 Windows hardware/CLI acceptance.
-- [ ] Gate 4 Windows desktop acceptance.
-- [ ] Gate 5 Linux hardware/cross-platform acceptance.
-- [ ] Gate 6 docs finalization + local acceptance commit.
-- [ ] Gate 7 ordinary non-force publication.
 
 ### Published baseline — binary framed transport foundation
 

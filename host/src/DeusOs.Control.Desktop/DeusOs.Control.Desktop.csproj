@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>DeusOs.Control.Desktop</AssemblyName>
+    <RootNamespace>DeusOs.Control.Desktop</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DeusOs.Control.Core/DeusOs.Control.Core.csproj" />
+    <ProjectReference Include="../DeusOs.Control.Transport.Windows/DeusOs.Control.Transport.Windows.csproj" />
+    <ProjectReference Include="../DeusOs.Control.Transport.Linux/DeusOs.Control.Transport.Linux.csproj" />
+  </ItemGroup>
+</Project>

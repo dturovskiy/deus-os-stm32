@@ -1,6 +1,6 @@
 # Deus OS — Host Control Application Foundation Plan
 
-Status: **GATE 0 ACCEPTED — GATE 1 SOURCE IMPLEMENTATION NEXT**
+Status: **GATES 0–6 ACCEPTED — GATE 7 ORDINARY NON-FORCE PUBLICATION NEXT**
 
 Boundary:
 
@@ -26,6 +26,28 @@ Canonical predecessors:
 - `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md`;
 - `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
+Gate 5 accepted candidate entering Gate 6:
+
+- parent repository commit/tree before the boundary acceptance commit: `61d8e138e7ca44aefbad546e0a4ad5561848a260` / `58e2078dc0eadbd76ac12cc3c12b792413555944`;
+- hardware-accepted firmware candidate tree: `b895955f7738aceb6fca0272d510cc433378c6ab`;
+- accepted host source candidate tree: `2c5afd9914851300aed15e321cf69c3a2c3daeed`;
+- BIN `50652` bytes / SHA-256 `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F`;
+- ELF `483488` bytes / SHA-256 `978CC710497F79E9A3AFBAFE3E0CD3AE10BA2B6CF0FE6AA7518B7AC5BC5E524C`;
+- MAP `207952` bytes / SHA-256 `F9806E2A71476D6D2DAC2CD481A6C491BACD18CADD713813BB69AF9DA608C032`;
+- Flash/SRAM `50652/11728` within frozen ceilings `54780/11824`; task stacks `1024/512`; undefined symbols `0`; accepted task0/task1 margins `424/424`;
+- host target `net10.0`; Windows SDK `10.0.201`; Linux SDK `10.0.112`; Avalonia `12.1.2`; `xunit.v3.mtp-v2` `4.0.1`;
+- Core tests `21/21`; Transport tests `5/5`;
+- exact HELLO: protocol `1`, service `3`, max args `4`, line capacity `32`, request payload max `132`, data chunk max `48`, registry `36`, protocol capability flags `0x0000003F`;
+- exact `sysinfo`: ABI `1`, `DEUS_OS`, `STM32F103C8`, `ARMV7M`, source tree equal to the firmware candidate above, protocol `1`, service `3`, runtime ABI `1`, system capability mask `0x0000001F`, unit-id kind `0`;
+- initial applications remain `system.home=0x0001` and `device.info=0x0002`;
+- Windows CLI/hardware Gate 3 PASS including malformed-vector recovery; Windows Desktop Gate 4 PASS; Linux Gate 5 real-hardware runtime PASS;
+- Windows and Linux physical reconnect both require a fresh HELLO + `sysinfo`; Linux same-port recovery is keyed by stable `usb:<bus>:<physical-port-path>` and passed with enumeration address `007 -> 008` while locator remained `usb:001:8`;
+- final Gate 5 diagnostics: USB errors/PMA overruns `0/0`, management RX/TX packets `13/113`, management drops `0/0`, CDC drops `0/0`, scheduler faults `0`;
+- Gate-4 target display disposition: `PHYSICAL_OLED=N/A_UNCHANGED_UI_AUTOMATED_REGRESSION_PASS`;
+- final target Flash readback is exactly the accepted BIN;
+- Gate 5 final composite evidence/log SHA-256: `564BF507C54D802ACD590012384A6FA2BE7483C40F94654802C5316071702BFE` / `BFF093889489077BBF60B97E083D34082ECF8AE40322E2710EA2B77FF2893591`.
+
+Gate 6 changes documentation only before staging the already hardware-accepted source set. The one normal local acceptance commit is the Gate 6 output; its exact commit/tree identity is recorded by Gate 6 evidence. No amend and no push are authorized in Gate 6.
 ## 1. Purpose
 
 This boundary creates the first real Windows/Linux host management application for Deus OS.

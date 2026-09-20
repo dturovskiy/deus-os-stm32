@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>DeusOs.Control.Transport.Windows</AssemblyName>
+    <RootNamespace>DeusOs.Control.Transport.Windows</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DeusOs.Control.Core/DeusOs.Control.Core.csproj" />
+  </ItemGroup>
+</Project>

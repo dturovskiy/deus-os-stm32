@@ -1,0 +1,25 @@
+#ifndef KERNEL_SYSTEM_IDENTITY_H
+#define KERNEL_SYSTEM_IDENTITY_H
+
+#include <stdint.h>
+#include "kernel/command_service.h"
+
+#define SYSTEM_IDENTITY_ABI_VERSION 1u
+
+#define SYSTEM_IDENTITY_CAP_SYSTEM_HEALTH                 (1u << 0)
+#define SYSTEM_IDENTITY_CAP_APPLICATION_RUNTIME           (1u << 1)
+#define SYSTEM_IDENTITY_CAP_APPLICATION_CONTROL           (1u << 2)
+#define SYSTEM_IDENTITY_CAP_DIAGNOSTICS                   (1u << 3)
+#define SYSTEM_IDENTITY_CAP_LOCAL_UI                      (1u << 4)
+#define SYSTEM_IDENTITY_CAP_ASSET_CONFIGURATION_TRANSFER  (1u << 5)
+#define SYSTEM_IDENTITY_CAP_FIRMWARE_UPDATE               (1u << 6)
+#define SYSTEM_IDENTITY_CAP_NETWORK_SERVICES              (1u << 7)
+
+#define SYSTEM_IDENTITY_CAPABILITIES (     SYSTEM_IDENTITY_CAP_SYSTEM_HEALTH |     SYSTEM_IDENTITY_CAP_APPLICATION_RUNTIME |     SYSTEM_IDENTITY_CAP_APPLICATION_CONTROL |     SYSTEM_IDENTITY_CAP_DIAGNOSTICS |     SYSTEM_IDENTITY_CAP_LOCAL_UI)
+
+#define SYSTEM_IDENTITY_UNIT_ID_NONE 0u
+
+command_service_status_t system_identity_write(
+    command_service_context_t *context);
+
+#endif
