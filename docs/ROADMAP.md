@@ -169,24 +169,24 @@ prerequisites. The 128x32 OLED geometry/gfx baseline remains frozen. `BOOT_DESKT
 - [x] `.bss` initialization
 - [x] Minimal `kernel_main()`
 - [x] ELF/BIN generation
-- [ ] Flash first kernel image
-- [ ] Prove execution on hardware
+- [x] Flash first kernel image
+- [x] Prove execution on hardware
 
 ## Phase 1 - Core hardware
 
-- [ ] GPIO driver
-- [ ] PC13 status LED
-- [ ] Clock configuration
-- [ ] SysTick
-- [ ] Monotonic kernel time
+- [x] GPIO driver
+- [x] PC13 status LED
+- [x] Clock configuration
+- [x] SysTick
+- [x] Monotonic kernel time
 
 ## Phase 2 - Diagnostics
 
-- [ ] HardFault diagnostics
-- [ ] UART logging
-- [ ] I2C driver
-- [ ] SSD1306 driver
-- [ ] OLED kernel console
+- [x] HardFault diagnostics
+- [x] UART logging
+- [x] I2C driver
+- [x] SSD1306 driver
+- [x] OLED kernel console
 
 ## Phase 3 - Scheduler
 
@@ -202,13 +202,17 @@ prerequisites. The 128x32 OLED geometry/gfx baseline remains frozen. `BOOT_DESKT
 
 ## Phase 4 - Kernel services
 
-- [ ] Timers
-- [ ] Message queues
-- [ ] Synchronization primitives
+The unchecked items below are consumer-driven/deferred rather than active prerequisites.
+
+- [ ] Generic timers — deferred until a concrete consumer requires them
+- [ ] Message queues — deferred until a real cross-task consumer requires them
+- [ ] Synchronization primitives — deferred until a real concurrency requirement exists
 - [x] Watchdog integration
-- [ ] Runtime statistics
+- [ ] Runtime statistics — deferred until observability requirements justify them
 
 ## Phase 5 - Networking
+
+Future roadmap only; not active until promoted after Asset/Configuration and firmware-update safety foundations.
 
 - [ ] ESP-01 / ESP8266 UART transport
 - [ ] Framed STM32 <-> ESP protocol
@@ -219,7 +223,7 @@ prerequisites. The 128x32 OLED geometry/gfx baseline remains frozen. `BOOT_DESKT
 <!-- BEGIN STM32_OS_USB_STRATEGY -->
 ## Native USB strategy
 
-The Blue Pill micro-USB connector is a planned first-class OS transport, not only a power connector.
+The Blue Pill micro-USB connector is an accepted first-class OS transport, not only a power connector.
 
 Target progression:
 
@@ -233,7 +237,7 @@ Target progression:
 8. Static application runtime foundation — published at `25752fba557b1a1b518265a93bde05d3a6a3f9ad`.
 9. Kernel composition-root decomposition — published at `fa75307fb392718a1d10d52770a6a111c97208e7`.
 10. Production USB management-device foundation — published at `1f88083843c6aae9fd228ad2d677f9252b889a11`; vendor-specific WinUSB `Deus OS Device`, Microsoft OS descriptors, stable interface GUID and accepted binary RPC above transport; CDC is debug/recovery rather than the primary production API.
-11. Cross-platform Windows/Linux host application — **Gate 0 accepted / Gate 1 next**. Provisional name: **Deus OS CP** (`Deus OS Control Panel`); C#/.NET 10 Core/CLI + Avalonia desktop, Windows WinUSB/Linux libusb adapters and system identity/capability discovery are frozen.
+11. Cross-platform Windows/Linux host application — **published through Gate 7** at `e0f49f168542fa1cf49bca451e01b0c077aa8d18`; C#/.NET 10 Core/CLI + Avalonia desktop, Windows WinUSB/Linux libusb adapters and system identity/capability discovery are accepted.
 12. Add bounded versioned asset/configuration transfer for non-executable packages.
 13. Add a recoverable USB firmware-update path and small bootloader as a separate safety boundary.
 14. Add networking/service extensions over the same application/service model.

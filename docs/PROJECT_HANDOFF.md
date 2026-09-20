@@ -42,14 +42,16 @@ Primary shell:
 MCU:
 
 - STM32F103 medium-density / Cortex-M3 / ARMv7-M
+- accepted target discovery Device ID: `0x410`
 - 64 KiB Flash
 - 20 KiB SRAM
 
 Debug/recovery:
 
-- ST-LINK V2
+- ST-LINK V2, firmware `V2J48S7`
 - SWD 950 kHz is the accepted reliable speed
 - read-only fallback ladder when needed: `950, 480, 240, 125 kHz`
+- fully close STM32CubeProgrammer GUI before CLI access; the GUI can hold ST-LINK and cause `DEV_CONNECT_ERR`
 - ST-LINK remains recovery/debug rather than product management state
 
 UART diagnostics:
@@ -59,12 +61,13 @@ UART diagnostics:
 - 115200 8N1
 - UART remains emergency/text diagnostics
 
-USB:
+USB / display:
 
 - target CDC may enumerate as `COM5` on Windows
 - product management uses native USB WinUSB management interface
 - CDC remains secondary diagnostics
 - physical micro-USB unplug/replug is a power-cycle event because it is also the target power source
+- accepted OLED is SSD1306-class native `128x32` at I2C address `0x3C`
 
 ## 4. Toolchain
 
@@ -139,6 +142,7 @@ A completed boundary’s plan/acceptance pair remains the scoped canonical recor
 
 ## 8. Hardware safety / operator notes
 
+- An original full-Flash backup was captured before replacing the pre-project firmware; the old handoff did not preserve a canonical restore path, so treat this as historical provenance rather than a current recovery artifact.
 - Do not power the board simultaneously from conflicting 3.3 V sources.
 - Prefer read-only SWD inspection before destructive recovery actions.
 - Preserve UART diagnostics while testing USB management.

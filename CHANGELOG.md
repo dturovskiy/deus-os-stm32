@@ -20,6 +20,8 @@ A post-publication audit found that `README.md`, the top execution-checklist blo
 
 A full audit of all plans, acceptance plans, checklists, handoff material, deferred UI plans and engineering playbook established `docs/CURRENT_STATE.md` as the sole global project-state source and `docs/DOCUMENTATION_MODEL.md` as canonical documentation governance. `ARCHITECTURE.md`, `ROADMAP.md`, boundary plans/acceptance plans, evidence, backlog, changelog, execution ledger and handoff now have non-overlapping roles. Historical umbrella/OLED plans were explicitly classified as historical or deferred; stale `COMM/UART`, static-time, UART-first configurator and UI-specific Flash persistence assumptions were reconciled with the accepted SYSTEM/USB/NETWORK/uptime and host Core/RPC/WinUSB architecture. The harness playbook now prefers direct `@DEUS MCP` repository operations for repo-only work and reserves operator-run ZIP packages for local Windows/hardware/toolchain execution or operations unavailable through the connected repository tool.
 
+A post-consolidation loss/open-checkbox audit then corrected stale Phase 0–2 and Host/USB roadmap state, leaving only genuinely deferred/future unchecked items. It also restored the small set of operator facts that remained useful after handoff compaction: target Device ID `0x410`, ST-LINK firmware `V2J48S7`, the CubeProgrammer-GUI `DEV_CONNECT_ERR` hazard, accepted OLED `128x32 @ 0x3C`, and provenance that an original full-Flash backup had historically been captured.
+
 ## 2026-09-19
 
 ### Published — USB management device foundation — Gates 0–7 accepted
