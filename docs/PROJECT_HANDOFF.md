@@ -31,7 +31,7 @@ Tools:
 
 User-run artifact download directory:
 
-`C:\Users\DETU\Downloads\`
+`$env:USERPROFILE\Downloads\`
 
 Primary shell:
 

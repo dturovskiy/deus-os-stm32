@@ -1,3 +1,11 @@
+## 2026-09-21
+
+### Repository hygiene / public GitHub audit
+
+The public repository tree and full 63-commit history were audited for generated build/evidence paths and high-confidence secret patterns. No tracked or historical `build/`, `bin/obj/TestResults`, firmware image/object outputs (`.bin/.elf/.map/.hex/.o`), logs/ZIP evidence, `.env`, private-key/certificate bundles or credential/secrets files were found. Content-history scans found no private-key PEM markers, GitHub/OpenAI/AWS/Slack/Google token patterns, literal password/API-key assignments or credential-bearing URLs.
+
+`.gitignore` was hardened to cover firmware intermediates/images, .NET test/coverage/package outputs, common IDE/user files, local `.env` files and private key/certificate/credential filenames. The public handoff no longer exposes the local Windows account name in its Downloads path; it uses `$env:USERPROFILE\Downloads\`.
+
 ## 2026-09-20
 
 ### Published — Host control application foundation — Gates 0–7 accepted

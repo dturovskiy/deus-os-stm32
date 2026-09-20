@@ -1,22 +1,68 @@
-# Build products
+# Firmware build products / intermediates
 build/
+*.o
+*.obj
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
 
-# Local logs / captures
+# Local logs / archives / evidence outputs
 *.log
 *.zip
-
-# Editor / OS noise
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Tool scratch files
-*.tmp
-*.bak
+*.7z
+*.tar
+*.gz
 
 # Host .NET generated artifacts
 host/**/bin/
 host/**/obj/
 host/**/TestResults/
 host/**/.vs/
+host/**/artifacts/
+host/**/coverage/
+*.trx
+*.coverage
+*.coveragexml
+*.nupkg
+*.snupkg
+
+# Local secrets / credentials
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.pfx
+*.p12
+id_rsa
+id_ed25519
+id_ecdsa
+credentials.json
+*.credentials.json
+secrets.json
+*.secrets.json
+
+# Editor / IDE / OS noise
+.vscode/
+.idea/
+.vs/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.user
+*.suo
+*.csproj.user
+*.DotSettings.user
+*.swp
+*.swo
+*~
+
+# Tool / patch scratch files
+*.tmp
+*.bak
+*.orig
+*.rej
