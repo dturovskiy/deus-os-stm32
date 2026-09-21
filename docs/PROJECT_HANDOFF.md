@@ -99,6 +99,8 @@ Exact current accepted product identities and versions are in `docs/CURRENT_STAT
 - Distinguish PRODUCT, HARNESS, ENVIRONMENT and EVIDENCE/STATE failures.
 - Inspect both external log and full evidence ZIP before classifying hardware/runtime acceptance.
 - Do not treat terminal PASS text alone as acceptance proof.
+- Build acceptance harnesses **primitive-first**: independently prove PowerShell process control, SSH/SCP, Git archive portability, .NET/MTP test invocation and any hardware-access primitive on the real execution domain before composing one collector.
+- Do **not** respond to harness failures with a `v1 -> v2 -> v3 -> ...` patch train. Freeze the composed collector, isolate/prove the failed primitive, then regenerate the collector from proven primitives. See `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` section 5.
 - Keep firmware/host source mutation separate from docs/evidence repair.
 - Do not amend accepted commits to repair harness/evidence mistakes.
 - Use ordinary non-force publication only.

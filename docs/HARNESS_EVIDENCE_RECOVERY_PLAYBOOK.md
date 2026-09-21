@@ -139,6 +139,39 @@ Do not ask the operator to repeat stable facts already recorded.
 
 Every new script must be validated against **current artifacts**, not memory.
 
+### Primitive-first composition contract — mandatory
+
+Acceptance harnesses MUST be built **primitive-first**, not by repeatedly patching a monolithic `v1 -> v2 -> v3 -> ...` collector after each operator-visible failure.
+
+Before a composed acceptance collector is handed to the operator, every non-trivial external primitive used by that collector MUST be proven independently on the **actual execution domain where it will run**. Static lint, AST parsing, ZIP/hash verification and source inspection are necessary preflight, but they are **not sufficient proof of runtime semantics**.
+
+At minimum, prove the primitives that the collector actually depends on, including where applicable:
+
+- Windows / PowerShell process invocation, argument passing, stdout/stderr capture, timeout, cancellation, elevation and child-process lifetime semantics on the real Windows host;
+- OpenSSH alias resolution, non-interactive authentication, `ssh` command execution, `scp` transfer, timeout behavior and remote cleanup across the actual Windows -> Linux endpoint path;
+- Git archive creation from the canonical repository plus extraction and path semantics on every target OS that will consume the archive;
+- .NET SDK / Microsoft.Testing.Platform / xUnit invocation using the exact installed SDK/runtime family on each execution host, including the real test entrypoint and accepted exit-code/result-count semantics;
+- UART, ST-LINK, WinUSB/libusb or other hardware-access primitives on the host that physically owns that interface whenever the acceptance collector will exercise them.
+
+A primitive proof is an **executed proof**, not an inferred one. It must use a representative real artifact/input and capture enough evidence to establish at least the command/arguments, execution host/domain, exit code, relevant stdout/stderr or result tokens, and bounded timeout/failure behavior. When portability is part of the collector contract, the primitive must be proven on both sides of that portability boundary rather than assumed from one host.
+
+Only after all required primitives pass independently may they be composed into one acceptance collector.
+
+If the composed collector then fails in the HARNESS layer:
+
+1. freeze the composed collector; do **not** repair only the last failing line and immediately issue another version;
+2. classify the failure and isolate the smallest failing primitive or interaction between already-proven primitives;
+3. reproduce and correct that primitive in a dedicated bounded proof on the real execution domain;
+4. re-run the primitive proof until it passes with trustworthy evidence;
+5. regenerate/recompose the acceptance collector from the proven primitives;
+6. replay downstream assertions against existing evidence where possible before asking the operator for another full run.
+
+Repeated `v1 -> v2 -> v3 -> ...` patch trains that discover one basic runtime-semantic defect per operator run are prohibited. A version increment is not evidence that a harness defect was understood. The required recovery unit is the failed primitive, not the monolithic bundle.
+
+Downstream missing tokens/files/results caused solely by an earlier harness abort MUST NOT be reported as independent product failures. A collector crash or uncontrolled host-process termination makes that run **invalid harness evidence**; it cannot be promoted to PRODUCT failure or acceptance PASS.
+
+Failure class for violating this construction rule: `HARNESS-UNPROVEN-PRIMITIVE-COMPOSITION-01`.
+
 Required preflight:
 
 - exact expected HEAD / origin / remote;
