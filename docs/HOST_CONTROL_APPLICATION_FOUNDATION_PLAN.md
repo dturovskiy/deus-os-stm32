@@ -31,7 +31,7 @@ Gate 5 accepted candidate entering Gate 6:
 - parent repository commit/tree before the boundary acceptance commit: `61d8e138e7ca44aefbad546e0a4ad5561848a260` / `58e2078dc0eadbd76ac12cc3c12b792413555944`;
 - hardware-accepted firmware candidate tree: `b895955f7738aceb6fca0272d510cc433378c6ab`;
 - accepted host source candidate tree: `2c5afd9914851300aed15e321cf69c3a2c3daeed`;
-- BIN `50652` bytes / SHA-256 `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F`;
+- BIN `50652` bytes / SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F`;
 - ELF `483488` bytes / SHA-256 `978CC710497F79E9A3AFBAFE3E0CD3AE10BA2B6CF0FE6AA7518B7AC5BC5E524C`;
 - MAP `207952` bytes / SHA-256 `F9806E2A71476D6D2DAC2CD481A6C491BACD18CADD713813BB69AF9DA608C032`;
 - Flash/SRAM `50652/11728` within frozen ceilings `54780/11824`; task stacks `1024/512`; undefined symbols `0`; accepted task0/task1 margins `424/424`;

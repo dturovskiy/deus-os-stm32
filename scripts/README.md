@@ -34,10 +34,26 @@ Close the STM32CubeProgrammer GUI before running the CLI workflow.
 
 A script-level `READ_ONLY_PREFLIGHT=PASS` means all requested read-only CLI operations completed. Hardware acceptance still requires reviewing the generated log and recording the exact device/revision/Flash/protection state in the relevant future boundary evidence.
 
-## Firmware build entrypoint
+## `build_firmware.ps1`
 
-A repository-owned firmware build entrypoint is still required before future self-programming work.
+Purpose:
 
-It is intentionally **not** reconstructed by guessing historical compiler/linker flags. The repository preserves the accepted toolchain and partial build constraints but not the full historical optimization/link/section invocation that produced the accepted firmware candidate.
+- provide the versioned repository-owned firmware build entrypoint;
+- preserve the exact recovered Host Control Gate-2 C/startup/link/objcopy invocation;
+- generate the accepted `deus_build_identity.h` binding;
+- fail closed if the current C source set differs from the recovered accepted source list;
+- build `os.elf`, `os.map` and the canonical `os.bin` without performing target I/O.
 
-The future canonical build entrypoint must therefore be established from recovered acceptance harness evidence or by an explicit new reproducibility baseline that is independently built, hardware-smoke-tested and accepted.
+The current accepted build is bound to firmware source candidate tree `b895955f7738aceb6fca0272d510cc433378c6ab` and Arm GNU Toolchain 15.3.Rel1 / GCC `15.3.1`. Independent reproducibility acceptance produced the exact 50652-byte BIN SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F` with `text/data/bss = 50540/112/11616` and Flash/SRAM `50652/11728`.
+
+Run from the repository root in PowerShell 7:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File ".\scripts\build_firmware.ps1" -ProjectRoot (Get-Location).Path -OutputDir ".\build\firmware"
+```
+
+The default toolchain path is `D:\Projects\STM32\Tools\arm-gnu-toolchain-15.3.rel1-mingw-w64-x86_64-arm-none-eabi`.
+
+The entrypoint is build-only: it does **not** invoke STM32CubeProgrammer, ST-LINK, USB, UART, reset or Flash programming. `os.bin` is the reproducible firmware identity artifact. ELF/MAP contain path-dependent debug/map metadata and are not required to be byte-identical across output directories.
+
+The accepted source-tree value is deliberately explicit rather than inferred from the current repository root tree. Future firmware boundaries must compute/freeze a new candidate tree through their acceptance flow and update the build contract together with any authorized source-list change; silently carrying the old source identity forward is not permitted.

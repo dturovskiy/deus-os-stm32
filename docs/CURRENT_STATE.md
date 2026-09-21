@@ -24,7 +24,7 @@ Accepted firmware candidate:
 
 - source candidate tree: `b895955f7738aceb6fca0272d510cc433378c6ab`
 - BIN: `50652` bytes
-- BIN SHA-256: `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F`
+- BIN SHA-256: `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F`
 - ELF: `483488` bytes
 - ELF SHA-256: `978CC710497F79E9A3AFBAFE3E0CD3AE10BA2B6CF0FE6AA7518B7AC5BC5E524C`
 - MAP: `207952` bytes
@@ -94,7 +94,7 @@ No product feature implementation boundary is currently active.
 
 Near-term repository readiness work that may proceed without activating speculative product functionality:
 
-1. establish one versioned repository-owned firmware build entrypoint; the exact historical optimization/link/section invocation is not preserved in Git, so it must be recovered from acceptance harness evidence or replaced by an explicitly re-accepted reproducibility baseline rather than guessed;
+1. repository-owned firmware build entrypoint — **ACCEPTED**: the exact historical Host Control Gate-2 compiler/startup/link/objcopy invocation was recovered from acceptance evidence rather than guessed, the generated `deus_build_identity.h` was recovered identically from 20/20 surviving copies (SHA-256 `F6EAA98172FEE67338BFD978F208BD95731063A1160B0C9C1282306A5D6658A5`), and two independent temporary builds with Arm GNU Toolchain `15.3.1` reproduced the accepted 50652-byte firmware BIN byte-for-byte at SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F` with exact `text/data/bss = 50540/112/11616` and Flash/SRAM `50652/11728`; the versioned entrypoint is `scripts/build_firmware.ps1` (accepted script SHA-256 `BC7B91825B9BB80394C28643848EE3AEF75A4B62017432BB1070190088B8CDFB`), final reproducibility evidence ZIP SHA-256 `1FDB3C647ACCF4B9A67FDC02514009495F60D1F3E3B4E00C551FC0B4A3F4F847`; ELF/MAP debug artifacts remain path-dependent and are not the firmware identity; no target I/O or Flash mutation occurred;
 2. read-only real-device MCU/Flash preflight — **ACCEPTED** on the current physical board: `DEV_ID=0x410`, numeric `REV_ID=0x2003`, factory Flash size `64 KiB`, `FLASH_OBR=0x000003FC`, `FLASH_WRPR=0xFFFFFFFF`, RDP disabled, WRP0..31 inactive, SWD accepted at 950 kHz; immutable source-log SHA-256 `B112A754E82ECC01BDC509B2D8FB359D652D74DDC565B3DE046C30C181672C13`, finalized evidence ZIP SHA-256 `BB1F928A2E716F2C8D0FA6B160FC7F41B3187A75CF869DD139DF0C450D6B42D8`;
 3. host package-lock/SDK restore reproducibility — **ACCEPTED**: seven project-local `packages.lock.json` files are now the reviewed dependency graph; `host/global.json` remains the accepted `.NET 10` policy (`10.0.100`, `rollForward=latestFeature`, prerelease disabled), selecting Windows SDK `10.0.201` and Linux SDK `10.0.112`; locked restore, Release build and direct Core/Transport tests pass on both Windows (`21/21`, `5/5`) and Ubuntu/Linux (`21/21`, `5/5`), WSL proves the DEUS path and `D:` path are the same checkout, and all seven normalized lock hashes are identical across Windows/Linux. Final acceptance evidence ZIP SHA-256 `CE7E3BB09A24913D5374A875CCE49556A2A186F114E36128E42AD3BB26F42165`; no target I/O, Flash mutation, reset or reconnect occurred.
 

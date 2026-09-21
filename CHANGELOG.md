@@ -1,5 +1,11 @@
 ## 2026-09-21
 
+### Firmware build reproducibility readiness accepted
+
+The final pre-feature repository-readiness prerequisite is accepted. Historical Host Control Gate-2 evidence recovered the exact firmware C/startup/link/objcopy invocation and the generated `deus_build_identity.h`; 20/20 surviving header copies are identical at SHA-256 `F6EAA98172FEE67338BFD978F208BD95731063A1160B0C9C1282306A5D6658A5`. Two independent temporary builds with Arm GNU Toolchain `15.3.1` then reproduced the accepted firmware BIN byte-for-byte: `50652` bytes, SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F`, `text/data/bss = 50540/112/11616`, Flash/SRAM `50652/11728`. The previously documented BIN hash differed by one hexadecimal nibble (`...B61FAF9F...` -> `...B61FAC9F...`); all canonical references are corrected by this finalization. ELF/MAP files carry path-dependent debug/map metadata and therefore are not byte-reproducible identity artifacts, while the firmware BIN is exact.
+
+The proven candidate is now versioned as `scripts/build_firmware.ps1` with SHA-256 `BC7B91825B9BB80394C28643848EE3AEF75A4B62017432BB1070190088B8CDFB`. The script retains the recovered source order, compiler/linker flags and accepted source-tree binding, fails closed on source-list drift, and performs build-only work; it does not invoke STM32CubeProgrammer, ST-LINK, USB, UART, reset or Flash programming. Final reproducibility evidence ZIP SHA-256 is `1FDB3C647ACCF4B9A67FDC02514009495F60D1F3E3B4E00C551FC0B4A3F4F847`.
+
 ### Host package-lock / SDK readiness accepted
 
 The post-Host-Control repository readiness task for repeatable package restore is accepted. Seven project-local `packages.lock.json` files are now the reviewed dependency graph while `host/global.json` intentionally retains the accepted `.NET 10` major-line policy (`10.0.100`, `rollForward=latestFeature`, prerelease disabled), which selects Windows SDK `10.0.201` and Linux SDK `10.0.112` in the current environments. Locked restore, Release build and direct Core/Transport test applications pass on both Windows (`21/21`, `5/5`) and Ubuntu/Linux (`21/21`, `5/5`); WSL confirms the DEUS bind path and `D:` path are the same checkout; all seven normalized lock hashes match across platforms. Final acceptance evidence ZIP SHA-256 is `CE7E3BB09A24913D5374A875CCE49556A2A186F114E36128E42AD3BB26F42165`. The acceptance performed no STM32 target I/O, Flash mutation, reset or reconnect.
@@ -28,7 +34,7 @@ The public repository tree and full 63-commit history were audited for generated
 
 Boundary: `HOST_CONTROL_APPLICATION_FOUNDATION`.
 
-The accepted firmware candidate is tree `b895955f7738aceb6fca0272d510cc433378c6ab`; BIN `50652` bytes / SHA-256 `FB68993FC998DE77B61FAF9F4949E4E124B95FF867BB456EBA401C9F2709F13F`; Flash/SRAM `50652/11728`. The accepted host candidate is tree `2c5afd9914851300aed15e321cf69c3a2c3daeed`, targeting `net10.0` with transport-neutral Core, Windows WinUSB, Linux libusb and Avalonia `12.1.2`; Core/Transport tests are `21/21` and `5/5`.
+The accepted firmware candidate is tree `b895955f7738aceb6fca0272d510cc433378c6ab`; BIN `50652` bytes / SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F`; Flash/SRAM `50652/11728`. The accepted host candidate is tree `2c5afd9914851300aed15e321cf69c3a2c3daeed`, targeting `net10.0` with transport-neutral Core, Windows WinUSB, Linux libusb and Avalonia `12.1.2`; Core/Transport tests are `21/21` and `5/5`.
 
 Windows CLI/hardware, Windows Desktop and real Ubuntu 26.04.1/libusb acceptance all pass. Linux claims management IF2 only and preserves CDC IF0/1; physical reconnect changed USB enumeration address `007 -> 008` while stable locator remained `usb:001:8`; fresh HELLO + `sysinfo` negotiation recovered the session. Final diagnostics show USB errors/PMA overruns `0/0`, management packets RX/TX `13/113`, management drops `0/0`, CDC drops `0/0`, and final Flash exactly matches the accepted BIN.
 
