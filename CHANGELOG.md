@@ -1,5 +1,11 @@
 ## 2026-09-21
 
+### Asset / Configuration Gate 0 consumer audit — deferred before implementation
+
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` completed its initial Gate 0 architecture/consumer review. The live target source contains no persistent settings reader, asset registry, Flash persistence owner or current configuration-package consumer; the closest documented candidate, configurable OLED layout/assets, remains explicitly deferred and does not yet freeze exact target packing. Gate 0 therefore records `FINAL_OUTCOME=DEFERRED_NO_REAL_CONSUMER`: Gate 1 is not authorized, capability bit 5 remains unadvertised, and no linker partition, transfer ABI or Flash-writing implementation is introduced. Canonical records are `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md` and `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`.
+
+The deferred boundary now freezes the prerequisites for later reactivation: concrete consumer/schema, exact Flash partition including future bootloader/recovery budget, first-class binary transfer semantics, atomic reset/power-loss recovery, resource/wear/timing acceptance, deterministic fault injection, repository-owned firmware build reproducibility, read-only real-device Flash/revision/protection preflight and a known-good recovery bundle. A versioned `scripts/stm32_readonly_flash_preflight.ps1` was added for the non-mutating hardware discovery step; it explicitly blocks erase/download/write/read-unprotect and permits option-byte access only as `-ob displ`. The firmware build entrypoint remains intentionally unresolved because the full historical compiler/linker invocation is not preserved in Git and must not be guessed.
+
 ### Pre-feature readiness documentation audit
 
 A follow-up readiness review corrected three residual documentation inconsistencies before the next product boundary: README no longer lists a non-existent `scripts/` directory; the deferred backlog no longer claims stale current/next roadmap authority and explicitly keeps Asset/Configuration implementation deferred if Gate 0 cannot identify a real consumer; and the canonical binary protocol-v1 document now reflects its transport-neutral reuse over the dedicated management interface plus the accepted additive command-service v3 / registry 36 / RPC IDs `0x0021..0x0024`, without changing the v1 wire envelope.

@@ -214,20 +214,28 @@ These are **not active roadmap boundaries**:
 
 They may become consumers of the future Asset/Configuration foundation, but only after a dedicated boundary explicitly promotes them.
 
-## 4. Active and future boundaries without canonical files yet
+### G. Gate-0-deferred boundary records
 
-### Active next
+These canonical files record a reviewed boundary that deliberately stopped before implementation:
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION`
+- `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
+- `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Current state:
+Their status is `DEFERRED_NO_REAL_CONSUMER`. They do not authorize Gate 1 or persistent Flash work.
 
-- Gate 0 contract freeze is next;
-- implementation has not started;
-- dedicated canonical plan/acceptance files do not yet exist;
-- creating them is the next boundary task, not part of this documentation-governance audit.
+## 4. Current and future boundaries
 
-### Planned after Asset/Configuration
+### Current product implementation state
+
+No product feature implementation boundary is active.
+
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` completed its initial Gate 0 consumer audit and was deferred because no current target consumer has a frozen schema requiring persistence.
+
+It may be reopened only after a concrete consumer is promoted and Gate 0 is re-frozen.
+
+Infrastructure readiness work such as a repository-owned firmware build entrypoint and read-only MCU/Flash preflight may proceed without turning the deferred product boundary into active implementation.
+
+### Planned after an accepted Asset/Configuration boundary
 
 `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`
 
@@ -272,14 +280,14 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Full documentation audit result at the source-of-truth consolidation point:
+Live documentation inventory after the Asset/Configuration Gate 0 review:
 
-- Markdown files in `docs/`: `53`;
-- same-stem `*_ACCEPTANCE_PLAN.md` records: `17`;
-- `*_PLAN.md`-named files: `20`;
+- Markdown files in `docs/`: `55`;
+- same-stem `*_ACCEPTANCE_PLAN.md` records: `18`;
+- non-acceptance `*_PLAN.md`-named files: `21`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;
 - all four unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
-- no Markdown reference to an existing `docs/*.md` file is missing;
-- the active next boundary deliberately has no canonical plan/acceptance yet because creating those files is the next Gate 0 task.
+- the Asset/Configuration plan and acceptance files form a matched pair and record `DEFERRED_NO_REAL_CONSUMER`;
+- no product implementation boundary is currently active.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

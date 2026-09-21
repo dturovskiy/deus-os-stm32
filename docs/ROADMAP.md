@@ -142,8 +142,8 @@ Implementation order:
 1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–7 accepted / published `fa75307fb392718a1d10d52770a6a111c97208e7`;
 2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — Gates 0–7 accepted / published `1f88083843c6aae9fd228ad2d677f9252b889a11`;
 3. `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `e0f49f168542fa1cf49bca451e01b0c077aa8d18`**; accepted firmware/host trees `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`; Windows CLI + Desktop and real Linux libusb runtime/reconnect PASS; final management/CDC drops `0/0`, final Flash exact;
-4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — ordered after Host Control; activation/current gate is tracked only in `docs/CURRENT_STATE.md`;
-5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+4. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — initial Gate 0 consumer audit completed as `DEFERRED_NO_REAL_CONSUMER`; no Gate 1 implementation is authorized until a concrete consumer is promoted and Gate 0 is reopened;
+5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — remains ordered after an accepted Asset/Configuration safety foundation unless the canonical roadmap is explicitly changed by a later architecture decision;
 6. networking/service extensions.
 
 Deferred optimization/robustness items are trigger-driven, not new immediate roadmap boundaries: I2C IRQ/DMA only after measured bus pressure; scheduler ready-set acceleration only after materially larger task count and measured overhead; CRC acceleration only for measured streaming cost; bounded minimal-copy/backpressure for WinUSB and transfer paths; tickless only for a real power requirement; structured binary event tracing rather than printf-heavy logging; bounded storage/block-device layers when a consumer exists.

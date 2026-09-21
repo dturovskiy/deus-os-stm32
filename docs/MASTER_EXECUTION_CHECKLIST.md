@@ -67,6 +67,15 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] identity/capability contract: HELLO protocol `1`, service `3`, registry `36`; system capabilities `0x0000001F`.
 - [x] Gate 7 evidence SHA-256 `638569FE26600013B3B6717C76DEBF3251980B06D0B493B835D96CB4BC0CFD8F`.
 
+### Gate-0-reviewed boundary — Asset / Configuration transfer — deferred before implementation
+
+- [x] Gate 0 audited current source and deferred future-consumer plans.
+- [x] No current target consumer with a frozen persistence schema was found.
+- [x] Canonical plan/acceptance records created with `FINAL_OUTCOME=DEFERRED_NO_REAL_CONSUMER`.
+- [x] Capability bit 5 remains reserved/unadvertised and system capability mask remains `0x0000001F`.
+- Gate 1 is not authorized; no Flash/linker/transfer implementation belongs to this deferred result.
+- Reactivation requires a promoted concrete consumer plus a reopened Gate 0 contract.
+
 ### Project-state pointer
 
 This historical ledger does not own the active boundary checklist. See `docs/CURRENT_STATE.md` for the active next boundary. When that boundary begins, its dedicated `*_PLAN.md` / `*_ACCEPTANCE_PLAN.md` pair owns the gate checklist.

@@ -56,7 +56,7 @@ README is an entry point only. It is **not** an authoritative current-state, acc
 - USB management device
 - Windows/Linux host control application
 
-Exact accepted product state, candidate hashes and the active next boundary live in `docs/CURRENT_STATE.md`.
+Exact accepted product state, candidate hashes and the current boundary disposition live in `docs/CURRENT_STATE.md`.
 
 ## Project structure
 
@@ -66,6 +66,7 @@ OS/
 ├── host/
 ├── include/
 ├── linker/
+├── scripts/
 └── src/
 ```
 

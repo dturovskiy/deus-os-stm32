@@ -65,41 +65,54 @@ Canonical acceptance:
 
 `docs/HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-## 2. Active next boundary
+## 2. Current boundary disposition
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATE 0 CONTRACT FREEZE NEXT**
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATE 0 REVIEW COMPLETE / DEFERRED_NO_REAL_CONSUMER**
 
-This boundary has **not started implementation**.
+Gate 0 completed as a fail-closed architecture review. It found no current target consumer with a frozen schema that requires persistent asset/configuration storage now.
 
-Its dedicated canonical `PLAN.md` and `ACCEPTANCE_PLAN.md` do not yet exist. Creating and accepting those documents is the next separate boundary task.
+Therefore:
 
-Gate 0 must freeze, before any persistent target write:
+- Gate 1 implementation is **not authorized**;
+- no persistent Flash region is owned by this boundary;
+- no Flash erase/program implementation is active;
+- no transfer ABI extension is active;
+- capability bit 5 remains reserved but unadvertised;
+- generic storage/filesystem/package infrastructure remains unauthorized.
 
-- the real v1 configuration/asset consumer;
-- exact transfer object semantics;
-- record/schema version;
-- exact maximum payload size;
-- exact Flash ownership region;
-- integrity/CRC contract;
-- atomic commit under reset/power loss;
-- previous/default recovery behavior;
-- STM32F103 erase/program alignment;
-- Flash wear budget;
-- incompatible-version migration/rejection policy;
-- strict separation of non-executable configuration/assets from firmware/update/executable state.
+Canonical Gate 0 design/disposition:
 
-A general filesystem is **not** authorized by this boundary unless a concrete consumer proves it necessary.
+`docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 
-## 3. Planned roadmap after the active boundary
+Canonical Gate 0 acceptance:
 
-After `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`:
+`docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-1. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-2. networking/service extensions.
+The deferred OLED configurable-layout and package ideas remain possible future consumers, but they do not become real consumers until a dedicated boundary promotes and freezes one of them.
 
-Firmware update requires its own security/authenticity, controlled reboot/update handoff and recoverable Flash transaction contract. It is not part of the active Asset/Configuration boundary.
+No product feature implementation boundary is currently active.
 
-Networking remains a later service boundary and does not authorize direct speculative TCP/IP expansion on the STM32F103.
+Near-term repository readiness work that may proceed without activating speculative product functionality:
+
+1. establish one versioned repository-owned firmware build entrypoint; the exact historical optimization/link/section invocation is not preserved in Git, so it must be recovered from acceptance harness evidence or replaced by an explicitly re-accepted reproducibility baseline rather than guessed;
+2. run and review the versioned read-only real-device preflight at `scripts/stm32_readonly_flash_preflight.ps1`; the script exists, but real-board evidence is still pending;
+3. resolve host package-lock/SDK restore ambiguity before future host transfer implementation; no `packages.lock.json` files are currently present.
+
+These are infrastructure prerequisites, not permission to implement persistent Flash mutation.
+
+## 3. Planned product sequencing
+
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` may be reopened only when a concrete consumer exists and Gate 0 can freeze its exact schema, Flash partition, transfer ABI, transaction/recovery model and resource budget.
+
+Forward product order remains:
+
+1. accepted/reactivated Asset/Configuration work when a real consumer exists;
+2. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+3. networking/service extensions.
+
+Deferring Asset/Configuration at Gate 0 does not automatically promote firmware update ahead of its own prerequisites or security/recovery contract.
+
+Firmware update requires separate authenticity/security, controlled reboot/update handoff and recoverable Flash transaction design. Networking remains a later service boundary and does not authorize speculative TCP/IP expansion on the STM32F103.
 
 Canonical sequence:
 
@@ -176,7 +189,7 @@ Canonical deferred policy:
 
 ## 6. Known architecture state
 
-No currently known architecture blocker prevents starting Asset/Configuration Gate 0.
+The initial Asset/Configuration Gate 0 review completed without finding a substrate blocker; it was deferred solely because no current consumer with a frozen persistence schema exists.
 
 Resolved gaps:
 
@@ -196,7 +209,7 @@ Still intentionally unresolved until a consumer requires them:
 - network mutation security;
 - richer observability/runtime-statistics framework.
 
-These are not blockers for the active Asset/Configuration Gate 0.
+These remain consumer- or boundary-specific future concerns. None changes the current `DEFERRED_NO_REAL_CONSUMER` disposition.
 
 ## 7. Source-of-truth map
 
