@@ -95,7 +95,7 @@ No product feature implementation boundary is currently active.
 Near-term repository readiness work that may proceed without activating speculative product functionality:
 
 1. establish one versioned repository-owned firmware build entrypoint; the exact historical optimization/link/section invocation is not preserved in Git, so it must be recovered from acceptance harness evidence or replaced by an explicitly re-accepted reproducibility baseline rather than guessed;
-2. run and review the versioned read-only real-device preflight at `scripts/stm32_readonly_flash_preflight.ps1`; the script exists, but real-board evidence is still pending;
+2. read-only real-device MCU/Flash preflight — **ACCEPTED** on the current physical board: `DEV_ID=0x410`, numeric `REV_ID=0x2003`, factory Flash size `64 KiB`, `FLASH_OBR=0x000003FC`, `FLASH_WRPR=0xFFFFFFFF`, RDP disabled, WRP0..31 inactive, SWD accepted at 950 kHz; immutable source-log SHA-256 `B112A754E82ECC01BDC509B2D8FB359D652D74DDC565B3DE046C30C181672C13`, finalized evidence ZIP SHA-256 `BB1F928A2E716F2C8D0FA6B160FC7F41B3187A75CF869DD139DF0C450D6B42D8`;
 3. resolve host package-lock/SDK restore ambiguity before future host transfer implementation; no `packages.lock.json` files are currently present.
 
 These are infrastructure prerequisites, not permission to implement persistent Flash mutation.

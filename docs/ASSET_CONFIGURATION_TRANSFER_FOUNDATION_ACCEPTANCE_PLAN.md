@@ -97,7 +97,7 @@ Reactivation requires all of:
 3. exact maximum serialized object size;
 4. exact Flash partition proposal including future bootloader/recovery budget;
 5. repository-owned reproducible firmware build entrypoint;
-6. read-only real-device Flash/revision/protection preflight plan;
+6. accepted read-only real-device Flash/revision/protection preflight baseline for the physical board used by the implementation;
 7. first-class binary transfer protocol proposal;
 8. persistent atomic-commit/recovery model;
 9. resource ceilings;
@@ -139,9 +139,34 @@ Before future Gate 1:
 
 Must provide one versioned repo-owned build entrypoint with deterministic source/flags/linker ownership and clean ELF/BIN/MAP generation.
 
-### Hardware preflight
+### Hardware preflight — accepted current-board baseline
 
-Must provide a read-only capture of exact board Flash/revision/protection state before self-programming tests.
+The read-only physical-board preflight was captured and evidence-finalized on 2026-09-21 without target or repository mutation.
+
+Accepted values:
+
+- STM32CubeProgrammer device ID `0x410`;
+- `DBGMCU_IDCODE=0x20036410`;
+- numeric `REV_ID=0x2003`;
+- numeric `DEV_ID=0x410`;
+- factory Flash-size register `0xFFFF0040`, low halfword `0x0040 = 64 KiB`;
+- `FLASH_OBR=0x000003FC`;
+- `FLASH_WRPR=0xFFFFFFFF`;
+- RDP disabled;
+- WRP0..31 inactive;
+- accepted SWD frequency `950 kHz`;
+- target voltage observed `3.15–3.16 V`;
+- six captured native commands, all `EXIT_CODE=0`;
+- `NONVOLATILE_MUTATION_REQUESTED=NO`.
+
+Evidence identity:
+
+- immutable source preflight log SHA-256 `B112A754E82ECC01BDC509B2D8FB359D652D74DDC565B3DE046C30C181672C13`;
+- evidence-finalization external log SHA-256 `E9196D310B79986477B9255F9D94883D84E9E2AC617086CCC97CB021272D41AF`;
+- finalized evidence ZIP SHA-256 `BB1F928A2E716F2C8D0FA6B160FC7F41B3187A75CF869DD139DF0C450D6B42D8`;
+- final outcome `PASS`, classification `NONE`.
+
+This satisfies the read-only hardware-preflight prerequisite for the current physical board. It does **not** authorize Flash mutation by itself. Revalidate this prerequisite if the physical MCU/board changes or if protection state is intentionally changed.
 
 ### Recovery
 

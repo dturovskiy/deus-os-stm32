@@ -73,6 +73,7 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] No current target consumer with a frozen persistence schema was found.
 - [x] Canonical plan/acceptance records created with `FINAL_OUTCOME=DEFERRED_NO_REAL_CONSUMER`.
 - [x] Capability bit 5 remains reserved/unadvertised and system capability mask remains `0x0000001F`.
+- [x] Post-review read-only physical-board Flash preflight accepted: `DEV_ID=0x410`, numeric `REV_ID=0x2003`, 64 KiB Flash, RDP disabled, WRP inactive; finalized evidence ZIP SHA-256 `BB1F928A2E716F2C8D0FA6B160FC7F41B3187A75CF869DD139DF0C450D6B42D8`.
 - Gate 1 is not authorized; no Flash/linker/transfer implementation belongs to this deferred result.
 - Reactivation requires a promoted concrete consumer plus a reopened Gate 0 contract.
 
