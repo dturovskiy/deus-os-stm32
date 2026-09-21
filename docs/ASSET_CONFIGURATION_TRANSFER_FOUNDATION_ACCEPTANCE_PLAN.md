@@ -1,6 +1,6 @@
 # Deus OS — Asset / Configuration Transfer Foundation Acceptance Plan
 
-Status: **GATE 0 REVIEW COMPLETE — DEFERRED_NO_REAL_CONSUMER — NO IMPLEMENTATION ACCEPTED**
+Status: **GATE 0 REOPENED / IN PROGRESS — OLED_UI_LAYOUT_CONFIG_V1 PROMOTED — GATE 1 BLOCKED**
 
 Boundary:
 
@@ -10,7 +10,42 @@ Canonical design:
 
 `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 
-## 1. Gate 0 repository prestate
+## 0. Current Gate 0 reactivation state — 2026-09-21
+
+The original Gate 0 deferral remains an accepted historical fail-closed result. The boundary is now reopened because the missing concrete-consumer prerequisite has been satisfied by `OLED_UI_LAYOUT_CONFIG_V1`.
+
+Reactivation repository baseline:
+
+- `HEAD == origin/main == 8a1fe87572a46b50b503ed5008c080705c517036`;
+- working tree clean;
+- ahead/behind `0/0`;
+- `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` already published at that baseline.
+
+Current reactivation matrix:
+
+| Reactivation prerequisite | Current result |
+| --- | --- |
+| Promoted concrete consumer | **PASS** — `OLED_UI_LAYOUT_CONFIG_V1` |
+| Frozen target schema + validation | **PASS** — exact 8-byte payload and strict validation |
+| Exact maximum serialized consumer payload | **PASS — 8 bytes** |
+| Shared Flash partition incl. bootloader/recovery budget | **PASS** — `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` |
+| Repository-owned reproducible firmware build | **PASS** — `scripts/build_firmware.ps1` |
+| Read-only real-device Flash/revision/protection preflight | **PASS** |
+| Host package-lock / SDK reproducibility | **PASS** |
+| First-class bounded binary transfer ABI | **OPEN — Gate 0 work** |
+| Persistent A/B record envelope + atomic commit/recovery | **OPEN — Gate 0 work** |
+| New implementation resource ceilings | **OPEN — Gate 0 work** |
+| Wear/timing/watchdog/USB continuity model | **OPEN — Gate 0 work** |
+| Deterministic reset/power-loss fault-injection matrix | **OPEN — Gate 0 work** |
+| Recovery-bundle / ST-LINK restoration procedure | **OPEN — Gate 0 work** |
+| Capability bit 5 advertised | **NO — correctly blocked** |
+| Gate 1 implementation authorized | **NO** |
+
+Gate 0 is therefore legitimately reopened but **not yet accepted complete**.
+
+No source implementation, linker migration, target Flash mutation, capability activation or hardware run is accepted by this reactivation record.
+
+## 1. Historical Gate 0 repository prestate
 
 Gate 0 review started from:
 
@@ -47,7 +82,7 @@ Acceptance requires evidence of a concrete target owner that can answer all of:
 
 A future idea, reserved capability bit, generic package concept or deferred design document is insufficient.
 
-## 3. Consumer audit result
+## 3. Historical consumer audit result
 
 Observed current source state:
 
@@ -71,7 +106,7 @@ Result:
 
 This satisfies the Gate 0 fail-closed rule and blocks Gate 1.
 
-## 4. Gate 0 acceptance matrix
+## 4. Historical Gate 0 deferral matrix
 
 | Concern | Result |
 | --- | --- |
@@ -88,7 +123,7 @@ This satisfies the Gate 0 fail-closed rule and blocks Gate 1.
 
 Gate 0 is accepted only as a **deferral decision**. It is not acceptance of Asset/Configuration implementation.
 
-## 5. Required conditions to reopen Gate 0
+## 5. Reactivation prerequisites / Gate 1 blockers
 
 Reactivation requires all of:
 
@@ -106,6 +141,8 @@ Reactivation requires all of:
 12. recovery bundle procedure.
 
 If any item is absent, Gate 1 remains blocked.
+
+Items 1–6 are now satisfied by the promoted consumer, frozen Flash decision and accepted infrastructure readiness. Items 7–12 remain the active Gate 0 design/acceptance work listed in Section 0.
 
 ## 6. Protocol rejection criteria
 
@@ -135,9 +172,11 @@ The reopened boundary must reject any design where:
 
 Before future Gate 1:
 
-### Firmware build
+### Firmware build — accepted
 
-Must provide one versioned repo-owned build entrypoint with deterministic source/flags/linker ownership and clean ELF/BIN/MAP generation.
+Accepted versioned entrypoint: `scripts/build_firmware.ps1`.
+
+Independent reproducibility acceptance reproduced the canonical 50652-byte `os.bin` byte-for-byte. Asset Gate 1 must update/re-accept the entrypoint for the transitional standalone linker ceiling (`0x08000000`, 54 KiB) while retaining reset ownership at Flash base. Relocation to `0x08002000` is deferred to the later Bootloader boundary.
 
 ### Hardware preflight — accepted current-board baseline
 
@@ -168,13 +207,13 @@ Evidence identity:
 
 This satisfies the read-only hardware-preflight prerequisite for the current physical board. It does **not** authorize Flash mutation by itself. Revalidate this prerequisite if the physical MCU/board changes or if protection state is intentionally changed.
 
-### Recovery
+### Recovery — Gate 0 procedure still open
 
-Must produce a fresh accepted/recovery firmware image and hashes independent of stale ignored `build/` contents.
+Before destructive self-programming acceptance, Gate 0 must freeze the exact recovery bundle and ST-LINK restoration procedure using a fresh repository-built known-good image rather than stale ignored `build/` state.
 
-### Host restore
+### Host restore — accepted
 
-Must resolve the current package-lock ambiguity before adding transfer implementation.
+Seven project-local `packages.lock.json` files are committed and locked restore/build/tests are accepted on the Windows/Linux SDK matrix. The previous package-lock ambiguity is closed.
 
 ## 9. Resource acceptance when reactivated
 
@@ -214,21 +253,31 @@ Future hardware acceptance must prove at minimum:
 
 No publication may claim Asset/Configuration capability until all implementation gates pass.
 
-While this Gate 0 deferral remains current:
+While reopened Gate 0 remains incomplete:
 
 - system capability mask stays `0x0000001F`;
 - bit 5 remains reserved only;
-- no transfer CLI/Desktop surface is considered product functionality;
-- no persistent Flash region is considered owned by Asset/Configuration.
+- no transfer CLI/Desktop surface is considered accepted product functionality;
+- pages 62/63 are reserved by the shared Flash decision but no Asset/Configuration runtime erase/program owner exists yet;
+- Gate 1 source/linker/Flash implementation remains unauthorized.
 
-## 12. Gate 0 final outcome
+## 12. Historical Gate 0 final outcome
 
-`FINAL_OUTCOME=DEFERRED_NO_REAL_CONSUMER`
+The original fail-closed Gate 0 evidence remains:
 
-Meaning:
+`HISTORICAL_FINAL_OUTCOME=DEFERRED_NO_REAL_CONSUMER`
+
+Meaning at that time:
 
 - architecture review completed;
 - speculative implementation prevented;
 - no accepted product regression;
-- no Gate 1 implementation authorized;
-- boundary may be reopened later when a concrete consumer is promoted.
+- no Gate 1 implementation authorized.
+
+## 13. Current reactivation outcome
+
+`CURRENT_OUTCOME=GATE_0_REOPENED_IN_PROGRESS`
+
+`GATE_1_AUTHORIZED=NO`
+
+The concrete consumer and prerequisite substrate are now present, but the six OPEN Gate 0 contracts in Section 0 must be frozen and accepted before Gate 1 may begin.

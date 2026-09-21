@@ -44,7 +44,7 @@ and currently owns the reset vector at the beginning of Flash.
 
 This decision does **not** retroactively change that accepted binary.
 
-When the first boundary actually implements the shared Flash partition, ownership transitions to the map in Section 4 and the standalone linker/startup contract must be migrated under that boundary's acceptance.
+The ownership target in Section 4 is reached in **two implementation phases**. Asset/Configuration may reserve and use the top A/B persistence pages while the application remains the standalone reset owner at `0x08000000`. The application moves to `0x08002000` only when a real bootloader is installed at Flash base. This staged rule prevents an Asset-first implementation from producing an unbootable device.
 
 ## 4. Frozen future physical map
 
@@ -83,6 +83,45 @@ Exact ownership:
 | Persistent slot B | `0x0800FC00` | `0x0800FFFF` | 1024 B | 63 |
 
 No region may erase or program a page owned by another region.
+
+### 4.1 Phased realization before the bootloader exists
+
+The final map above is the steady-state ownership target, but the roadmap intentionally implements persistence before the bootloader.
+
+Therefore the Asset/Configuration phase uses this transitional physical execution map:
+
+```text
+0x08000000  +----------------------------------+
+            | Standalone application           |
+            | reset owner                       |
+            | maximum linked span: 54 KiB      |
+0x0800D800  +----------------------------------+
+            | Reserved relocation headroom     |
+            | pages 54..61 / 8 KiB             |
+0x0800F800  +----------------------------------+
+            | Persistent config slot A / 1 KiB |
+0x0800FC00  +----------------------------------+
+            | Persistent config slot B / 1 KiB |
+0x08010000  +----------------------------------+
+```
+
+During this phase:
+
+- the application vector table remains at `0x08000000`;
+- no bootloader is implied or fabricated;
+- the application linker may remain at origin `0x08000000`, but its Flash length/ceiling becomes **54 KiB**, ending before `0x0800D800`;
+- pages 54..61 remain deliberately unused as relocation headroom;
+- pages 62/63 are the only self-programmable Asset/Configuration pages;
+- the current 50652-byte application fits the 54 KiB ceiling with 4644 bytes remaining.
+
+When `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is later implemented, the same 54 KiB application budget shifts upward by exactly 8 KiB:
+
+```text
+standalone phase: application 0x08000000..0x0800D7FF
+bootloader phase: application 0x08002000..0x0800F7FF
+```
+
+Only that bootloader phase changes reset ownership, application linker origin and VTOR/handoff semantics. Persistence pages do not move.
 
 ## 5. Why the bootloader reservation is 8 KiB
 
@@ -175,30 +214,47 @@ The bootloader must not reuse these pages for firmware-update staging or bootloa
 
 ## 9. Application-region invariants
 
-Once this map is implemented, the application linker must expose only:
+The application budget is **54 KiB in both phases**.
+
+### Asset/Configuration phase — standalone reset owner
+
+Before a bootloader exists:
+
+```text
+ORIGIN = 0x08000000
+LENGTH = 54K
+```
+
+The build must fail if application loadable sections exceed `0x0800D800`. Pages 54..61 remain unused relocation headroom; pages 62/63 remain persistence.
+
+### Bootloader phase — relocated application
+
+After the bootloader becomes reset owner:
 
 ```text
 ORIGIN = 0x08002000
 LENGTH = 54K
 ```
 
-and the build must fail if application loadable sections exceed `0x0800F800`.
+The build must fail if application loadable sections exceed `0x0800F800`.
 
-The future linker migration must add build-failing assertions that prevent:
+The relevant linker migration in each phase must add build-failing assertions that prevent:
 
-- application overlap into bootloader pages;
 - application overlap into persistence pages;
+- use of the reserved relocation-headroom pages during the standalone Asset phase;
+- application overlap into bootloader pages after relocation;
 - persistence symbols outside pages 62..63.
 
-The repository-owned reproducible build entrypoint remains authoritative and must be updated/re-accepted together with the linker migration.
+The repository-owned reproducible build entrypoint remains authoritative and must be updated/re-accepted at each linker-contract transition.
 
 ## 10. Programming ownership rules
 
 Future self-programming code must operate fail-closed:
 
 - Asset/Configuration may erase/program only pages 62..63;
-- Bootloader/update may erase/program only pages 8..61;
-- normal application code may not erase/program pages 0..7;
+- before bootloader installation, the standalone application may execute from lower Flash but its self-programming path still owns only pages 62..63;
+- after bootloader installation, Bootloader/update may erase/program only pages 8..61;
+- normal application self-programming code may never erase/program pages 0..7;
 - no boundary may perform mass erase as part of normal product operation;
 - ST-LINK remains recovery/debug tooling outside normal self-programming ownership.
 

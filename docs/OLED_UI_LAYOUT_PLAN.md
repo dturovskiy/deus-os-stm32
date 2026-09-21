@@ -4,6 +4,11 @@
 > [`OLED_UI_ACCEPTED_BASELINE.md`](OLED_UI_ACCEPTED_BASELINE.md).
 > Any configurable-layout, preset, custom-layout, persistence, or alternate-geometry
 > material below is deferred planning and must not override the accepted baseline.
+>
+> **Promotion note (2026-09-21):** the broader plan remains deferred. Only the narrow
+> `OLED_UI_LAYOUT_CONFIG_V1` console-clip persistence consumer has been promoted in
+> `OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md` to reopen Asset/Configuration Gate 0.
+> Status-bar geometry, presets, borders, bitmaps and arbitrary custom-layout work remain deferred.
 # OLED UI Layout and Customization Plan
 
 Status: **DEFERRED FUTURE UI/CONFIGURATION CONSUMER — NOT AN ACTIVE ROADMAP BOUNDARY; CURRENT STATE IN `docs/CURRENT_STATE.md`**

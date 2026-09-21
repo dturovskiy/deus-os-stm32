@@ -67,20 +67,34 @@ Canonical acceptance:
 
 ## 2. Current boundary disposition
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATE 0 REVIEW COMPLETE / DEFERRED_NO_REAL_CONSUMER**
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATE 0 REOPENED / IN PROGRESS — GATE 1 BLOCKED**
 
-Gate 0 completed as a fail-closed architecture review. It found no current target consumer with a frozen schema that requires persistent asset/configuration storage now.
+The original `DEFERRED_NO_REAL_CONSUMER` Gate 0 result remains historical proof that implementation was correctly blocked when no real consumer existed.
 
-Therefore:
+That blocking condition is now resolved by the promoted narrow consumer:
 
-- Gate 1 implementation is **not authorized**;
-- no persistent Flash region is owned by this boundary;
-- no Flash erase/program implementation is active;
-- no transfer ABI extension is active;
-- capability bit 5 remains reserved but unadvertised;
-- generic storage/filesystem/package infrastructure remains unauthorized.
+- consumer: `OLED_UI_LAYOUT_CONFIG_V1`;
+- canonical consumer contract: `docs/OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md`;
+- target object type: `0x0001`;
+- exact consumer payload: `8 bytes`;
+- scope: persisted OLED **console clip only**;
+- accepted status bar remains frozen/system-owned at `128x9`;
+- compiled default remains console `x=1, y=10, w=126, h=22`.
 
-Canonical Gate 0 design/disposition:
+Gate 0 is active only for design/acceptance freeze. **Gate 1 implementation is not authorized.**
+
+Still-open Gate 0 items:
+
+1. first-class bounded binary transfer ABI;
+2. persistent A/B record envelope + atomic commit/recovery;
+3. new resource ceilings against the frozen 54 KiB future application region;
+4. Flash wear/timing/watchdog/USB continuity model;
+5. deterministic reset/power-loss fault-injection matrix;
+6. recovery-bundle / ST-LINK restoration procedure.
+
+No Flash erase/program implementation is active; no linker/vector migration is active; capability bit 5 remains reserved but unadvertised; generic storage/filesystem/package infrastructure remains unauthorized.
+
+Canonical Gate 0 design:
 
 `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 
@@ -88,11 +102,9 @@ Canonical Gate 0 acceptance:
 
 `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-The deferred OLED configurable-layout and package ideas remain possible future consumers, but they do not become real consumers until a dedicated boundary promotes and freezes one of them.
+The broader configurable OLED layout/preset/assets roadmap remains deferred. Only `OLED_UI_LAYOUT_CONFIG_V1` has been promoted as the concrete persistence consumer.
 
-No product feature implementation boundary is currently active.
-
-Near-term repository readiness work that may proceed without activating speculative product functionality:
+Completed repository-readiness prerequisites supporting the reopened Gate 0:
 
 1. repository-owned firmware build entrypoint — **ACCEPTED**: the exact historical Host Control Gate-2 compiler/startup/link/objcopy invocation was recovered from acceptance evidence rather than guessed, the generated `deus_build_identity.h` was recovered identically from 20/20 surviving copies (SHA-256 `F6EAA98172FEE67338BFD978F208BD95731063A1160B0C9C1282306A5D6658A5`), and two independent temporary builds with Arm GNU Toolchain `15.3.1` reproduced the accepted 50652-byte firmware BIN byte-for-byte at SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F` with exact `text/data/bss = 50540/112/11616` and Flash/SRAM `50652/11728`; the versioned entrypoint is `scripts/build_firmware.ps1` (accepted script SHA-256 `BC7B91825B9BB80394C28643848EE3AEF75A4B62017432BB1070190088B8CDFB`), final reproducibility evidence ZIP SHA-256 `1FDB3C647ACCF4B9A67FDC02514009495F60D1F3E3B4E00C551FC0B4A3F4F847`; ELF/MAP debug artifacts remain path-dependent and are not the firmware identity; no target I/O or Flash mutation occurred;
 2. read-only real-device MCU/Flash preflight — **ACCEPTED** on the current physical board: `DEV_ID=0x410`, numeric `REV_ID=0x2003`, factory Flash size `64 KiB`, `FLASH_OBR=0x000003FC`, `FLASH_WRPR=0xFFFFFFFF`, RDP disabled, WRP0..31 inactive, SWD accepted at 950 kHz; immutable source-log SHA-256 `B112A754E82ECC01BDC509B2D8FB359D652D74DDC565B3DE046C30C181672C13`, finalized evidence ZIP SHA-256 `BB1F928A2E716F2C8D0FA6B160FC7F41B3187A75CF869DD139DF0C450D6B42D8`;
@@ -104,20 +116,22 @@ These are infrastructure prerequisites, not permission to implement persistent F
 
 The shared docs-only Flash ownership decision is now frozen by `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md`:
 
-- future bootloader/recovery: pages 0..7, `0x08000000..0x08001FFF`, 8 KiB ceiling;
-- future application: pages 8..61, origin `0x08002000`, 54 KiB maximum;
+- steady-state bootloader/recovery: pages 0..7, `0x08000000..0x08001FFF`, 8 KiB ceiling;
+- steady-state relocated application: pages 8..61, origin `0x08002000`, 54 KiB maximum;
 - persistent slot A/B: pages 62/63 at `0x0800F800` / `0x0800FC00`, 1 KiB each;
-- current accepted firmware remains standalone at `0x08000000` until an implementation boundary migrates linker/startup/vector ownership.
+- Asset/Configuration is implemented first in a transitional standalone phase: application remains reset owner at `0x08000000`, its linker ceiling becomes 54 KiB, pages 54..61 remain unused relocation headroom, and only pages 62/63 become persistent;
+- application relocation to `0x08002000`, VTOR/handoff changes and lower-page bootloader ownership occur only in the later Bootloader boundary.
 
 `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` may be reopened only when a concrete consumer exists and Gate 0 can freeze its exact schema, transfer ABI, transaction/recovery model and resource budget against that shared Flash map.
 
 Forward dependency order is:
 
 1. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **ACCEPTED DOCS-ONLY SHARED CONTRACT**;
-2. promote/freeze one concrete bounded persistent consumer;
-3. reactivate and accept `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
-4. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-5. networking/service/security extensions.
+2. `OLED_UI_LAYOUT_CONFIG_V1` — **PROMOTED / FROZEN CONSUMER CONTRACT**;
+3. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 — **REOPENED / IN PROGRESS; GATE 1 BLOCKED**;
+4. accept Asset/Configuration implementation only after Gate 0 is fully frozen;
+5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+6. networking/service/security extensions.
 
 Deferring Asset/Configuration at Gate 0 does not automatically promote firmware update ahead of its own prerequisites or security/recovery contract.
 
@@ -230,7 +244,7 @@ Still intentionally unresolved until a consumer requires them:
 - network mutation security;
 - richer observability/runtime-statistics framework.
 
-These remain consumer- or boundary-specific future concerns. None changes the current `DEFERRED_NO_REAL_CONSUMER` disposition.
+These remain consumer- or boundary-specific future concerns. None changes the current `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 reopened / Gate 1 blocked disposition.
 
 ## 7. Source-of-truth map
 

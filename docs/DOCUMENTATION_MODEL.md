@@ -185,9 +185,9 @@ These are complete and retained as scoped historical contracts:
 - `HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md`
 - `HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-### D. Accepted protocol/hardware/UI reference contracts
+### D. Accepted protocol/hardware/UI references and promoted narrow consumer contracts
 
-These describe accepted narrow contracts rather than active boundaries:
+These describe accepted narrow reference contracts or explicitly promoted consumer contracts rather than source implementation authority:
 
 - `BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
 - `OLED_SSD1306_HARDWARE_PROFILE.md`
@@ -195,6 +195,7 @@ These describe accepted narrow contracts rather than active boundaries:
 - `OLED_CONSOLE_API_CONTRACT.md`
 - `OLED_CONSOLE_ARCHITECTURE.md`
 - `OLED_CONSOLE_ACCEPTANCE_PLAN.md`
+- `OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md` — promoted concrete consumer contract for reopened Asset/Configuration Gate 0; not source implementation authority by itself
 
 ### E. Historical implementation records
 
@@ -214,30 +215,30 @@ These are **not active roadmap boundaries**:
 - `OLED_STATUS_BAR_PLAN.md`
 - `HOST_MANAGEMENT_PRESENTATION_MODEL.md`
 
-The OLED plans may become consumers of the future Asset/Configuration foundation, but only after a dedicated boundary explicitly promotes them.
+The broad OLED plans remain deferred. A deliberately narrow subset has now been separately promoted as `OLED_UI_LAYOUT_CONFIG_V1` in `OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md`; that promotion does not activate the rest of the configurable-layout/preset/asset roadmap.
 
 `HOST_MANAGEMENT_PRESENTATION_MODEL.md` is a non-authorizing forward architecture reference: it formalizes CLI/Desktop/Web presentation roles above the accepted Host Control Core without activating Web, networking, packaging/distribution or target-firmware implementation.
 
-### G. Gate-0-deferred boundary records
+### G. Reopened Gate-0 boundary records
 
-These canonical files record a reviewed boundary that deliberately stopped before implementation:
+These canonical files preserve the original fail-closed deferral and now own the reopened Gate 0 design/acceptance work:
 
 - `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 - `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Their status is `DEFERRED_NO_REAL_CONSUMER`. They do not authorize Gate 1 or persistent Flash work.
+Current status is `GATE 0 REOPENED / IN PROGRESS — GATE 1 BLOCKED`. The historical `DEFERRED_NO_REAL_CONSUMER` result remains part of the record, but it is no longer the current disposition because `OLED_UI_LAYOUT_CONFIG_V1` has been promoted.
 
 ## 4. Current and future boundaries
 
 ### Current product implementation state
 
-No product feature implementation boundary is active.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 is the active product-design boundary.
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` completed its initial Gate 0 consumer audit and was deferred because no current target consumer has a frozen schema requiring persistence.
+It is reopened for `OLED_UI_LAYOUT_CONFIG_V1`, but Gate 1 source implementation remains blocked until the remaining Gate 0 transfer/persistence/resource/wear/fault-recovery contracts are frozen and accepted.
 
-It may be reopened only after a concrete consumer is promoted and Gate 0 is re-frozen.
+The original no-consumer deferral remains historical evidence; it no longer describes current Gate 0 status.
 
-Infrastructure readiness work such as a repository-owned firmware build entrypoint and read-only MCU/Flash preflight may proceed without turning the deferred product boundary into active implementation.
+No product **implementation** gate is active yet.
 
 ### Planned after an accepted Asset/Configuration boundary
 
@@ -286,14 +287,14 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after the Asset/Configuration Gate 0 review:
+Live documentation inventory after the Asset/Configuration Gate 0 reactivation:
 
-- Markdown files in `docs/`: `57`;
+- Markdown files in `docs/`: `58`;
 - same-stem `*_ACCEPTANCE_PLAN.md` records: `18`;
 - non-acceptance `*_PLAN.md`-named files: `21`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;
 - all four unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
-- the Asset/Configuration plan and acceptance files form a matched pair and record `DEFERRED_NO_REAL_CONSUMER`;
+- the Asset/Configuration plan and acceptance files form a matched pair; they preserve the historical `DEFERRED_NO_REAL_CONSUMER` result and now record `GATE 0 REOPENED / IN PROGRESS — GATE 1 BLOCKED`;
 - no product implementation boundary is currently active.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

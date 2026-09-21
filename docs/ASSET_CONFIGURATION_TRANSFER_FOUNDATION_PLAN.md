@@ -1,12 +1,12 @@
 # Deus OS — Asset / Configuration Transfer Foundation Plan
 
-Status: **GATE 0 REVIEW COMPLETE — DEFERRED_NO_REAL_CONSUMER — GATE 1 NOT AUTHORIZED**
+Status: **GATE 0 REOPENED — OLED_UI_LAYOUT_CONFIG_V1 PROMOTED — GATE 1 NOT AUTHORIZED**
 
 Boundary:
 
 `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`
 
-Gate 0 repository baseline:
+Historical initial Gate 0 repository baseline:
 
 - repository `HEAD == origin/main == dd68659959d3c04b75e90bb6e31e5a956099eb92`;
 - working tree was clean and ahead/behind `0/0` before this Gate 0 documentation work;
@@ -26,8 +26,59 @@ Canonical predecessors:
 - `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md`;
 - `docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md`;
 - `docs/OLED_UI_LAYOUT_PLAN.md`;
+- `docs/OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md`;
+- `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md`;
 - `docs/HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md`;
 - `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md`.
+
+## 0. Gate 0 reactivation — 2026-09-21
+
+The historical Gate 0 deferral remains preserved below, but its blocking condition has now changed.
+
+Reactivation repository baseline:
+
+- `HEAD == origin/main == 8a1fe87572a46b50b503ed5008c080705c517036`;
+- working tree clean;
+- ahead/behind `0/0`;
+- `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` already published at that baseline.
+
+A concrete persistent consumer has been promoted:
+
+- consumer ID: `OLED_UI_LAYOUT_CONFIG_V1`;
+- canonical consumer contract: `docs/OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md`;
+- object type: `0x0001`;
+- exact consumer payload: `8 bytes`;
+- semantic owner: OLED console layout/clip;
+- compiled default: console rectangle `x=1, y=10, w=126, h=22`;
+- status bar remains frozen/system-owned at `128x9`;
+- persistence is required so operator-selected console layout survives reset and power removal.
+
+The shared future Flash map is also frozen by `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md`:
+
+- bootloader/recovery pages `0..7`, 8 KiB ceiling;
+- future application pages `8..61`, origin `0x08002000`, 54 KiB maximum;
+- persistent slot A/B pages `62/63`, 1 KiB each.
+
+Infrastructure prerequisites already accepted before this reactivation:
+
+- repository-owned firmware build entrypoint `scripts/build_firmware.ps1`;
+- read-only current-board MCU/Flash/protection preflight;
+- seven project-local host package locks and accepted Windows/Linux SDK restore/build/test reproducibility.
+
+Therefore `DEFERRED_NO_REAL_CONSUMER` is no longer the current disposition. Gate 0 is reopened for the remaining architecture/protocol/persistence acceptance work.
+
+**Gate 1 remains blocked.**
+
+Before Gate 1 may be authorized, reopened Gate 0 must still freeze and accept:
+
+1. first-class bounded binary transfer ABI;
+2. persistent A/B record envelope and atomic commit/selection rules;
+3. new resource ceilings against the 54 KiB future application region;
+4. Flash wear/timing/watchdog/USB continuity policy;
+5. deterministic reset/power-loss fault-injection matrix;
+6. recovery-bundle/ST-LINK restoration procedure for destructive acceptance.
+
+This reactivation is documentation/design work only. It performs no source implementation, linker migration, vector relocation, Flash erase/program, capability advertisement or target I/O.
 
 ## 1. Purpose
 
@@ -41,7 +92,7 @@ The first Gate 0 question is therefore mandatory:
 
 If that question cannot be answered with a concrete current product consumer and a bounded schema, implementation is deferred.
 
-## 2. Gate 0 consumer audit
+## 2. Historical Gate 0 consumer audit
 
 The repository was audited for current target consumers.
 
@@ -71,7 +122,7 @@ Existing future-consumer documentation does not satisfy the implementation trigg
 
 Therefore Gate 0 does not identify a current v1 target object whose persistence is required now.
 
-## 3. Gate 0 disposition
+## 3. Historical Gate 0 disposition
 
 Gate 0 disposition is:
 
@@ -90,9 +141,13 @@ Consequences:
 
 This is a fail-closed architectural result, not a product failure.
 
+This historical disposition is superseded for current work by the Gate 0 reactivation record in Section 0; it remains the reason no implementation was started before a concrete consumer existed.
+
 ## 4. Reactivation trigger
 
 The boundary may be reopened only when a concrete product boundary promotes a real consumer.
+
+That trigger is now satisfied specifically by `OLED_UI_LAYOUT_CONFIG_V1`; broader OLED customization, arbitrary assets and generic settings remain deferred.
 
 A qualifying consumer must define all of:
 
@@ -109,7 +164,7 @@ A qualifying consumer must define all of:
 
 Possible existing ideas such as configurable OLED layout, monochrome assets, device profiles or application data do not qualify merely because they appear in deferred documents.
 
-## 5. Mandatory future Flash partition contract
+## 5. Flash partition contract — architecture map accepted / implementation reservation pending
 
 Before the first persistent target write, the reopened Gate 0 must freeze the physical Flash map.
 
@@ -125,6 +180,15 @@ The contract must state:
 - migration consequences if the future bootloader layout changes.
 
 The current linker gives the firmware the full 64 KiB Flash region. That is acceptable for the current accepted baseline but is not acceptable once persistent Flash pages are owned separately.
+
+The architecture-level partition requirement is now satisfied by `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md`.
+
+Implementation is explicitly phased:
+
+- Asset/Configuration phase: standalone application remains reset owner at `0x08000000`, but its linker Flash ceiling becomes 54 KiB; pages 54..61 remain unused relocation headroom; pages 62/63 become persistent A/B slots;
+- Bootloader phase: bootloader becomes reset owner in pages 0..7 and the same 54 KiB application budget relocates to `0x08002000..0x0800F7FF`.
+
+Asset Gate 1 must **not** relocate the application to `0x08002000` before a bootloader exists.
 
 ## 6. Mandatory real-device read-only preflight
 
@@ -263,9 +327,11 @@ Before any destructive self-programming test:
 
 Ignored stale `build/` contents are not an authoritative recovery source.
 
-## 13. Build reproducibility prerequisite
+## 13. Build reproducibility prerequisite — accepted
 
-Before a future Gate 1 implementation, the repository must have one versioned firmware build entrypoint that owns:
+The prerequisite is accepted. The versioned repository-owned entrypoint is `scripts/build_firmware.ps1`; independent reproducibility proof reproduced the accepted 50652-byte firmware BIN exactly.
+
+Before Gate 1 implementation, that entrypoint remains responsible for:
 
 - exact source list;
 - startup assembly;
@@ -279,14 +345,14 @@ Before a future Gate 1 implementation, the repository must have one versioned fi
 
 External acceptance harnesses may invoke that entrypoint but must not remain the only source of the firmware build recipe.
 
-## 14. Host reproducibility prerequisite
+## 14. Host reproducibility prerequisite — accepted
 
-Before host transfer implementation:
+The prerequisite is accepted:
 
-- package restore behavior must be unambiguous;
-- either commit and enforce lock files or remove the unsupported lock-file promise;
-- SDK roll-forward policy must be explicitly accepted;
-- Core transfer logic must remain independent of Avalonia and OS-specific transport layers.
+- all seven host projects have committed `packages.lock.json` files;
+- locked restore/build/tests pass on accepted Windows and Linux SDKs;
+- `host/global.json` retains the accepted .NET 10 roll-forward policy;
+- Core transfer logic must continue to remain independent of Avalonia and OS-specific transport layers.
 
 ## 15. Security boundary
 
@@ -332,4 +398,4 @@ A future reactivation must explicitly reopen Gate 0 and then use a fresh gate se
 - Gate 6 — docs finalization + one normal local acceptance commit;
 - Gate 7 — ordinary non-force publication and remote verification.
 
-No later gate is active while Gate 0 remains `DEFERRED_NO_REAL_CONSUMER`.
+Gate 0 is now active as a documentation/design freeze. Gate 1 and every later implementation gate remain blocked until all open Gate 0 reactivation criteria are accepted.
