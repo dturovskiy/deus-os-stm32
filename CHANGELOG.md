@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Asset/Configuration Gate 0 persistent A/B contract frozen
+
+Added `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`. Pages 62/63 remain the only persistence pages; each 1-KiB slot is frozen as a 64-byte envelope plus up to 960 payload bytes. Record validity requires exact metadata/reserved state, header CRC-32, payload CRC-32, consumer validation and final `0xA55A` halfword commit marker. Replacement always targets the inactive page, verifies readback before programming the commit marker, retains the previous committed slot, suppresses unchanged writes, and falls back deterministically to previous valid or compiled default across reset/power loss. No Flash code or target mutation occurred; four Gate 0 contracts remain open.
+
 ### Asset/Configuration Gate 0 transfer ABI frozen
 
 Added `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` as the first closed design contract of the reopened Gate 0. It additively reserves frame types `0x03/0x85` on Binary Framed Transport v1, uses management IF2 only, fixes one active session, 32-byte chunks, a 960-byte transport ceiling, 30-second abandonment, whole-object CRC-32, strict sequential/idempotent retry semantics, readback generation binding and explicit destructive intent. Initial accepted object type remains only `0x0001` / `OLED_UI_LAYOUT_CONFIG_V1` at exactly 8 bytes. No firmware/host source or target mutation occurred; Gate 1 remains blocked on the remaining five Gate 0 contracts.

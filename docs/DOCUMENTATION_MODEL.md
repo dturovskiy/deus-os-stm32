@@ -191,6 +191,7 @@ These describe accepted narrow reference contracts or explicitly promoted consum
 
 - `BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
 - `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` — frozen Gate 0 additive binary transfer ABI; docs-only until Gate 1
+- `ASSET_CONFIGURATION_PERSISTENCE_V1.md` — frozen Gate 0 A/B persistence envelope/atomic selection contract; docs-only until Gate 1
 - `OLED_SSD1306_HARDWARE_PROFILE.md`
 - `OLED_UI_ACCEPTED_BASELINE.md`
 - `OLED_CONSOLE_API_CONTRACT.md`
@@ -290,7 +291,7 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 Live documentation inventory after the Asset/Configuration Gate 0 reactivation:
 
-- Markdown files in `docs/`: `59`;
+- Markdown files in `docs/`: `60`;
 - same-stem `*_ACCEPTANCE_PLAN.md` records: `18`;
 - non-acceptance `*_PLAN.md`-named files: `21`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;

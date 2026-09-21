@@ -72,7 +72,7 @@ Therefore `DEFERRED_NO_REAL_CONSUMER` is no longer the current disposition. Gate
 Before Gate 1 may be authorized, reopened Gate 0 must still freeze and accept:
 
 1. first-class bounded binary transfer ABI — **FROZEN** in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`;
-2. persistent A/B record envelope and atomic commit/selection rules;
+2. persistent A/B record envelope and atomic commit/selection rules — **FROZEN** in `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`;
 3. new resource ceilings against the 54 KiB future application region;
 4. Flash wear/timing/watchdog/USB continuity policy;
 5. deterministic reset/power-loss fault-injection matrix;
@@ -240,9 +240,11 @@ Required semantics include:
 - error/status model;
 - host readback/verification contract.
 
-## 8. Persistent transaction model
+## 8. Persistent transaction model — Gate 0 contract frozen
 
 Persistent configuration must be fail-closed under reset and power loss.
+
+The exact v1 envelope/selection/commit contract is frozen in `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`: two 1-KiB slots, 64-byte envelope, 960-byte payload capacity, CRC-32 metadata/payload validation, monotonic generation and a final 16-bit `0xA55A` commit marker.
 
 The reopened Gate 0 must freeze:
 
