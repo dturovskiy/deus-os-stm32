@@ -74,7 +74,7 @@ Before Gate 1 may be authorized, reopened Gate 0 must still freeze and accept:
 1. first-class bounded binary transfer ABI — **FROZEN** in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`;
 2. persistent A/B record envelope and atomic commit/selection rules — **FROZEN** in `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`;
 3. new resource ceilings against the 54 KiB future application region — **FROZEN** in `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md`;
-4. Flash wear/timing/watchdog/USB continuity policy;
+4. Flash wear/timing/watchdog/USB continuity policy — **FROZEN** in `docs/ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md`;
 5. deterministic reset/power-loss fault-injection matrix;
 6. recovery-bundle/ST-LINK restoration procedure for destructive acceptance.
 
@@ -288,9 +288,9 @@ The frozen v1 resource contract sets Flash `<=54272`, SRAM `<=12288`, task margi
 - reserved Flash pages;
 - future bootloader/recovery budget.
 
-## 10. Flash wear and timing
+## 10. Flash wear, timing, watchdog and transport continuity — Gate 0 contract frozen
 
-The future design must state:
+The frozen `ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1` sets the exact policy. It states:
 
 - maximum erase frequency expected from the real consumer;
 - wear budget and expected lifetime;

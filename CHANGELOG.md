@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Asset/Configuration Gate 0 Flash-operation policy frozen
+
+Added `docs/ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` from ST DS5319/PM0075 constraints. v1 uses page erase plus aligned halfword programming only, requires HSI on, allows bounded same-Flash CPU/IRQ stalls, forbids mass erase/option-byte mutation and never reloads IWDG from Flash code. Worst-case datasheet arithmetic is 74.65 ms BUSY for a maximum 960-byte record and 41.33 ms for the current 8-byte consumer; product ceilings are 80 ms total BSY, 150 ms mutation phase, 500 ms COMMIT response and >=2 s host timeout. Successful changed generations are capped at 10,000; A/B rotation limits that to at most 5,000 erases/page, half the 10k minimum endurance, while unchanged writes are strictly suppressed. No source/target mutation occurred; two Gate 0 contracts remain open.
+
 ### Asset/Configuration Gate 0 resource budget frozen
 
 Added `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md`. Asset-phase linker geometry remains standalone at `0x08000000` with physical `54K` length, but Gate-2 Flash acceptance is capped at `54272` bytes (53 KiB), retaining one 1-KiB application page as post-Asset reserve; from the current 50652-byte baseline this permits at most 3620 bytes growth. Static SRAM is capped at `12288` bytes (12 KiB), leaving a 6-KiB address gap below the fixed 2-KiB MSP reservation and allowing only 560 bytes growth from the current 11728-byte baseline. Existing 1024/512 task stacks remain fixed with >=256-byte hardware margins; MSP measurable margin must remain >=1024. Whole-object/page buffering and new tasks remain forbidden. No source/target mutation occurred; three Gate 0 contracts remain open.
