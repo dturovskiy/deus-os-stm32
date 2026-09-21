@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Asset/Configuration Gate 0 transfer ABI frozen
+
+Added `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` as the first closed design contract of the reopened Gate 0. It additively reserves frame types `0x03/0x85` on Binary Framed Transport v1, uses management IF2 only, fixes one active session, 32-byte chunks, a 960-byte transport ceiling, 30-second abandonment, whole-object CRC-32, strict sequential/idempotent retry semantics, readback generation binding and explicit destructive intent. Initial accepted object type remains only `0x0001` / `OLED_UI_LAYOUT_CONFIG_V1` at exactly 8 bytes. No firmware/host source or target mutation occurred; Gate 1 remains blocked on the remaining five Gate 0 contracts.
+
 ### Asset / Configuration Gate 0 reopened for a concrete OLED console-layout consumer
 
 Promoted `OLED_UI_LAYOUT_CONFIG_V1` as the first real persistent consumer and reopened `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0. The promoted object is deliberately narrow: an exact 8-byte, non-executable console-clip configuration with compiled default `x=1,y=10,w=126,h=22`; the accepted 128x9 status bar remains frozen/system-owned. The broader configurable-layout/preset/asset plan remains deferred.

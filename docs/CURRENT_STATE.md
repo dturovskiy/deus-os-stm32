@@ -83,14 +83,17 @@ That blocking condition is now resolved by the promoted narrow consumer:
 
 Gate 0 is active only for design/acceptance freeze. **Gate 1 implementation is not authorized.**
 
+Frozen Gate 0 contract:
+
+- first-class bounded binary transfer ABI — `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`.
+
 Still-open Gate 0 items:
 
-1. first-class bounded binary transfer ABI;
-2. persistent A/B record envelope + atomic commit/recovery;
-3. new resource ceilings against the frozen 54 KiB future application region;
-4. Flash wear/timing/watchdog/USB continuity model;
-5. deterministic reset/power-loss fault-injection matrix;
-6. recovery-bundle / ST-LINK restoration procedure.
+1. persistent A/B record envelope + atomic commit/recovery;
+2. new resource ceilings against the frozen 54 KiB future application region;
+3. Flash wear/timing/watchdog/USB continuity model;
+4. deterministic reset/power-loss fault-injection matrix;
+5. recovery-bundle / ST-LINK restoration procedure.
 
 No Flash erase/program implementation is active; no linker/vector migration is active; capability bit 5 remains reserved but unadvertised; generic storage/filesystem/package infrastructure remains unauthorized.
 

@@ -71,7 +71,7 @@ Therefore `DEFERRED_NO_REAL_CONSUMER` is no longer the current disposition. Gate
 
 Before Gate 1 may be authorized, reopened Gate 0 must still freeze and accept:
 
-1. first-class bounded binary transfer ABI;
+1. first-class bounded binary transfer ABI — **FROZEN** in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`;
 2. persistent A/B record envelope and atomic commit/selection rules;
 3. new resource ceilings against the 54 KiB future application region;
 4. Flash wear/timing/watchdog/USB continuity policy;
@@ -208,13 +208,13 @@ The preflight must use authoritative STM32 documentation for the discovered sili
 
 No erase/program operation is authorized until the captured device state is compatible with the frozen design.
 
-## 7. Transfer protocol requirement
+## 7. Transfer protocol requirement — Gate 0 contract frozen
 
 Arbitrary object bytes must not be tunneled through the current UTF-8 string-argument RPC representation using hex, Base64 or equivalent text encoding.
 
 Current RPC semantics remain appropriate for bounded control requests, but asset/configuration transfer requires a first-class bounded binary transfer contract.
 
-When reactivated, Gate 0 must freeze an explicit equivalent of:
+Gate 0 has frozen `ASSET_CONFIGURATION_TRANSFER_V1` in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`, including:
 
 - begin;
 - chunk;

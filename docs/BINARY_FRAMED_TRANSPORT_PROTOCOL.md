@@ -76,6 +76,8 @@ Unknown nonzero flag bits, nonzero reserved bytes, oversized payloads, malformed
 
 No telemetry/event/asset-transfer/firmware-update frame type is implemented in the currently accepted v1 envelope. Future additions must be additive, capability-negotiated and backward-compatible with the accepted frame types, or explicitly advance the protocol version; they must never reinterpret existing frame-type values.
 
+Gate 0 for `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` now freezes future additive frame types `0x03 ASSET_TRANSFER_REQUEST` and `0x85 ASSET_TRANSFER_RESPONSE` in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`. They are **reserved by contract but not implemented or advertised in the current accepted firmware**.
+
 ## 5. Flags
 
 For `RPC_REQUEST`:

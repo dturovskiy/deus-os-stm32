@@ -32,7 +32,7 @@ Current reactivation matrix:
 | Repository-owned reproducible firmware build | **PASS** — `scripts/build_firmware.ps1` |
 | Read-only real-device Flash/revision/protection preflight | **PASS** |
 | Host package-lock / SDK reproducibility | **PASS** |
-| First-class bounded binary transfer ABI | **OPEN — Gate 0 work** |
+| First-class bounded binary transfer ABI | **PASS** — `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` |
 | Persistent A/B record envelope + atomic commit/recovery | **OPEN — Gate 0 work** |
 | New implementation resource ceilings | **OPEN — Gate 0 work** |
 | Wear/timing/watchdog/USB continuity model | **OPEN — Gate 0 work** |
@@ -142,7 +142,7 @@ Reactivation requires all of:
 
 If any item is absent, Gate 1 remains blocked.
 
-Items 1–6 are now satisfied by the promoted consumer, frozen Flash decision and accepted infrastructure readiness. Items 7–12 remain the active Gate 0 design/acceptance work listed in Section 0.
+Items 1–7 are now satisfied by the promoted consumer, frozen Flash decision, accepted infrastructure readiness and frozen transfer ABI. Items 8–12 remain active Gate 0 work.
 
 ## 6. Protocol rejection criteria
 
