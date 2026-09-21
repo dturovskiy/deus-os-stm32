@@ -17,6 +17,7 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - current `fault_record` is normal `.bss` runtime state and is cleared by reset; bounded previous-boot crash/reset retention is later observability work;
 - CRC-16 and explicit destructive intent are not authentication; trust-sensitive network mutation and firmware update require a separate security/authenticity contract;
 - controlled reboot/update handoff belongs to the update/bootloader boundary;
+- future internal-Flash ownership is frozen by `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md`: bootloader/recovery pages 0..7 (`0x08000000..0x08001FFF`), application pages 8..61 from `0x08002000` with 54 KiB maximum, and persistent A/B pages 62/63; this is a docs-only future ownership contract and does not change the currently accepted standalone application linker until an implementation boundary migrates reset/vector ownership;
 - startup/context-switch/register drivers remain arch/platform-specific while kernel/services/apps/UI/protocol semantics should avoid leaking STM32 register details upward;
 - heap, filesystem, generic DMA framework, RTC, MPU isolation and broad power-management facilities are not current prerequisites.
 

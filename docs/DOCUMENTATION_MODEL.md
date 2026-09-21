@@ -142,6 +142,7 @@ New active boundaries must use dedicated canonical plans instead.
 
 - `ARCHITECTURE.md` — architecture/invariants
 - `ROADMAP.md` — forward ordering
+- `FLASH_OWNERSHIP_LAYOUT_DECISION.md` — shared future internal-Flash ownership/reset/application/persistence map; docs-only and non-authorizing by itself
 - `HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` — harness/evidence operating rules
 - `DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md` — deferred/trigger policy
 - `USB_IDENTITY_POLICY.md` — private-development USB identity policy
@@ -287,7 +288,7 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 Live documentation inventory after the Asset/Configuration Gate 0 review:
 
-- Markdown files in `docs/`: `56`;
+- Markdown files in `docs/`: `57`;
 - same-stem `*_ACCEPTANCE_PLAN.md` records: `18`;
 - non-acceptance `*_PLAN.md`-named files: `21`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;

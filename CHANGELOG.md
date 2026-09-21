@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Shared Flash ownership / memory map decision frozen
+
+Added `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md` as a docs-only shared contract before persistent Asset/Configuration or bootloader implementation. For the accepted 64 KiB STM32F103C8 target, the future map reserves pages 0..7 (`0x08000000..0x08001FFF`, 8 KiB ceiling) for the reset-owning bootloader/recovery path, pages 8..61 for a relocated application at `0x08002000` with 54 KiB maximum, and pages 62/63 as independent 1 KiB persistent A/B slots. The 8 KiB bootloader ceiling is derived from 64-page capacity, the current 50-page rounded application footprint, two persistence pages and four explicit application-growth pages; it is not a claim that an unimplemented bootloader already fits. The future Bootloader Gate 0 must prove linked-size feasibility or explicitly reopen this decision. No linker/startup/vector/Flash mutation is performed by this documentation decision.
+
 ### Host management presentation model formalized
 
 Added `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md` as a non-authorizing planning/architecture reference above the accepted Host Control foundation. The documented direction makes `DeusOs.Control.Cli` the first-class automation/headless/acceptance surface, retains the existing Avalonia Desktop as an optional workstation frontend, and reserves a future Web UI for presentation over the shared Core or a bounded host-management service rather than a duplicate browser-side STM32 protocol implementation. A local Web surface is explicitly separated from STM32 networking; LAN/Wi-Fi/remote exposure still requires a dedicated security/trust boundary. No product implementation boundary is activated by this documentation change.

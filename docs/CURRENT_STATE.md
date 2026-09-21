@@ -102,13 +102,22 @@ These are infrastructure prerequisites, not permission to implement persistent F
 
 ## 3. Planned product sequencing
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` may be reopened only when a concrete consumer exists and Gate 0 can freeze its exact schema, Flash partition, transfer ABI, transaction/recovery model and resource budget.
+The shared docs-only Flash ownership decision is now frozen by `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md`:
 
-Forward product order remains:
+- future bootloader/recovery: pages 0..7, `0x08000000..0x08001FFF`, 8 KiB ceiling;
+- future application: pages 8..61, origin `0x08002000`, 54 KiB maximum;
+- persistent slot A/B: pages 62/63 at `0x0800F800` / `0x0800FC00`, 1 KiB each;
+- current accepted firmware remains standalone at `0x08000000` until an implementation boundary migrates linker/startup/vector ownership.
 
-1. accepted/reactivated Asset/Configuration work when a real consumer exists;
-2. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-3. networking/service extensions.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` may be reopened only when a concrete consumer exists and Gate 0 can freeze its exact schema, transfer ABI, transaction/recovery model and resource budget against that shared Flash map.
+
+Forward dependency order is:
+
+1. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **ACCEPTED DOCS-ONLY SHARED CONTRACT**;
+2. promote/freeze one concrete bounded persistent consumer;
+3. reactivate and accept `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`;
+4. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+5. networking/service/security extensions.
 
 Deferring Asset/Configuration at Gate 0 does not automatically promote firmware update ahead of its own prerequisites or security/recovery contract.
 
