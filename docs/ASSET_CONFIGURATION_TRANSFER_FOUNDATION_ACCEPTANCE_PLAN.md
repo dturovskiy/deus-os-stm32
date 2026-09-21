@@ -34,7 +34,7 @@ Current reactivation matrix:
 | Host package-lock / SDK reproducibility | **PASS** |
 | First-class bounded binary transfer ABI | **PASS** — `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` |
 | Persistent A/B record envelope + atomic commit/recovery | **PASS** — `ASSET_CONFIGURATION_PERSISTENCE_V1.md` |
-| New implementation resource ceilings | **OPEN — Gate 0 work** |
+| New implementation resource ceilings | **PASS** — `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` |
 | Wear/timing/watchdog/USB continuity model | **OPEN — Gate 0 work** |
 | Deterministic reset/power-loss fault-injection matrix | **OPEN — Gate 0 work** |
 | Recovery-bundle / ST-LINK restoration procedure | **OPEN — Gate 0 work** |
@@ -142,7 +142,7 @@ Reactivation requires all of:
 
 If any item is absent, Gate 1 remains blocked.
 
-Items 1–8 are now satisfied by the promoted consumer, frozen Flash decision, accepted infrastructure readiness, transfer ABI and persistence contract. Items 9–12 remain active Gate 0 work.
+Items 1–9 are now satisfied by the promoted consumer, frozen Flash decision, accepted infrastructure readiness, transfer ABI, persistence contract and resource budget. Items 10–12 remain active Gate 0 work.
 
 ## 6. Protocol rejection criteria
 

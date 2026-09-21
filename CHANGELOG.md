@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Asset/Configuration Gate 0 resource budget frozen
+
+Added `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md`. Asset-phase linker geometry remains standalone at `0x08000000` with physical `54K` length, but Gate-2 Flash acceptance is capped at `54272` bytes (53 KiB), retaining one 1-KiB application page as post-Asset reserve; from the current 50652-byte baseline this permits at most 3620 bytes growth. Static SRAM is capped at `12288` bytes (12 KiB), leaving a 6-KiB address gap below the fixed 2-KiB MSP reservation and allowing only 560 bytes growth from the current 11728-byte baseline. Existing 1024/512 task stacks remain fixed with >=256-byte hardware margins; MSP measurable margin must remain >=1024. Whole-object/page buffering and new tasks remain forbidden. No source/target mutation occurred; three Gate 0 contracts remain open.
+
 ### Asset/Configuration Gate 0 persistent A/B contract frozen
 
 Added `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`. Pages 62/63 remain the only persistence pages; each 1-KiB slot is frozen as a 64-byte envelope plus up to 960 payload bytes. Record validity requires exact metadata/reserved state, header CRC-32, payload CRC-32, consumer validation and final `0xA55A` halfword commit marker. Replacement always targets the inactive page, verifies readback before programming the commit marker, retains the previous committed slot, suppresses unchanged writes, and falls back deterministically to previous valid or compiled default across reset/power loss. No Flash code or target mutation occurred; four Gate 0 contracts remain open.

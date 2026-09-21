@@ -73,7 +73,7 @@ Before Gate 1 may be authorized, reopened Gate 0 must still freeze and accept:
 
 1. first-class bounded binary transfer ABI — **FROZEN** in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`;
 2. persistent A/B record envelope and atomic commit/selection rules — **FROZEN** in `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`;
-3. new resource ceilings against the 54 KiB future application region;
+3. new resource ceilings against the 54 KiB future application region — **FROZEN** in `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md`;
 4. Flash wear/timing/watchdog/USB continuity policy;
 5. deterministic reset/power-loss fault-injection matrix;
 6. recovery-bundle/ST-LINK restoration procedure for destructive acceptance.
@@ -271,7 +271,7 @@ After reset at any point in the transaction, firmware must select exactly one of
 
 Ambiguous/half-valid state is forbidden.
 
-## 9. Resource model
+## 9. Resource model — Gate 0 contract frozen
 
 The current accepted resource point is Flash `50652`, SRAM `11728`.
 
@@ -279,7 +279,7 @@ Historical boundary ceilings `54780/11824` leave only 96 bytes of SRAM headroom 
 
 Future implementation must prefer bounded streaming/small scratch unless a new SRAM ceiling is explicitly justified and stack/resource proof is repeated.
 
-The reopened Gate 0 must define new resource ceilings that include:
+The frozen v1 resource contract sets Flash `<=54272`, SRAM `<=12288`, task margins `>=256/256`, MSP margin `>=1024`, no new task and no whole-object target buffer. It covers:
 
 - firmware code growth;
 - transfer parser/state;

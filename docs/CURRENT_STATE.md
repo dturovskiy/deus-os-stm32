@@ -86,14 +86,14 @@ Gate 0 is active only for design/acceptance freeze. **Gate 1 implementation is n
 Frozen Gate 0 contract:
 
 - first-class bounded binary transfer ABI — `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`;
-- persistent A/B record envelope + atomic commit/recovery — `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`.
+- persistent A/B record envelope + atomic commit/recovery — `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`;
+- resource budget — `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md`: Flash `<=54272`, SRAM `<=12288`, task margins `>=256/256`, MSP margin `>=1024`.
 
 Still-open Gate 0 items:
 
-1. new resource ceilings against the frozen 54 KiB future application region;
-2. Flash wear/timing/watchdog/USB continuity model;
-3. deterministic reset/power-loss fault-injection matrix;
-4. recovery-bundle / ST-LINK restoration procedure.
+1. Flash wear/timing/watchdog/USB continuity model;
+2. deterministic reset/power-loss fault-injection matrix;
+3. recovery-bundle / ST-LINK restoration procedure.
 
 No Flash erase/program implementation is active; no linker/vector migration is active; capability bit 5 remains reserved but unadvertised; generic storage/filesystem/package infrastructure remains unauthorized.
 
