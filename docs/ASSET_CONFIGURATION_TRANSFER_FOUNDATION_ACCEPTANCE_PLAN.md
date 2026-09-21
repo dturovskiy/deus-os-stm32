@@ -36,7 +36,7 @@ Current reactivation matrix:
 | Persistent A/B record envelope + atomic commit/recovery | **PASS** — `ASSET_CONFIGURATION_PERSISTENCE_V1.md` |
 | New implementation resource ceilings | **PASS** — `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` |
 | Wear/timing/watchdog/USB continuity model | **PASS** — `ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` |
-| Deterministic reset/power-loss fault-injection matrix | **OPEN — Gate 0 work** |
+| Deterministic reset/power-loss fault-injection matrix | **PASS** — `ASSET_CONFIGURATION_FAULT_INJECTION_V1.md` |
 | Recovery-bundle / ST-LINK restoration procedure | **OPEN — Gate 0 work** |
 | Capability bit 5 advertised | **NO — correctly blocked** |
 | Gate 1 implementation authorized | **NO** |
@@ -142,7 +142,7 @@ Reactivation requires all of:
 
 If any item is absent, Gate 1 remains blocked.
 
-Items 1–10 are now satisfied by the promoted consumer, frozen Flash decision, accepted infrastructure readiness, transfer ABI, persistence contract, resource budget and Flash-operation policy. Items 11–12 remain active Gate 0 work.
+Items 1–11 are now satisfied by the promoted consumer, frozen Flash decision, accepted infrastructure readiness and the five frozen Asset design contracts. Item 12 — recovery bundle / ST-LINK restoration — remains the sole open Gate 0 contract.
 
 ## 6. Protocol rejection criteria
 

@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Asset/Configuration Gate 0 deterministic fault matrix frozen
+
+Added `docs/ASSET_CONFIGURATION_FAULT_INJECTION_V1.md`. The mandatory campaign uses a SWD-armed volatile one-shot checkpoint selector rather than adding a product wire command. Nine exact checkpoints span pre-erase through post-runtime-activation; pre-marker reset must select previous/default, post-marker reset selects the new record only through the ordinary validator. The matrix also covers corrupt-record fallback, lost-COMMIT-response idempotency, zero boot-time repair writes and an explicit <=64 deliberate-erase budget. Repeated manual cable pulling is not used for systematic coverage; after deterministic injection, exactly one normal physical power-removal/return retention proof is required. No source/target mutation occurred; only the recovery/ST-LINK contract remains open in Gate 0.
+
 ### Asset/Configuration Gate 0 Flash-operation policy frozen
 
 Added `docs/ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` from ST DS5319/PM0075 constraints. v1 uses page erase plus aligned halfword programming only, requires HSI on, allows bounded same-Flash CPU/IRQ stalls, forbids mass erase/option-byte mutation and never reloads IWDG from Flash code. Worst-case datasheet arithmetic is 74.65 ms BUSY for a maximum 960-byte record and 41.33 ms for the current 8-byte consumer; product ceilings are 80 ms total BSY, 150 ms mutation phase, 500 ms COMMIT response and >=2 s host timeout. Successful changed generations are capped at 10,000; A/B rotation limits that to at most 5,000 erases/page, half the 10k minimum endurance, while unchanged writes are strictly suppressed. No source/target mutation occurred; two Gate 0 contracts remain open.

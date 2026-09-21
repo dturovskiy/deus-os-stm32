@@ -75,7 +75,7 @@ Before Gate 1 may be authorized, reopened Gate 0 must still freeze and accept:
 2. persistent A/B record envelope and atomic commit/selection rules — **FROZEN** in `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`;
 3. new resource ceilings against the 54 KiB future application region — **FROZEN** in `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md`;
 4. Flash wear/timing/watchdog/USB continuity policy — **FROZEN** in `docs/ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md`;
-5. deterministic reset/power-loss fault-injection matrix;
+5. deterministic reset/power-loss fault-injection matrix — **FROZEN** in `docs/ASSET_CONFIGURATION_FAULT_INJECTION_V1.md`;
 6. recovery-bundle/ST-LINK restoration procedure for destructive acceptance.
 
 This reactivation is documentation/design work only. It performs no source implementation, linker migration, vector relocation, Flash erase/program, capability advertisement or target I/O.
@@ -303,9 +303,9 @@ The frozen `ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1` sets the exact policy
 
 These must be measured on real hardware during acceptance rather than justified only by nominal timing arithmetic.
 
-## 11. Fault-injection acceptance requirement
+## 11. Fault-injection acceptance requirement — Gate 0 contract frozen
 
-Before implementation, acceptance must define deterministic reset/power-loss injection points including at least:
+The exact deterministic reset/corruption/reconnect campaign is frozen in `docs/ASSET_CONFIGURATION_FAULT_INJECTION_V1.md`. It covers:
 
 - before erase;
 - immediately after erase;
