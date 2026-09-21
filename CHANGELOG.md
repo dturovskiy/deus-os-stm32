@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Host management presentation model formalized
+
+Added `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md` as a non-authorizing planning/architecture reference above the accepted Host Control foundation. The documented direction makes `DeusOs.Control.Cli` the first-class automation/headless/acceptance surface, retains the existing Avalonia Desktop as an optional workstation frontend, and reserves a future Web UI for presentation over the shared Core or a bounded host-management service rather than a duplicate browser-side STM32 protocol implementation. A local Web surface is explicitly separated from STM32 networking; LAN/Wi-Fi/remote exposure still requires a dedicated security/trust boundary. No product implementation boundary is activated by this documentation change.
+
 ### Firmware build reproducibility readiness accepted
 
 The final pre-feature repository-readiness prerequisite is accepted. Historical Host Control Gate-2 evidence recovered the exact firmware C/startup/link/objcopy invocation and the generated `deus_build_identity.h`; 20/20 surviving header copies are identical at SHA-256 `F6EAA98172FEE67338BFD978F208BD95731063A1160B0C9C1282306A5D6658A5`. Two independent temporary builds with Arm GNU Toolchain `15.3.1` then reproduced the accepted firmware BIN byte-for-byte: `50652` bytes, SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F`, `text/data/bss = 50540/112/11616`, Flash/SRAM `50652/11728`. The previously documented BIN hash differed by one hexadecimal nibble (`...B61FAF9F...` -> `...B61FAC9F...`); all canonical references are corrected by this finalization. ELF/MAP files carry path-dependent debug/map metadata and therefore are not byte-reproducible identity artifacts, while the firmware BIN is exact.

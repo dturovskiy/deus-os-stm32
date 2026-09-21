@@ -205,14 +205,17 @@ Retained for engineering history and rationale, not current authority:
 - `MASTER_EXECUTION_CHECKLIST.md`
 - `PROJECT_HANDOFF.md`
 
-### F. Deferred future-consumer designs
+### F. Deferred future-consumer / planning references
 
 These are **not active roadmap boundaries**:
 
 - `OLED_UI_LAYOUT_PLAN.md`
 - `OLED_STATUS_BAR_PLAN.md`
+- `HOST_MANAGEMENT_PRESENTATION_MODEL.md`
 
-They may become consumers of the future Asset/Configuration foundation, but only after a dedicated boundary explicitly promotes them.
+The OLED plans may become consumers of the future Asset/Configuration foundation, but only after a dedicated boundary explicitly promotes them.
+
+`HOST_MANAGEMENT_PRESENTATION_MODEL.md` is a non-authorizing forward architecture reference: it formalizes CLI/Desktop/Web presentation roles above the accepted Host Control Core without activating Web, networking, packaging/distribution or target-firmware implementation.
 
 ### G. Gate-0-deferred boundary records
 
@@ -244,6 +247,8 @@ No canonical plan/acceptance files yet.
 ### Later
 
 Networking/service extensions.
+
+Host-management presentation evolution is described by `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`. That reference does not itself promote a Web/service/network boundary.
 
 No canonical implementation boundary is active yet.
 
@@ -282,7 +287,7 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 Live documentation inventory after the Asset/Configuration Gate 0 review:
 
-- Markdown files in `docs/`: `55`;
+- Markdown files in `docs/`: `56`;
 - same-stem `*_ACCEPTANCE_PLAN.md` records: `18`;
 - non-acceptance `*_PLAN.md`-named files: `21`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;

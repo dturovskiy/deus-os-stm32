@@ -175,6 +175,18 @@ The following items exist as possible future work but are **not active roadmap b
 
 `docs/OLED_UI_LAYOUT_PLAN.md` and `docs/OLED_STATUS_BAR_PLAN.md` are deferred future-consumer designs, not active implementation plans.
 
+### Host management presentation direction
+
+- `DeusOs.Control.Cli` is the canonical first-class management surface for automation, diagnostics, acceptance and headless Linux operation;
+- the existing Avalonia Desktop remains an optional workstation frontend rather than a Linux-server dependency;
+- a future Web UI should sit above the same `DeusOs.Control.Core` / bounded host-management service API rather than implement the STM32 binary protocol independently in the browser;
+- a local Web/service surface does not imply STM32 networking and may be promoted separately only when a concrete host-management consumer requires it;
+- LAN/Wi-Fi/remote exposure remains a later networking/security boundary and requires explicit authentication/authorization/trust design before activation.
+
+Forward presentation reference: `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
+
+This direction is **not an active implementation boundary**.
+
 ### Storage/platform expansion
 
 - general filesystem;

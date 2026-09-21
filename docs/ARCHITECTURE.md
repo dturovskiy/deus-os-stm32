@@ -25,6 +25,15 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 `HOST_CONTROL_APPLICATION_FOUNDATION` is accepted through Gate 7 and published at `e0f49f168542fa1cf49bca451e01b0c077aa8d18`, tree `42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`. The accepted firmware/host source identities are `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`. The host is C# / `net10.0`, with transport-neutral Core + CLI + Avalonia `12.1.2` Desktop, direct Windows WinUSB and Linux libusb adapters over the existing management interface 2. `sysinfo=0x0024` advances command service to v3 / registry 36 while binary framing remains v1.
 
 Hardware acceptance proves exact identity/capability negotiation, application list/start/stop, typed failure behavior, 128 unique management pings, Windows Desktop behavior, Linux IF2-only claiming with CDC IF0/1 untouched, and fresh-session reconnect on both operating systems. Linux reconnect survives USB enumeration-address change by using current physical bus+port session identity (`usb:001:8` in acceptance), not a fabricated serial identity. Final target diagnostics have USB errors/PMA overruns `0/0`, management drops `0/0`, CDC drops `0/0`, and final Flash exactly matches accepted BIN SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F`. Transfer/update/network/plugin/security work remains outside this boundary.
+
+### Host management presentation invariant
+
+Canonical forward reference: `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
+
+Host presentation remains layered above the accepted transport-neutral `DeusOs.Control.Core`: CLI is first-class and headless-capable; Avalonia Desktop is an optional workstation frontend; any future Web UI must consume Core or a bounded host-management service API rather than reimplement the STM32 binary protocol in browser code. Presentation choice must not determine physical transport policy.
+
+A future local browser surface does not by itself create a network-management boundary. Any LAN/Wi-Fi/remote management exposure requires a separately reviewed authentication/authorization/security contract before it may be described as secure or remotely manageable.
+
 ## Published boundary — Boot / desktop UI foundation
 
 Canonical design: `docs/BOOT_DESKTOP_UI_PLAN.md`.

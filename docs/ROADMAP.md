@@ -210,6 +210,18 @@ The unchecked items below are consumer-driven/deferred rather than active prereq
 - [x] Watchdog integration
 - [ ] Runtime statistics — deferred until observability requirements justify them
 
+## Host management presentation evolution — future / not active
+
+The accepted Host Control foundation already provides one transport-neutral Core with CLI + Avalonia presentation. Forward presentation policy is:
+
+- CLI remains the first-class automation/headless/acceptance surface;
+- Avalonia Desktop remains an optional workstation frontend;
+- a future local host-management service/Web frontend may be promoted as its own host boundary when a concrete need exists and must reuse Core/service models rather than duplicate the STM32 protocol;
+- local Web presentation does not require STM32 networking;
+- remote/LAN/Wi-Fi Web exposure belongs to the later network/security sequence and requires an explicit trust/authentication/authorization contract.
+
+Canonical reference: `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
+
 ## Phase 5 - Networking
 
 Future roadmap only; not active until promoted after Asset/Configuration and firmware-update safety foundations.
@@ -217,8 +229,8 @@ Future roadmap only; not active until promoted after Asset/Configuration and fir
 - [ ] ESP-01 / ESP8266 UART transport
 - [ ] Framed STM32 <-> ESP protocol
 - [ ] Network service boundary
-- [ ] Remote control API
-- [ ] Web control panel
+- [ ] Remote control API with explicit security/trust contract
+- [ ] Network-exposed Web control panel over the shared host/service model
 
 <!-- BEGIN STM32_OS_USB_STRATEGY -->
 ## Native USB strategy
