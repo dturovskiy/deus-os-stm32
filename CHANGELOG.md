@@ -1,5 +1,9 @@
 ## 2026-09-21
 
+### Host package-lock / SDK readiness accepted
+
+The post-Host-Control repository readiness task for repeatable package restore is accepted. Seven project-local `packages.lock.json` files are now the reviewed dependency graph while `host/global.json` intentionally retains the accepted `.NET 10` major-line policy (`10.0.100`, `rollForward=latestFeature`, prerelease disabled), which selects Windows SDK `10.0.201` and Linux SDK `10.0.112` in the current environments. Locked restore, Release build and direct Core/Transport test applications pass on both Windows (`21/21`, `5/5`) and Ubuntu/Linux (`21/21`, `5/5`); WSL confirms the DEUS bind path and `D:` path are the same checkout; all seven normalized lock hashes match across platforms. Final acceptance evidence ZIP SHA-256 is `CE7E3BB09A24913D5374A875CCE49556A2A186F114E36128E42AD3BB26F42165`. The acceptance performed no STM32 target I/O, Flash mutation, reset or reconnect.
+
 ### Asset / Configuration Gate 0 consumer audit — deferred before implementation
 
 `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` completed its initial Gate 0 architecture/consumer review. The live target source contains no persistent settings reader, asset registry, Flash persistence owner or current configuration-package consumer; the closest documented candidate, configurable OLED layout/assets, remains explicitly deferred and does not yet freeze exact target packing. Gate 0 therefore records `FINAL_OUTCOME=DEFERRED_NO_REAL_CONSUMER`: Gate 1 is not authorized, capability bit 5 remains unadvertised, and no linker partition, transfer ABI or Flash-writing implementation is introduced. Canonical records are `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md` and `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`.
