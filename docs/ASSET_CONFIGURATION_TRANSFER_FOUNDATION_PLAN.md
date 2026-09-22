@@ -76,7 +76,7 @@ Before Gate 1 may be authorized, reopened Gate 0 must still freeze and accept:
 3. new resource ceilings against the 54 KiB future application region — **FROZEN** in `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md`;
 4. Flash wear/timing/watchdog/USB continuity policy — **FROZEN** in `docs/ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md`;
 5. deterministic reset/power-loss fault-injection matrix — **FROZEN** in `docs/ASSET_CONFIGURATION_FAULT_INJECTION_V1.md`;
-6. recovery-bundle/ST-LINK restoration procedure for destructive acceptance.
+6. recovery-bundle/ST-LINK restoration procedure for destructive acceptance — **FROZEN** in `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`.
 
 This reactivation is documentation/design work only. It performs no source implementation, linker migration, vector relocation, Flash erase/program, capability advertisement or target I/O.
 
@@ -317,15 +317,20 @@ For each point, post-reset state must be deterministic and valid.
 
 Physical power removal is useful as final proof but must not replace deterministic reset/fault injection for systematic coverage.
 
-## 12. Recovery prerequisite
+## 12. Recovery prerequisite — Gate 0 contract frozen
 
-Before any destructive self-programming test:
+The exact recovery bundle and ST-LINK restoration procedure are frozen in `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`.
 
-- produce a fresh firmware build from a repository-owned reproducible build entrypoint;
-- preserve BIN/ELF/MAP identities;
-- preserve a known-good recovery BIN outside ignored transient build state;
-- preserve SHA-256 identities in evidence;
-- prove ST-LINK recovery procedure remains functional.
+Before destructive self-programming acceptance, Gate 1/2 must materialize that contract as a fresh candidate-bound recovery bundle and versioned scripts. The contract requires:
+
+- fresh repo-owned Gate-2 build identity;
+- exact 54-KiB application-region recovery image;
+- PRESERVE_PERSISTENCE and CLEAN_STATE modes;
+- full 64-KiB pre/post readback evidence;
+- explicit page erase only, never mass erase;
+- non-incremental programming with immediate verify;
+- independent final byte-range/full-image verification;
+- primitive-first proof of CubeProgrammer recovery operations.
 
 Ignored stale `build/` contents are not an authoritative recovery source.
 
@@ -400,4 +405,4 @@ A future reactivation must explicitly reopen Gate 0 and then use a fresh gate se
 - Gate 6 — docs finalization + one normal local acceptance commit;
 - Gate 7 — ordinary non-force publication and remote verification.
 
-Gate 0 is now active as a documentation/design freeze. Gate 1 and every later implementation gate remain blocked until all open Gate 0 reactivation criteria are accepted.
+All six Gate 0 design contracts are now frozen. Gate 1 remains blocked pending one final cross-contract closure audit and explicit Gate-0 completion record; contract completion does not auto-authorize implementation.

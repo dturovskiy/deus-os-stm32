@@ -37,7 +37,7 @@ Current reactivation matrix:
 | New implementation resource ceilings | **PASS** — `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` |
 | Wear/timing/watchdog/USB continuity model | **PASS** — `ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` |
 | Deterministic reset/power-loss fault-injection matrix | **PASS** — `ASSET_CONFIGURATION_FAULT_INJECTION_V1.md` |
-| Recovery-bundle / ST-LINK restoration procedure | **OPEN — Gate 0 work** |
+| Recovery-bundle / ST-LINK restoration procedure | **PASS** — `ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` |
 | Capability bit 5 advertised | **NO — correctly blocked** |
 | Gate 1 implementation authorized | **NO** |
 
@@ -142,7 +142,7 @@ Reactivation requires all of:
 
 If any item is absent, Gate 1 remains blocked.
 
-Items 1–11 are now satisfied by the promoted consumer, frozen Flash decision, accepted infrastructure readiness and the five frozen Asset design contracts. Item 12 — recovery bundle / ST-LINK restoration — remains the sole open Gate 0 contract.
+Items 1–12 are now satisfied. All six reopened Gate-0 design contracts are frozen. Gate 0 still requires one final cross-contract closure audit before its outcome can move from `GATE_0_REOPENED_IN_PROGRESS` to complete or Gate 1 can be authorized.
 
 ## 6. Protocol rejection criteria
 
@@ -209,7 +209,7 @@ This satisfies the read-only hardware-preflight prerequisite for the current phy
 
 ### Recovery — Gate 0 procedure still open
 
-Before destructive self-programming acceptance, Gate 0 must freeze the exact recovery bundle and ST-LINK restoration procedure using a fresh repository-built known-good image rather than stale ignored `build/` state.
+Gate 0 has frozen the recovery requirement in `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`. Gate 1/2 must materialize a candidate-bound recovery bundle using a fresh repository-built image; stale ignored `build/` state remains forbidden.
 
 ### Host restore — accepted
 

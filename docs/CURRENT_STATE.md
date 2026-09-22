@@ -89,11 +89,17 @@ Frozen Gate 0 contract:
 - persistent A/B record envelope + atomic commit/recovery — `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`;
 - resource budget — `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md`: Flash `<=54272`, SRAM `<=12288`, task margins `>=256/256`, MSP margin `>=1024`;
 - Flash wear/timing/watchdog/USB continuity — `docs/ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md`;
-- deterministic reset/power-loss fault-injection matrix — `docs/ASSET_CONFIGURATION_FAULT_INJECTION_V1.md`.
+- deterministic reset/power-loss fault-injection matrix — `docs/ASSET_CONFIGURATION_FAULT_INJECTION_V1.md`;
+- recovery bundle / ST-LINK restoration — `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`.
 
-Still-open Gate 0 items:
+All six reopened Gate-0 design contracts are frozen.
 
-1. recovery-bundle / ST-LINK restoration procedure.
+Remaining Gate-0 work:
+
+1. one cross-contract closure audit proving transfer/persistence/resource/timing/fault/recovery consistency;
+2. explicit Gate-0 completion disposition.
+
+Gate 1 remains blocked until that audit passes and the completion disposition is published.
 
 No Flash erase/program implementation is active; no linker/vector migration is active; capability bit 5 remains reserved but unadvertised; generic storage/filesystem/package infrastructure remains unauthorized.
 

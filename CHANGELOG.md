@@ -1,3 +1,9 @@
+## 2026-09-22
+
+### Asset/Configuration Gate 0 ST-LINK recovery contract frozen
+
+Added `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` as the sixth and final reopened Gate-0 design contract. Recovery is candidate-bound and generated from the fresh repository-owned Gate-2 build, with a deterministic 54-KiB application-region image, full 64-KiB pre/post readback and two explicit modes: `PRESERVE_PERSISTENCE` and `CLEAN_STATE`. Explicit page erase is used; mass erase, read-unprotect, option-byte mutation and incremental programming are forbidden. CubeProgrammer verify is required but independent full readback remains authoritative. All six Gate-0 design contracts are now frozen; Gate 1 remains blocked pending the final cross-contract closure audit.
+
 ## 2026-09-21
 
 ### Asset/Configuration Gate 0 deterministic fault matrix frozen
