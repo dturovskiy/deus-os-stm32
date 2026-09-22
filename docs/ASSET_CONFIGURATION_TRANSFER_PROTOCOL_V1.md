@@ -304,6 +304,17 @@ It reports:
 - committed payload CRC-32;
 - whether a valid committed object exists.
 
+For STATUS responses, the common response `data` field is an exact 8-byte metadata extension:
+
+```text
+offset  size  field
+0       2     committed_payload_length, 0 if none
+2       2     reserved = 0
+4       4     committed_payload_crc32, 0 if none
+```
+
+Therefore a STATUS response always has `data_length = 8`. This extension does not change the 50-byte maximum response-payload bound.
+
 ## 13. READ_CHUNK
 
 READ_CHUNK reads the currently committed object, not an uncommitted upload candidate.
@@ -357,7 +368,13 @@ Maximum response wire size is:
 
 so every transfer response fits one current 64-byte USB management IN packet.
 
-For non-read responses `data_length == 0`.
+Data-field use is opcode-specific:
+
+- BEGIN / WRITE_CHUNK / COMMIT / ABORT: `data_length == 0`;
+- STATUS: `data_length == 8` with the metadata extension defined in Section 12;
+- READ_CHUNK: `data_length == returned payload bytes`, maximum `32`.
+
+No response opcode may reinterpret the common 18-byte prefix.
 
 ## 15. Session states
 
@@ -499,6 +516,7 @@ Gate acceptance must prove at minimum:
 - whole-object CRC mismatch rejection;
 - consumer validation failure rejection;
 - COMMIT idempotency without duplicate Flash write;
+- STATUS exact 8-byte committed-length/CRC metadata extension;
 - STATUS/readback generation consistency;
 - disconnect/reset/timeout abandonment;
 - no partial activation;

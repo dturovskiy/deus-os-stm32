@@ -73,6 +73,16 @@ The closure audit reviewed the Flash ownership decision, concrete consumer and a
 | SRAM architecture | **PASS** — no heap/new task/whole-object target buffer; `12288 B` static ceiling |
 | Gate-1 implementation scope | **PASS** — bounded target/Core/CLI/recovery-script surface frozen in the design plan; startup/scheduler/USB-descriptor/transport/Desktop/Web/bootloader/network expansion guarded |
 
+Post-closure Gate-1 implementation review found one response-schema omission before any transfer handler was implemented: STATUS promised committed payload CRC/length but the frozen common response prefix had no fields for them and described response data as READ-only. The contract is corrected without changing any frame-size bound: STATUS now carries an exact 8-byte data extension `committed_length:u16, reserved:u16, committed_crc32:u32`. Maximum response remains the READ_CHUNK case at 50-byte payload / 62-byte wire.
+
+Re-audit after this correction:
+
+- common prefix remains 18 bytes;
+- STATUS payload becomes `18 + 8 = 26 bytes`;
+- READ maximum remains `18 + 32 = 50 bytes`;
+- maximum wire remains `10 + 50 + 2 = 62 bytes`;
+- no existing frame type, request shape or consumer/persistence contract changes.
+
 Two substantive closure defects were found and corrected before Gate-0 completion:
 
 1. shared HELLO generation would otherwise have advertised Asset support on CDC; the protocol now requires carrier-specific capability flags;

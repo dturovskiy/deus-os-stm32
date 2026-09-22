@@ -1,5 +1,9 @@
 ## 2026-09-22
 
+### Asset STATUS response metadata omission corrected before Gate-1 transfer implementation
+
+Gate-1 implementation review found that the frozen STATUS semantics promised committed payload length/CRC while the common response prefix had no corresponding fields and the response data field was described as READ-only. `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1` now defines an exact 8-byte STATUS data extension containing committed length and CRC-32. The correction does not change any maximum: STATUS payload is 26 bytes, READ_CHUNK remains the 50-byte maximum response payload, and maximum wire remains 62 bytes inside one 64-byte management packet. No source implementation or target mutation occurred before this contract correction.
+
 ### Asset/Configuration Gate 0 closed; bounded Gate 1 authorized
 
 Completed the cross-contract closure audit across Flash ownership, `OLED_UI_LAYOUT_CONFIG_V1`, transfer ABI, A/B persistence, resource budget, Flash-operation policy, deterministic fault injection and ST-LINK recovery. The audit found and corrected two real integration defects before implementation authorization: Asset HELLO capability bit 6 must be carrier-specific (CDC remains `0x3F`, management IF2 candidate `0x7F`), and canonical recovery must own explicit erase sets and program with CubeProgrammer `--skiperase` so PRESERVE mode never depends on hidden download erase behavior and never erases pages 62/63. Numeric invariants pass: `54K + 8K + 2K = 64K`, `64 + 960 = 1024`, Gate-2 Flash ceiling `54272 < 55296`, and max Asset response wire `62 <= 64`. Gate 1 is authorized only for the bounded target/Core/CLI/recovery-script source surface in the canonical plan; startup/vector relocation, scheduler, USB descriptors/PMA, transport adapters, Desktop/Web, bootloader/network/security and generic storage expansion remain outside scope. System capability bit 5 remains unadvertised until full implementation/hardware/fault acceptance.
