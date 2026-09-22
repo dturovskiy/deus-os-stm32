@@ -1,5 +1,9 @@
 ## 2026-09-22
 
+### Asset transfer halfword/chunk staging clarified before handler implementation
+
+Gate-1 primitive review reconciled the protocol's arbitrary 1..32-byte chunk lengths with STM32F1 16-bit Flash programming. The target may keep exactly one pending payload byte across chunk boundaries and an exact <=32-byte cache of the immediately preceding accepted chunk for stop-and-wait retry idempotency. Sequential bytes are still streamed into the inactive slot; the only odd final byte is programmed with erased `0xFF` high-byte padding at object completion. This remains bounded state and does not permit a whole-object SRAM buffer or change any resource/USB limit. No transfer handler or target mutation existed before this clarification.
+
 ### Asset STATUS response metadata omission corrected before Gate-1 transfer implementation
 
 Gate-1 implementation review found that the frozen STATUS semantics promised committed payload length/CRC while the common response prefix had no corresponding fields and the response data field was described as READ-only. `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1` now defines an exact 8-byte STATUS data extension containing committed length and CRC-32. The correction does not change any maximum: STATUS payload is 26 bytes, READ_CHUNK remains the 50-byte maximum response payload, and maximum wire remains 62 bytes inside one 64-byte management packet. No source implementation or target mutation occurred before this contract correction.

@@ -73,6 +73,8 @@ The closure audit reviewed the Flash ownership decision, concrete consumer and a
 | SRAM architecture | **PASS** — no heap/new task/whole-object target buffer; `12288 B` static ceiling |
 | Gate-1 implementation scope | **PASS** — bounded target/Core/CLI/recovery-script surface frozen in the design plan; startup/scheduler/USB-descriptor/transport/Desktop/Web/bootloader/network expansion guarded |
 
+Gate-1 primitive review also closed the STM32F1 halfword/chunk-boundary detail before the transfer handler was implemented. WRITE_CHUNK remains `1..32` bytes; target state may hold exactly one pending odd payload byte plus an exact <=32-byte last-chunk retry cache. The pending final byte is padded with erased `0xFF` only when it is the declared end of the object. This remains bounded streaming, not whole-object buffering, and does not change any frozen SRAM ceiling.
+
 Post-closure Gate-1 implementation review found one response-schema omission before any transfer handler was implemented: STATUS promised committed payload CRC/length but the frozen common response prefix had no fields for them and described response data as READ-only. The contract is corrected without changing any frame-size bound: STATUS now carries an exact 8-byte data extension `committed_length:u16, reserved:u16, committed_crc32:u32`. Maximum response remains the READ_CHUNK case at 50-byte payload / 62-byte wire.
 
 Re-audit after this correction:

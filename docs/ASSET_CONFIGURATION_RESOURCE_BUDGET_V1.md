@@ -129,6 +129,8 @@ Frozen constraints:
 - no 1-KiB page mirror;
 - no per-transport duplicate transfer workspace;
 - transport chunk bytes are consumed from the existing bounded frame payload;
+- one volatile pending payload byte is permitted for STM32F1 halfword alignment;
+- one exact last-chunk retry cache of at most 32 bytes is permitted for stop-and-wait idempotency;
 - response framing uses one bounded <=64-byte wire workspace;
 - CRC-32 implementation must be table-free unless a later measured performance trigger justifies a table;
 - consumer runtime state remains one validated layout object.

@@ -237,6 +237,24 @@ Retry rule:
 
 A chunk may not extend past declared `total_length`.
 
+### Halfword boundary staging
+
+STM32F1 persistent Flash is programmed in 16-bit halfwords while WRITE_CHUNK permits any `data_length = 1..32`.
+
+The target therefore owns exactly one volatile pending payload byte when the accepted stream currently ends on an odd payload offset.
+
+Rules:
+
+- the pending byte is combined with the next sequential payload byte and programmed as one halfword;
+- if the pending byte is the final byte of the complete object, COMMIT flushes it as the low byte of the final halfword with erased high-byte padding `0xFF`;
+- at most one payload byte may be pending;
+- pending state is part of the volatile transfer session and is discarded on ABORT/reset/timeout;
+- no second write to an already-programmed Flash halfword is allowed;
+- the bounded retry cache stores only the exact most recently accepted chunk, maximum 32 bytes, so an exact stop-and-wait retry can be recognized even when its final byte is still pending;
+- duplicate acceptance remains limited to that exact immediately preceding chunk; arbitrary older/partial overlap retries are rejected.
+
+This staging is not whole-object buffering and does not change `next_offset`: the offset counts accepted transport bytes, including one possible pending byte.
+
 ## 10. COMMIT
 
 COMMIT payload is exactly 6 bytes:
