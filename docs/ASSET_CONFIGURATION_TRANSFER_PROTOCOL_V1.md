@@ -78,7 +78,18 @@ HELLO protocol capability bit `6` is assigned:
 bit 6  ASSET_CONFIGURATION_TRANSFER_V1
 ```
 
-The accepted HELLO capability flags therefore become `0x0000007F` only after the transfer implementation exists.
+This capability is **carrier-specific** because the accepted binary HELLO implementation is shared by CDC and management transports while Asset/Configuration v1 is accepted only on management IF2.
+
+Required HELLO capability masks after Gate-1 implementation:
+
+```text
+CDC coexistence carrier     0x0000003F
+management IF2 carrier      0x0000007F
+```
+
+Therefore Gate 1 must make HELLO capability flags a property of the transport/binary-RPC binding (or an equivalent narrow carrier-specific input). It must not change the meaning of existing bits and must not duplicate the HELLO encoder.
+
+Advertising bit 6 on CDC is forbidden because CDC is not an accepted Asset/Configuration v1 carrier.
 
 This protocol capability is separate from system identity capability bit `5`:
 
@@ -86,7 +97,7 @@ This protocol capability is separate from system identity capability bit `5`:
 
 System capability bit 5 remains unadvertised until the complete Asset/Configuration boundary passes acceptance.
 
-Normal host product UI/CLI must require the final accepted system capability before exposing persistent mutation as supported functionality. Acceptance harnesses may exercise a pre-publication candidate explicitly.
+Normal host product UI/CLI must require the final accepted system capability before exposing persistent mutation as supported functionality. Acceptance harnesses may exercise a pre-publication candidate explicitly on management IF2.
 
 ## 5. Common transfer limits
 
@@ -466,7 +477,9 @@ The implementation must retain:
 - RPC service version `3` unless independently advanced for another accepted reason;
 - registry `36` unless independently advanced by an additive RPC boundary;
 - existing RPC max payload `132`;
-- existing RPC data chunk max `48`.
+- existing RPC data chunk max `48`;
+- CDC HELLO capability flags remain `0x0000003F`;
+- management IF2 HELLO may add bit 6 for `0x0000007F`.
 
 Asset transfer is not tunneled through RPC strings and does not consume new RPC method IDs merely to carry binary chunks.
 

@@ -144,7 +144,7 @@ Implementation order:
 3. `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `e0f49f168542fa1cf49bca451e01b0c077aa8d18`**; accepted firmware/host trees `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`; Windows CLI + Desktop and real Linux libusb runtime/reconnect PASS; final management/CDC drops `0/0`, final Flash exact;
 4. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **docs-only shared contract accepted**; steady-state ownership reserves lower pages 0..7 for future reset-owning bootloader/recovery, relocated application pages 8..61 at `0x08002000`, and top pages 62/63 as persistent A/B slots; Asset/Configuration realizes persistence first with the standalone application still at `0x08000000` under a 54 KiB ceiling and pages 54..61 unused, so reset/vector relocation remains a later Bootloader action;
 5. `OLED_UI_LAYOUT_CONFIG_V1` — **promoted/frozen concrete consumer**; exact 8-byte non-executable payload persists only the OLED console clip while the accepted 128x9 status bar remains frozen;
-6. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **Gate 0 reopened / contracts frozen; Gate 1 blocked**; transfer ABI, A/B persistence, resource ceilings, Flash-operation policy, deterministic fault matrix and ST-LINK recovery contracts are frozen, pending final cross-contract closure audit;
+6. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **Gate 0 complete / closure PASS; Gate 1 authorized**; transfer ABI, A/B persistence, resource ceilings, Flash-operation policy, deterministic fault matrix, recovery contract and bounded source scope are frozen;
 7. accepted Asset/Configuration implementation + persistence;
 8. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — ordered after accepted Asset/Configuration persistence; its Gate 0 must prove the minimum recovery/update/security implementation fits the frozen 8 KiB bootloader ceiling or explicitly reopen the Flash decision;
 9. networking/service/security extensions.
@@ -255,8 +255,8 @@ Target progression:
 11. Cross-platform Windows/Linux host application — **published through Gate 7** at `e0f49f168542fa1cf49bca451e01b0c077aa8d18`; C#/.NET 10 Core/CLI + Avalonia desktop, Windows WinUSB/Linux libusb adapters and system identity/capability discovery are accepted.
 12. Freeze shared internal-Flash ownership: reset-owning bootloader/recovery lower region, relocated application region, and top-page A/B persistence reservation — docs-only decision accepted in `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md`.
 13. Promote/freeze `OLED_UI_LAYOUT_CONFIG_V1` as the exact non-executable persistence consumer — complete.
-14. Reopen Asset/Configuration Gate 0 for that object and freeze transfer/persistence/resource/fault-recovery contracts — in progress; Gate 1 blocked.
-15. Add bounded versioned asset/configuration transfer and atomic persistent A/B storage after Gate 0 acceptance.
+14. Reopen Asset/Configuration Gate 0 for that object and freeze transfer/persistence/resource/fault-recovery contracts — complete; cross-contract closure PASS.
+15. Implement bounded versioned Asset/Configuration transfer + atomic A/B persistence — Gate 1 authorized, then Gates 2–7 acceptance.
 16. Add a recoverable USB firmware-update path and small bootloader as a separate executable-Flash safety boundary.
 17. Add networking/service/security extensions over the same application/service model.
 18. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.

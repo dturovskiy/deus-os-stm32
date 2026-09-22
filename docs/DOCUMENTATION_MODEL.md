@@ -225,26 +225,26 @@ The broad OLED plans remain deferred. A deliberately narrow subset has now been 
 
 `HOST_MANAGEMENT_PRESENTATION_MODEL.md` is a non-authorizing forward architecture reference: it formalizes CLI/Desktop/Web presentation roles above the accepted Host Control Core without activating Web, networking, packaging/distribution or target-firmware implementation.
 
-### G. Reopened Gate-0 boundary records
+### G. Closed Gate-0 / active Gate-1 boundary records
 
 These canonical files preserve the original fail-closed deferral and now own the reopened Gate 0 design/acceptance work:
 
 - `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 - `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Current status is `GATE 0 REOPENED / IN PROGRESS — GATE 1 BLOCKED`. The historical `DEFERRED_NO_REAL_CONSUMER` result remains part of the record, but it is no longer the current disposition because `OLED_UI_LAYOUT_CONFIG_V1` has been promoted.
+Current status is `GATE 0 COMPLETE — GATE 1 AUTHORIZED / NOT STARTED`. The historical `DEFERRED_NO_REAL_CONSUMER` result remains part of the record and explains why implementation was originally blocked.
 
 ## 4. Current and future boundaries
 
 ### Current product implementation state
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 is the active product-design boundary.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 is complete after the 2026-09-22 cross-contract closure audit.
 
-It is reopened for `OLED_UI_LAYOUT_CONFIG_V1`, but Gate 1 source implementation remains blocked until the remaining Gate 0 transfer/persistence/resource/wear/fault-recovery contracts are frozen and accepted.
+Gate 1 is the active implementation boundary and is authorized only for the bounded source surface frozen in the canonical plan.
 
-The original no-consumer deferral remains historical evidence; it no longer describes current Gate 0 status.
+The original no-consumer deferral remains historical evidence; it no longer describes current status.
 
-No product **implementation** gate is active yet.
+No later hardware/product acceptance gate is active yet.
 
 ### Planned after an accepted Asset/Configuration boundary
 
@@ -300,7 +300,7 @@ Live documentation inventory after the Asset/Configuration Gate 0 reactivation:
 - non-acceptance `*_PLAN.md`-named files: `21`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;
 - all four unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
-- the Asset/Configuration plan and acceptance files form a matched pair; they preserve the historical `DEFERRED_NO_REAL_CONSUMER` result and now record `GATE 0 REOPENED / IN PROGRESS — GATE 1 BLOCKED`;
+- the Asset/Configuration plan and acceptance files form a matched pair; they preserve the historical `DEFERRED_NO_REAL_CONSUMER` result and now record `GATE 0 COMPLETE — GATE 1 AUTHORIZED / NOT STARTED`;
 - no product implementation boundary is currently active.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

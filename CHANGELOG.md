@@ -1,5 +1,9 @@
 ## 2026-09-22
 
+### Asset/Configuration Gate 0 closed; bounded Gate 1 authorized
+
+Completed the cross-contract closure audit across Flash ownership, `OLED_UI_LAYOUT_CONFIG_V1`, transfer ABI, A/B persistence, resource budget, Flash-operation policy, deterministic fault injection and ST-LINK recovery. The audit found and corrected two real integration defects before implementation authorization: Asset HELLO capability bit 6 must be carrier-specific (CDC remains `0x3F`, management IF2 candidate `0x7F`), and canonical recovery must own explicit erase sets and program with CubeProgrammer `--skiperase` so PRESERVE mode never depends on hidden download erase behavior and never erases pages 62/63. Numeric invariants pass: `54K + 8K + 2K = 64K`, `64 + 960 = 1024`, Gate-2 Flash ceiling `54272 < 55296`, and max Asset response wire `62 <= 64`. Gate 1 is authorized only for the bounded target/Core/CLI/recovery-script source surface in the canonical plan; startup/vector relocation, scheduler, USB descriptors/PMA, transport adapters, Desktop/Web, bootloader/network/security and generic storage expansion remain outside scope. System capability bit 5 remains unadvertised until full implementation/hardware/fault acceptance.
+
 ### Asset/Configuration Gate 0 ST-LINK recovery contract frozen
 
 Added `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` as the sixth and final reopened Gate-0 design contract. Recovery is candidate-bound and generated from the fresh repository-owned Gate-2 build, with a deterministic 54-KiB application-region image, full 64-KiB pre/post readback and two explicit modes: `PRESERVE_PERSISTENCE` and `CLEAN_STATE`. Explicit page erase is used; mass erase, read-unprotect, option-byte mutation and incremental programming are forbidden. CubeProgrammer verify is required but independent full readback remains authoritative. All six Gate-0 design contracts are now frozen; Gate 1 remains blocked pending the final cross-contract closure audit.

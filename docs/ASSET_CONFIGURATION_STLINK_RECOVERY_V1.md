@@ -179,8 +179,8 @@ Procedure:
 2. capture full 64-KiB pre-recovery backup;
 3. save exact 2048-byte persistence backup from `0x0800F800..0x0800FFFF`;
 4. record SHA-256 of those 2048 bytes;
-5. erase only relocation-headroom pages `54..61`;
-6. program `application_region_54k.bin` at `0x08000000` using normal non-incremental CubeProgrammer download with verification;
+5. explicitly erase application + relocation-headroom pages `0..61` and **do not erase pages 62/63**;
+6. program `application_region_54k.bin` at `0x08000000` using CubeProgrammer download with `--skiperase` and immediate verification;
 7. read full 64-KiB Flash again;
 8. prove:
    - bytes `0x0000..0xD7FF` equal `application_region_54k.bin`;
@@ -188,6 +188,8 @@ Procedure:
    - bytes `0xF800..0xFFFF` equal the exact saved persistence backup;
 9. perform software reset/start normal application;
 10. require normal boot/management health proof.
+
+Canonical PRESERVE recovery never authorizes erase of pages 62/63. The download command is run with `--skiperase`, so persistence safety does not depend on the download command's internal erase policy.
 
 If persistence differs by even one byte, PRESERVE recovery fails.
 
@@ -201,8 +203,8 @@ Procedure:
 
 1. complete mandatory preflight;
 2. capture full 64-KiB pre-recovery backup;
-3. erase pages `54..63` explicitly;
-4. program `application_region_54k.bin` at `0x08000000` using normal non-incremental CubeProgrammer download with verification;
+3. explicitly erase pages `0..63` by enumerated page codes; do not use the CubeProgrammer mass-erase primitive;
+4. program `application_region_54k.bin` at `0x08000000` using CubeProgrammer download with `--skiperase` and immediate verification;
 5. read full 64-KiB Flash;
 6. prove exact expected full image:
    - bytes `0x0000..0xD7FF` equal `application_region_54k.bin`;
@@ -210,6 +212,8 @@ Procedure:
 7. reset/start application;
 8. require runtime falls back to compiled `OLED_UI_LAYOUT_CONFIG_V1` default;
 9. require persistence STATUS reports no committed record.
+
+Because erase ownership is explicit and programming uses `--skiperase`, CLEAN_STATE has a deterministic erase set independent of download heuristics.
 
 CLEAN_STATE is the canonical reset point for destructive fault-injection campaign trials.
 
@@ -219,19 +223,14 @@ Mass erase is not used.
 
 For Asset-phase STM32F103C8 page numbering:
 
-PRESERVE_PERSISTENCE headroom cleanup:
-
 ```text
-54 55 56 57 58 59 60 61
+PRESERVE_PERSISTENCE erase set = pages 0..61
+CLEAN_STATE erase set          = pages 0..63
 ```
 
-CLEAN_STATE cleanup:
+The recovery scripts expand these ranges to explicit sector/page codes for CubeProgrammer `-e`. They do not rely on shell-specific bracket/range parsing.
 
-```text
-54 55 56 57 58 59 60 61 62 63
-```
-
-The recovery scripts pass explicit sector/page codes to CubeProgrammer `-e`.
+PRESERVE_PERSISTENCE must prove that page codes 62 and 63 are absent from its erase invocation.
 
 They must not use:
 
@@ -241,13 +240,15 @@ or read-unprotect/option-byte mutation commands.
 
 ## 13. Download mechanism
 
-Recovery uses ordinary non-incremental CubeProgrammer `-w/-d` with immediate `-v` verification.
+Recovery uses CubeProgrammer `-w/-d` with `--skiperase` and immediate `-v` verification **after** the exact erase set has already been completed successfully.
 
 Incremental programming is forbidden for canonical recovery.
 
+Automatic download-time erase is also forbidden for canonical recovery because erase ownership is explicitly controlled by the preceding page-erase step.
+
 Reason:
 
-recovery must deterministically rewrite the required application sectors and then prove them through independent full readback; it must not depend on an optimization that decides a sector can be skipped.
+recovery must deterministically erase exactly the authorized pages, program the required application region without a second hidden erase phase, and then prove the result through independent full readback.
 
 The canonical recovery artifact already has fixed 54-KiB scope, so full-region deterministic programming is acceptable.
 
@@ -338,7 +339,7 @@ Before Gate-5 deterministic persistence fault tests:
 
 During the campaign, CLEAN_STATE may re-establish trial preconditions when needed.
 
-Actual recovery erase attempts count toward the declared destructive test budget and must be logged separately from product self-programming counters.
+CLEAN_STATE erases of persistence pages 62/63 count toward the fault campaign's `<=64` **persistence-page erase-attempt** budget. PRESERVE_PERSISTENCE must contribute zero page-62/page-63 erase attempts. Erases of application/headroom pages 0..61 are recorded separately and do not consume that persistence-page counter. All recovery erase/program operations remain bounded and explicitly logged.
 
 ## 20. Required recovery evidence
 
@@ -400,4 +401,4 @@ Gate 0 completion still requires a full cross-contract closure audit proving tha
 
 are mutually consistent.
 
-Only that closure audit may change `GATE_1_AUTHORIZED` from `NO`.
+The 2026-09-22 cross-contract closure audit recorded in the canonical acceptance plan satisfies this exit criterion and authorizes the bounded Gate-1 source boundary.

@@ -67,7 +67,7 @@ Canonical acceptance:
 
 ## 2. Current boundary disposition
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATE 0 REOPENED / IN PROGRESS — GATE 1 BLOCKED**
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATE 0 COMPLETE — GATE 1 AUTHORIZED / NOT STARTED**
 
 The original `DEFERRED_NO_REAL_CONSUMER` Gate 0 result remains historical proof that implementation was correctly blocked when no real consumer existed.
 
@@ -81,9 +81,9 @@ That blocking condition is now resolved by the promoted narrow consumer:
 - accepted status bar remains frozen/system-owned at `128x9`;
 - compiled default remains console `x=1, y=10, w=126, h=22`.
 
-Gate 0 is active only for design/acceptance freeze. **Gate 1 implementation is not authorized.**
+Gate 0 design/acceptance freeze is complete. **Gate 1 bounded source implementation is authorized but has not yet been accepted or hardware-tested.**
 
-Frozen Gate 0 contract:
+Frozen Gate-0 contracts:
 
 - first-class bounded binary transfer ABI — `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`;
 - persistent A/B record envelope + atomic commit/recovery — `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md`;
@@ -92,14 +92,14 @@ Frozen Gate 0 contract:
 - deterministic reset/power-loss fault-injection matrix — `docs/ASSET_CONFIGURATION_FAULT_INJECTION_V1.md`;
 - recovery bundle / ST-LINK restoration — `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`.
 
-All six reopened Gate-0 design contracts are frozen.
+All six Gate-0 design contracts are frozen and the 2026-09-22 cross-contract closure audit is **PASS**.
 
-Remaining Gate-0 work:
+Closure found and corrected two issues before authorization:
 
-1. one cross-contract closure audit proving transfer/persistence/resource/timing/fault/recovery consistency;
-2. explicit Gate-0 completion disposition.
+1. HELLO Asset bit 6 is carrier-specific: CDC remains `0x3F`, management IF2 candidate becomes `0x7F`;
+2. ST-LINK recovery uses explicit page erases followed by CubeProgrammer `--skiperase`; PRESERVE never erases pages 62/63.
 
-Gate 1 remains blocked until that audit passes and the completion disposition is published.
+Current next work is Gate 1 bounded source implementation under Section 17 of the canonical plan.
 
 No Flash erase/program implementation is active; no linker/vector migration is active; capability bit 5 remains reserved but unadvertised; generic storage/filesystem/package infrastructure remains unauthorized.
 
@@ -137,8 +137,8 @@ Forward dependency order is:
 
 1. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **ACCEPTED DOCS-ONLY SHARED CONTRACT**;
 2. `OLED_UI_LAYOUT_CONFIG_V1` — **PROMOTED / FROZEN CONSUMER CONTRACT**;
-3. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 — **REOPENED / IN PROGRESS; GATE 1 BLOCKED**;
-4. accept Asset/Configuration implementation only after Gate 0 is fully frozen;
+3. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 — **COMPLETE / CROSS-CONTRACT CLOSURE PASS**;
+4. Gate 1 bounded Asset/Configuration source implementation — **AUTHORIZED / NOT STARTED**;
 5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
 6. networking/service/security extensions.
 
@@ -253,7 +253,7 @@ Still intentionally unresolved until a consumer requires them:
 - network mutation security;
 - richer observability/runtime-statistics framework.
 
-These remain consumer- or boundary-specific future concerns. None changes the current `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 reopened / Gate 1 blocked disposition.
+These remain consumer- or boundary-specific future concerns. None expands the current bounded `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate-1 implementation scope.
 
 ## 7. Source-of-truth map
 

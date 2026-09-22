@@ -1,6 +1,6 @@
 # Deus OS — Asset / Configuration Transfer Foundation Acceptance Plan
 
-Status: **GATE 0 REOPENED / IN PROGRESS — OLED_UI_LAYOUT_CONFIG_V1 PROMOTED — GATE 1 BLOCKED**
+Status: **GATE 0 COMPLETE — CROSS-CONTRACT CLOSURE PASS — GATE 1 AUTHORIZED / NOT STARTED**
 
 Boundary:
 
@@ -39,11 +39,60 @@ Current reactivation matrix:
 | Deterministic reset/power-loss fault-injection matrix | **PASS** — `ASSET_CONFIGURATION_FAULT_INJECTION_V1.md` |
 | Recovery-bundle / ST-LINK restoration procedure | **PASS** — `ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` |
 | Capability bit 5 advertised | **NO — correctly blocked** |
-| Gate 1 implementation authorized | **NO** |
+| Gate 1 implementation authorized | **YES — bounded source boundary only; implementation not started** |
 
-Gate 0 is therefore legitimately reopened but **not yet accepted complete**.
+Gate 0 is **complete** after the cross-contract closure audit recorded below. This completion authorizes only the bounded Gate-1 source boundary; it is not implementation acceptance.
 
 No source implementation, linker migration, target Flash mutation, capability activation or hardware run is accepted by this reactivation record.
+
+## 0A. Cross-contract closure audit — 2026-09-22
+
+Closure baseline before this documentation change:
+
+- `HEAD == origin/main == FETCH_HEAD == 57ce4d96fc28f948b0c12809bdc54fc2a0cf0608`;
+- ahead/behind `0/0`;
+- working tree clean before the closure corrections;
+- all six Gate-0 design-contract commits already published.
+
+The closure audit reviewed the Flash ownership decision, concrete consumer and all six Gate-0 contracts as one system rather than accepting six isolated documents.
+
+| Cross-contract concern | Closure result |
+| --- | --- |
+| Flash arithmetic | **PASS** — `54 KiB application + 8 KiB relocation headroom + 2 KiB persistence = 64 KiB` |
+| Gate-2 application ceiling | **PASS** — `54272 B` is one 1-KiB page below the 54-KiB linker region |
+| Transfer/storage capacity | **PASS** — `64-byte envelope + 960-byte payload = 1024-byte slot` |
+| Current consumer | **PASS** — object `0x0001`, schema `1`, exact `8 B`, compiled default frozen |
+| Frame/USB bounds | **PASS** — parser max `132 B`, chunk `32 B`, max Asset response wire `62 B <= 64 B` EP4 packet |
+| Carrier capability semantics | **PASS AFTER CORRECTION** — CDC HELLO remains `0x3F`; management IF2 alone may advertise Asset bit 6 / `0x7F` |
+| System capability semantics | **PASS** — system identity bit 5 remains OFF through Gate 1–5 |
+| Persistent authority | **PASS** — final `0xA55A` halfword is the only authority-changing write after readback validation |
+| Fault ordering | **PASS** — FI-1..FI-6 resolve previous/default; FI-7..FI-9 may resolve new only through the normal full validator |
+| Wear/fault budget | **PASS** — 10,000 successful changed-generation ceiling; fault campaign counts page-62/63 erases explicitly |
+| Recovery ownership | **PASS AFTER CORRECTION** — explicit erase set + `--skiperase`; PRESERVE never erases pages 62/63; CLEAN explicitly erases 0..63 without mass erase |
+| Reset ownership | **PASS** — Asset keeps standalone reset owner at `0x08000000`; no VTOR/application-origin relocation |
+| SRAM architecture | **PASS** — no heap/new task/whole-object target buffer; `12288 B` static ceiling |
+| Gate-1 implementation scope | **PASS** — bounded target/Core/CLI/recovery-script surface frozen in the design plan; startup/scheduler/USB-descriptor/transport/Desktop/Web/bootloader/network expansion guarded |
+
+Two substantive closure defects were found and corrected before Gate-0 completion:
+
+1. shared HELLO generation would otherwise have advertised Asset support on CDC; the protocol now requires carrier-specific capability flags;
+2. canonical ST-LINK recovery must not rely on CubeProgrammer download erase heuristics; recovery now owns explicit page erase and programs with `--skiperase`.
+
+No source, linker, firmware, host executable or target mutation occurred during Gate 0.
+
+Gate-0 closure result:
+
+`GATE_0_OUTCOME=COMPLETE`
+
+`GATE_1_AUTHORIZED=YES`
+
+Meaning of `YES`:
+
+- Gate 1 may now implement only the bounded source surface frozen in Section 17 of the design plan;
+- Gate 1 must still pass its own source review before Gate 2 build acceptance;
+- capability bit 5 remains OFF;
+- no hardware Flash mutation is authorized until later gates;
+- no product capability is accepted or published yet.
 
 ## 1. Historical Gate 0 repository prestate
 
@@ -142,7 +191,7 @@ Reactivation requires all of:
 
 If any item is absent, Gate 1 remains blocked.
 
-Items 1–12 are now satisfied. All six reopened Gate-0 design contracts are frozen. Gate 0 still requires one final cross-contract closure audit before its outcome can move from `GATE_0_REOPENED_IN_PROGRESS` to complete or Gate 1 can be authorized.
+Items 1–12 are satisfied, all six design contracts are frozen, and the Section 0A closure audit passes. Gate 1 is authorized only within the frozen bounded source boundary.
 
 ## 6. Protocol rejection criteria
 
@@ -253,13 +302,13 @@ Future hardware acceptance must prove at minimum:
 
 No publication may claim Asset/Configuration capability until all implementation gates pass.
 
-While reopened Gate 0 remains incomplete:
+Until the full Asset/Configuration implementation boundary is accepted:
 
 - system capability mask stays `0x0000001F`;
 - bit 5 remains reserved only;
 - no transfer CLI/Desktop surface is considered accepted product functionality;
 - pages 62/63 are reserved by the shared Flash decision but no Asset/Configuration runtime erase/program owner exists yet;
-- Gate 1 source/linker/Flash implementation remains unauthorized.
+- Gate 1 implementation may exist only inside the frozen source boundary; later hardware/product acceptance is still required.
 
 ## 12. Historical Gate 0 final outcome
 
@@ -276,8 +325,8 @@ Meaning at that time:
 
 ## 13. Current reactivation outcome
 
-`CURRENT_OUTCOME=GATE_0_REOPENED_IN_PROGRESS`
+`CURRENT_OUTCOME=GATE_0_COMPLETE`
 
-`GATE_1_AUTHORIZED=NO`
+`GATE_1_AUTHORIZED=YES`
 
-The concrete consumer and prerequisite substrate are now present, but the six OPEN Gate 0 contracts in Section 0 must be frozen and accepted before Gate 1 may begin.
+Gate 1 is authorized but not yet accepted. It begins from the published Gate-0 closure state and is constrained by the exact source boundary in the canonical design.

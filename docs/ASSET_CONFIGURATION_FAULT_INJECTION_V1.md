@@ -314,7 +314,9 @@ Frozen acceptance limit for the full Gate-5 fault campaign:
 
 This is <1% of the 10k datasheet minimum per-page endurance even in the pathological case that every erase hit one page.
 
-The harness records actual erase-attempt deltas.
+The harness records actual **page 62/63** erase-attempt deltas, including those caused by CLEAN_STATE recovery during the campaign. PRESERVE_PERSISTENCE is required to contribute zero page-62/page-63 erases.
+
+Erases of relocation-headroom pages 54..61 or application sectors are recovery-tool evidence and are recorded separately; they do not consume this persistence-page endurance counter.
 
 An accidental unbounded loop is a harness failure and must be stopped.
 

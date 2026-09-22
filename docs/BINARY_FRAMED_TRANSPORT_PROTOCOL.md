@@ -110,7 +110,7 @@ offset  size  field
 12      4     capability_flags
 ```
 
-Capability flags:
+Capability flags in the currently accepted product:
 
 ```text
 bit 0  CDC text/binary coexistence
@@ -119,8 +119,10 @@ bit 2  stable 16-bit RPC method IDs
 bit 3  request-ID correlation
 bit 4  explicit destructive-request flag
 bit 5  chunked response data
-bits 6..31 reserved
+bits 6..31 reserved in the current accepted firmware
 ```
+
+Gate 0 for `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` additionally reserves future bit 6 as `ASSET_CONFIGURATION_TRANSFER_V1`. Because HELLO is shared by CDC and management carriers while Asset v1 is management-IF2-only, that future bit is carrier-specific: CDC remains `0x0000003F`; management IF2 may advertise `0x0000007F` after its implementation exists. The current accepted firmware continues to advertise the existing mask.
 
 A host should issue HELLO before relying on protocol-specific capabilities.
 

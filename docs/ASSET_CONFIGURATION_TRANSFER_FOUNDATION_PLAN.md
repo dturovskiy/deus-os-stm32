@@ -1,6 +1,6 @@
 # Deus OS — Asset / Configuration Transfer Foundation Plan
 
-Status: **GATE 0 REOPENED — OLED_UI_LAYOUT_CONFIG_V1 PROMOTED — GATE 1 NOT AUTHORIZED**
+Status: **GATE 0 COMPLETE — GATE 1 BOUNDED SOURCE IMPLEMENTATION AUTHORIZED / NOT STARTED**
 
 Boundary:
 
@@ -67,7 +67,7 @@ Infrastructure prerequisites already accepted before this reactivation:
 
 Therefore `DEFERRED_NO_REAL_CONSUMER` is no longer the current disposition. Gate 0 is reopened for the remaining architecture/protocol/persistence acceptance work.
 
-**Gate 1 remains blocked.**
+**Gate 1 is now authorized only after the 2026-09-22 cross-contract closure PASS recorded in the acceptance plan.**
 
 Before Gate 1 may be authorized, reopened Gate 0 must still freeze and accept:
 
@@ -377,9 +377,61 @@ Bit 5 may become advertised only after the complete implementation boundary pass
 
 Advertising a placeholder, partial implementation or host-only implementation is forbidden.
 
-## 17. Non-goals
+## 17. Gate 1 bounded source boundary
 
-This deferred boundary does not authorize:
+Gate 0 authorizes only the implementation surface required by the six frozen contracts and `OLED_UI_LAYOUT_CONFIG_V1`.
+
+### Target — existing integration points that may change
+
+- `include/kernel/binary_frame.h` — additive frame-type constants only; parser envelope/version/max-payload semantics remain v1;
+- `include/kernel/binary_rpc.h` / `src/kernel/binary_rpc.c` — only the narrow carrier-specific HELLO capability input needed to keep CDC at `0x3F` and management IF2 at `0x7F`;
+- `include/kernel/usb_management.h` / `src/kernel/usb_management.c` — dispatch management IF2 frames between existing HELLO/RPC ownership and the new Asset transfer owner;
+- `include/kernel/oled_ui_layout.h` / `src/kernel/oled_ui_layout.c` — bounded active-console-clip selection/validation while retaining the frozen status rectangle;
+- `src/kernel.c` — composition-root wiring, boot-time persistent selection/activation, existing task0 ownership and acceptance-only SWD fault selector placement;
+- `linker/stm32f103c8.ld` — origin remains `0x08000000`; Flash LENGTH becomes `54K` with overlap assertions;
+- `scripts/build_firmware.ps1` — exact new source list, linker/resource checks and candidate build identity;
+- new versioned recovery scripts under `scripts/` implementing `ASSET_CONFIGURATION_STLINK_RECOVERY_V1`.
+
+### Target — new modules permitted
+
+Gate 1 may add narrowly owned modules under existing repository layers for:
+
+- STM32F1 internal-Flash page/halfword primitives;
+- Asset transfer/session state;
+- A/B persistence record validation/selection/programming;
+- OLED v1 payload serialization/consumer adaptation.
+
+New modules must remain allocation-free, bounded and single-purpose. Their public interfaces must not become a generic storage/filesystem API.
+
+### Host — permitted implementation surface
+
+- `host/src/DeusOs.Control.Core/` for frame constants, Asset request/response codecs, CRC-32, transfer/session client logic and models;
+- `host/tests/DeusOs.Control.Core.Tests/` for exact protocol/state/retry/capability tests;
+- `host/src/DeusOs.Control.Cli/Program.cs` only for a bounded Asset/Configuration command surface that remains capability-gated for normal product use;
+- candidate acceptance harness code may call Core directly to exercise pre-publication management-IF2 bit 6 while system capability bit 5 is intentionally still off.
+
+No transport-adapter change is expected: Windows WinUSB and Linux libusb already provide the accepted byte transport to IF2.
+
+### Gate 1 guards / forbidden source expansion
+
+Gate 1 does **not** authorize changes to:
+
+- `src/startup.s` or application origin/VTOR semantics;
+- scheduler core/API, task count, task stack capacities or SVC/PendSV semantics;
+- USB descriptors, VID/PID, interface/endpoint allocation or PMA ownership;
+- Windows WinUSB or Linux libusb transport implementations unless an independently proven transport defect is discovered and the boundary is explicitly reopened;
+- Avalonia Desktop/Web presentation;
+- UART/CDC text command semantics;
+- command-service registry/RPC method count merely to tunnel Asset bytes;
+- bootloader/firmware-update/network/security implementation;
+- option bytes, RDP or WRP policy;
+- heap/filesystem/generic block-device/package-manager infrastructure.
+
+`SYSTEM_IDENTITY_CAP_ASSET_CONFIGURATION_TRANSFER` remains off during Gate 1–5 candidate acceptance. Its final activation is a Gate-6 documentation/product-publication decision only after implementation/hardware/fault acceptance passes.
+
+## 18. Non-goals
+
+This bounded implementation boundary does not authorize:
 
 - generic filesystem;
 - heap;
@@ -392,9 +444,9 @@ This deferred boundary does not authorize:
 - cryptographic framework added without a concrete trust requirement;
 - generic persistence API designed for hypothetical future consumers.
 
-## 18. Gate sequence when reactivated
+## 19. Gate sequence after reactivation
 
-A future reactivation must explicitly reopen Gate 0 and then use a fresh gate sequence:
+The reopened boundary uses this gate sequence:
 
 - Gate 0 — concrete consumer + architecture/protocol/persistence/partition contract freeze;
 - Gate 1 — bounded source implementation;
@@ -405,4 +457,4 @@ A future reactivation must explicitly reopen Gate 0 and then use a fresh gate se
 - Gate 6 — docs finalization + one normal local acceptance commit;
 - Gate 7 — ordinary non-force publication and remote verification.
 
-All six Gate 0 design contracts are now frozen. Gate 1 remains blocked pending one final cross-contract closure audit and explicit Gate-0 completion record; contract completion does not auto-authorize implementation.
+All six Gate-0 design contracts are frozen and the acceptance plan records a passing cross-contract closure audit. Gate 0 is complete. Gate 1 is authorized only for the bounded source surface in Section 17; no implementation has yet been accepted.
