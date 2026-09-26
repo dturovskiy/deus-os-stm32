@@ -1,11 +1,14 @@
 #include <stdint.h>
 #include "drivers/usb_device.h"
+#include "kernel/asset_transfer.h"
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
 #include "kernel/usb_management.h"
 
 _Static_assert(BINARY_RPC_DATA_WIRE_MAX <= USB_MANAGEMENT_MAX_PACKET,
     "management RPC response wire frame must fit one EP4 packet");
+_Static_assert(ASSET_TRANSFER_RESPONSE_WIRE_MAX <= USB_MANAGEMENT_MAX_PACKET,
+    "management Asset response wire frame must fit one EP4 packet");
 
 static binary_frame_parser_t usb_management_parser;
 static binary_rpc_state_t usb_management_rpc_state;
@@ -13,13 +16,17 @@ static uint32_t usb_management_last_bus_reset_count;
 
 static void usb_management_protocol_reset(void)
 {
-    binary_rpc_workspace_t *workspace = usb_management_rpc_state.workspace;
+    binary_rpc_workspace_t *workspace =
+        usb_management_rpc_state.workspace;
 
     binary_frame_parser_init(&usb_management_parser);
+    asset_transfer_reset_session();
 
     if (workspace != (binary_rpc_workspace_t *)0)
     {
-        binary_rpc_init(&usb_management_rpc_state, workspace);
+        binary_rpc_init(
+            &usb_management_rpc_state,
+            workspace);
     }
 }
 
@@ -31,9 +38,14 @@ int usb_management_runtime_init(binary_rpc_workspace_t *workspace)
     }
 
     binary_frame_parser_init(&usb_management_parser);
-    binary_rpc_init(&usb_management_rpc_state, workspace);
+    binary_rpc_init(
+        &usb_management_rpc_state,
+        workspace);
+    asset_transfer_init();
+
     usb_management_last_bus_reset_count =
         usb_device_diagnostics.bus_reset_count;
+
     return 1;
 }
 
@@ -52,10 +64,14 @@ uint32_t usb_management_runtime_service(
         return 0u;
     }
 
-    if (bus_reset_count != usb_management_last_bus_reset_count)
+    asset_transfer_poll();
+
+    if (bus_reset_count !=
+        usb_management_last_bus_reset_count)
     {
         usb_management_protocol_reset();
-        usb_management_last_bus_reset_count = bus_reset_count;
+        usb_management_last_bus_reset_count =
+            bus_reset_count;
     }
 
     if (usb_management_is_configured() == 0)
@@ -75,7 +91,18 @@ uint32_t usb_management_runtime_service(
 
         if (result == BINARY_FRAME_FEED_FRAME_READY)
         {
-            if (frame.frame_type == BINARY_FRAME_TYPE_RPC_REQUEST)
+            if (frame.frame_type ==
+                BINARY_FRAME_TYPE_ASSET_TRANSFER_REQUEST)
+            {
+                (void)asset_transfer_handle_frame(
+                    &frame,
+                    binding->send_wire,
+                    binding->send_context);
+                continue;
+            }
+
+            if (frame.frame_type ==
+                BINARY_FRAME_TYPE_RPC_REQUEST)
             {
                 ++rpc_requests;
             }

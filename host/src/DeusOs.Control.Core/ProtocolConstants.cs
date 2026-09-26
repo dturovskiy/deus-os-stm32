@@ -15,6 +15,8 @@ public static class ProtocolConstants
     public const int MaxArgBytes = 31;
 
     public const byte RpcFlagAllowDestructive = 0x01;
+    public const uint AssetTransferProtocolCapability = 1u << 6;
+    public const uint HelloCapabilityAssetConfigurationTransfer = 1u << 6;
 
     public const ushort RpcPing = 0x0001;
     public const ushort RpcHealth = 0x0003;
@@ -32,10 +34,12 @@ public enum FrameType : byte
 {
     HelloRequest = 0x01,
     RpcRequest = 0x02,
+    AssetTransferRequest = 0x03,
     HelloResponse = 0x81,
     RpcData = 0x82,
     RpcEnd = 0x83,
     ProtocolError = 0x84,
+    AssetTransferResponse = 0x85,
 }
 
 public enum HostErrorKind

@@ -1,6 +1,6 @@
 # Deus OS — Asset / Configuration Transfer Foundation Acceptance Plan
 
-Status: **GATE 0 COMPLETE — CROSS-CONTRACT CLOSURE PASS — GATE 1 AUTHORIZED / NOT STARTED**
+Status: **GATES 0–6 ACCEPTED BY THE LOCAL ACCEPTANCE COMMIT CANDIDATE — GATE 7 PUBLICATION AUTHORIZED NEXT**
 
 Boundary:
 
@@ -10,7 +10,7 @@ Canonical design:
 
 `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 
-## 0. Current Gate 0 reactivation state — 2026-09-21
+## 0. Gate 0 reactivation state — historical record, 2026-09-21
 
 The original Gate 0 deferral remains an accepted historical fail-closed result. The boundary is now reopened because the missing concrete-consumer prerequisite has been satisfied by `OLED_UI_LAYOUT_CONFIG_V1`.
 
@@ -21,7 +21,7 @@ Reactivation repository baseline:
 - ahead/behind `0/0`;
 - `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` already published at that baseline.
 
-Current reactivation matrix:
+Reactivation matrix at that time:
 
 | Reactivation prerequisite | Current result |
 | --- | --- |
@@ -105,6 +105,39 @@ Meaning of `YES`:
 - capability bit 5 remains OFF;
 - no hardware Flash mutation is authorized until later gates;
 - no product capability is accepted or published yet.
+
+## 0B. Live acceptance state — 2026-09-25
+
+The Gate-0 reactivation/closure material above remains historical contract evidence. Current execution has advanced beyond it:
+
+- Gates 0–4 are accepted in the active WIP evidence chain;
+- Gate 5 fault/recovery acceptance is **ACCEPTED** on firmware source candidate `f945045221adb52e1aa7a13f4e89b3dbd1ddb5de`; the Gate-6 publication activation smoke is also accepted, and only final docs/commit-candidate validation plus the local acceptance commit remain;
+- Campaign A is accepted;
+- Campaign B is accepted for FI-1..FI-9, including FI-9 response-loss recovery/idempotency;
+- cumulative deliberate persistence-page erase attempts after Campaign B were `20/64`;
+- accepted Campaign-B final generation is `2`, payload `01100A6016000000`, payload CRC `838D1F51`;
+- accepted whole-Flash SHA-256 after Campaign B is `CCE75D6B5C75934F5E4FB5788BB3BB63639B1B5D7D0FDF552085830C1300341D`;
+- accepted persistence-region SHA-256 is `F5375013643DD5E8D3C31D44836BE1B2FB06844A9C99D751CCAB594E61922233`;
+- the deterministic corruption matrix is now **ACCEPTED 7/7** by `stm32_os_asset_gate5_corruption_matrix_contract_oracle_v1_20260925_203206.evidence.zip`, SHA-256 `51BA4472AE94C1ADDFE552AEF245E8CF7DC39FDE6C855C2377455CBD74838255`;
+- that accepted run first proved exact canonical CLEAN live prestate, then proved each corrupt-state fallback through Windows SWD readback + Mac-mini Linux libusb runtime; every case preserved its exact pre-reset persistence bytes across boot, proving zero boot repair writes, while firmware outside pages 62/63 remained exact;
+- Case 7 proved the frozen equal-generation conflict rule: two individually valid but conflicting generation-equal records produce no selected record and compiled-default runtime;
+- the accepted matrix consumed `16` persistence-page erases, so cumulative Gate-5 wear is now **`40/64`**; this remains inside the frozen `<=64` campaign limit;
+- final recovery is independently exact before and after reset at canonical whole-Flash SHA `15061F971CFCF48A9EAA8F0AB8C6E630D14A6428B96E19D576C02C5E74859957`, persistence erased, generation `0`, compiled-default runtime and healthy Linux/libusb/scheduler/IWDG/fault state;
+- earlier failed matrix attempts remain frozen diagnostic history only and are superseded by this accepted contract-oracle run;
+- historical Gate-5 final substep was the single physical target USB/VBUS power-removal/power-return retention proof; that requirement is now accepted by the v3 retention evidence below;
+- the first PowerShell-monolithic retention delivery was blocked before execution by Microsoft Defender AMSI as `HackTool:PowerShell/ApexToolkit.A` (Threat ID `2147749462`, Defender events `1116/1117`, quarantine successful). This is `HARNESS-AMSI-DELIVERY-01`, not a product result; security controls remain enabled and no bypass/exclusion is authorized;
+- `.NET` replacement run `stm32_os_asset_gate5_physical_retention_dotnet_v1_20260925_222446.evidence.zip` (SHA-256 `A496C86EDDE741358C32B12968172E8FF978AF122BC3A3329EEE18C8415915D0`) successfully passed package/build/prestate/commit stages but failed in `PHYSICAL_POWER_CYCLE` as `ENVIRONMENT / USB_PRESENCE_TIMEOUT`. Across the full 90-second removal window, 81 fresh remote helper processes each created a new Linux libusb context and each observed one Deus device at the same physical locator `usb:001:8`; an actual USB data-path disappearance was therefore not observed. The run is not retention evidence;
+- failure cleanup restored exact canonical CLEAN after reset. The failed run consumed three persistence-page erases (`+1` commit + `+2` cleanup), raising cumulative Gate-5 wear to **`43/64`**;
+- before any further persistence mutation, the retention harness must perform a zero-write physical-path rehearsal with explicit operator synchronization and independent USB-absence plus SWD-power-off corroboration, then re-attest exact CLEAN after reconnection. Only a passed rehearsal may authorize the actual retention commit/power-cycle;
+- `.NET` rehearsal package v2 failed during Release compilation before engine startup and therefore before any target I/O. Audit classifies it `HARNESS-DOTNET-COMPILE-01`: six regex literals added for failed-v1 evidence binding contained ordinary-string `\s` escapes, which are invalid C# escape sequences. Zero persistence erases occurred and cumulative wear remains `43/64`; whole-source scan found exactly those six instances and no additional invalid normal-string escapes;
+- physical retention is **ACCEPTED** by `stm32_os_asset_gate5_physical_retention_dotnet_v3_20260925_235521.evidence.zip`, SHA-256 `239735C43309870DC820ED0B3FF2C6D0E331BF805FE9B1BCA2B68ED685A249A7`. The zero-write rehearsal independently proved Linux USB disappearance and SWD target loss, then exact CLEAN return. The retained generation `1` / payload `01100A6016000000` / CRC `838D1F51` survived one real VBUS removal/return with exact runtime and byte-identical pre/post whole Flash and persistence;
+- final cleanup restored canonical CLEAN SHA `15061F971CFCF48A9EAA8F0AB8C6E630D14A6428B96E19D576C02C5E74859957` before and after reset. This run consumed `+3` persistence erases, so final Gate-5 cumulative wear is **`46/64`**, within the frozen limit;
+- evidence integrity independently closes: ZIP CRC clean, `412/412` hashes exact, 24/24 source locks exact, repository pre/post status identical, real index empty, and the only two native-process timeouts/nonzero results are the intentional SWD-off probes used to corroborate physical power removal;
+- all Gate-5 blocking conditions in `ASSET_CONFIGURATION_FAULT_INJECTION_V1` are satisfied. **Gate 5 is ACCEPTED.** Gate-6 v2 later failed before target I/O because of a fixed-column Git-porcelain parser defect plus noncompliant terminal/evidence presentation; zero persistence erases occurred. Gate-6 v3 corrected those defects and produced trustworthy evidence, but then hit `HARNESS-LINE-ENDINGS-PARSER-01`: its CRLF-sensitive build-token regex falsely rejected a successful build (`BUILD_FLASH=54268`, `BUILD_SRAM=11944`). V3 evidence `stm32_os_asset_gate6_publication_activation_smoke_v3_20260926_120207.evidence.zip`, SHA-256 `4C58503D25033BFCEAAE973746489908E0011B21A52EED00F784CDAD21DC2862`, proves no target I/O and unchanged wear `46/64`. Gate-6 v4 normalized line endings, enforced exact token cardinality, replayed the parser against the raw v3 stdout, and then passed the complete activation smoke; only final documentation/commit-candidate validation and the local acceptance commit remain before Gate 7.
+
+Current physical execution topology is split-host and is canonical in `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`: target native USB/power and Linux libusb/CDC are on Ubuntu at `deus@macmini`; ST-LINK/SWD and CH340/UART are on Windows. Composed Gate-5 harnesses must coordinate these domains rather than assume all target interfaces are local to Windows.
+
+System capability bit 5 remained OFF throughout Gates 1–5. After Gate 5 closed, Gate 6 activated it exactly once in `SYSTEM_IDENTITY_CAPABILITIES`; the resulting `0x0000003F` production identity is accepted by the Gate-6 publication-activation smoke and is pending only the final local acceptance commit.
 
 ## 1. Historical Gate 0 repository prestate
 
@@ -314,13 +347,12 @@ Future hardware acceptance must prove at minimum:
 
 No publication may claim Asset/Configuration capability until all implementation gates pass.
 
-Until the full Asset/Configuration implementation boundary is accepted:
+Publication state is now split explicitly:
 
-- system capability mask stays `0x0000001F`;
-- bit 5 remains reserved only;
-- no transfer CLI/Desktop surface is considered accepted product functionality;
-- pages 62/63 are reserved by the shared Flash decision but no Asset/Configuration runtime erase/program owner exists yet;
-- Gate 1 implementation may exist only inside the frozen source boundary; later hardware/product acceptance is still required.
+- through Gates 1–5, the published system capability mask stayed `0x0000001F` and bit 5 remained reserved only;
+- the Gate-6 activation candidate advertises `0x0000003F` and its production `PublishedOnly` transfer path is hardware-accepted, but this remains unpublished WIP state until the Gate-6 local acceptance commit exists and Gate 7 completes ordinary non-force publication;
+- pages 62/63 remain owned by the accepted Asset A/B persistence implementation; Gate-6 activation did not mutate them and persistence wear remains `46/64`;
+- no broader generic storage/filesystem/package surface is authorized by this activation.
 
 ## 12. Historical Gate 0 final outcome
 
@@ -335,10 +367,26 @@ Meaning at that time:
 - no accepted product regression;
 - no Gate 1 implementation authorized.
 
-## 13. Current reactivation outcome
+## 13. Current boundary outcome
 
-`CURRENT_OUTCOME=GATE_0_COMPLETE`
+`CURRENT_OUTCOME=GATE_6_ACCEPTED_GATE_7_AUTHORIZED`
 
-`GATE_1_AUTHORIZED=YES`
+`GATES_0_TO_5_ACTIVE_WIP_ACCEPTANCE=PASS`
 
-Gate 1 is authorized but not yet accepted. It begins from the published Gate-0 closure state and is constrained by the exact source boundary in the canonical design.
+`GATE_5_CAMPAIGN_A=PASS`
+
+`GATE_5_CAMPAIGN_B=PASS`
+
+`GATE_5_CORRUPTION_MATRIX=PASS`
+
+`GATE_5_PHYSICAL_RETENTION=PASS`
+
+`GATE_5_PERSISTENCE_ERASE_ATTEMPTS=46/64`
+
+`GATE_5_FINAL_STATE=CLEAN_STATE_POST_RESET_BYTE_EXACT`
+
+`GATE_6_AUTHORIZED=YES`
+
+`GATE_7_AUTHORIZED=YES`
+
+The boundary remains unpublished. Gate 6 owns exactly one post-Gate-5 product-activation source change: add system capability bit 5 to the advertised mask so the accepted production `PublishedOnly` host path becomes usable. That changed firmware candidate passed fresh build/resource checks, Core `28/28`, Transport `5/5`, exact Flash readback and production-policy hardware smoke in `stm32_os_asset_gate6_publication_activation_smoke_v4_20260926_134106.evidence.zip`, SHA-256 `7A65CA036E29FE06E39C5ADA2B70461292DBFD3DC584D28C3563A7E498322C60`. Accepted identities: firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`, host tree `136687e80c42bd8104ad6c37fbbccb915b60fd08`, BIN SHA-256 `7EDB650B78D6778C57BA477EC466B31E3AC5CE693ECF933E04B42AC3F0B23F9F`, whole-Flash SHA-256 `CD31D49985753E08F3AE123F0AF7BF136AC510AA2D40E3D5CB4FDF5EBEF9D737`, Flash `54268/54272`, SRAM `11944/12288`, system capabilities `0x0000003F`, persistence wear unchanged `46/64`. The exact 42-path local commit candidate is the Gate-6 acceptance boundary; after that commit exists, Gate 7 is authorized to perform only the ordinary non-force publication proof.

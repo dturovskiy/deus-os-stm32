@@ -1,6 +1,6 @@
 # Deus OS — Asset / Configuration ST-LINK Recovery Contract v1
 
-Status: **GATE 0 CONTRACT FROZEN — DOCS ONLY — NO TARGET RECOVERY EXECUTION AUTHORIZED BY THIS FILE**
+Status: **FROZEN CONTRACT — CONSUMED BY ACTIVE ASSET GATE-5 RECOVERY — TARGET RECOVERY EXECUTION STILL REQUIRES A CANDIDATE-BOUND ACCEPTANCE HARNESS**
 
 Boundary:
 
@@ -31,6 +31,8 @@ Recovery must never use:
 - an image whose Git/source identity is unknown.
 
 The exact Gate-2 candidate BIN, source tree, build-entrypoint hash and toolchain identity are recorded in the recovery manifest.
+
+The bundle generator is intentionally repository-topology independent. Gate-2 owns candidate provenance and passes `base_head`, exact materialized `candidate_tree`, and `firmware_source_tree` explicitly to the generator. The generator validates those identities and MUST NOT call Git or require `.git` inside the clean candidate. This is required because the canonical Gate-2 candidate is materialized as a gitless content tree.
 
 ## 3. Asset-phase Flash geometry
 
@@ -95,7 +97,7 @@ Why this artifact exists:
 - boundary ID;
 - Gate-2 candidate Git commit/tree;
 - firmware source-tree identity;
-- `scripts/build_firmware.ps1` SHA-256;
+- `scripts/build_firmware.ps1` SHA-256 of the exact script bytes materialized from the recorded candidate tree and used for the Gate-2 clean build; this is a candidate-tree byte identity and must not be compared to a platform-specific live working-tree checkout hash;
 - exact compiler/toolchain version;
 - `os.bin` size/SHA-256;
 - `application_region_54k.bin` size/SHA-256;
@@ -107,6 +109,8 @@ Why this artifact exists:
 - persistence A/B addresses;
 - STM32CubeProgrammer version used for acceptance;
 - restore-script SHA-256 values.
+
+All manifest hashes for repository-owned scripts refer to the exact bytes present in the materialized candidate that produced the bundle. Live working-tree hashes remain separate source-lock evidence and may legitimately differ because Git text normalization can canonicalize line endings when the candidate tree is written/materialized.
 
 The manifest does not contain secrets.
 
@@ -240,7 +244,7 @@ or read-unprotect/option-byte mutation commands.
 
 ## 13. Download mechanism
 
-Recovery uses CubeProgrammer `-w/-d` with `--skiperase` and immediate `-v` verification **after** the exact erase set has already been completed successfully.
+Recovery uses CubeProgrammer `-w/-d` with `--skiperase` and immediate `-v` verification **after** the exact erase set has already been completed successfully. In the CLI token sequence, `--skiperase` precedes `-w`, and `-v` follows immediately after `-w <file> <address>` so CubeProgrammer binds verification to that write command.
 
 Incremental programming is forbidden for canonical recovery.
 

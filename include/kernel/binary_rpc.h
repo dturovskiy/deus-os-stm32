@@ -8,7 +8,8 @@
 #define BINARY_RPC_FLAG_ALLOW_DESTRUCTIVE 0x01u
 #define BINARY_RPC_MAX_ARG_BYTES          31u
 #define BINARY_RPC_REQUEST_PAYLOAD_MAX   132u
-#define BINARY_RPC_CAPABILITY_FLAGS       0x0000003Fu
+#define BINARY_RPC_CAPABILITY_FLAGS_CDC        0x0000003Fu
+#define BINARY_RPC_CAPABILITY_FLAGS_MANAGEMENT 0x0000007Fu
 
 typedef enum
 {
@@ -37,6 +38,7 @@ typedef struct
     command_service_handler_t command_handler;
     void *command_handler_context;
     uint32_t source_rx_event_mask;
+    uint32_t capability_flags;
 } binary_rpc_binding_t;
 
 typedef struct

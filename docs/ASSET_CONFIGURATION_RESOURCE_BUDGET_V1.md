@@ -1,6 +1,6 @@
 # Deus OS — Asset / Configuration Resource Budget v1
 
-Status: **GATE 0 CONTRACT FROZEN — DOCS ONLY — NO SOURCE IMPLEMENTATION AUTHORIZED**
+Status: **FROZEN CONTRACT — ENFORCED BY ACTIVE ASSET WIP ACCEPTANCE — THIS FILE DOES NOT AUTHORIZE NEW SOURCE CHANGES**
 
 Boundary:
 
@@ -10,9 +10,9 @@ Resource contract:
 
 `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1`
 
-## 1. Accepted baseline
+## 1. Gate-0 baseline used to freeze this budget
 
-Current accepted firmware resource point:
+Firmware resource point at contract freeze:
 
 ```text
 Flash            50652 bytes
@@ -107,7 +107,7 @@ Asset/Configuration Gate-2 static SRAM ceiling:
 
 This leaves an exact minimum **6144-byte physical address gap** between accepted data+bss usage and the reserved MSP region.
 
-From the current accepted 11728-byte point:
+From the Gate-0 baseline 11728-byte point:
 
 ```text
 new SRAM ceiling              12288

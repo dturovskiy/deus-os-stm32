@@ -18,6 +18,10 @@ For stable architecture/invariants:
 
 - `docs/ARCHITECTURE.md`
 
+For the current development/acceptance host and cable topology:
+
+- `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`
+
 For forward sequencing:
 
 - `docs/ROADMAP.md`
@@ -36,7 +40,8 @@ README is an entry point only. It is **not** an authoritative current-state, acc
 - SRAM: 20 KiB
 - debug/recovery: SWD / ST-LINK V2
 - emergency diagnostics: USART1
-- primary host management: native USB WinUSB
+- primary product management: native USB management IF2 over WinUSB (Windows) or libusb (Linux)
+- current bench USB owner: Ubuntu on Mac mini via Linux libusb; Windows owns ST-LINK and UART
 - secondary USB diagnostics: CDC ACM
 - local display: SSD1306-class 128x32 OLED
 
@@ -83,6 +88,7 @@ OS/
 - operator/handoff reference: `docs/PROJECT_HANDOFF.md`
 - historical umbrella implementation notes: `docs/IMPLEMENTATION_PLAN.md`
 - harness/evidence rules: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`
+- development/acceptance host + cable topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`
 - chronology: `CHANGELOG.md`
 
 ## Design principles

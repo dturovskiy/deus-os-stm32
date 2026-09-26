@@ -266,7 +266,7 @@ static int binary_rpc_send_hello(
         (uint16_t)command_service_registry_count());
     binary_rpc_put_u32(
         &payload[12],
-        BINARY_RPC_CAPABILITY_FLAGS);
+        state->active_binding->capability_flags);
 
     return binary_rpc_send_workspace_frame(
         state,

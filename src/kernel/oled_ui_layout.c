@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "kernel/oled_ui_layout.h"
 
 static const oled_ui_layout_t default_layout =
@@ -24,14 +25,17 @@ int oled_ui_layout_validate(
         (layout->status_rect.y == 0) &&
         (layout->status_rect.width == 128) &&
         (layout->status_rect.height == 9) &&
-        (layout->console_rect.x == 1) &&
-        (layout->console_rect.y == 10) &&
-        (layout->console_rect.width == 126) &&
-        (layout->console_rect.height == 22);
+        (layout->console_rect.x >= 0) &&
+        (layout->console_rect.y >= 10) &&
+        (layout->console_rect.width >= 5) &&
+        (layout->console_rect.height >= 6) &&
+        ((uint32_t)layout->console_rect.x +
+            (uint32_t)layout->console_rect.width <= 128u) &&
+        ((uint32_t)layout->console_rect.y +
+            (uint32_t)layout->console_rect.height <= 32u);
 }
 
 int oled_ui_layout_self_test(void)
 {
-    return oled_ui_layout_validate(
-        &default_layout);
+    return oled_ui_layout_validate(&default_layout);
 }

@@ -52,7 +52,7 @@ Accepted management/runtime contract:
 - binary framing protocol: v1
 - command service: v3 / registry 36
 - `sysinfo=0x0024`
-- system capability mask: `0x0000001F`
+- system capability mask: `0x0000003F` (`ASSET_CONFIGURATION_TRANSFER` bit 5 published by the Gate-6 activation candidate)
 - initial applications: `system.home=0x0001`, `device.info=0x0002`
 
 Host foundation acceptance covers Windows CLI/hardware, Windows Desktop, real Linux libusb runtime, application lifecycle, malformed/recovery behavior, 128 unique management pings, fresh reconnect negotiation, IF2-only Linux claiming with CDC retained, zero management/CDC drops and exact final Flash readback.
@@ -67,7 +67,7 @@ Canonical acceptance:
 
 ## 2. Current boundary disposition
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATE 0 COMPLETE — GATE 1 AUTHORIZED / NOT STARTED**
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATES 0–6 ACCEPTED IN THE LOCAL ACCEPTANCE CANDIDATE — GATE 7 PUBLICATION CURRENT**
 
 The original `DEFERRED_NO_REAL_CONSUMER` Gate 0 result remains historical proof that implementation was correctly blocked when no real consumer existed.
 
@@ -81,7 +81,7 @@ That blocking condition is now resolved by the promoted narrow consumer:
 - accepted status bar remains frozen/system-owned at `128x9`;
 - compiled default remains console `x=1, y=10, w=126, h=22`.
 
-Gate 0 design/acceptance freeze is complete. **Gate 1 bounded source implementation is authorized but has not yet been accepted or hardware-tested.**
+Gate 0 design/acceptance freeze is complete. Gates 1–5 implementation/hardware acceptance and the Gate-6 publication-activation smoke have passed. The local acceptance candidate containing this state is the Gate-6 acceptance commit candidate. The boundary is **not published yet**; Gate 7 ordinary non-force publication is the only remaining step.
 
 Frozen Gate-0 contracts:
 
@@ -99,9 +99,37 @@ Closure found and corrected two issues before authorization:
 1. HELLO Asset bit 6 is carrier-specific: CDC remains `0x3F`, management IF2 candidate becomes `0x7F`;
 2. ST-LINK recovery uses explicit page erases followed by CubeProgrammer `--skiperase`; PRESERVE never erases pages 62/63.
 
-Current next work is Gate 1 bounded source implementation under Section 17 of the canonical plan.
+Current accepted Gate-5 candidate source tree is `f945045221adb52e1aa7a13f4e89b3dbd1ddb5de`.
 
-No Flash erase/program implementation is active; no linker/vector migration is active; capability bit 5 remains reserved but unadvertised; generic storage/filesystem/package infrastructure remains unauthorized.
+Gate-5 status:
+
+- deterministic Campaign A — **ACCEPTED**;
+- deterministic Campaign B with previous valid record — **ACCEPTED**, including FI-1..FI-9 and the FI-9 response-loss/idempotency proof;
+- deliberate persistence-page erase attempts accumulated through Campaign B: `20/64`;
+- accepted Campaign-B final generation: `2`, payload `01100A6016000000`, payload CRC `838D1F51`;
+- accepted Campaign-B whole-Flash SHA-256: `CCE75D6B5C75934F5E4FB5788BB3BB63639B1B5D7D0FDF552085830C1300341D`;
+- accepted Campaign-B persistence-region SHA-256: `F5375013643DD5E8D3C31D44836BE1B2FB06844A9C99D751CCAB594E61922233`;
+- corruption matrix — **ACCEPTED 7/7** by `stm32_os_asset_gate5_corruption_matrix_contract_oracle_v1_20260925_203206.evidence.zip`, SHA-256 `51BA4472AE94C1ADDFE552AEF245E8CF7DC39FDE6C855C2377455CBD74838255`;
+- the accepted matrix independently proved all seven deterministic corrupt-state fallbacks, exact compiled-default runtime and frozen status bar, Linux/libusb management health, zero boot repair mutation by exact pre-reset/post-boot persistence byte equality, and exact firmware bytes outside pages 62/63. Case 7 additionally proved conflicting equal-generation valid A/B records resolve to no record/default as required;
+- accepted matrix preflight first proved the previously uncertain post-v2 live target state was already canonical CLEAN, then consumed `16` deliberate persistence-page erases (14 for seven cases + 2 final CLEAN), bringing the Gate-5 cumulative counter to **40/64**;
+- final matrix recovery is **CLEAN_STATE_POST_RESET_BYTE_EXACT**: whole-Flash SHA-256 before and after reset is `15061F971CFCF48A9EAA8F0AB8C6E630D14A6428B96E19D576C02C5E74859957`, persistence pages are erased, Asset status is generation `0`/no-record, runtime is exact compiled default, and scheduler/IWDG/USB/fault health passes;
+- historical failed corruption-matrix attempts remain diagnostic history only: v3 restore-state/obsolete Windows-USB composition, cross-host v1 PowerShell argument-cardinality, and cross-host v2 semantic-oracle revision misuse are superseded by the accepted contract-oracle evidence above;
+- historical Gate-5 final substep was the physical target USB/VBUS power-removal/power-return retention proof; it is now accepted by the v3 evidence below;
+- first retention package `stm32_os_asset_gate5_physical_retention_v1_20260925.zip` was blocked by Microsoft Defender AMSI while `apply.ps1` was being parsed, before any harness code or target I/O executed. Defender Operational events `1116/1117` identify `HackTool:PowerShell/ApexToolkit.A`, Threat ID `2147749462`, detection source `AMSI`, process `pwsh.exe`, action `Quarantine`, action success `True`, security-intelligence version `1.459.398.0`, engine `1.1.26080.3`. This is `HARNESS-AMSI-DELIVERY-01`: zero target mutation, zero additional persistence erases. The blocked package is frozen; no Defender exclusion, AMSI bypass, obfuscation or signature-avoidance rewrite is authorized;
+- replacement `.NET` retention run `stm32_os_asset_gate5_physical_retention_dotnet_v1_20260925_222446.evidence.zip`, SHA-256 `A496C86EDDE741358C32B12968172E8FF978AF122BC3A3329EEE18C8415915D0`, proved the executable/AMSI architecture works and reached the physical-power phase. It committed generation `1`, then timed out waiting for USB disappearance: 81 fresh remote helper processes each created a new Linux libusb discovery context and all reported exactly one Deus device at stable locator `usb:001:8`; therefore no actual Linux USB data-path disappearance was observed. Classification `ENVIRONMENT / USB_PRESENCE_TIMEOUT`, not PRODUCT. Failure cleanup restored `CLEAN_STATE_POST_RESET_BYTE_EXACT`;
+- that failed retention run consumed `+3` persistence-page erases (`+1` retention commit, `+2` cleanup), so cumulative Gate-5 wear is now **`43/64`**. Before another mutation, the next retention composition must include a zero-write physical-path rehearsal: operator-synchronized USB removal, fresh Linux libusb absence, SWD target-unavailable corroboration, USB/SWD return, and exact CLEAN re-attestation. Only after that rehearsal passes may the real retention commit consume another erase;
+- `stm32_os_asset_gate5_physical_retention_dotnet_v2_20260925.zip` failed safely during `DOTNET_BUILD_RELEASE` before the .NET engine started. Root cause is `HARNESS-DOTNET-COMPILE-01`: six newly added failed-v1 evidence regexes used `\s` inside ordinary C# string literals, producing Roslyn invalid-escape compile errors. Bootstrap ordering proves zero SSH/ST-LINK/USB/UART/target I/O and zero persistence erases; cumulative wear therefore remains **`43/64`**. Full-source audit found exactly those six invalid normal-string escapes and no others;
+- physical retention — **ACCEPTED** by `stm32_os_asset_gate5_physical_retention_dotnet_v3_20260925_235521.evidence.zip`, SHA-256 `239735C43309870DC820ED0B3FF2C6D0E331BF805FE9B1BCA2B68ED685A249A7`. The zero-write rehearsal proved real Mac-mini Linux USB disappearance plus independent SWD target loss, then exact CLEAN return. The retained test committed generation `1`, payload `01100A6016000000`, CRC `838D1F51`; after one real VBUS removal/return the same generation/payload/runtime returned and the entire 64-KiB Flash plus 2-KiB persistence region were byte-identical pre/post power cycle. Final persistence-only cleanup restored canonical CLEAN whole-Flash SHA `15061F971CFCF48A9EAA8F0AB8C6E630D14A6428B96E19D576C02C5E74859957` before and after reset;
+- accepted retention evidence integrity: ZIP CRC clean, `412/412` evidence hashes exact, all 24 source locks exact, repository pre/post status identical, real index empty, no commit/push/mass erase/option-byte mutation. Of 121 bounded native processes, the only two nonzero/timeouts are the intentional SWD power-off probes during rehearsal and retained power removal;
+- the accepted retention run consumed `+3` persistence-page erases (`+1` retained commit + `+2` final CLEAN), bringing the final Gate-5 wear counter to **`46/64`**. This is within the frozen `<=64` campaign budget;
+- **GATE 5 = ACCEPTED**: Campaign A/B, FI-9 response-loss idempotency, 7/7 corruption matrix, one physical retention power cycle, wear budget and known-good recovery are all satisfied. Final Gate-5 target state was `CLEAN_STATE_POST_RESET_BYTE_EXACT`. Gate 6 then performed the single capability-publication activation described below;
+- Gate-6 harness v2 reached clean locked restore/build but failed before target I/O because its `git status --porcelain=v1` parser trimmed the fixed status prefix before slicing the path, turning tracked names such as `README.md` into `EADME.md`; its operator/evidence presentation also violated the canonical terminal-structure contract. This is diagnostic HARNESS history only and consumed zero persistence erases;
+- Gate-6 harness v3 corrected the porcelain/presentation lifecycle and produced trustworthy classified evidence, but falsely reported `BUILD_TOKEN: BUILD_FLASH` after a successful firmware build because its multiline regex was CRLF-sensitive. Evidence `stm32_os_asset_gate6_publication_activation_smoke_v3_20260926_120207.evidence.zip`, SHA-256 `4C58503D25033BFCEAAE973746489908E0011B21A52EED00F784CDAD21DC2862`, proves `BUILD_OUTCOME=PASS`, Flash `54268`, SRAM `11944`, no target I/O and unchanged wear `46/64`; failure class `HARNESS-LINE-ENDINGS-PARSER-01`;
+- Gate-6 v4 replayed the corrected normalized/cardinality parser against the exact v3 raw build stdout before execution, then passed the complete activation smoke. This v4 result supersedes the failed Gate-6 harness attempts.
+
+The current bench is split-host: target native USB/power is owned by Ubuntu on the Mac mini and exercised through Linux libusb via `deus@macmini`; ST-LINK/SWD and CH340/UART are owned by Windows. The canonical operational contract is `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.
+
+The Asset Flash erase/program implementation and 54-KiB linker boundary are active in the accepted WIP candidate. Application reset origin remains `0x08000000`; bootloader relocation/VTOR migration is still deferred. Gate 5 accepted the implementation with system capability bit 5 intentionally off. Gate 6 added the single publication-activation source change `SYSTEM_IDENTITY_CAP_ASSET_CONFIGURATION_TRANSFER`, changing the published system capability mask from `0x0000001F` to `0x0000003F`; that activation is now hardware-accepted by `stm32_os_asset_gate6_publication_activation_smoke_v4_20260926_134106.evidence.zip`, SHA-256 `7A65CA036E29FE06E39C5ADA2B70461292DBFD3DC584D28C3563A7E498322C60`. Accepted activation firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`, host tree `136687e80c42bd8104ad6c37fbbccb915b60fd08`, BIN SHA-256 `7EDB650B78D6778C57BA477EC466B31E3AC5CE693ECF933E04B42AC3F0B23F9F`, whole-Flash SHA-256 `CD31D49985753E08F3AE123F0AF7BF136AC510AA2D40E3D5CB4FDF5EBEF9D737`. Fresh build/tests pass at Flash `54268/54272` (4-byte headroom) and SRAM `11944/12288`; production `PublishedOnly` `config status/read`, ping8 and health pass on Mac-mini Linux libusb. Persistence remains erased and Gate-5 wear remains `46/64`. Generic storage/filesystem/package infrastructure remains unauthorized.
 
 Canonical Gate 0 design:
 
@@ -131,16 +159,17 @@ The shared docs-only Flash ownership decision is now frozen by `docs/FLASH_OWNER
 - Asset/Configuration is implemented first in a transitional standalone phase: application remains reset owner at `0x08000000`, its linker ceiling becomes 54 KiB, pages 54..61 remain unused relocation headroom, and only pages 62/63 become persistent;
 - application relocation to `0x08002000`, VTOR/handoff changes and lower-page bootloader ownership occur only in the later Bootloader boundary.
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` may be reopened only when a concrete consumer exists and Gate 0 can freeze its exact schema, transfer ABI, transaction/recovery model and resource budget against that shared Flash map.
+The historical reactivation condition has been satisfied by `OLED_UI_LAYOUT_CONFIG_V1`; Gates 0–5 are accepted under the frozen schema, transfer ABI, transaction/recovery model and resource budget. Gate 6 is closed by the accepted activation evidence plus this exact local acceptance commit candidate; Gate 7 ordinary non-force publication is next.
 
 Forward dependency order is:
 
 1. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **ACCEPTED DOCS-ONLY SHARED CONTRACT**;
 2. `OLED_UI_LAYOUT_CONFIG_V1` — **PROMOTED / FROZEN CONSUMER CONTRACT**;
-3. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 — **COMPLETE / CROSS-CONTRACT CLOSURE PASS**;
-4. Gate 1 bounded Asset/Configuration source implementation — **AUTHORIZED / NOT STARTED**;
-5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-6. networking/service/security extensions.
+3. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gates 0–5 — **ACCEPTED IN ACTIVE WIP EVIDENCE CHAIN**;
+4. Asset Gate 6 final documentation + local acceptance commit — **ACCEPTED BY THIS COMMIT CANDIDATE**;
+5. Asset Gate 7 ordinary non-force publication — **CURRENT AFTER LOCAL COMMIT**;
+6. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
+7. networking/service/security extensions.
 
 Deferring Asset/Configuration at Gate 0 does not automatically promote firmware update ahead of its own prerequisites or security/recovery contract.
 
@@ -233,7 +262,7 @@ Canonical deferred policy:
 
 ## 6. Known architecture state
 
-The initial Asset/Configuration Gate 0 review completed without finding a substrate blocker; it was deferred solely because no current consumer with a frozen persistence schema exists.
+The initial Asset/Configuration Gate 0 review found no substrate blocker and was historically deferred because no concrete consumer with a frozen persistence schema existed. That blocker was subsequently resolved by promoting `OLED_UI_LAYOUT_CONFIG_V1`; implementation and hardware acceptance have since advanced to Gate 5.
 
 Resolved gaps:
 
@@ -253,13 +282,14 @@ Still intentionally unresolved until a consumer requires them:
 - network mutation security;
 - richer observability/runtime-statistics framework.
 
-These remain consumer- or boundary-specific future concerns. None expands the current bounded `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate-1 implementation scope.
+These remain consumer- or boundary-specific future concerns. None expands the current bounded `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` candidate or its active Gate-5 acceptance scope.
 
 ## 7. Source-of-truth map
 
 - live repository bytes/commit/tree/branch/cleanliness: **Git**
 - global current project/product state: **this file**
 - stable architecture/invariants: `docs/ARCHITECTURE.md`
+- development/acceptance host and physical-interface topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`
 - forward ordering: `docs/ROADMAP.md`
 - active/completed boundary design contract: matching `*_PLAN.md`
 - boundary proof/acceptance contract: matching `*_ACCEPTANCE_PLAN.md`

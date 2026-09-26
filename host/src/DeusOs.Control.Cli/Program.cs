@@ -235,6 +235,56 @@ internal static class Program
                 return 0;
             }
 
+            case "config-status":
+            {
+                var status = await session.ExecuteAsync(
+                    (client, token) => client.AssetStatusAsync(
+                        AssetAccessPolicy.PublishedOnly,
+                        token),
+                    CancellationToken.None);
+                PrintAssetStatus(status);
+                return 0;
+            }
+
+            case "config-read":
+            {
+                var result = await session.ExecuteAsync(
+                    (client, token) => client.ReadOledUiLayoutAsync(
+                        AssetAccessPolicy.PublishedOnly,
+                        token),
+                    CancellationToken.None);
+
+                if (result is null)
+                {
+                    Console.WriteLine("CONFIG_COMMITTED=NO FALLBACK=COMPILED_DEFAULT");
+                    return 0;
+                }
+
+                var layout = OledUiLayoutConfigV1.Deserialize(result.Payload);
+                Console.WriteLine(
+                    $"CONFIG_COMMITTED=YES GENERATION={result.Generation} CRC32=0x{result.PayloadCrc32:X8}");
+                Console.WriteLine(
+                    $"OLED_CONSOLE_X={layout.ConsoleX} OLED_CONSOLE_Y={layout.ConsoleY} " +
+                    $"OLED_CONSOLE_WIDTH={layout.ConsoleWidth} OLED_CONSOLE_HEIGHT={layout.ConsoleHeight}");
+                return 0;
+            }
+
+            case "config-set-layout":
+            {
+                var layout = ParseOledLayout(parsed.CommandArgument);
+                var result = await session.ExecuteAsync(
+                    (client, token) => client.WriteOledUiLayoutAsync(
+                        layout,
+                        AssetAccessPolicy.PublishedOnly,
+                        token),
+                    CancellationToken.None);
+
+                Console.WriteLine(
+                    $"CONFIG_COMMIT=PASS GENERATION={result.Generation} CHANGED={result.Changed} " +
+                    $"LENGTH={result.PayloadLength} CRC32=0x{result.PayloadCrc32:X8}");
+                return 0;
+            }
+
             default:
                 throw new ArgumentException(
                     $"unknown command '{parsed.Command}'");
@@ -267,6 +317,42 @@ internal static class Program
                 $"0x{application.Id:X4} {application.Name} " +
                 $"{application.State} active={application.Active}");
         }
+    }
+
+    private static void PrintAssetStatus(AssetStatusSnapshot status)
+    {
+        Console.WriteLine(
+            $"ASSET_STATUS={status.Status} SESSION={status.SessionState} " +
+            $"OBJECT_TYPE=0x{status.ObjectType:X4} TRANSFER_ID=0x{status.TransferId:X4}");
+        Console.WriteLine(
+            $"TRANSFER_LENGTH={status.TransferTotalLength} NEXT_OFFSET={status.NextOffset} " +
+            $"COMMITTED_GENERATION={status.CommittedGeneration} " +
+            $"COMMITTED_LENGTH={status.CommittedPayloadLength} " +
+            $"COMMITTED_CRC32=0x{status.CommittedPayloadCrc32:X8}");
+    }
+
+    private static OledUiLayoutConfigV1 ParseOledLayout(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new ArgumentException(
+                "config set-layout requires x,y,width,height");
+        }
+
+        var fields = text.Split(',', StringSplitOptions.None);
+        if (fields.Length != 4 ||
+            !byte.TryParse(fields[0], out var x) ||
+            !byte.TryParse(fields[1], out var y) ||
+            !byte.TryParse(fields[2], out var width) ||
+            !byte.TryParse(fields[3], out var height))
+        {
+            throw new ArgumentException(
+                "config set-layout values must be decimal bytes: x y width height");
+        }
+
+        var layout = new OledUiLayoutConfigV1(x, y, width, height);
+        _ = layout.Serialize();
+        return layout;
     }
 
     private static int ParsePingCount(string? text)
@@ -388,6 +474,32 @@ internal static class Program
                 };
             }
 
+            if (remaining[0] == "config")
+            {
+                if (remaining.Count < 2)
+                {
+                    throw new ArgumentException(
+                        "config requires status, read, or set-layout");
+                }
+
+                return remaining[1] switch
+                {
+                    "status" when remaining.Count == 2 =>
+                        new CliArguments("config-status", device, null),
+                    "read" when remaining.Count == 2 =>
+                        new CliArguments("config-read", device, null),
+                    "set-layout" when remaining.Count == 6 =>
+                        new CliArguments(
+                            "config-set-layout",
+                            device,
+                            string.Join(",", remaining.Skip(2))),
+                    "set-layout" => throw new ArgumentException(
+                        "config set-layout requires: <x> <y> <width> <height>"),
+                    _ => throw new ArgumentException(
+                        "config requires status, read, or set-layout"),
+                };
+            }
+
             var command = remaining[0];
             if (command is not (
                     "devices" or
@@ -417,6 +529,9 @@ internal static class Program
                   deus-cp [--device <locator>] apps
                   deus-cp [--device <locator>] app start <id>
                   deus-cp [--device <locator>] app stop
+                  deus-cp [--device <locator>] config status
+                  deus-cp [--device <locator>] config read
+                  deus-cp [--device <locator>] config set-layout <x> <y> <width> <height>
                 """);
         }
     }

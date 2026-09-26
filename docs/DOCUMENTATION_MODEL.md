@@ -95,6 +95,18 @@ Owns only that boundary’s proof criteria and accepted-gate record.
 
 It does not become the global current-state file after publication.
 
+### `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`
+
+Owns the current operational development/acceptance topology:
+
+- canonical repository host/path;
+- physical owner host for target USB, UART and ST-LINK/SWD;
+- Windows -> Mac-mini SSH/SCP coordination boundary;
+- target power/VBUS ownership relevant to physical power-cycle acceptance;
+- execution-domain mapping rules for multi-host harnesses.
+
+It does not define product acceptance state; `CURRENT_STATE.md` and accepted evidence still own that.
+
 ### Evidence / logs
 
 Own actual run proof:
@@ -143,6 +155,7 @@ New active boundaries must use dedicated canonical plans instead.
 - `ARCHITECTURE.md` — architecture/invariants
 - `ROADMAP.md` — forward ordering
 - `FLASH_OWNERSHIP_LAYOUT_DECISION.md` — shared future internal-Flash ownership/reset/application/persistence map; docs-only and non-authorizing by itself
+- `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` — current canonical development/acceptance host, cable and physical-interface ownership topology
 - `HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` — harness/evidence operating rules
 - `DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md` — deferred/trigger policy
 - `USB_IDENTITY_POLICY.md` — private-development USB identity policy
@@ -190,12 +203,12 @@ These are complete and retained as scoped historical contracts:
 These describe accepted narrow reference contracts or explicitly promoted consumer contracts rather than source implementation authority:
 
 - `BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
-- `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` — frozen Gate 0 additive binary transfer ABI; docs-only until Gate 1
-- `ASSET_CONFIGURATION_PERSISTENCE_V1.md` — frozen Gate 0 A/B persistence envelope/atomic selection contract; docs-only until Gate 1
-- `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` — frozen Gate 0 Flash/SRAM/stack resource ceilings; docs-only until Gate 1
-- `ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` — frozen Gate 0 wear/timing/watchdog/USB-continuity contract; docs-only until Gate 1
-- `ASSET_CONFIGURATION_FAULT_INJECTION_V1.md` — frozen Gate 0 deterministic reset/corruption/power-retention acceptance matrix; docs-only until Gate 1
-- `ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` — frozen Gate 0 candidate-bound ST-LINK recovery-bundle/restoration contract; docs-only until Gate 1
+- `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` — frozen additive binary transfer ABI consumed by the active Asset candidate; publication remains pending
+- `ASSET_CONFIGURATION_PERSISTENCE_V1.md` — frozen A/B persistence envelope/atomic selection contract consumed by the active Asset candidate; publication remains pending
+- `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` — frozen Flash/SRAM/stack ceilings enforced by the active Asset acceptance chain
+- `ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` — frozen wear/timing/watchdog/USB-continuity contract for the active Asset candidate
+- `ASSET_CONFIGURATION_FAULT_INJECTION_V1.md` — frozen deterministic reset/corruption/power-retention matrix currently governing Gate 5
+- `ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` — frozen candidate-bound ST-LINK recovery/restoration contract currently governing Gate 5 recovery
 - `OLED_SSD1306_HARDWARE_PROFILE.md`
 - `OLED_UI_ACCEPTED_BASELINE.md`
 - `OLED_CONSOLE_API_CONTRACT.md`
@@ -225,26 +238,22 @@ The broad OLED plans remain deferred. A deliberately narrow subset has now been 
 
 `HOST_MANAGEMENT_PRESENTATION_MODEL.md` is a non-authorizing forward architecture reference: it formalizes CLI/Desktop/Web presentation roles above the accepted Host Control Core without activating Web, networking, packaging/distribution or target-firmware implementation.
 
-### G. Closed Gate-0 / active Gate-1 boundary records
+### G. Active Asset/Configuration boundary records
 
-These canonical files preserve the original fail-closed deferral and now own the reopened Gate 0 design/acceptance work:
+These canonical files preserve the original fail-closed deferral, the reopened Gate-0 contract freeze and the active implementation/acceptance sequence:
 
 - `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 - `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Current status is `GATE 0 COMPLETE — GATE 1 AUTHORIZED / NOT STARTED`. The historical `DEFERRED_NO_REAL_CONSUMER` result remains part of the record and explains why implementation was originally blocked.
+Current status is `GATES 0–6 ACCEPTED BY THE LOCAL ACCEPTANCE COMMIT CANDIDATE — GATE 7 PUBLICATION NEXT`. Campaign A/B, FI-9 idempotency, the 7/7 corruption matrix and one physical VBUS retention proof are accepted; final persistence wear remains `46/64`. Gate-6 activation firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84` advertises capabilities `0x0000003F` and passed production `PublishedOnly` hardware smoke. The historical `DEFERRED_NO_REAL_CONSUMER` result remains part of the record and explains why implementation was originally blocked.
 
 ## 4. Current and future boundaries
 
 ### Current product implementation state
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gate 0 is complete after the 2026-09-22 cross-contract closure audit.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` has progressed through Gates 0–6 in the exact local acceptance commit candidate. Gate 5 fault/recovery/physical-retention acceptance is complete on source tree `f945045221adb52e1aa7a13f4e89b3dbd1ddb5de`; Gate-6 publication activation is hardware-accepted on firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`. Gate 7 ordinary non-force publication is next.
 
-Gate 1 is the active implementation boundary and is authorized only for the bounded source surface frozen in the canonical plan.
-
-The original no-consumer deferral remains historical evidence; it no longer describes current status.
-
-No later hardware/product acceptance gate is active yet.
+The original no-consumer deferral remains historical evidence; it no longer describes current status. The boundary is not published yet. System capability bit 5 was intentionally off through Gate 5 and is enabled only in the accepted Gate-6 activation candidate (`0x0000003F`). The local acceptance commit closes Gate 6; Gate 7 ordinary non-force publication is the remaining step.
 
 ### Planned after an accepted Asset/Configuration boundary
 
@@ -293,14 +302,15 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after the Asset/Configuration Gate 0 reactivation:
+Live documentation inventory after the 2026-09-25 environment/current-state reconciliation:
 
-- Markdown files in `docs/`: `64`;
+- Markdown files in `docs/`: `65`;
 - same-stem `*_ACCEPTANCE_PLAN.md` records: `18`;
 - non-acceptance `*_PLAN.md`-named files: `21`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;
 - all four unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
-- the Asset/Configuration plan and acceptance files form a matched pair; they preserve the historical `DEFERRED_NO_REAL_CONSUMER` result and now record `GATE 0 COMPLETE — GATE 1 AUTHORIZED / NOT STARTED`;
-- no product implementation boundary is currently active.
+- `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` is the canonical operational topology reference, not a product boundary plan;
+- the Asset/Configuration plan and acceptance files form a matched active pair; they preserve the historical `DEFERRED_NO_REAL_CONSUMER` record and now point to active Gate-5 acceptance;
+- the current product implementation boundary is `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, Gate 5.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

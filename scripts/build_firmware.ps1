@@ -1,19 +1,16 @@
 param(
     [Parameter(Mandatory=$true)][string]$ProjectRoot,
     [Parameter(Mandatory=$true)][string]$OutputDir,
-    [string]$ToolchainRoot = "D:\Projects\STM32\Tools\arm-gnu-toolchain-15.3.rel1-mingw-w64-x86_64-arm-none-eabi",
-    [string]$FirmwareSourceTree = "b895955f7738aceb6fca0272d510cc433378c6ab"
+    [Parameter(Mandatory=$true)][string]$FirmwareSourceTree,
+    [string]$ToolchainRoot = "D:\Projects\STM32\Tools\arm-gnu-toolchain-15.3.rel1-mingw-w64-x86_64-arm-none-eabi"
 )
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = "Stop"
 
-$ExpectedTree = "b895955f7738aceb6fca0272d510cc433378c6ab"
-$ExpectedHeaderSha = "F6EAA98172FEE67338BFD978F208BD95731063A1160B0C9C1282306A5D6658A5"
+$FlashAcceptanceCeiling = 54272
+$SramAcceptanceCeiling = 12288
 
-if ($FirmwareSourceTree -ne $ExpectedTree) {
-    throw ("FirmwareSourceTree must equal accepted candidate tree {0}" -f $ExpectedTree)
-}
 if ($FirmwareSourceTree -notmatch '^[0-9a-f]{40}$') {
     throw "FirmwareSourceTree must be 40 lowercase hex characters"
 }
@@ -30,6 +27,7 @@ foreach ($Tool in @($Gcc,$Objcopy,$Size,$Nm)) {
 }
 
 $SourcePaths = @(
+    "src/drivers/flash_persistence.c"
     "src/drivers/iwdg.c"
     "src/drivers/ssd1306.c"
     "src/drivers/usb_device.c"
@@ -42,18 +40,23 @@ $SourcePaths = @(
     "src/kernel/application_commands.c"
     "src/kernel/application_runtime_bridge.c"
     "src/kernel/application_runtime.c"
+    "src/kernel/asset_persistence.c"
+    "src/kernel/asset_transfer.c"
     "src/kernel/binary_frame.c"
     "src/kernel/binary_rpc.c"
     "src/kernel/command_service.c"
     "src/kernel/oled_console.c"
     "src/kernel/oled_status_bar.c"
     "src/kernel/oled_ui_layout.c"
+    "src/kernel/oled_ui_layout_config_v1.c"
     "src/kernel/scheduler_diagnostics.c"
     "src/kernel/scheduler.c"
     "src/kernel/system_identity.c"
     "src/kernel/usb_management.c"
 )
+
 $ObjectNames = @(
+    "src_drivers_flash_persistence.o"
     "src_drivers_iwdg.o"
     "src_drivers_ssd1306.o"
     "src_drivers_usb_device.o"
@@ -66,17 +69,24 @@ $ObjectNames = @(
     "src_kernel_application_commands.o"
     "src_kernel_application_runtime_bridge.o"
     "src_kernel_application_runtime.o"
+    "src_kernel_asset_persistence.o"
+    "src_kernel_asset_transfer.o"
     "src_kernel_binary_frame.o"
     "src_kernel_binary_rpc.o"
     "src_kernel_command_service.o"
     "src_kernel_oled_console.o"
     "src_kernel_oled_status_bar.o"
     "src_kernel_oled_ui_layout.o"
+    "src_kernel_oled_ui_layout_config_v1.o"
     "src_kernel_scheduler_diagnostics.o"
     "src_kernel_scheduler.o"
     "src_kernel_system_identity.o"
     "src_kernel_usb_management.o"
 )
+
+if ($SourcePaths.Count -ne $ObjectNames.Count) {
+    throw "source/object list length mismatch"
+}
 
 $DiscoveredSources = @(
     Get-ChildItem -LiteralPath (Join-Path $ProjectRoot "src") -File -Recurse -Filter "*.c" |
@@ -88,7 +98,8 @@ $DiscoveredSources = @(
 $ExpectedSourcesSorted = @($SourcePaths | Sort-Object)
 $SourceDiff = @(Compare-Object -ReferenceObject $ExpectedSourcesSorted -DifferenceObject $DiscoveredSources)
 if ($SourceDiff.Count -ne 0 -or $DiscoveredSources.Count -ne $SourcePaths.Count) {
-    throw "current firmware C source set differs from recovered historical source list"
+    $SourceDiff | ForEach-Object { Write-Host $_ }
+    throw "current firmware C source set differs from versioned build source list"
 }
 
 if (Test-Path -LiteralPath $OutputDir) {
@@ -104,9 +115,6 @@ $HeaderText = "#ifndef DEUS_BUILD_IDENTITY_H`r`n#define DEUS_BUILD_IDENTITY_H`r`
     [System.Text.UTF8Encoding]::new($false)
 )
 $HeaderSha = (Get-FileHash -LiteralPath $Header -Algorithm SHA256).Hash.ToUpperInvariant()
-if ($HeaderSha -ne $ExpectedHeaderSha) {
-    throw ("generated build identity header mismatch: {0}" -f $HeaderSha)
-}
 
 function Invoke-Tool {
     param(
@@ -127,7 +135,6 @@ $CommonC = @(
     "-mcpu=cortex-m3",
     "-mthumb",
     "-std=c11",
-    "-O2",
     "-g3",
     "-ffreestanding",
     "-fno-builtin",
@@ -143,12 +150,27 @@ $CommonC = @(
 )
 
 $Objects = [System.Collections.Generic.List[string]]::new()
+
+$SizeOptimizedSources = @(
+    "src/drivers/flash_persistence.c"
+    "src/kernel/asset_persistence.c"
+    "src/kernel/asset_transfer.c"
+    "src/kernel/oled_ui_layout_config_v1.c"
+)
+
 for ($i = 0; $i -lt $SourcePaths.Count; ++$i) {
     $Source = Join-Path $ProjectRoot $SourcePaths[$i].Replace("/","\")
     $Object = Join-Path $OutputDir $ObjectNames[$i]
+    $Optimization = if ($SizeOptimizedSources -contains $SourcePaths[$i]) {
+        "-Os"
+    } else {
+        "-O2"
+    }
+
     Invoke-Tool -Label ("compile-" + $ObjectNames[$i]) -Exe $Gcc -Arguments (
-        $CommonC + @("-c",$Source,"-o",$Object)
+        $CommonC + @($Optimization,"-c",$Source,"-o",$Object)
     )
+
     $Objects.Add($Object)
 }
 
@@ -180,16 +202,40 @@ foreach ($Arg in @(
 )) {
     $LinkArgs.Add($Arg)
 }
-foreach ($Object in $Objects) { $LinkArgs.Add($Object) }
+
+foreach ($Object in $Objects) {
+    $LinkArgs.Add($Object)
+}
+
 $LinkArgs.Add("-lgcc")
 Invoke-Tool -Label "link" -Exe $Gcc -Arguments @($LinkArgs)
 
 Invoke-Tool -Label "objcopy-bin" -Exe $Objcopy -Arguments @("-O","binary",$Elf,$Bin)
-Invoke-Tool -Label "size" -Exe $Size -Arguments @($Elf)
+
+$SizeLines = @(& $Size $Elf)
+$SizeRc = $LASTEXITCODE
+$SizeLines | ForEach-Object { Write-Host $_ }
+if ($SizeRc -ne 0) {
+    throw ("size failed with exit {0}" -f $SizeRc)
+}
+
+$SizeDataLine = $SizeLines | Select-Object -Last 1
+if ($SizeDataLine -notmatch '^\s*(\d+)\s+(\d+)\s+(\d+)\s+') {
+    throw ("cannot parse arm-none-eabi-size output: {0}" -f $SizeDataLine)
+}
+
+$TextBytes = [int64]$Matches[1]
+$DataBytes = [int64]$Matches[2]
+$BssBytes = [int64]$Matches[3]
+$FlashUsage = $TextBytes + $DataBytes
+$SramUsage = $DataBytes + $BssBytes
+
 Invoke-Tool -Label "nm-undefined" -Exe $Nm -Arguments @("-u",$Elf)
 
 $Undefined = @(& $Nm -u $Elf)
-if ($LASTEXITCODE -ne 0) { throw "nm -u failed" }
+if ($LASTEXITCODE -ne 0) {
+    throw "nm -u failed"
+}
 if ($Undefined.Count -ne 0) {
     throw ("undefined symbols remain: {0}" -f ($Undefined -join "; "))
 }
@@ -197,11 +243,30 @@ if ($Undefined.Count -ne 0) {
 $BinInfo = Get-Item -LiteralPath $Bin
 $ElfInfo = Get-Item -LiteralPath $Elf
 $MapInfo = Get-Item -LiteralPath $Map
+
+if ($BinInfo.Length -ne $FlashUsage) {
+    throw ("BIN size {0} does not match text+data Flash usage {1}" -f $BinInfo.Length,$FlashUsage)
+}
+if ($FlashUsage -gt $FlashAcceptanceCeiling) {
+    throw ("Flash usage {0} exceeds Asset Gate-2 ceiling {1}" -f $FlashUsage,$FlashAcceptanceCeiling)
+}
+if ($SramUsage -gt $SramAcceptanceCeiling) {
+    throw ("SRAM usage {0} exceeds Asset Gate-2 ceiling {1}" -f $SramUsage,$SramAcceptanceCeiling)
+}
+
 $BinSha = (Get-FileHash -LiteralPath $Bin -Algorithm SHA256).Hash.ToUpperInvariant()
 $ElfSha = (Get-FileHash -LiteralPath $Elf -Algorithm SHA256).Hash.ToUpperInvariant()
 $MapSha = (Get-FileHash -LiteralPath $Map -Algorithm SHA256).Hash.ToUpperInvariant()
 
+Write-Host ("BUILD_SOURCE_TREE={0}" -f $FirmwareSourceTree)
 Write-Host ("BUILD_HEADER_SHA256={0}" -f $HeaderSha)
+Write-Host ("BUILD_TEXT={0}" -f $TextBytes)
+Write-Host ("BUILD_DATA={0}" -f $DataBytes)
+Write-Host ("BUILD_BSS={0}" -f $BssBytes)
+Write-Host ("BUILD_FLASH={0}" -f $FlashUsage)
+Write-Host ("BUILD_FLASH_CEILING={0}" -f $FlashAcceptanceCeiling)
+Write-Host ("BUILD_SRAM={0}" -f $SramUsage)
+Write-Host ("BUILD_SRAM_CEILING={0}" -f $SramAcceptanceCeiling)
 Write-Host ("BUILD_BIN_SIZE={0}" -f $BinInfo.Length)
 Write-Host ("BUILD_BIN_SHA256={0}" -f $BinSha)
 Write-Host ("BUILD_ELF_SIZE={0}" -f $ElfInfo.Length)

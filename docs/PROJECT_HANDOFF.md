@@ -14,8 +14,9 @@ For a fresh session, read in this order:
 2. `docs/DOCUMENTATION_MODEL.md` — source-of-truth precedence;
 3. `docs/ARCHITECTURE.md` — stable architecture/invariants;
 4. `docs/ROADMAP.md` — forward sequence;
-5. the active boundary’s dedicated `*_PLAN.md` / `*_ACCEPTANCE_PLAN.md` once they exist;
-6. `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` before building acceptance harnesses.
+5. `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` — which host physically owns USB, UART, ST-LINK and the canonical repository;
+6. the active boundary’s dedicated `*_PLAN.md` / `*_ACCEPTANCE_PLAN.md`;
+7. `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` before building acceptance harnesses.
 
 Historical execution detail lives in `docs/MASTER_EXECUTION_CHECKLIST.md` and `CHANGELOG.md`.
 
@@ -63,11 +64,13 @@ UART diagnostics:
 
 USB / display:
 
-- target CDC may enumerate as `COM5` on Windows
-- product management uses native USB WinUSB management interface
-- CDC remains secondary diagnostics
-- physical micro-USB unplug/replug is a power-cycle event because it is also the target power source
-- accepted OLED is SSD1306-class native `128x32` at I2C address `0x3C`
+- **current bench USB owner is the Ubuntu host on the Mac mini**, reached from Windows through `deus@macmini` / SSH alias `macmini`;
+- current target USB management is therefore exercised through Linux libusb on the Mac mini; CDC IF0/1 remains on Linux `cdc_acm`;
+- Windows WinUSB remains an accepted product transport when the target is physically attached to Windows, but it is not the current cable owner;
+- Windows owns ST-LINK/SWD and CH340/UART in the current bench;
+- the target USB cable is also the normal target power source, so the required physical power-cycle/reconnect action occurs on the Mac-mini USB connection;
+- accepted OLED is SSD1306-class native `128x32` at I2C address `0x3C`;
+- exact operational topology and cross-host harness rules are canonical in `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.
 
 ## 4. Toolchain
 
@@ -84,12 +87,15 @@ Host:
 - Linux libusb
 - Avalonia desktop
 
-Linux acceptance host used during Host Control acceptance:
+Linux USB/runtime host on the current Mac-mini bench:
 
-- Ubuntu 26.04.1 LTS
-- x86_64
-- libusb 1.0.29
-- usbutils 019
+- SSH endpoint `deus@macmini` / alias `macmini`;
+- Ubuntu 26.04.1 LTS;
+- x86_64;
+- .NET SDK 10.0.112 in the accepted environment baseline;
+- libusb 1.0.29;
+- usbutils 019;
+- no persistent canonical repository on the Mac mini is assumed; exact payloads are transferred to bounded remote temporary directories when required.
 
 Exact current accepted product identities and versions are in `docs/CURRENT_STATE.md`.
 
@@ -97,9 +103,10 @@ Exact current accepted product identities and versions are in `docs/CURRENT_STAT
 
 - Fail closed on unexpected repository/source state.
 - Distinguish PRODUCT, HARNESS, ENVIRONMENT and EVIDENCE/STATE failures.
-- Inspect both external log and full evidence ZIP before classifying hardware/runtime acceptance.
+- Inspect the authoritative self-contained evidence ZIP before classifying hardware/runtime acceptance; `run.log` is inside it, and any loose external log is optional compatibility output only.
 - Do not treat terminal PASS text alone as acceptance proof.
 - Build acceptance harnesses **primitive-first**: independently prove PowerShell process control, SSH/SCP, Git archive portability, .NET/MTP test invocation and any hardware-access primitive on the real execution domain before composing one collector.
+- Never collapse the current split-host bench into one generic host: USB/libusb lives on `deus@macmini`; ST-LINK/CubeProgrammer and CH340/UART live on Windows. A Windows-driven reset/Flash step that needs runtime proof must verify USB recovery remotely on the Mac mini.
 - Do **not** respond to harness failures with a `v1 -> v2 -> v3 -> ...` patch train. Freeze the composed collector, isolate/prove the failed primitive, then regenerate the collector from proven primitives. See `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` section 5.
 - Keep firmware/host source mutation separate from docs/evidence repair.
 - Do not amend accepted commits to repair harness/evidence mistakes.
@@ -122,7 +129,7 @@ Acceptance evidence should preserve:
 - build/resource results;
 - hardware/runtime diagnostics where applicable;
 - final classification;
-- external log plus full evidence archive;
+- one self-contained authoritative evidence ZIP containing chronological `run.log`, structured `outcome.txt`, raw command evidence and hashes; a loose duplicate log is optional only;
 - hashes of bound prior evidence where a composite/repaired verifier is used.
 
 Historical evidence hashes are retained in the relevant boundary acceptance plan, execution ledger and changelog.
@@ -134,6 +141,7 @@ Current-state facts must not be duplicated here.
 Use:
 
 - current state: `docs/CURRENT_STATE.md`
+- development/acceptance topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`
 - architecture: `docs/ARCHITECTURE.md`
 - roadmap: `docs/ROADMAP.md`
 - deferred ideas: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`

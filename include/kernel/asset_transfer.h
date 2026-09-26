@@ -1,0 +1,59 @@
+#ifndef KERNEL_ASSET_TRANSFER_H
+#define KERNEL_ASSET_TRANSFER_H
+
+#include <stdint.h>
+#include "kernel/binary_frame.h"
+
+#define ASSET_TRANSFER_PROTOCOL_VERSION 1u
+#define ASSET_TRANSFER_OBJECT_MAX       960u
+#define ASSET_TRANSFER_CHUNK_MAX        32u
+#define ASSET_TRANSFER_RESPONSE_DATA_MAX 32u
+#define ASSET_TRANSFER_RESPONSE_PAYLOAD_MAX 50u
+#define ASSET_TRANSFER_RESPONSE_WIRE_MAX     (BINARY_FRAME_FIXED_PREFIX_BYTES +      ASSET_TRANSFER_RESPONSE_PAYLOAD_MAX +      BINARY_FRAME_CRC_BYTES)
+#define ASSET_TRANSFER_IDLE_TIMEOUT_MS  30000u
+
+typedef enum
+{
+    ASSET_TRANSFER_STATUS_OK = 0u,
+    ASSET_TRANSFER_STATUS_MALFORMED = 1u,
+    ASSET_TRANSFER_STATUS_BAD_FLAGS = 2u,
+    ASSET_TRANSFER_STATUS_BAD_OPCODE = 3u,
+    ASSET_TRANSFER_STATUS_BAD_OBJECT_TYPE = 4u,
+    ASSET_TRANSFER_STATUS_BAD_SCHEMA = 5u,
+    ASSET_TRANSFER_STATUS_BAD_LENGTH = 6u,
+    ASSET_TRANSFER_STATUS_BAD_TRANSFER_ID = 7u,
+    ASSET_TRANSFER_STATUS_BUSY = 8u,
+    ASSET_TRANSFER_STATUS_BAD_STATE = 9u,
+    ASSET_TRANSFER_STATUS_BAD_OFFSET = 10u,
+    ASSET_TRANSFER_STATUS_DATA_CONFLICT = 11u,
+    ASSET_TRANSFER_STATUS_CRC_MISMATCH = 12u,
+    ASSET_TRANSFER_STATUS_VALIDATION_FAILED = 13u,
+    ASSET_TRANSFER_STATUS_NOT_FOUND = 14u,
+    ASSET_TRANSFER_STATUS_GENERATION_MISMATCH = 15u,
+    ASSET_TRANSFER_STATUS_STORAGE_ERROR = 16u,
+    ASSET_TRANSFER_STATUS_WEAR_BUDGET_EXHAUSTED = 17u,
+    ASSET_TRANSFER_STATUS_INTERNAL_ERROR = 18u
+} asset_transfer_status_t;
+
+typedef enum
+{
+    ASSET_TRANSFER_SESSION_NONE = 0u,
+    ASSET_TRANSFER_SESSION_RECEIVING = 1u,
+    ASSET_TRANSFER_SESSION_COMPLETE_UNCOMMITTED = 2u
+} asset_transfer_session_state_t;
+
+typedef int (*asset_transfer_send_wire_t)(
+    void *context,
+    const uint8_t *data,
+    uint32_t length);
+
+void asset_transfer_init(void);
+void asset_transfer_reset_session(void);
+void asset_transfer_poll(void);
+
+int asset_transfer_handle_frame(
+    const binary_frame_view_t *frame,
+    asset_transfer_send_wire_t send_wire,
+    void *send_context);
+
+#endif

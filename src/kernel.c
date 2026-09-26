@@ -15,6 +15,7 @@
 #include "kernel/application_runtime.h"
 #include "kernel/application_runtime_bridge.h"
 #include "kernel/application_commands.h"
+#include "kernel/asset_persistence.h"
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
 #include "kernel/usb_management.h"
@@ -289,6 +290,7 @@ static uint32_t boot_desktop_ui_initialized;
 static uint32_t boot_desktop_ui_uptime_saturated;
 static uint32_t boot_desktop_ui_snapshot_valid;
 static uint32_t boot_desktop_ui_panel_initialized;
+static uint32_t boot_desktop_ui_layout_revision;
 static boot_desktop_ui_snapshot_t boot_desktop_ui_last_snapshot;
 
 static command_service_status_t console_execute_request(
@@ -469,7 +471,8 @@ static const binary_rpc_binding_t usb_cdc_binary_rpc_binding =
     (void *)0,
     console_execute_request,
     (void *)0,
-    PRODUCTION_USB_CDC_RX_EVENT
+    PRODUCTION_USB_CDC_RX_EVENT,
+    BINARY_RPC_CAPABILITY_FLAGS_CDC
 };
 
 static const binary_rpc_binding_t usb_management_binary_rpc_binding =
@@ -478,7 +481,8 @@ static const binary_rpc_binding_t usb_management_binary_rpc_binding =
     (void *)0,
     console_execute_request,
     (void *)0,
-    PRODUCTION_USB_MANAGEMENT_RX_EVENT
+    PRODUCTION_USB_MANAGEMENT_RX_EVENT,
+    BINARY_RPC_CAPABILITY_FLAGS_MANAGEMENT
 };
 
 static void console_write(
@@ -1518,6 +1522,7 @@ static void boot_desktop_ui_initialize(void)
     boot_desktop_ui_uptime_saturated = 0u;
     boot_desktop_ui_snapshot_valid = 0u;
     boot_desktop_ui_panel_initialized = 0u;
+    boot_desktop_ui_layout_revision = oled_ui_layout_revision();
     oled_status_bar_init(&boot_desktop_ui_status);
     boot_desktop_ui_initialized = 1u;
 }
@@ -1683,6 +1688,7 @@ static int boot_desktop_ui_render(int force)
         (force == 0) &&
         (boot_desktop_ui_snapshot_valid != 0u) &&
         (application_runtime_bridge_view_dirty() == 0) &&
+        (boot_desktop_ui_layout_revision == oled_ui_layout_revision()) &&
         (boot_desktop_ui_snapshot_equal(
             &snapshot,
             &boot_desktop_ui_last_snapshot) != 0)
@@ -1690,7 +1696,7 @@ static int boot_desktop_ui_render(int force)
         return 1;
     }
 
-    layout = oled_ui_layout_default();
+    layout = oled_ui_layout_active();
 
     if (
         (layout == (const oled_ui_layout_t *)0) ||
@@ -1836,6 +1842,7 @@ static int boot_desktop_ui_render(int force)
     }
 
     boot_desktop_ui_last_snapshot = snapshot;
+    boot_desktop_ui_layout_revision = oled_ui_layout_revision();
     boot_desktop_ui_snapshot_valid = 1u;
 
     return 1;
@@ -3284,6 +3291,7 @@ void kernel_main(void)
         SSD1306_WIDTH,
         SSD1306_HEIGHT);
     oled_console_init(&oled_console_state);
+    asset_persistence_init();
     application_runtime_bridge_reset();
     faults_init();
     if (usb_device_init(core_clock_hz) == 0)
