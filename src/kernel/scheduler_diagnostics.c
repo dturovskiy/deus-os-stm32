@@ -83,6 +83,44 @@ static command_service_status_t scheduler_diagnostics_execute_bound_request(
         (void *)0);
 }
 
+static int scheduler_diagnostics_init_default_stacks(void)
+{
+    uint32_t task_index;
+
+    if (
+        (scheduler_diagnostics_bindings ==
+            (const scheduler_diagnostics_bindings_t *)0) ||
+        (scheduler_diagnostics_bindings->console_stack == (uint32_t *)0) ||
+        (scheduler_diagnostics_bindings->console_stack_words <
+            (SCHEDULER_TASK_COUNT * SCHEDULER_TASK_STACK_WORDS))
+    ) {
+        return 0;
+    }
+
+    if (scheduler_init() == 0)
+    {
+        return 0;
+    }
+
+    for (task_index = 0u;
+         task_index < SCHEDULER_TASK_COUNT;
+         ++task_index)
+    {
+        if (
+            scheduler_task_stack_bind(
+                task_index,
+                &scheduler_diagnostics_bindings->console_stack[
+                    task_index * SCHEDULER_TASK_STACK_WORDS],
+                SCHEDULER_TASK_STACK_WORDS) == 0
+        ) {
+            (void)scheduler_init();
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 static void scheduler_workload_oled_task(void *argument)
 {
     (void)argument;
@@ -118,7 +156,9 @@ static void scheduler_workload_cpu_peer_task(void *argument)
 
 static void console_scheduler_test(command_service_context_t *context)
 {
-    if (scheduler_self_test() != 0)
+    if (scheduler_self_test(
+            scheduler_diagnostics_bindings->console_stack,
+            scheduler_diagnostics_bindings->console_stack_words) != 0)
     {
         console_write_line(context, "SCHED_FOUNDATION_OK");
     }
@@ -130,7 +170,9 @@ static void console_scheduler_test(command_service_context_t *context)
 
 static void console_scheduler_cooperative_test(command_service_context_t *context)
 {
-    if (scheduler_cooperative_self_test() != 0)
+    if (scheduler_cooperative_self_test(
+            scheduler_diagnostics_bindings->console_stack,
+            scheduler_diagnostics_bindings->console_stack_words) != 0)
     {
         console_write_line(context, "SCHED_COOP_OK");
     }
@@ -142,7 +184,9 @@ static void console_scheduler_cooperative_test(command_service_context_t *contex
 
 static void console_scheduler_preemptive_test(command_service_context_t *context)
 {
-    if (scheduler_preemptive_self_test() != 0)
+    if (scheduler_preemptive_self_test(
+            scheduler_diagnostics_bindings->console_stack,
+            scheduler_diagnostics_bindings->console_stack_words) != 0)
     {
         console_write_line(context, "SCHED_PREEMPT_OK");
     }
@@ -168,13 +212,17 @@ static void console_scheduler_stack_water_test(command_service_context_t *contex
     int preempt_result;
     int passed;
 
-    coop_result = scheduler_cooperative_self_test();
+    coop_result = scheduler_cooperative_self_test(
+            scheduler_diagnostics_bindings->console_stack,
+            scheduler_diagnostics_bindings->console_stack_words);
     coop_used0 = scheduler_stack_high_water_bytes(0u);
     coop_used1 = scheduler_stack_high_water_bytes(1u);
     coop_canary0 = scheduler_stack_canary_intact(0u);
     coop_canary1 = scheduler_stack_canary_intact(1u);
 
-    preempt_result = scheduler_preemptive_self_test();
+    preempt_result = scheduler_preemptive_self_test(
+            scheduler_diagnostics_bindings->console_stack,
+            scheduler_diagnostics_bindings->console_stack_words);
     preempt_used0 = scheduler_stack_high_water_bytes(0u);
     preempt_used1 = scheduler_stack_high_water_bytes(1u);
     preempt_canary0 = scheduler_stack_canary_intact(0u);
@@ -245,7 +293,7 @@ static void console_scheduler_workload_test(command_service_context_t *context)
     int start_result;
     int passed;
 
-    if (scheduler_init() == 0)
+    if (scheduler_diagnostics_init_default_stacks() == 0)
     {
         console_write_line(context, "SCHED_WORKLOAD_PREPARE_ERR");
         return;
@@ -456,6 +504,7 @@ static void console_scheduler_console_probe_test(command_service_context_t *cont
     int canary0;
     int canary1;
     int bind_result;
+    int peer_bind_result;
     int prepare0;
     int prepare1;
     int start_result;
@@ -480,6 +529,12 @@ static void console_scheduler_console_probe_test(command_service_context_t *cont
             scheduler_diagnostics_bindings->console_stack,
             scheduler_diagnostics_bindings->console_stack_words);
 
+    peer_bind_result =
+        scheduler_task_stack_bind(
+            1u,
+            scheduler_diagnostics_bindings->peer_stack,
+            scheduler_diagnostics_bindings->peer_stack_words);
+
     prepare0 =
         scheduler_task_prepare(
             0u,
@@ -494,6 +549,7 @@ static void console_scheduler_console_probe_test(command_service_context_t *cont
 
     if (
         (bind_result == 0) ||
+        (peer_bind_result == 0) ||
         (prepare0 == 0) ||
         (prepare1 == 0)
     ) {
@@ -702,7 +758,7 @@ static void console_scheduler_wait_wake_test(command_service_context_t *context)
     int start_result;
     int passed;
 
-    if (scheduler_init() == 0)
+    if (scheduler_diagnostics_init_default_stacks() == 0)
     {
         console_write_line(context, "SCHED_WAIT_WAKE_PREPARE_ERR");
         return;
@@ -922,7 +978,7 @@ static void console_scheduler_isolation_test(command_service_context_t *context)
     int start_result;
     int passed;
 
-    if (scheduler_init() == 0)
+    if (scheduler_diagnostics_init_default_stacks() == 0)
     {
         console_write_line(context, "SCHED_ISOLATE_PREPARE_ERR");
         return;

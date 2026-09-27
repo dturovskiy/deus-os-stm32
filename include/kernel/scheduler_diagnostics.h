@@ -19,6 +19,8 @@ typedef struct
     scheduler_diagnostics_uart_try_getc_t uart_try_getc;
     uint32_t *console_stack;
     uint32_t console_stack_words;
+    uint32_t *peer_stack;
+    uint32_t peer_stack_words;
     uint32_t console_min_margin_bytes;
     uint32_t uart_rx_event_mask;
 } scheduler_diagnostics_bindings_t;

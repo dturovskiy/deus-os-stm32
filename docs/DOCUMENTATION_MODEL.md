@@ -203,18 +203,18 @@ These are complete and retained as scoped historical contracts:
 These describe accepted narrow reference contracts or explicitly promoted consumer contracts rather than source implementation authority:
 
 - `BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
-- `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` — frozen additive binary transfer ABI consumed by the active Asset candidate; publication remains pending
-- `ASSET_CONFIGURATION_PERSISTENCE_V1.md` — frozen A/B persistence envelope/atomic selection contract consumed by the active Asset candidate; publication remains pending
-- `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` — frozen Flash/SRAM/stack ceilings enforced by the active Asset acceptance chain
-- `ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` — frozen wear/timing/watchdog/USB-continuity contract for the active Asset candidate
-- `ASSET_CONFIGURATION_FAULT_INJECTION_V1.md` — frozen deterministic reset/corruption/power-retention matrix currently governing Gate 5
-- `ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` — frozen candidate-bound ST-LINK recovery/restoration contract currently governing Gate 5 recovery
+- `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` — frozen additive binary transfer ABI consumed by the published Asset boundary
+- `ASSET_CONFIGURATION_PERSISTENCE_V1.md` — frozen A/B persistence envelope/atomic selection contract consumed by the published Asset boundary
+- `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` — frozen Flash/SRAM/stack ceilings that governed the published Asset acceptance
+- `ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` — frozen wear/timing/watchdog/USB-continuity contract satisfied by the published Asset boundary
+- `ASSET_CONFIGURATION_FAULT_INJECTION_V1.md` — frozen deterministic reset/corruption/power-retention matrix satisfied by published Gate-5 acceptance
+- `ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` — frozen candidate-bound ST-LINK recovery/restoration contract satisfied by published Gate-5 acceptance
 - `OLED_SSD1306_HARDWARE_PROFILE.md`
 - `OLED_UI_ACCEPTED_BASELINE.md`
 - `OLED_CONSOLE_API_CONTRACT.md`
 - `OLED_CONSOLE_ARCHITECTURE.md`
 - `OLED_CONSOLE_ACCEPTANCE_PLAN.md`
-- `OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md` — promoted concrete consumer contract for reopened Asset/Configuration Gate 0; not source implementation authority by itself
+- `OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md` — promoted concrete consumer contract consumed by the published Asset boundary; not source implementation authority by itself
 
 ### E. Historical implementation records
 
@@ -238,36 +238,53 @@ The broad OLED plans remain deferred. A deliberately narrow subset has now been 
 
 `HOST_MANAGEMENT_PRESENTATION_MODEL.md` is a non-authorizing forward architecture reference: it formalizes CLI/Desktop/Web presentation roles above the accepted Host Control Core without activating Web, networking, packaging/distribution or target-firmware implementation.
 
-### G. Active Asset/Configuration boundary records
+### G. Published Asset/Configuration boundary records
 
-These canonical files preserve the original fail-closed deferral, the reopened Gate-0 contract freeze and the active implementation/acceptance sequence:
+These canonical files preserve the original fail-closed deferral, the reopened Gate-0
+contract freeze, implementation acceptance and final publication:
 
 - `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 - `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-Current status is `GATES 0–6 ACCEPTED BY THE LOCAL ACCEPTANCE COMMIT CANDIDATE — GATE 7 PUBLICATION NEXT`. Campaign A/B, FI-9 idempotency, the 7/7 corruption matrix and one physical VBUS retention proof are accepted; final persistence wear remains `46/64`. Gate-6 activation firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84` advertises capabilities `0x0000003F` and passed production `PublishedOnly` hardware smoke. The historical `DEFERRED_NO_REAL_CONSUMER` result remains part of the record and explains why implementation was originally blocked.
+Current status is `GATES 0–7 ACCEPTED / PUBLISHED
+562e786ffa734da055c23144ec4256bc8961bbaf`. Campaign A/B, FI-9 idempotency, the
+7/7 corruption matrix and one physical VBUS retention proof are accepted; final
+persistence wear remains `46/64`. Publication-activation firmware tree
+`12f0a0ffaa4597d9ada8b78ecee324d77db79d84` advertises capabilities `0x0000003F`
+and passed production `PublishedOnly` hardware smoke. The historical
+`DEFERRED_NO_REAL_CONSUMER` result remains part of the record and explains why
+implementation was originally blocked.
+
+### H. Active pre-Bootloader recovery records
+
+- `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`
+- `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`
+
+This boundary is behavior-preserving. Gate 0 is accepted; Gate 1 is build/measurement
+only and performs no target I/O or product-source mutation.
 
 ## 4. Current and future boundaries
 
 ### Current product implementation state
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` has progressed through Gates 0–6 in the exact local acceptance commit candidate. Gate 5 fault/recovery/physical-retention acceptance is complete on source tree `f945045221adb52e1aa7a13f4e89b3dbd1ddb5de`; Gate-6 publication activation is hardware-accepted on firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`. Gate 7 ordinary non-force publication is next.
+`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is active. It starts from the
+published Asset parent `562e786ffa734da055c23144ec4256bc8961bbaf`, with only
+`4` bytes Flash acceptance headroom and `344` bytes static-SRAM acceptance
+headroom. Gate 0 documentation/read-only audit is accepted; Gate 1 is the
+measurement-only resource-attribution step.
 
-The original no-consumer deferral remains historical evidence; it no longer describes current status. The boundary is not published yet. System capability bit 5 was intentionally off through Gate 5 and is enabled only in the accepted Gate-6 activation candidate (`0x0000003F`). The local acceptance commit closes Gate 6; Gate 7 ordinary non-force publication is the remaining step.
-
-### Planned after an accepted Asset/Configuration boundary
+### Planned after the recovery boundary
 
 `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`
 
-No canonical plan/acceptance files yet.
+No canonical Bootloader plan/acceptance files yet. Bootloader Gate 0 is not authorized
+until the recovery boundary is accepted and published.
 
 ### Later
 
 Networking/service extensions.
 
 Host-management presentation evolution is described by `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`. That reference does not itself promote a Web/service/network boundary.
-
-No canonical implementation boundary is active yet.
 
 ## 5. Promotion rule for deferred work
 
@@ -302,15 +319,17 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after the 2026-09-25 environment/current-state reconciliation:
+Live documentation inventory after the 2026-09-26 Asset post-publication reconciliation:
 
-- Markdown files in `docs/`: `65`;
-- same-stem `*_ACCEPTANCE_PLAN.md` records: `18`;
-- non-acceptance `*_PLAN.md`-named files: `21`;
+- Markdown files in `docs/`: `67`;
+- `*_ACCEPTANCE_PLAN.md` records: `19`;
+- non-acceptance `*_PLAN.md`-named files: `22`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;
-- all four unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
+- the sole unmatched same-stem acceptance name is `OLED_CONSOLE_ACCEPTANCE_PLAN.md`, which is the historical semantic pair for `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`;
+- the remaining unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
 - `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` is the canonical operational topology reference, not a product boundary plan;
-- the Asset/Configuration plan and acceptance files form a matched active pair; they preserve the historical `DEFERRED_NO_REAL_CONSUMER` record and now point to active Gate-5 acceptance;
-- the current product implementation boundary is `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, Gate 5.
+- the Asset/Configuration plan and acceptance files form a matched published pair and preserve the historical `DEFERRED_NO_REAL_CONSUMER` record plus final Gates 0–7 publication;
+- the new pre-Bootloader recovery plan and acceptance files form a matched active pair;
+- the current product implementation boundary is `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY`: Gate 0 accepted, Gate 1 measurement-only attribution next.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

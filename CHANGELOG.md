@@ -1,3 +1,37 @@
+## 2026-09-26
+
+### Published — Asset / Configuration transfer foundation — Gates 0–7 accepted
+
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` is published at commit
+`562e786ffa734da055c23144ec4256bc8961bbaf`, tree
+`88720a614794d5aef93cf13ac762a4095cb17baf`. The accepted publication-activation
+candidate uses firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`, host tree
+`136687e80c42bd8104ad6c37fbbccb915b60fd08`, BIN SHA-256
+`7EDB650B78D6778C57BA477EC466B31E3AC5CE693ECF933E04B42AC3F0B23F9F`,
+Flash/SRAM `54268/11944`, whole-Flash SHA-256
+`CD31D49985753E08F3AE123F0AF7BF136AC510AA2D40E3D5CB4FDF5EBEF9D737`, and system
+capabilities `0x0000003F`. The boundary accepts bounded management-IF2 transfer,
+persistent A/B configuration, deterministic fault/corruption recovery, lost-response
+idempotency and physical VBUS retention for the exact 8-byte
+`OLED_UI_LAYOUT_CONFIG_V1` consumer. Final accepted persistence wear is `46/64`.
+
+### Post-publication documentation reconciliation and pre-Bootloader recovery Gate 0
+
+A repository-wide documentation/code audit found that Asset publication had completed
+while several canonical status headers still described Gate 7 as pending. Current-state,
+roadmap, documentation-model, architecture, Asset contract status, consumer, gap-review,
+deferred-backlog, README, changelog and execution-ledger text are reconciled without
+changing historical evidence bodies.
+
+The same audit freezes `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` as the exact
+behavior-preserving prerequisite before `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The
+published Asset image has only 4 bytes under its Flash acceptance ceiling and 344 bytes
+under its static-SRAM ceiling. Gate 1 is measurement-only: exact map/object/symbol/stack
+attribution and controlled per-family `-Os` variants, with no target I/O or product
+source mutation. The current audit also records the 1-KiB default scheduler stack store
+as a concrete SRAM-recovery candidate and keeps host `DeusDeviceClient` decomposition
+as a separate host-only trigger rather than inflating the target cleanup boundary.
+
 ## 2026-09-22
 
 ### Asset transfer halfword/chunk staging clarified before handler implementation

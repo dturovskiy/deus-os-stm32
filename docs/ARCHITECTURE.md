@@ -13,7 +13,7 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - generic timers, queues, synchronization primitives and runtime statistics remain consumer-driven extensions; scheduler-internal PRIMASK save/restore is not a public mutex/semaphore API;
 - host-facing system identity is explicit through `sysinfo` and remains distinct from USB identity and transport protocol capability flags;
 - accepted `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` candidate tree `883cecc8d78306fa28b252332dc9d654fde95b5a` uses Flash `48636/65536`, SRAM `10032/20480`, and final task0/task1 margins `384/424`; `src/kernel.c` is reduced from `5100` to `3405` lines with application bridge, application command and scheduler diagnostic ownership extracted without a universal god object or hidden cross-module state; Gate 2 evidence is `E46AD8B481D612D29F9E514106D11A9FAF861FA0CAF22AF6764D2711B6485549`, Gate 3 evidence is `2FE593A80FB42BF3808AFAE397A3205FD64824873FF867ED3277D91010AFAC42`, and Gate 4 is `PHYSICAL_OLED=PASS`; after publication, `USB_MANAGEMENT_DEVICE_FOUNDATION` owns the production Windows USB profile: vendor-specific WinUSB management transport with explicit product identity/device-interface GUID, reusing the accepted binary RPC above transport; CDC/COM must not remain the primary production host API;
-- persistent target state requires versioning, integrity, atomic commit/recovery and Flash wear policy before acceptance;
+- bounded persistent target state v1 is accepted through published `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`; any broader storage/update format still requires its own versioning, integrity, atomic recovery and wear policy;
 - current `fault_record` is normal `.bss` runtime state and is cleared by reset; bounded previous-boot crash/reset retention is later observability work;
 - CRC-16 and explicit destructive intent are not authentication; trust-sensitive network mutation and firmware update require a separate security/authenticity contract;
 - controlled reboot/update handoff belongs to the update/bootloader boundary;
@@ -34,6 +34,40 @@ Canonical forward reference: `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
 Host presentation remains layered above the accepted transport-neutral `DeusOs.Control.Core`: CLI is first-class and headless-capable; Avalonia Desktop is an optional workstation frontend; any future Web UI must consume Core or a bounded host-management service API rather than reimplement the STM32 binary protocol in browser code. Presentation choice must not determine physical transport policy.
 
 A future local browser surface does not by itself create a network-management boundary. Any LAN/Wi-Fi/remote management exposure requires a separately reviewed authentication/authorization/security contract before it may be described as secure or remotely manageable.
+
+## Published boundary — Asset / Configuration transfer foundation
+
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` is accepted through Gate 7 and published at
+`562e786ffa734da055c23144ec4256bc8961bbaf`, tree
+`88720a614794d5aef93cf13ac762a4095cb17baf`. The publication-activation firmware tree
+is `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`, with Flash/SRAM `54268/11944`,
+system capabilities `0x0000003F`, and final accepted persistence wear `46/64`.
+
+The accepted v1 surface is deliberately narrow: management-IF2 binary transfer,
+persistent A/B pages 62/63 and object type `0x0001` carrying exactly the 8-byte
+`OLED_UI_LAYOUT_CONFIG_V1` console clip. The accepted 128x9 status bar remains
+system-owned. Transfer/persistence acceptance includes unchanged-write suppression,
+response-loss idempotency, deterministic corruption fallback, physical power-cycle
+retention and candidate-bound ST-LINK recovery. This does not create a filesystem,
+generic package manager, executable loader or update protocol.
+
+## Current prerequisite — pre-Bootloader resource / architecture recovery
+
+`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is the behavior-preserving current
+boundary and has completed hardware/runtime Gate 4. The accepted candidate tree is
+`a10182e7d0659b9b161073ad49a8816ecb6e7918`, with Flash/SRAM `52908/10920`,
+production task0/task1 margins `304/432` and MSP margin `1592`. Recovery was achieved
+with the measured minimum source/profile set: `kernel.c -> -Os` plus removal of the
+redundant scheduler-owned 1-KiB default stack store while preserving explicit production
+`1024/512` stack bindings and diagnostic behavior. No second composition-root split was
+promoted because Gate-1 attribution did not prove a further blocker; host Core client
+decomposition remains a separate trigger-driven debt before update-client responsibilities
+would otherwise accumulate. Bootloader/update feature work remains forbidden until this
+recovery boundary is documented, committed and published.
+
+Canonical design/acceptance:
+`docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`
+`docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`
 
 ## Published boundary — Boot / desktop UI foundation
 

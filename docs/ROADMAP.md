@@ -137,16 +137,54 @@ Frozen topology is hardware-accepted on candidate tree `46841b52d351277deb134a6f
 ### Published implementation boundary — Host control application foundation
 
 `HOST_CONTROL_APPLICATION_FOUNDATION` is accepted through Gate 7 and published at `e0f49f168542fa1cf49bca451e01b0c077aa8d18`, tree `42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`. Final candidate: firmware tree `b895955f7738aceb6fca0272d510cc433378c6ab`, host tree `2c5afd9914851300aed15e321cf69c3a2c3daeed`, BIN `50652` / `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F`. Windows WinUSB CLI/hardware, Windows Avalonia Desktop and Ubuntu 26.04.1/libusb hardware runtime all pass. Linux claims IF2 only and leaves CDC IF0/1 on `cdc_acm`; same-port reconnect passes with stable bus+port locator; 128 unique pings pass; final management/CDC drops are zero and final Flash is exact. Canonical design/acceptance: `docs/HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md` and `docs/HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md`.
+### Published implementation boundary — Asset / Configuration transfer foundation
+
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `562e786ffa734da055c23144ec4256bc8961bbaf`**.
+
+Accepted publication-activation candidate: firmware tree
+`12f0a0ffaa4597d9ada8b78ecee324d77db79d84`, host tree
+`136687e80c42bd8104ad6c37fbbccb915b60fd08`, BIN SHA-256
+`7EDB650B78D6778C57BA477EC466B31E3AC5CE693ECF933E04B42AC3F0B23F9F`,
+Flash/SRAM `54268/11944`, system capabilities `0x0000003F`. Transfer v1,
+persistent A/B recovery, deterministic fault matrix, response-loss idempotency,
+corruption fallback, physical VBUS retention and production `PublishedOnly` host access
+are accepted. Final accepted persistence wear is `46/64`; broader generic
+storage/filesystem/package infrastructure remains outside this boundary.
+
+Canonical design/acceptance:
+`docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
+`docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
+
+### Current prerequisite boundary — pre-Bootloader resource / architecture recovery
+
+`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` — **GATES 0–6 ACCEPTED BY THE ONE NORMAL LOCAL ACCEPTANCE COMMIT CONTAINING THIS ROADMAP / GATE 7 ORDINARY NON-FORCE PUBLICATION NEXT**.
+
+This behavior-preserving boundary recovered explicit target Flash/SRAM margin and
+resolved the measured scheduler-stack ownership waste without widening product scope.
+The accepted candidate is tree `a10182e7d0659b9b161073ad49a8816ecb6e7918`, BIN
+`52908` / `FE1CB8AF32063C0336D276EDAAB0583E6F269C953DCF0E68D4FB6F9B55D583C2`,
+Flash/SRAM `52908/10920`. Relative to the published Asset image this recovers `1360`
+Flash bytes and `1024` static-SRAM bytes; accepted runtime margins are task0/task1
+`304/432` and MSP `1592`. The exact six-file recovery remains behavior-preserving:
+`kernel.c -> -Os`, duplicate scheduler default-stack ownership removed, diagnostics
+borrow existing production storage, no USB ring cuts or ABI/linker/update changes.
+Bootloader implementation, linker relocation and update protocol behavior remain
+forbidden until this boundary is published.
+
+Canonical design/acceptance:
+`docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`
+`docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`
+
 Implementation order:
 
 1. `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` — Gates 0–7 accepted / published `fa75307fb392718a1d10d52770a6a111c97208e7`;
 2. `USB_MANAGEMENT_DEVICE_FOUNDATION` — Gates 0–7 accepted / published `1f88083843c6aae9fd228ad2d677f9252b889a11`;
-3. `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `e0f49f168542fa1cf49bca451e01b0c077aa8d18`**; accepted firmware/host trees `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`; Windows CLI + Desktop and real Linux libusb runtime/reconnect PASS; final management/CDC drops `0/0`, final Flash exact;
-4. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **docs-only shared contract accepted**; steady-state ownership reserves lower pages 0..7 for future reset-owning bootloader/recovery, relocated application pages 8..61 at `0x08002000`, and top pages 62/63 as persistent A/B slots; Asset/Configuration realizes persistence first with the standalone application still at `0x08000000` under a 54 KiB ceiling and pages 54..61 unused, so reset/vector relocation remains a later Bootloader action;
-5. `OLED_UI_LAYOUT_CONFIG_V1` — **promoted/frozen concrete consumer**; exact 8-byte non-executable payload persists only the OLED console clip while the accepted 128x9 status bar remains frozen;
-6. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **Gates 0–5 accepted; Gate-6 publication activation smoke accepted**; transfer ABI, A/B persistence, resource ceilings, Flash-operation policy, deterministic fault matrix, recovery contract and bounded source scope are frozen; Campaign A/B, FI-9 idempotency, 7/7 corruption matrix and one physical VBUS retention cycle are accepted; publication activation firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84` advertises system capabilities `0x0000003F`, passes Core `28/28`, Transport `5/5`, production `PublishedOnly` runtime and exact whole-Flash readback, with persistence wear unchanged at `46/64`;
-7. Asset Gate 6 final documentation/commit-candidate validation + local acceptance commit — **ACCEPTED BY THIS EXACT COMMIT CANDIDATE**; Gate 7 ordinary non-force publication is next;
-8. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — ordered after accepted/published Asset/Configuration persistence; its Gate 0 must prove the minimum recovery/update/security implementation fits the frozen 8 KiB bootloader ceiling or explicitly reopen the Flash decision;
+3. `HOST_CONTROL_APPLICATION_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `e0f49f168542fa1cf49bca451e01b0c077aa8d18`**;
+4. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **docs-only shared contract accepted**;
+5. `OLED_UI_LAYOUT_CONFIG_V1` — **promoted/frozen concrete consumer**;
+6. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `562e786ffa734da055c23144ec4256bc8961bbaf`**;
+7. `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` — **GATES 0–6 ACCEPTED BY THE ONE NORMAL LOCAL ACCEPTANCE COMMIT / GATE 7 PUBLICATION NEXT**;
+8. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — only after the recovery boundary is accepted/published; Gate 0 must prove the minimum recovery/update/security implementation fits the frozen 8 KiB bootloader ceiling or explicitly reopen the Flash decision;
 9. networking/service/security extensions.
 
 Deferred optimization/robustness items are trigger-driven, not new immediate roadmap boundaries: I2C IRQ/DMA only after measured bus pressure; scheduler ready-set acceleration only after materially larger task count and measured overhead; CRC acceleration only for measured streaming cost; bounded minimal-copy/backpressure for WinUSB and transfer paths; tickless only for a real power requirement; structured binary event tracing rather than printf-heavy logging; bounded storage/block-device layers when a consumer exists.

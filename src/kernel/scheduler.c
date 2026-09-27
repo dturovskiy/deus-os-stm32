@@ -32,10 +32,6 @@
 
 static scheduler_task_t scheduler_tasks[SCHEDULER_TASK_COUNT];
 
-static uint32_t scheduler_task_stacks
-    [SCHEDULER_TASK_COUNT][SCHEDULER_TASK_STACK_WORDS]
-    __attribute__((aligned(8)));
-
 uint32_t scheduler_host_r4_r11[8]
     __attribute__((used, aligned(8)));
 
@@ -472,7 +468,6 @@ static void scheduler_preempt_task1(void *argument)
 int scheduler_init(void)
 {
     uint32_t task_index;
-    uint32_t word_index;
 
     if (scheduler_active != 0u)
     {
@@ -496,30 +491,16 @@ int scheduler_init(void)
         scheduler_task_t *task =
             &scheduler_tasks[task_index];
 
-        task->stack_low =
-            &scheduler_task_stacks[task_index][0];
-
-        task->stack_high =
-            &scheduler_task_stacks
-                [task_index][SCHEDULER_TASK_STACK_WORDS];
-
-        task->saved_sp = task->stack_high;
-        task->stack_words = SCHEDULER_TASK_STACK_WORDS;
+        task->stack_low = (uint32_t *)0;
+        task->stack_high = (uint32_t *)0;
+        task->saved_sp = (uint32_t *)0;
+        task->stack_words = 0u;
         task->state = SCHEDULER_TASK_UNUSED;
         task->priority = SCHEDULER_PRIORITY_DEFAULT;
         task->wait_events = 0u;
         task->wake_events = 0u;
         task->deadline_ms = 0u;
         task->deadline_active = 0u;
-
-        for (word_index = 0u;
-             word_index < SCHEDULER_TASK_STACK_WORDS;
-             ++word_index)
-        {
-            scheduler_task_stacks
-                [task_index][word_index] =
-                    SCHEDULER_STACK_FILL;
-        }
     }
 
     return 1;
@@ -1579,13 +1560,56 @@ int scheduler_stack_canary_intact(uint32_t index)
     return scheduler_stack_canary_exhausted[index] == 0u;
 }
 
-int scheduler_self_test(void)
+static int scheduler_self_test_init(
+    uint32_t *stack_storage,
+    uint32_t stack_storage_words)
+{
+    uint32_t task_index;
+
+    if (
+        (stack_storage == (uint32_t *)0) ||
+        (stack_storage_words <
+            (SCHEDULER_TASK_COUNT * SCHEDULER_TASK_STACK_WORDS))
+    ) {
+        return 0;
+    }
+
+    if (scheduler_init() == 0)
+    {
+        return 0;
+    }
+
+    for (task_index = 0u;
+         task_index < SCHEDULER_TASK_COUNT;
+         ++task_index)
+    {
+        if (
+            scheduler_task_stack_bind(
+                task_index,
+                &stack_storage[
+                    task_index * SCHEDULER_TASK_STACK_WORDS],
+                SCHEDULER_TASK_STACK_WORDS) == 0
+        ) {
+            (void)scheduler_init();
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+int scheduler_self_test(
+    uint32_t *stack_storage,
+    uint32_t stack_storage_words)
 {
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
 
-    if (scheduler_init() == 0)
-    {
+    if (
+        scheduler_self_test_init(
+            stack_storage,
+            stack_storage_words) == 0
+    ) {
         return 0;
     }
 
@@ -1688,8 +1712,11 @@ int scheduler_self_test(void)
         return 0;
     }
 
-    if (scheduler_init() == 0)
-    {
+    if (
+        scheduler_self_test_init(
+            stack_storage,
+            stack_storage_words) == 0
+    ) {
         return 0;
     }
 
@@ -1706,15 +1733,20 @@ int scheduler_self_test(void)
         (task1->priority == SCHEDULER_PRIORITY_DEFAULT);
 }
 
-int scheduler_cooperative_self_test(void)
+int scheduler_cooperative_self_test(
+    uint32_t *stack_storage,
+    uint32_t stack_storage_words)
 {
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
     int start_result;
     int passed;
 
-    if (scheduler_init() == 0)
-    {
+    if (
+        scheduler_self_test_init(
+            stack_storage,
+            stack_storage_words) == 0
+    ) {
         return 0;
     }
 
@@ -1731,8 +1763,11 @@ int scheduler_cooperative_self_test(void)
             scheduler_coop_task0,
             (void *)&scheduler_coop_arg0) == 0
     ) {
-        if (scheduler_init() == 0)
-        {
+        if (
+            scheduler_self_test_init(
+                stack_storage,
+                stack_storage_words) == 0
+        ) {
             return 0;
         }
 
@@ -1745,8 +1780,11 @@ int scheduler_cooperative_self_test(void)
             scheduler_coop_task1,
             (void *)&scheduler_coop_arg1) == 0
     ) {
-        if (scheduler_init() == 0)
-        {
+        if (
+            scheduler_self_test_init(
+                stack_storage,
+                stack_storage_words) == 0
+        ) {
             return 0;
         }
 
@@ -1771,23 +1809,31 @@ int scheduler_cooperative_self_test(void)
         (task0->state == SCHEDULER_TASK_DONE) &&
         (task1->state == SCHEDULER_TASK_DONE);
 
-    if (scheduler_init() == 0)
-    {
+    if (
+        scheduler_self_test_init(
+            stack_storage,
+            stack_storage_words) == 0
+    ) {
         return 0;
     }
 
     return passed;
 }
 
-int scheduler_preemptive_self_test(void)
+int scheduler_preemptive_self_test(
+    uint32_t *stack_storage,
+    uint32_t stack_storage_words)
 {
     const scheduler_task_t *task0;
     const scheduler_task_t *task1;
     int start_result;
     int passed;
 
-    if (scheduler_init() == 0)
-    {
+    if (
+        scheduler_self_test_init(
+            stack_storage,
+            stack_storage_words) == 0
+    ) {
         return 0;
     }
 
@@ -1807,8 +1853,11 @@ int scheduler_preemptive_self_test(void)
             scheduler_preempt_task0,
             (void *)&scheduler_preempt_arg0) == 0
     ) {
-        if (scheduler_init() == 0)
-        {
+        if (
+            scheduler_self_test_init(
+                stack_storage,
+                stack_storage_words) == 0
+        ) {
             return 0;
         }
 
@@ -1821,8 +1870,11 @@ int scheduler_preemptive_self_test(void)
             scheduler_preempt_task1,
             (void *)&scheduler_preempt_arg1) == 0
     ) {
-        if (scheduler_init() == 0)
-        {
+        if (
+            scheduler_self_test_init(
+                stack_storage,
+                stack_storage_words) == 0
+        ) {
             return 0;
         }
 
@@ -1850,8 +1902,11 @@ int scheduler_preemptive_self_test(void)
         (task0->state == SCHEDULER_TASK_DONE) &&
         (task1->state == SCHEDULER_TASK_DONE);
 
-    if (scheduler_init() == 0)
-    {
+    if (
+        scheduler_self_test_init(
+            stack_storage,
+            stack_storage_words) == 0
+    ) {
         return 0;
     }
 

@@ -98,11 +98,17 @@ void scheduler_yield(void);
 
 void scheduler_tick(uint32_t now_ms);
 
-int scheduler_self_test(void);
+int scheduler_self_test(
+    uint32_t *stack_storage,
+    uint32_t stack_storage_words);
 
-int scheduler_cooperative_self_test(void);
+int scheduler_cooperative_self_test(
+    uint32_t *stack_storage,
+    uint32_t stack_storage_words);
 
-int scheduler_preemptive_self_test(void);
+int scheduler_preemptive_self_test(
+    uint32_t *stack_storage,
+    uint32_t stack_storage_words);
 
 uint32_t scheduler_priority_self_test(void);
 

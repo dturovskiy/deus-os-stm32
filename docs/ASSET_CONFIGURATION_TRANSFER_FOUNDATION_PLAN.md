@@ -1,6 +1,6 @@
 # Deus OS — Asset / Configuration Transfer Foundation Plan
 
-Status: **FROZEN DESIGN CONTRACT — GATES 0–6 ACCEPTED BY THE LOCAL COMMIT CANDIDATE; GATE 7 PUBLICATION NEXT**
+Status: **FROZEN DESIGN CONTRACT — GATES 0–7 ACCEPTED / PUBLISHED `562e786ffa734da055c23144ec4256bc8961bbaf`**
 
 Boundary:
 
@@ -457,4 +457,4 @@ The reopened boundary uses this gate sequence:
 - Gate 6 — docs finalization + one normal local acceptance commit;
 - Gate 7 — ordinary non-force publication and remote verification.
 
-All six Gate-0 design contracts remain frozen and the acceptance plan records the passing cross-contract closure audit plus the current execution state. Implementation has progressed through Gates 1–5, and the Gate-6 publication activation candidate passed fresh build/tests, exact Flash readback and production `PublishedOnly` hardware smoke. The exact local commit candidate containing this state closes Gate 6; Gate 7 ordinary non-force publication follows. This plan remains the frozen design contract and does not itself publish the feature.
+All six Gate-0 design contracts remain frozen. Gates 1–5 implementation/fault/recovery acceptance and the Gate-6 publication activation candidate passed; the exact 42-path acceptance set was committed and Gate 7 completed ordinary non-force publication at `562e786ffa734da055c23144ec4256bc8961bbaf`. This file remains the frozen design contract; later resource recovery or Bootloader work must not silently reinterpret it.

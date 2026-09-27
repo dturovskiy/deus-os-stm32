@@ -153,6 +153,7 @@ $Objects = [System.Collections.Generic.List[string]]::new()
 
 $SizeOptimizedSources = @(
     "src/drivers/flash_persistence.c"
+    "src/kernel.c"
     "src/kernel/asset_persistence.c"
     "src/kernel/asset_transfer.c"
     "src/kernel/oled_ui_layout_config_v1.c"

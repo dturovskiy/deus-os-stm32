@@ -10,68 +10,130 @@ For architecture, roadmap sequence, boundary contracts, acceptance criteria, evi
 
 ## 1. Latest completed product boundary
 
-`HOST_CONTROL_APPLICATION_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED**
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED**
 
 Boundary acceptance/publication commit:
 
-`e0f49f168542fa1cf49bca451e01b0c077aa8d18`
+`562e786ffa734da055c23144ec4256bc8961bbaf`
 
 Boundary commit tree:
 
-`42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`
+`88720a614794d5aef93cf13ac762a4095cb17baf`
 
-Accepted firmware candidate:
+Accepted publication-activation candidate:
 
-- source candidate tree: `b895955f7738aceb6fca0272d510cc433378c6ab`
-- BIN: `50652` bytes
-- BIN SHA-256: `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F`
-- ELF: `483488` bytes
-- ELF SHA-256: `978CC710497F79E9A3AFBAFE3E0CD3AE10BA2B6CF0FE6AA7518B7AC5BC5E524C`
-- MAP: `207952` bytes
-- MAP SHA-256: `F9806E2A71476D6D2DAC2CD481A6C491BACD18CADD713813BB69AF9DA608C032`
-- Flash/SRAM: `50652/11728`
-- task stacks: `1024/512`
-- accepted task0/task1 margins: `424/424`
+- firmware source tree: `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`
+- host source tree: `136687e80c42bd8104ad6c37fbbccb915b60fd08`
+- BIN SHA-256: `7EDB650B78D6778C57BA477EC466B31E3AC5CE693ECF933E04B42AC3F0B23F9F`
+- whole-Flash SHA-256: `CD31D49985753E08F3AE123F0AF7BF136AC510AA2D40E3D5CB4FDF5EBEF9D737`
+- Flash/SRAM: `54268/11944`
+- task stacks remain `1024/512`
+- system capability mask: `0x0000003F`
+- final accepted persistence wear counter: `46/64`
+- final Gate-5 recovery state: `CLEAN_STATE_POST_RESET_BYTE_EXACT`
 
-Accepted host candidate:
+Published v1 capability is deliberately bounded:
 
-- host source tree: `2c5afd9914851300aed15e321cf69c3a2c3daeed`
-- target: `net10.0`
-- Avalonia: `12.1.2`
-- Windows management: WinUSB
-- Linux management: libusb-1.0
-- Core tests: `21/21`
-- Transport tests: `5/5`
-
-Accepted management/runtime contract:
-
-- USB identity: private-development `1209:000C` / `Deus OS Device`
-- CDC IF0/1 retained for secondary diagnostics
-- management IF2 over EP4 OUT/IN `0x04/0x84`, bulk64
-- Windows management GUID: `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`
-- binary framing protocol: v1
-- command service: v3 / registry 36
-- `sysinfo=0x0024`
-- system capability mask: `0x0000003F` (`ASSET_CONFIGURATION_TRANSFER` bit 5 published by the Gate-6 activation candidate)
-- initial applications: `system.home=0x0001`, `device.info=0x0002`
-
-Host foundation acceptance covers Windows CLI/hardware, Windows Desktop, real Linux libusb runtime, application lifecycle, malformed/recovery behavior, 128 unique management pings, fresh reconnect negotiation, IF2-only Linux claiming with CDC retained, zero management/CDC drops and exact final Flash readback.
+- management-IF2 binary Asset/Configuration transfer;
+- object type `0x0001` / `OLED_UI_LAYOUT_CONFIG_V1`;
+- exact current consumer payload `8` bytes;
+- persistent A/B pages 62/63 with version/integrity/atomic-commit/recovery/wear contracts;
+- production `PublishedOnly` host path accepted on Linux/libusb;
+- response-loss idempotency, corruption fallback and physical VBUS retention accepted;
+- accepted 128x9 status bar remains system-owned; only the console clip is persisted.
 
 Canonical design:
 
-`docs/HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md`
+`docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 
 Canonical acceptance:
 
-`docs/HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md`
+`docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
+
+The preceding `HOST_CONTROL_APPLICATION_FOUNDATION` remains published at
+`e0f49f168542fa1cf49bca451e01b0c077aa8d18`; it is no longer the latest completed
+product boundary.
 
 ## 2. Current boundary disposition
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATES 0–6 ACCEPTED IN THE LOCAL ACCEPTANCE CANDIDATE — GATE 7 PUBLICATION CURRENT**
+`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` — **GATES 0–6 ACCEPTED BY THE ONE NORMAL LOCAL ACCEPTANCE COMMIT CONTAINING THIS DOCUMENT / GATE 7 ORDINARY NON-FORCE PUBLICATION NEXT**
+
+Canonical design:
+
+`docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`
+
+Canonical acceptance:
+
+`docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`
+
+This is a behavior-preserving prerequisite before `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`.
+It exists because the published Asset image has only `4` bytes remaining under the
+frozen Flash acceptance ceiling and `344` bytes remaining under the static-SRAM ceiling.
+
+Gate-0 read-only audit froze these trigger facts:
+
+- `src/kernel.c = 3459` LOC and remains a measured multi-responsibility composition-root hotspot;
+- `src/drivers/usb_device.c = 2365` LOC;
+- `src/kernel/scheduler.c = 1859` LOC;
+- `src/kernel/scheduler_diagnostics.c = 1361` LOC;
+- host `DeusDeviceClient.cs = 1004` LOC, but host decomposition is tracked separately;
+- the target build already uses function/data sections plus linker GC;
+- most firmware still builds at `-O2`; only the four Asset size-sensitive sources use `-Os`;
+- production command/RPC reachability retains substantial scheduler/OLED diagnostic/self-test code;
+- scheduler core reserves a 1-KiB default task-stack store while normal production binds separate `1024/512` task stacks;
+- target heap API use remains absent and driver/gfx dependency direction remains clean.
+
+Gate 1 measurement is accepted. The exact published baseline reproduced at
+Flash/SRAM `54268/11944` with BIN SHA-256
+`7EDB650B78D6778C57BA477EC466B31E3AC5CE693ECF933E04B42AC3F0B23F9F`.
+Isolated linked Flash deltas were `kernel.c -1648`, scheduler core `-1360`,
+USB device `-1600`, and gfx/OLED presentation `-1508`; all left SRAM unchanged.
+Scheduler diagnostics `-Os` is not selected because GCC generated an unresolved
+`memset` under the current freestanding `-nostdlib` contract.
+`RING_RESIZE_AUTHORIZED=NO` remains frozen.
+
+Gate 2 is now authorized only for the smallest measured recovery set:
+`src/kernel.c -> -Os` plus removal of the scheduler-owned 1024-byte default
+task-stack store. Scheduler diagnostics/self-tests must preserve behavior by borrowing
+already-existing production stack storage while the scheduler is inactive; production
+boot continues to bind the existing `1024/512` console/heartbeat stacks. No USB-ring
+cuts, command/RPC pruning, diagnostic-profile split, libc shim, linker relocation or
+Bootloader behavior is authorized.
+
+Gate 2 is accepted from
+`stm32_os_preboot_resource_gate2_recovery_recomposed_v1_20260926_210150.evidence.zip`
+with SHA-256 `D84AC967C204FC9D09B94EC8AD7B472B173BCDCE4593320F88601B062681E325`;
+the exact normalized six-file source diff is
+`D1EC010F55313DA61DC1366E99E68A619CF4E678EDD2EE443E7D53AB08AD6A06`.
+The real index remained empty and there was no target or Flash mutation.
+
+Gate 3 is accepted from
+`stm32_os_preboot_resource_gate3_build_static_v1_20260926_212215.evidence.zip`
+with SHA-256 `9FA982530FAB4B703AF6D92936080BD13A0E2FF346D294F6376F5CAFE814EFE2`.
+The locked firmware candidate tree is `a10182e7d0659b9b161073ad49a8816ecb6e7918`;
+BIN `52908` / `FE1CB8AF32063C0336D276EDAAB0583E6F269C953DCF0E68D4FB6F9B55D583C2`,
+ELF `5BF8D5CE66049CCBD7EF2D77D6D569B980CB96B33E0FFDBFDB1A626A6A101247`, MAP
+`AE45CF669031AC4CB29DB2FFB72161ABA2249D9A6558B80E6B40757EC162C29E`, Flash/SRAM
+`52908/10920`, stack-usage `26/26`, undefined `0`, forbidden heap/libc drift `0`, public
+ABI diff `0`. Gate 4 is accepted as a bound composite hardware/runtime result. The
+exact Gate-3 production candidate retained task0/task1 margins `304/432`, MSP margin
+`1592`, management IF2 pressure `128/128`, application lifecycle, scheduler/IWDG,
+canonical CLEAN persistence, zero USB errors/PMA overruns/drops, physical OLED and
+physical reconnect recovery. The final read-only closure
+`stm32_os_preboot_resource_gate4_readonly_closure_v1_20260927_190303.evidence.zip`
+(SHA-256 `05A8F13552656D3C2AE5B05F8BC0FC927140BF0CBAC964B12721E46BABB2357B`)
+proved post-IWDG UART `IWDG_RESET=1`, exact source tree/Home/health/ping over primary
+management IF2/libusb, and exact final 64-KiB Flash SHA-256
+`17B48E7743F0AD1811FF431FA8C328E88C7CFBAD6ADA874F03C1392C2E94D726`.
+
+After this boundary is accepted and published, exact next product boundary is
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0.
+
+### Published Asset acceptance record
 
 The original `DEFERRED_NO_REAL_CONSUMER` Gate 0 result remains historical proof that implementation was correctly blocked when no real consumer existed.
 
-That blocking condition is now resolved by the promoted narrow consumer:
+That blocking condition was resolved by the promoted narrow consumer:
 
 - consumer: `OLED_UI_LAYOUT_CONFIG_V1`;
 - canonical consumer contract: `docs/OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md`;
@@ -81,7 +143,8 @@ That blocking condition is now resolved by the promoted narrow consumer:
 - accepted status bar remains frozen/system-owned at `128x9`;
 - compiled default remains console `x=1, y=10, w=126, h=22`.
 
-Gate 0 design/acceptance freeze is complete. Gates 1–5 implementation/hardware acceptance and the Gate-6 publication-activation smoke have passed. The local acceptance candidate containing this state is the Gate-6 acceptance commit candidate. The boundary is **not published yet**; Gate 7 ordinary non-force publication is the only remaining step.
+Gates 0–7 are accepted and the boundary is published at
+`562e786ffa734da055c23144ec4256bc8961bbaf`.
 
 Frozen Gate-0 contracts:
 
@@ -117,8 +180,8 @@ Gate-5 status:
 - historical Gate-5 final substep was the physical target USB/VBUS power-removal/power-return retention proof; it is now accepted by the v3 evidence below;
 - first retention package `stm32_os_asset_gate5_physical_retention_v1_20260925.zip` was blocked by Microsoft Defender AMSI while `apply.ps1` was being parsed, before any harness code or target I/O executed. Defender Operational events `1116/1117` identify `HackTool:PowerShell/ApexToolkit.A`, Threat ID `2147749462`, detection source `AMSI`, process `pwsh.exe`, action `Quarantine`, action success `True`, security-intelligence version `1.459.398.0`, engine `1.1.26080.3`. This is `HARNESS-AMSI-DELIVERY-01`: zero target mutation, zero additional persistence erases. The blocked package is frozen; no Defender exclusion, AMSI bypass, obfuscation or signature-avoidance rewrite is authorized;
 - replacement `.NET` retention run `stm32_os_asset_gate5_physical_retention_dotnet_v1_20260925_222446.evidence.zip`, SHA-256 `A496C86EDDE741358C32B12968172E8FF978AF122BC3A3329EEE18C8415915D0`, proved the executable/AMSI architecture works and reached the physical-power phase. It committed generation `1`, then timed out waiting for USB disappearance: 81 fresh remote helper processes each created a new Linux libusb discovery context and all reported exactly one Deus device at stable locator `usb:001:8`; therefore no actual Linux USB data-path disappearance was observed. Classification `ENVIRONMENT / USB_PRESENCE_TIMEOUT`, not PRODUCT. Failure cleanup restored `CLEAN_STATE_POST_RESET_BYTE_EXACT`;
-- that failed retention run consumed `+3` persistence-page erases (`+1` retention commit, `+2` cleanup), so cumulative Gate-5 wear is now **`43/64`**. Before another mutation, the next retention composition must include a zero-write physical-path rehearsal: operator-synchronized USB removal, fresh Linux libusb absence, SWD target-unavailable corroboration, USB/SWD return, and exact CLEAN re-attestation. Only after that rehearsal passes may the real retention commit consume another erase;
-- `stm32_os_asset_gate5_physical_retention_dotnet_v2_20260925.zip` failed safely during `DOTNET_BUILD_RELEASE` before the .NET engine started. Root cause is `HARNESS-DOTNET-COMPILE-01`: six newly added failed-v1 evidence regexes used `\s` inside ordinary C# string literals, producing Roslyn invalid-escape compile errors. Bootstrap ordering proves zero SSH/ST-LINK/USB/UART/target I/O and zero persistence erases; cumulative wear therefore remains **`43/64`**. Full-source audit found exactly those six invalid normal-string escapes and no others;
+- that failed retention run consumed `+3` persistence-page erases (`+1` retention commit, `+2` cleanup), so cumulative Gate-5 wear reached **`43/64`** at that checkpoint. The subsequent composition sequence introduced the required zero-write physical-path rehearsal with operator-synchronized USB removal, fresh Linux libusb absence, SWD target-unavailable corroboration, USB/SWD return and exact CLEAN re-attestation before the retained commit; the accepted v3 run below satisfied that requirement;
+- `stm32_os_asset_gate5_physical_retention_dotnet_v2_20260925.zip` failed safely during `DOTNET_BUILD_RELEASE` before the .NET engine started. Root cause is `HARNESS-DOTNET-COMPILE-01`: six newly added failed-v1 evidence regexes used `\s` inside ordinary C# string literals, producing Roslyn invalid-escape compile errors. Bootstrap ordering proved zero SSH/ST-LINK/USB/UART/target I/O and zero persistence erases; cumulative wear therefore remained **`43/64`** at that checkpoint. Full-source audit found exactly those six invalid normal-string escapes and no others;
 - physical retention — **ACCEPTED** by `stm32_os_asset_gate5_physical_retention_dotnet_v3_20260925_235521.evidence.zip`, SHA-256 `239735C43309870DC820ED0B3FF2C6D0E331BF805FE9B1BCA2B68ED685A249A7`. The zero-write rehearsal proved real Mac-mini Linux USB disappearance plus independent SWD target loss, then exact CLEAN return. The retained test committed generation `1`, payload `01100A6016000000`, CRC `838D1F51`; after one real VBUS removal/return the same generation/payload/runtime returned and the entire 64-KiB Flash plus 2-KiB persistence region were byte-identical pre/post power cycle. Final persistence-only cleanup restored canonical CLEAN whole-Flash SHA `15061F971CFCF48A9EAA8F0AB8C6E630D14A6428B96E19D576C02C5E74859957` before and after reset;
 - accepted retention evidence integrity: ZIP CRC clean, `412/412` evidence hashes exact, all 24 source locks exact, repository pre/post status identical, real index empty, no commit/push/mass erase/option-byte mutation. Of 121 bounded native processes, the only two nonzero/timeouts are the intentional SWD power-off probes during rehearsal and retained power removal;
 - the accepted retention run consumed `+3` persistence-page erases (`+1` retained commit + `+2` final CLEAN), bringing the final Gate-5 wear counter to **`46/64`**. This is within the frozen `<=64` campaign budget;
@@ -129,25 +192,25 @@ Gate-5 status:
 
 The current bench is split-host: target native USB/power is owned by Ubuntu on the Mac mini and exercised through Linux libusb via `deus@macmini`; ST-LINK/SWD and CH340/UART are owned by Windows. The canonical operational contract is `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.
 
-The Asset Flash erase/program implementation and 54-KiB linker boundary are active in the accepted WIP candidate. Application reset origin remains `0x08000000`; bootloader relocation/VTOR migration is still deferred. Gate 5 accepted the implementation with system capability bit 5 intentionally off. Gate 6 added the single publication-activation source change `SYSTEM_IDENTITY_CAP_ASSET_CONFIGURATION_TRANSFER`, changing the published system capability mask from `0x0000001F` to `0x0000003F`; that activation is now hardware-accepted by `stm32_os_asset_gate6_publication_activation_smoke_v4_20260926_134106.evidence.zip`, SHA-256 `7A65CA036E29FE06E39C5ADA2B70461292DBFD3DC584D28C3563A7E498322C60`. Accepted activation firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`, host tree `136687e80c42bd8104ad6c37fbbccb915b60fd08`, BIN SHA-256 `7EDB650B78D6778C57BA477EC466B31E3AC5CE693ECF933E04B42AC3F0B23F9F`, whole-Flash SHA-256 `CD31D49985753E08F3AE123F0AF7BF136AC510AA2D40E3D5CB4FDF5EBEF9D737`. Fresh build/tests pass at Flash `54268/54272` (4-byte headroom) and SRAM `11944/12288`; production `PublishedOnly` `config status/read`, ping8 and health pass on Mac-mini Linux libusb. Persistence remains erased and Gate-5 wear remains `46/64`. Generic storage/filesystem/package infrastructure remains unauthorized.
+The Asset Flash erase/program implementation and 54-KiB linker boundary are active in the published Asset boundary. Application reset origin remains `0x08000000`; bootloader relocation/VTOR migration is still deferred. Gate 5 accepted the implementation with system capability bit 5 intentionally off. Gate 6 added the single publication-activation source change `SYSTEM_IDENTITY_CAP_ASSET_CONFIGURATION_TRANSFER`, changing the published system capability mask from `0x0000001F` to `0x0000003F`; that activation is now hardware-accepted by `stm32_os_asset_gate6_publication_activation_smoke_v4_20260926_134106.evidence.zip`, SHA-256 `7A65CA036E29FE06E39C5ADA2B70461292DBFD3DC584D28C3563A7E498322C60`. Accepted activation firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`, host tree `136687e80c42bd8104ad6c37fbbccb915b60fd08`, BIN SHA-256 `7EDB650B78D6778C57BA477EC466B31E3AC5CE693ECF933E04B42AC3F0B23F9F`, whole-Flash SHA-256 `CD31D49985753E08F3AE123F0AF7BF136AC510AA2D40E3D5CB4FDF5EBEF9D737`. Fresh build/tests pass at Flash `54268/54272` (4-byte headroom) and SRAM `11944/12288`; production `PublishedOnly` `config status/read`, ping8 and health pass on Mac-mini Linux libusb. Persistence remains erased and Gate-5 wear remains `46/64`. Generic storage/filesystem/package infrastructure remains unauthorized.
 
-Canonical Gate 0 design:
+Canonical Asset design:
 
 `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 
-Canonical Gate 0 acceptance:
+Canonical Asset acceptance:
 
 `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
 The broader configurable OLED layout/preset/assets roadmap remains deferred. Only `OLED_UI_LAYOUT_CONFIG_V1` has been promoted as the concrete persistence consumer.
 
-Completed repository-readiness prerequisites supporting the reopened Gate 0:
+Historical repository-readiness prerequisites that supported the reopened Asset Gate 0:
 
 1. repository-owned firmware build entrypoint — **ACCEPTED**: the exact historical Host Control Gate-2 compiler/startup/link/objcopy invocation was recovered from acceptance evidence rather than guessed, the generated `deus_build_identity.h` was recovered identically from 20/20 surviving copies (SHA-256 `F6EAA98172FEE67338BFD978F208BD95731063A1160B0C9C1282306A5D6658A5`), and two independent temporary builds with Arm GNU Toolchain `15.3.1` reproduced the accepted 50652-byte firmware BIN byte-for-byte at SHA-256 `FB68993FC998DE77B61FAC9F4949E4E124B95FF867BB456EBA401C9F2709F13F` with exact `text/data/bss = 50540/112/11616` and Flash/SRAM `50652/11728`; the versioned entrypoint is `scripts/build_firmware.ps1` (accepted script SHA-256 `BC7B91825B9BB80394C28643848EE3AEF75A4B62017432BB1070190088B8CDFB`), final reproducibility evidence ZIP SHA-256 `1FDB3C647ACCF4B9A67FDC02514009495F60D1F3E3B4E00C551FC0B4A3F4F847`; ELF/MAP debug artifacts remain path-dependent and are not the firmware identity; no target I/O or Flash mutation occurred;
 2. read-only real-device MCU/Flash preflight — **ACCEPTED** on the current physical board: `DEV_ID=0x410`, numeric `REV_ID=0x2003`, factory Flash size `64 KiB`, `FLASH_OBR=0x000003FC`, `FLASH_WRPR=0xFFFFFFFF`, RDP disabled, WRP0..31 inactive, SWD accepted at 950 kHz; immutable source-log SHA-256 `B112A754E82ECC01BDC509B2D8FB359D652D74DDC565B3DE046C30C181672C13`, finalized evidence ZIP SHA-256 `BB1F928A2E716F2C8D0FA6B160FC7F41B3187A75CF869DD139DF0C450D6B42D8`;
 3. host package-lock/SDK restore reproducibility — **ACCEPTED**: seven project-local `packages.lock.json` files are now the reviewed dependency graph; `host/global.json` remains the accepted `.NET 10` policy (`10.0.100`, `rollForward=latestFeature`, prerelease disabled), selecting Windows SDK `10.0.201` and Linux SDK `10.0.112`; locked restore, Release build and direct Core/Transport tests pass on both Windows (`21/21`, `5/5`) and Ubuntu/Linux (`21/21`, `5/5`), WSL proves the DEUS path and `D:` path are the same checkout, and all seven normalized lock hashes are identical across Windows/Linux. Final acceptance evidence ZIP SHA-256 `CE7E3BB09A24913D5374A875CCE49556A2A186F114E36128E42AD3BB26F42165`; no target I/O, Flash mutation, reset or reconnect occurred.
 
-These are infrastructure prerequisites, not permission to implement persistent Flash mutation.
+These were infrastructure prerequisites for the now-published Asset boundary; they are retained here as acceptance provenance.
 
 ## 3. Planned product sequencing
 
@@ -159,19 +222,19 @@ The shared docs-only Flash ownership decision is now frozen by `docs/FLASH_OWNER
 - Asset/Configuration is implemented first in a transitional standalone phase: application remains reset owner at `0x08000000`, its linker ceiling becomes 54 KiB, pages 54..61 remain unused relocation headroom, and only pages 62/63 become persistent;
 - application relocation to `0x08002000`, VTOR/handoff changes and lower-page bootloader ownership occur only in the later Bootloader boundary.
 
-The historical reactivation condition has been satisfied by `OLED_UI_LAYOUT_CONFIG_V1`; Gates 0–5 are accepted under the frozen schema, transfer ABI, transaction/recovery model and resource budget. Gate 6 is closed by the accepted activation evidence plus this exact local acceptance commit candidate; Gate 7 ordinary non-force publication is next.
+The historical Asset reactivation condition was satisfied by `OLED_UI_LAYOUT_CONFIG_V1`; the full Asset/Configuration boundary is now accepted and published at `562e786ffa734da055c23144ec4256bc8961bbaf`.
 
 Forward dependency order is:
 
 1. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **ACCEPTED DOCS-ONLY SHARED CONTRACT**;
 2. `OLED_UI_LAYOUT_CONFIG_V1` — **PROMOTED / FROZEN CONSUMER CONTRACT**;
-3. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` Gates 0–5 — **ACCEPTED IN ACTIVE WIP EVIDENCE CHAIN**;
-4. Asset Gate 6 final documentation + local acceptance commit — **ACCEPTED BY THIS COMMIT CANDIDATE**;
-5. Asset Gate 7 ordinary non-force publication — **CURRENT AFTER LOCAL COMMIT**;
-6. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`;
-7. networking/service/security extensions.
+3. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `562e786ffa734da055c23144ec4256bc8961bbaf`**;
+4. `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` — **GATE 0 ACCEPTED / GATE 1 MEASUREMENT NEXT**;
+5. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — only after the recovery boundary is accepted/published;
+6. networking/service/security extensions.
 
-Deferring Asset/Configuration at Gate 0 does not automatically promote firmware update ahead of its own prerequisites or security/recovery contract.
+The pre-Bootloader recovery boundary is deliberately behavior-preserving. It does not
+implicitly authorize firmware-update logic, linker relocation or public-ABI removal.
 
 Firmware update requires separate authenticity/security, controlled reboot/update handoff and recoverable Flash transaction design. Networking remains a later service boundary and does not authorize speculative TCP/IP expansion on the STM32F103.
 
@@ -198,7 +261,8 @@ The following major foundations are complete/published and are **not active work
 - application runtime foundation;
 - kernel composition-root decomposition;
 - USB management device foundation;
-- Host control application foundation.
+- Host control application foundation;
+- Asset / Configuration transfer foundation.
 
 Their `*_PLAN.md` and `*_ACCEPTANCE_PLAN.md` files are retained as immutable scoped design/proof records, not as competing global current-state documents.
 
@@ -221,7 +285,6 @@ The following items exist as possible future work but are **not active roadmap b
 - previous-boot crash/reset retention;
 - bounded structured binary event tracing;
 - soak/fault-injection campaigns;
-- diagnostic/test build profiles;
 - explicit application stop-failure semantics before resource-owning apps require them.
 
 ### UI/configuration ideas
@@ -282,7 +345,7 @@ Still intentionally unresolved until a consumer requires them:
 - network mutation security;
 - richer observability/runtime-statistics framework.
 
-These remain consumer- or boundary-specific future concerns. None expands the current bounded `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` candidate or its active Gate-5 acceptance scope.
+These remain consumer- or boundary-specific future concerns. None is implicitly activated by the current bounded `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` boundary.
 
 ## 7. Source-of-truth map
 

@@ -67,15 +67,37 @@ Physical micro-USB disconnect/reconnect is a power-cycle recovery proof, not a l
 - [x] identity/capability contract: HELLO protocol `1`, service `3`, registry `36`; system capabilities `0x0000001F`.
 - [x] Gate 7 evidence SHA-256 `638569FE26600013B3B6717C76DEBF3251980B06D0B493B835D96CB4BC0CFD8F`.
 
-### Gate-0-reviewed boundary — Asset / Configuration transfer — deferred before implementation
+### Published boundary — Asset / Configuration transfer — Gates 0–7 accepted / published
 
-- [x] Gate 0 audited current source and deferred future-consumer plans.
-- [x] No current target consumer with a frozen persistence schema was found.
-- [x] Canonical plan/acceptance records created with `FINAL_OUTCOME=DEFERRED_NO_REAL_CONSUMER`.
-- [x] Capability bit 5 remains reserved/unadvertised and system capability mask remains `0x0000001F`.
-- [x] Post-review read-only physical-board Flash preflight accepted: `DEV_ID=0x410`, numeric `REV_ID=0x2003`, 64 KiB Flash, RDP disabled, WRP inactive; finalized evidence ZIP SHA-256 `BB1F928A2E716F2C8D0FA6B160FC7F41B3187A75CF869DD139DF0C450D6B42D8`.
-- Gate 1 is not authorized; no Flash/linker/transfer implementation belongs to this deferred result.
-- Reactivation requires a promoted concrete consumer plus a reopened Gate 0 contract.
+- [x] historical fail-closed `DEFERRED_NO_REAL_CONSUMER` Gate-0 result preserved;
+- [x] concrete `OLED_UI_LAYOUT_CONFIG_V1` consumer promoted and Gate 0 reopened/frozen;
+- [x] bounded transfer, A/B persistence, resource, Flash-operation, fault-injection and ST-LINK recovery contracts accepted;
+- [x] Gate 1 bounded source implementation accepted;
+- [x] Gate 2 build/unit/resource acceptance accepted;
+- [x] Gate 3 hardware transfer/persistence/runtime acceptance accepted;
+- [x] Gate 4 consumer physical/semantic OLED acceptance accepted;
+- [x] Gate 5 deterministic fault/recovery acceptance accepted: Campaign A/B, FI-9 response-loss idempotency, 7/7 corruption matrix and physical VBUS retention;
+- [x] final accepted persistence wear `46/64`;
+- [x] Gate 6 publication activation accepted on firmware tree `12f0a0ffaa4597d9ada8b78ecee324d77db79d84`, Flash/SRAM `54268/11944`, system capabilities `0x0000003F`;
+- [x] Gate 7 ordinary non-force publication complete at `562e786ffa734da055c23144ec4256bc8961bbaf`, tree `88720a614794d5aef93cf13ac762a4095cb17baf`.
+
+### Current boundary — pre-Bootloader resource / architecture recovery
+
+Boundary ID: `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY`.
+
+- [x] Gate 0 documentation/source-boundary freeze + read-only architecture/resource audit — **PASS**.
+- [x] Gate 1 measurement-only resource attribution — **PASS**; exact baseline BIN `7EDB650B...23F9F`, Flash/SRAM `54268/11944`, linked `-Os` deltas: `kernel.c -1648`, scheduler core `-1360`, USB device `-1600`, gfx/OLED `-1508`; scheduler diagnostics classified `LINK_BLOCKED_COMPILER_MEMSET`; `RING_RESIZE_AUTHORIZED=NO`.
+- [x] Gate 2 behavior-preserving source/profile recovery — **PASS**; exact six-file WIP applies `kernel.c -> -Os`, removes the scheduler-owned duplicate 1-KiB default stack store, and rebinds diagnostics/self-tests to existing production stack storage; no USB ring cuts, command/RPC pruning, diagnostic-profile split, linker relocation or Bootloader change. Evidence SHA-256 `D84AC967C204FC9D09B94EC8AD7B472B173BCDCE4593320F88601B062681E325`.
+- [x] Gate 3 fresh build/resource/static acceptance — **PASS**; candidate tree `a10182e7d0659b9b161073ad49a8816ecb6e7918`, BIN `52908` / `FE1CB8AF32063C0336D276EDAAB0583E6F269C953DCF0E68D4FB6F9B55D583C2`, ELF `5BF8D5CE66049CCBD7EF2D77D6D569B980CB96B33E0FFDBFDB1A626A6A101247`, MAP `AE45CF669031AC4CB29DB2FFB72161ABA2249D9A6558B80E6B40757EC162C29E`, Flash/SRAM `52908/10920`, stack-usage `26/26`, undefined `0`, public ABI diff `0`; evidence SHA-256 `9FA982530FAB4B703AF6D92936080BD13A0E2FF346D294F6376F5CAFE814EFE2`.
+- [x] Gate 4 exact production-image hardware/runtime equivalence — **PASS / COMPOSITE**; exact Gate-3 candidate tree `a10182e7d0659b9b161073ad49a8816ecb6e7918` retained, task0/task1 margins `304/432`, MSP margin `1592`, management IF2 pressure `128/128`, application lifecycle, scheduler/IWDG, Asset CLEAN, zero USB errors/PMA overruns/drops, physical OLED and reconnect all accepted; IWDG reset completion was independently proven at `7575 ms` with `IWDG_RESET=1`, then final read-only closure proved Home/health/ping and exact 64-KiB Flash SHA `17B48E7743F0AD1811FF431FA8C328E88C7CFBAD6ADA874F03C1392C2E94D726`. Closure evidence SHA-256 `05A8F13552656D3C2AE5B05F8BC0FC927140BF0CBAC964B12721E46BABB2357B`.
+- [x] Gate 5 docs/evidence finalization — **PASS**; exact 28-path WIP set, exact six-path firmware diff `D1EC010F55313DA61DC1366E99E68A619CF4E678EDD2EE443E7D53AB08AD6A06`, host source unchanged, `git diff --check` clean, canonical Gate-4/Gate-5 tokens synchronized. Evidence SHA-256 `FD2ACCA48E8051356668933FBA9E0A5E451E1E2C97ADADCF3BB3302FC87748B4`; normalized docs diff SHA-256 `397E449A64EED8160A21BC484F8217636B55E45819AD1FED59C867CAB67EFCA9`.
+- [x] Gate 6 one normal local acceptance commit — **PASS BY THE NORMAL LOCAL COMMIT CONTAINING THIS CHECKLIST**; exact commit/tree identity is recorded by Gate-6 evidence; no amend and no push are part of Gate 6.
+- [ ] Gate 7 ordinary non-force publication — **NEXT AFTER GATE-6 COMMIT EVIDENCE**.
+- [ ] After Gate 7 only: begin `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0.
+
+Canonical design: `docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`.
+
+Canonical acceptance: `docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`.
 
 ### Project-state pointer
 
@@ -497,12 +519,12 @@ Console UI is not aligned to SSD1306 pages.
 - [x] Slice 3B: generic opaque text renderer.
 - [x] Slice 3C: framebuffer-equivalent aligned fast path.
 - [x] Slice 4: retained 21x3 console without scrolling + accepted reference UI.
-- [ ] Deferred candidate: Slice 4B configurable UI layout + status bar — not active unless promoted by `docs/CURRENT_STATE.md` and a dedicated accepted boundary.
+- [ ] Deferred candidate: Slice 4B configurable UI layout + status bar — the narrow console-clip configuration/persistence subset was promoted and published by `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`; broader presets/style/status-layout customization remains deferred unless separately promoted.
   - [x] 4B.0: initial status architecture/acceptance plan.
   - [x] 4B.0a: static status prototype protocol/isolation proof.
   - [x] 4B.0b: visually reject hardcoded full-frame composition; do not commit it.
   - [x] 4B.0c: define configurable layout/preset/customization plan.
-  - [ ] 4B.1: add validated `oled_ui_layout` module.
+  - [x] 4B.1 narrow substrate: validated `oled_ui_layout` module exists and is consumed by the published v1 console-clip configuration; this does not activate the broader preset/style plan.
   - [ ] 4B.1: add `minimal`, `boxed`, `compact` presets.
   - [ ] 4B.1: move borders/separator/regions into layout data.
   - [ ] 4B.1: keep 21x3 console with glyph-based horizontal fit.
@@ -517,7 +539,7 @@ Console UI is not aligned to SSD1306 pages.
   - [ ] 4B.4: define bounded host interchange/converter/configurator protocol if this deferred work is promoted.
   - [ ] 4B.4: use shared host Core/RPC over the accepted management transport; do not define a UART-first UI contract.
   - [ ] 4B.4: keep UART/CDC diagnostic transports independent of UI configuration semantics.
-  - [ ] 4B.5: optional persistence only as a consumer of the accepted Asset/Configuration persistence contract; no UI-specific parallel Flash format.
+  - [x] 4B.5 narrow v1 persistence rule: published console-clip persistence consumes the accepted Asset/Configuration A/B contract; no UI-specific parallel Flash format was introduced.
 - [x] Slice 5: circular 3-row scroll — accepted; detailed proof retained below.
 - [x] Slice 6: dirty-page presentation optimization — accepted and later superseded by the published `OLED_DIRTY_REGION_OPTIMIZATION` boundary.
 - [ ] Optional kernel-log integration — deferred; not part of the accepted numbered Slice 7 dirty-page UI-integration record below.

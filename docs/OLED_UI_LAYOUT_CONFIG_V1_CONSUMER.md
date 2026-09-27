@@ -1,6 +1,6 @@
 # Deus OS — OLED UI Layout Configuration v1 Consumer Contract
 
-Status: **PROMOTED/FROZEN CONCRETE PERSISTENT CONSUMER — CONSUMED BY ACTIVE ASSET WIP CANDIDATE — THIS FILE DOES NOT AUTHORIZE NEW SOURCE CHANGES**
+Status: **PROMOTED/FROZEN PERSISTENT CONSUMER — CONSUMED BY PUBLISHED ASSET BOUNDARY `562e786ffa734da055c23144ec4256bc8961bbaf` — NO NEW SOURCE AUTHORIZATION**
 
 Consumer ID:
 
@@ -241,7 +241,7 @@ Those require later promoted consumers or schema versions.
 
 ## 13. Source-boundary implication
 
-When Gate 1 is eventually authorized, consumer-specific source work may extend the current layout validation/selection path only as needed to support this v1 console rectangle.
+The published Asset implementation extended the layout validation/selection path only as needed to support this v1 console rectangle. Any further consumer-specific source work requires a newly promoted boundary.
 
 The accepted `128x9` status renderer contract remains unchanged.
 

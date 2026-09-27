@@ -1,6 +1,6 @@
 # Deus OS — Foundation Architecture Gap Review
 
-Status: **HISTORICAL NORMATIVE GAP REVIEW — APPLICATION EVENT + SYSTEM IDENTITY GAPS RESOLVED; PERSISTENCE PREREQUISITE CARRIED FORWARD TO `docs/CURRENT_STATE.md`**
+Status: **HISTORICAL NORMATIVE GAP REVIEW — APPLICATION EVENT, SYSTEM IDENTITY AND BOUNDED PERSISTENCE GAPS RESOLVED; UPDATE/SECURITY CONTRACTS REMAIN FUTURE**
 
 Published source baseline reviewed:
 
@@ -11,7 +11,7 @@ Published source baseline reviewed:
 
 This review asks one question: **is the lower kernel/foundation map complete enough that future product direction can change without forcing a rewrite of the accepted substrate?**
 
-Original conclusion: **yes, with a small set of additional contracts that must be explicitly retained in the roadmap.** No missing kernel mechanism blocked the then-current `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` direction. Since this review, the semantic application-event contract was accepted in `APPLICATION_RUNTIME_FOUNDATION` and the system identity/capability gap was closed by `HOST_CONTROL_APPLICATION_FOUNDATION` through `sysinfo=0x0024`. The active unresolved prerequisite for the next boundary is bounded recoverable persistence before any Flash-resident configuration/assets.
+Original conclusion: **yes, with a small set of additional contracts that must be explicitly retained in the roadmap.** No missing kernel mechanism blocked the then-current `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` direction. Since this review, the semantic application-event contract was accepted in `APPLICATION_RUNTIME_FOUNDATION` and the system identity/capability gap was closed by `HOST_CONTROL_APPLICATION_FOUNDATION` through `sysinfo=0x0024`. Bounded recoverable persistence was subsequently implemented and published by `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` at `562e786ffa734da055c23144ec4256bc8961bbaf`. The next unresolved product contracts are firmware-update authenticity/trust, controlled reboot/handoff and bootloader recovery/rollback semantics; resource/architecture recovery is the current behavior-preserving prerequisite before that work.
 
 ## 1. Verified foundation already present
 
@@ -48,7 +48,7 @@ Therefore the next product/application work does not require a scheduler rewrite
 | Runtime statistics | Partial counters/high-water diagnostics exist | Keep later observability slice; do not block app/runtime work. |
 | System identity / capabilities | Resolved by published Host Control foundation: HELLO remains transport/protocol negotiation and `sysinfo=0x0024` exposes stable OS/platform/architecture/source-tree/service/runtime/capability identity | **Resolved for v1.** Stable physical unit identity/MCU UID remains intentionally absent until a real multi-unit/privacy requirement exists. |
 | Application event/service model | Resolved by published `APPLICATION_RUNTIME_FOUNDATION`: bounded pointer-free semantic application events are separate from scheduler wake bits | **Resolved.** Scheduler wake bits remain kernel notification state, not public application ABI. |
-| Persistent settings/state | Persistent-storage policy is planned for asset/config transfer | Expand into a versioned bounded persistence contract before first Flash-resident settings/packages: schema/version, integrity, atomic commit, recovery and wear budget. |
+| Persistent settings/state | **Resolved for v1** by published `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` | Versioned bounded A/B persistence, integrity, atomic commit/recovery and wear budget are accepted for the current 8-byte configuration consumer; broader storage/filesystem semantics remain separate future work. |
 | Crash/reset retention | Fault capture exists; current `fault_record` is normal BSS and is cleared on reset | Missing later observability contract. Add retained crash/boot diagnostics so post-reset tooling can recover the previous failure/reset reason. |
 | Structured logs/telemetry | Existing command diagnostics and counters are ad hoc but useful | Add a later bounded structured observability model for host TUI/Control Panel; do not replace emergency UART/fault paths. |
 | Security/trust | CRC and destructive flag exist | CRC is integrity against corruption, not authentication. Before network remote control or firmware update, define authorization/authenticity/trust policy. |

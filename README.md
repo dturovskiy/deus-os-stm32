@@ -60,6 +60,7 @@ README is an entry point only. It is **not** an authoritative current-state, acc
 - kernel composition-root decomposition
 - USB management device
 - Windows/Linux host control application
+- bounded Asset/Configuration transfer + persistent A/B configuration
 
 Exact accepted product state, candidate hashes and the current boundary disposition live in `docs/CURRENT_STATE.md`.
 

@@ -20,7 +20,7 @@ Keep bitwise CRC-16/CCITT-FALSE for low-rate control RPC. Consider table-driven 
 
 ### WinUSB / streaming copy policy
 
-Future `USB_MANAGEMENT_DEVICE_FOUNDATION` and transfer boundaries should prefer bounded batches, minimal-copy flow and explicit backpressure. Avoid whole-payload duplication in SRAM. The accepted framed RPC semantics remain above transport.
+The published USB-management and Asset/Configuration paths, plus future update streaming, should prefer bounded batches, minimal-copy flow and explicit backpressure. Avoid whole-payload duplication in SRAM. The accepted framed RPC semantics remain above transport.
 
 ### Asset / configuration / update streaming
 
@@ -110,6 +110,20 @@ Do not reopen decomposition merely to reduce line count. Revisit this debt when 
 
 Historical `console_*` naming on transport-neutral dispatch is not itself a functional defect and is not sufficient reason for a rename-only boundary.
 
+### Host Core client decomposition
+
+The Asset boundary grew `host/src/DeusOs.Control.Core/DeusDeviceClient.cs` to roughly
+1004 lines and added about `+417/-3` lines in that boundary. The client now combines
+session negotiation, frame correlation, generic RPC, application facade behavior and
+Asset transaction orchestration.
+
+This is a real ownership hotspot but not a target Flash/SRAM blocker. Gate-4 acceptance
+of `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` did not promote this debt. Keep it
+separate from that boundary. Promote a host-only decomposition when Bootloader/update
+host work would otherwise add another protocol responsibility:
+retain one shared session/channel and split RPC/Asset/update transaction ownership
+without duplicating transport decoders, locks or reconnect state.
+
 ### System/service state must remain upstream of presentation
 
 The current boot/desktop integration reconstructs `application_service_snapshot_t` from `boot_desktop_ui_snapshot_t`. This is behaviorally valid for the accepted single OLED presentation path, but it must not become the long-term dependency direction.
@@ -142,12 +156,12 @@ In particular, do not implicitly start a replacement application after an unreso
 
 None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
 
-These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION` or `HOST_CONTROL_APPLICATION_FOUNDATION`. They do not authorize speculative kernel expansion or become active work merely by appearing in this backlog.
+These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION` or `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`. Only the measured resource/ownership subset explicitly promoted into `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is active now; the rest does not become active merely by appearing in this backlog.
 
 ## 8. Roadmap placement
 
 This backlog does not own current roadmap state or activation. `docs/CURRENT_STATE.md` is authoritative for the active boundary and `docs/ROADMAP.md` owns forward sequencing.
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` must still identify a real consumer before implementation; if Gate 0 cannot name one, the storage/transfer implementation remains deferred rather than becoming an abstract framework.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` subsequently identified `OLED_UI_LAYOUT_CONFIG_V1`, completed Gates 0–7 and is published at `562e786ffa734da055c23144ec4256bc8961bbaf`. The current measured trigger is target resource pressure before Bootloader work; the active behavior-preserving plan is `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY`. Broader storage remains consumer-driven and must not grow into an abstract framework.
 
 Optimization rule: remove unnecessary work first, measure next, add complexity only against an observed bottleneck.

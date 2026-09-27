@@ -2876,6 +2876,8 @@ static command_service_status_t console_execute_scheduler_diagnostic(
         uart_try_getc,
         production_console_stack,
         PRODUCTION_CONSOLE_STACK_WORDS,
+        production_heartbeat_stack,
+        PRODUCTION_HEARTBEAT_STACK_WORDS,
         PRODUCTION_CONSOLE_MIN_MARGIN_BYTES,
         PRODUCTION_UART_RX_EVENT
     };
