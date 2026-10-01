@@ -55,6 +55,13 @@ g_pfnVectors:
 .thumb_func
 Reset_Handler:
 
+    /* Relocated application owns VTOR before any runtime/interrupt initialization. */
+    ldr r0, =0xE000ED08
+    ldr r1, =0x08002000
+    str r1, [r0]
+    dsb
+    isb
+
     /* Copy .data from Flash to RAM */
     ldr r0, =_sidata
     ldr r1, =_sdata

@@ -3,6 +3,14 @@ using DeusOs.Control.Core;
 
 namespace DeusOs.Control.Transport.Linux;
 
+internal readonly record struct LinuxUsbProfile(
+    ushort VendorId,
+    ushort ProductId,
+    int InterfaceNumber,
+    byte OutEndpoint,
+    byte InEndpoint,
+    string DisplayName);
+
 public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
 {
     public const ushort VendorId = 0x1209;
@@ -10,6 +18,14 @@ public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
     public const int InterfaceNumber = 2;
     public const byte OutEndpoint = 0x04;
     public const byte InEndpoint = 0x84;
+
+    internal static readonly LinuxUsbProfile RuntimeProfile = new(
+        VendorId,
+        ProductId,
+        InterfaceNumber,
+        OutEndpoint,
+        InEndpoint,
+        "Deus OS Device");
 
     public ValueTask<IReadOnlyList<DeviceCandidate>> DiscoverAsync(
         CancellationToken cancellationToken)
@@ -24,7 +40,7 @@ public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
 
         try
         {
-            var candidates = LinuxLibUsbNative.EnumerateCandidates();
+            var candidates = LinuxLibUsbNative.EnumerateCandidates(RuntimeProfile);
             return ValueTask.FromResult<IReadOnlyList<DeviceCandidate>>(candidates);
         }
         catch (Exception exception)
@@ -51,7 +67,9 @@ public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
                 "Linux libusb transport is unavailable on this platform");
         }
 
-        IDeviceTransport transport = LinuxLibUsbTransport.Open(candidate.Locator);
+        IDeviceTransport transport = LinuxLibUsbTransport.Open(
+            candidate.Locator,
+            RuntimeProfile);
         return ValueTask.FromResult(transport);
     }
 }
@@ -140,7 +158,8 @@ internal static class LinuxLibUsbNative
         public int ExtraLength;
     }
 
-    internal static IReadOnlyList<DeviceCandidate> EnumerateCandidates()
+    internal static IReadOnlyList<DeviceCandidate> EnumerateCandidates(
+        LinuxUsbProfile profile)
     {
         Check(libusb_init(out var context), "libusb_init", HostErrorKind.Discovery);
         try
@@ -167,8 +186,8 @@ internal static class LinuxLibUsbNative
                     if (libusb_get_device_descriptor(
                             device,
                             out var descriptor) != 0 ||
-                        descriptor.VendorId != ExpectedVendorId ||
-                        descriptor.ProductId != ExpectedProductId)
+                        descriptor.VendorId != profile.VendorId ||
+                        descriptor.ProductId != profile.ProductId)
                     {
                         continue;
                     }
@@ -176,7 +195,7 @@ internal static class LinuxLibUsbNative
                     var locator = FormatLocator(device);
                     candidates.Add(new DeviceCandidate(
                         locator,
-                        "Deus OS Device",
+                        profile.DisplayName,
                         "Linux"));
                 }
 
@@ -221,7 +240,12 @@ internal static class LinuxLibUsbNative
         return $"usb:{bus:D3}:{path}";
     }
 
-    internal static void ValidateManagementTopology(IntPtr device)
+    internal static void ValidateManagementTopology(IntPtr device) =>
+        ValidateTopology(device, LinuxLibUsbDiscovery.RuntimeProfile);
+
+    internal static void ValidateTopology(
+        IntPtr device,
+        LinuxUsbProfile profile)
     {
         Check(
             libusb_get_active_config_descriptor(device, out var configPointer),
@@ -255,7 +279,7 @@ internal static class LinuxLibUsbNative
                             usbInterface.AlternateSettings,
                             altIndex * interfaceDescriptorSize));
 
-                    if (descriptor.InterfaceNumber != ManagementInterface ||
+                    if (descriptor.InterfaceNumber != profile.InterfaceNumber ||
                         descriptor.AlternateSetting != 0)
                     {
                         continue;
@@ -268,7 +292,7 @@ internal static class LinuxLibUsbNative
                     {
                         throw new DeusHostException(
                             HostErrorKind.Open,
-                            "Linux management interface is not IF2 FF/00/00 with two endpoints");
+                            $"Linux interface {profile.InterfaceNumber} is not FF/00/00 with two endpoints");
                     }
 
                     var sawOut = false;
@@ -292,15 +316,15 @@ internal static class LinuxLibUsbNative
                                 $"unexpected endpoint 0x{endpoint.EndpointAddress:X2} type/packet");
                         }
 
-                        sawOut |= endpoint.EndpointAddress == OutEndpoint;
-                        sawIn |= endpoint.EndpointAddress == InEndpoint;
+                        sawOut |= endpoint.EndpointAddress == profile.OutEndpoint;
+                        sawIn |= endpoint.EndpointAddress == profile.InEndpoint;
                     }
 
                     if (!sawOut || !sawIn)
                     {
                         throw new DeusHostException(
                             HostErrorKind.Open,
-                            "required EP4 OUT/IN endpoints were not found");
+                            $"required OUT 0x{profile.OutEndpoint:X2} / IN 0x{profile.InEndpoint:X2} endpoints were not found");
                     }
 
                     found = true;
@@ -311,7 +335,7 @@ internal static class LinuxLibUsbNative
             {
                 throw new DeusHostException(
                     HostErrorKind.Open,
-                    "management interface 2 was not found");
+                    $"USB interface {profile.InterfaceNumber} was not found");
             }
         }
         finally

@@ -51,23 +51,23 @@ response-loss idempotency, deterministic corruption fallback, physical power-cyc
 retention and candidate-bound ST-LINK recovery. This does not create a filesystem,
 generic package manager, executable loader or update protocol.
 
-## Current prerequisite — pre-Bootloader resource / architecture recovery
+## Current boundary — firmware update / bootloader foundation
 
-`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is the behavior-preserving current
-boundary and has completed hardware/runtime Gate 4. The accepted candidate tree is
-`a10182e7d0659b9b161073ad49a8816ecb6e7918`, with Flash/SRAM `52908/10920`,
-production task0/task1 margins `304/432` and MSP margin `1592`. Recovery was achieved
-with the measured minimum source/profile set: `kernel.c -> -Os` plus removal of the
-redundant scheduler-owned 1-KiB default stack store while preserving explicit production
-`1024/512` stack bindings and diagnostic behavior. No second composition-root split was
-promoted because Gate-1 attribution did not prove a further blocker; host Core client
-decomposition remains a separate trigger-driven debt before update-client responsibilities
-would otherwise accumulate. Bootloader/update feature work remains forbidden until this
-recovery boundary is documented, committed and published.
+`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is complete and published at
+`a8f92f83c2ba8917ad183b1a099c9e21199c9463`. Its accepted production candidate remains
+source tree `a10182e7d0659b9b161073ad49a8816ecb6e7918`, Flash/SRAM `52908/10920`, task
+margins `304/432` and MSP margin `1592`.
 
-Canonical design/acceptance:
-`docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`
-`docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 is complete. Gate 0A source/ownership audit is accepted (SHA-256 `BB3D9210639564D27E0E9FFF57817A10E619991EC3A1960D4D5D29E82E122002`); Gate 0B linked feasibility is accepted (SHA-256 `852DF5AB29AB850FDBB250FD582C2C1D59B0052790E1CDAF8759A5E50C05F780`). The selected minimum bootloader links at `5756/8192` Flash and `1684/2048` conventional SRAM; longest linked stack path is `648/768`, MSP margin `376`. The exact current application relocates acceptance-only to `0x08002000/52K` at Flash/SRAM `52932/10920`, ending `0x0800EEC4` before metadata page A.
+
+Gate 1 Host Core decomposition is accepted (evidence SHA-256 `D0EE276FB34965AB229E21A53F3A6317159F82EF1AD6B6C1F993132692C7C808`): one `DeviceProtocolChannel` owns transport/framing/correlation/gate; generic RPC and Asset transaction owners are separate; `DeusDeviceClient` is the public facade; `DeusDeviceSession` remains the reconnect lifecycle owner. Existing Core/Transport tests pass `28/28` and `5/5`.
+
+Gate 2 is accepted (evidence SHA-256 `CF8492497990C799602E53AAD59490E9EBDA399C40EB81BB13A74422002D0531`): firmware tree `637ea07b10cf84882e19cbb8239f31b7f48856a7`, application Flash/SRAM `52932/10920`, end `0x0800EEC4`, vectors at `0x08002000`, metadata/persistence boundaries exact. Gates 3–4 and the complete Gate-5 hardware functional matrix are accepted; the post-Stage-10 host reliability repair is accepted. Gate 6 is locally accepted with capability mask `0x0000007F`: firmware tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, host tree `c95019bedfb6223705e6eba4f4c6d310b1701cdc`, firmware BIN `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`, Flash/SRAM `53212/10956`, Core `41/41`, Transport `12/12`; validation evidence SHA-256 `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC4BD14FA848FE3FD44FD7`. Gate 7 ordinary non-force publication is current. Gate-2 relocation owners and geometry/ceiling invariants remain frozen.
+
+Canonical design/acceptance/protocol:
+`docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md`
+`docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
+`docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`
 
 ## Published boundary — Boot / desktop UI foundation
 
@@ -389,6 +389,34 @@ BOOT_DESKTOP_UI_FOUNDATION
  -> FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION
  -> networking/service extensions
 ```
+
+## Accepted architecture — firmware update / bootloader foundation — Gate-5 hardware accepted
+
+Boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`.
+
+The accepted architecture adds an 8-KiB reset-owning bootloader at `0x08000000..0x08001FFF`, relocates the executable application to `0x08002000..0x0800EFFF`, owns authenticated firmware metadata in pages 60/61, and leaves persistence pages 62/63 outside the update state machine.
+
+The v1 update path is intentionally narrow:
+
+- runtime entry is management-IF2 `ENTER_BOOTLOADER` -> one-shot BKP token -> `SYSRESETREQ`;
+- recovery/update USB is private-test `1209:000D`, one vendor-specific bulk interface, WinUSB/libusb, no CDC;
+- package format is fixed 48-byte header + 32-byte HMAC-SHA-256 tag + relocated application bytes;
+- target/product/origin/version policy is device-enforced before destructive application programming;
+- metadata commit marker `0xA55A` is written last from erased `0xFFFF`;
+- DATA is strictly sequential, with exactly one exact immediately-previous retry accepted idempotently;
+- interruption before commit falls back to the preserved authenticated version floor and complete restart-from-BEGIN semantics;
+- normal handoff validates vectors and transfers to application VTOR `0x08002000`;
+- bootloader does not own OLED/I2C or persistence pages 62/63.
+
+Gate-5 hardware acceptance covers normal boot, explicit update entry, invalid-app recovery, malformed header, wrong target, bad digest, bad authenticator, rollback rejection, deterministic reset interruption, physical Mac-mini VBUS interruption, complete retry, exact application bytes, exact bootloader/persistence preservation, metadata commit ordering, runtime VTOR and Linux/libusb target transport.
+
+A post-Stage-10 host reliability audit keeps one shared `DeviceProtocolChannel` as correlation authority. Firmware-update timeout handling marks only the abandoned request ID stale; one delayed response with that explicit stale ID is discarded centrally, while an unknown mismatched request ID remains fatal. Windows WinUSB pipe timeout errors 121/1460 map to `HostErrorKind.Timeout`; Open/setup error ownership is unchanged. No second firmware-side response-loss mechanism is claimed from historical timeout observations.
+
+The hardware functional matrix is complete. Gate 6 locally accepts publication capability bit 6 (`SYSTEM_IDENTITY_CAPABILITIES = 0x0000007F`) after build/test/source-consistency validation; firmware tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, host tree `c95019bedfb6223705e6eba4f4c6d310b1701cdc`, firmware BIN `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`, Core `41/41`, Transport `12/12`, evidence SHA-256 `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC4BD14FA848FE3FD44FD7`. Gate 7 owns ordinary non-force remote publication.
+
+Canonical design: `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md`.
+Canonical protocol: `docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`.
+Canonical acceptance: `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
 ## 1. Boot flow
 

@@ -1,3 +1,218 @@
+## 2026-10-01
+
+### Firmware Update / Bootloader Foundation — Gate-6 locally accepted
+
+After Gate-5 hardware/reliability acceptance, Gate 6 reconciled the canonical current-state/design/acceptance/protocol/roadmap records and activated `SYSTEM_IDENTITY_CAP_FIRMWARE_UPDATE` in the runtime system-identity mask. The Gate-6 publication candidate therefore advertises system capabilities `0x0000007F`.
+
+Host publication policy was activated symmetrically: `DeusDeviceClient` no longer treats `SystemCapability.FirmwareUpdate` as forbidden during system-info negotiation, while `NetworkServices` remains forbidden and `EnterBootloaderAsync(PublishedOnly)` still requires the firmware-update bit. Core tests now explicitly cover both the published-capability entry path and rejection when the bit is absent.
+
+Gate-6 validation evidence SHA-256 `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC4BD14FA848FE3FD44FD7` is accepted: ZIP CRC clean, `92/92` evidence hashes exact, firmware candidate tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, host candidate tree `c95019bedfb6223705e6eba4f4c6d310b1701cdc`, validated pre-commit full candidate tree `8860661c9bcd5e4424fa5c36b37d48815b8ea7ef`, firmware BIN SHA-256 `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`, Flash/SRAM `53212/10956`, Core `41/41`, Transport `12/12`, all Core/Windows/Linux Release builds and zero target/remote/real-index/ref mutation. Gate 6 is accepted by the normal local acceptance commit containing this entry; Gate 7 ordinary non-force publication remains pending and no push is part of Gate 6.
+
+### Firmware Update / Bootloader Foundation — Gate-5 hardware matrix complete
+
+Gate-5 Stages 6–10 are accepted through exact technical evidence plus operator OLED continuations. The campaign covers bad digest, bad authenticator, rollback/version rejection, deterministic reset interruption, physical Mac-mini native-USB/VBUS interruption, recovery and full retry from offset zero, exact successful application bytes, metadata commit ordering, unchanged bootloader pages, byte-identical persistence and deterministic runtime handoff/VTOR.
+
+Key final evidence:
+
+- Stage-6 technical v4 `0C5FD70A063F6E4BB366ED85A45DD4AB060B8B645C5983AF7D3E0E486C2703DA`; continuation `D726C04A812BDAB3262E7D352A146481E627894586ADA89A00DA026614175717`;
+- Stage-7 technical `43DF41301E005D6E23DEE7C71D3076F97797AF3419232C46A57F3FAA9F916515`; continuation `EFA420DA03CB0300937B1DBC99C73CBBC66B7627577E82E92AC3F1252B5D7CA9`;
+- Stage-8 technical v2 `D2006CEE054A85ECA59B96288B3CE25AFCF5BF97B5611D994CF8F7F06B3DB61F`; continuation `57761DE3C23839566983172E403884F85B1A583AB7C5C9ADC512E6096F22B921`;
+- Stage-9 technical `2775E2565EA10BCEF8A72EDEE052D698A515B347C6E177D7ABB972D7F36C1EAB`; continuation `C0240BA36BD79C5DB8413B50B4885A6ADBBE6FB69BF2907A75153CEE89D333EB`;
+- Stage-10 physical-VBUS technical `24FA0C42644B7E87F88AAD0B775547C7272A591A366D11A4903274C3F47D6CA3`; continuation `E6EB019B021AB95DB16CA3B95E1C3F7C2C7F44D862ABF2711F6B42089F35D560`.
+
+The final bench was restored byte-exact to whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`.
+
+### Firmware Update / Bootloader Foundation — host reliability repair accepted
+
+The post-Stage-10 architecture/reliability audit identified two host-side defects: delayed responses from timed-out firmware requests could poison a fresh-ID retry/following request, and Windows WinUSB native timeout codes 121/1460 were classified as disconnects rather than timeouts.
+
+The accepted repair keeps one shared `DeviceProtocolChannel` correlation authority, centrally discards one response only for an explicitly stale timed-out request ID, preserves fatal handling for unknown request-ID mismatches, retains exactly one immediate exact-payload DATA retry, and maps only WinUSB pipe-I/O timeout errors to `HostErrorKind.Timeout`.
+
+Validation evidence SHA-256 `61D8AEBCA99E712D893474376CA4FEDD63D17D11021E45C0F7701621C712B108` passed Core `39/39`, Transport `12/12`, Core/Windows/Linux Release builds, exact source/poststate locks and zero target/remote/Git mutation. Formal repair continuation SHA-256 is `253026C36C346C579AD5C1CE0FD528A7F7943A07CC21D792171C14C3350797FD`.
+
+No second firmware-side response-loss mechanism is claimed from the historical INFO/BEGIN/DATA timeout observations; no speculative bootloader patch is introduced. Gate 6 is now the documentation/capability publication finalization step.
+
+## 2026-09-30
+
+### Firmware Update / Bootloader Foundation — Gate-5 Stage-5 technical PASS
+
+`stm32_os_bootloader_gate5_stage5_wrong_target_rejection_v1_20260930_190851.evidence.zip`
+(SHA-256 `2BAADC493338BA31A26F38F33A0488C7F2B7F092F2ABB8B8F420296D2766043F`) passed
+the signed wrong-target fail-closed hardware case with ZIP CRC clean and `72/72` hash-owned
+evidence entries exact.
+
+The run started from exact accepted whole Flash
+`A9F279C2DEB70937A4A3BED1B0A2919D50374B8BCE4B1C15948B8244F17062CD`,
+validated accepted repair bundle SHA-256
+`8871F0E7D770A3CA45A942638552B53B0BABE3EECE946ECB4C0E74DA64616B9E`,
+and used its frozen signed `wrong_target_v2.pkg` vector SHA-256
+`B82A52EF431017A27C0BAA64D346982A93AB6A7D1240C18C14F11A3EDB2CB5FB`
+for product `0x534F4544`, target `0x0411`, firmware version `2`.
+
+Pre-case bootloader `INFO` was `Ok/RecoveryIdle` with offset `0`, floor `1`, committed version `1`.
+The structurally valid signed wrong-target `BEGIN` passed `Ok/HeaderStaged`; `AUTHORIZE_HEADER`
+then returned exactly `TargetMismatch/HeaderStaged`, still with offset `0`, floor `1`, committed
+version `1`. `DATA` and `END` were never sent. Whole Flash remained byte-exact while bootloader
+was still active after rejection, proving target rejection occurred before authorization-side
+metadata erase/application mutation.
+
+Explicit HOTPLUG reset restored runtime `1209:000C`, removed bootloader `1209:000D`, restored
+`VTOR=0x08002000`, left `VECTACTIVE=0`, and kernel ticks advanced `4732 -> 6451`; final whole
+Flash remained exact. Operator physical reconfirmation is now `OLED=PASS` for `DEUS OS / DESKTOP / READY`.
+Formal continuation `stm32_os_bootloader_gate5_stage5_acceptance_continuation_v1_20260930.evidence.zip`,
+SHA-256 `C35A3319B806B21BC42B48EAF84822DF0F721AEE5EF5222BFA45C959F0BB90EE`, exact-binds the `72/72` technical evidence with zero target
+I/O/mutation, fully accepts Stage 5, and authorizes Stage 6.
+
+
+### Firmware Update / Bootloader Foundation — Gate-5 Stage-4 technical PASS
+
+`stm32_os_bootloader_gate5_stage4_malformed_header_rejection_v1_20260930_184648.evidence.zip`
+(SHA-256 `BD0ABADA1523C4E213A4F2B46997A62FE55124208939786543577D2DD434F281`) passed
+the malformed-header fail-closed hardware case with ZIP CRC clean and `68/68` hash-owned
+evidence entries exact.
+
+The run entered the accepted bootloader path from exact whole Flash
+`A9F279C2DEB70937A4A3BED1B0A2919D50374B8BCE4B1C15948B8244F17062CD`
+and exercised six structurally invalid `BEGIN` headers: wrong format version, non-zero reserved
+byte, image length below minimum, above maximum, misaligned image length, and firmware version
+zero. Every request returned `BadHeader/RecoveryIdle` with offset `0`, version floor `1`,
+committed version `1`. `AUTHORIZE_HEADER`, `DATA`, and `END` were never sent.
+
+Whole Flash remained byte-exact while the bootloader was still active after all malformed
+requests, proving structural `BEGIN` rejection is non-mutating. An explicit HOTPLUG reset then
+returned runtime `1209:000C`, removed bootloader `1209:000D`, restored `VTOR=0x08002000`,
+left `VECTACTIVE=0`, and kernel ticks advanced `4806 -> 6555`; final whole Flash remained exact.
+Operator physical reconfirmation is now `OLED=PASS` for `DEUS OS / DESKTOP / READY`. Formal continuation `stm32_os_bootloader_gate5_stage4_acceptance_continuation_v1_20260930.evidence.zip`, SHA-256 `AD194B3198D19EF14EA726568DF50207DE7B09EBC4EF2C2FBE2E974974121F5D`, exact-binds the technical evidence with zero target I/O/mutation, fully accepts Stage 4, and authorizes Stage 5.
+
+
+### Firmware Update / Bootloader Foundation — Gate-5 Stage-3 technical PASS
+
+`stm32_os_bootloader_gate5_stage3_invalid_application_recovery_v1_20260930_182233.evidence.zip`
+(SHA-256 `A507F73C628DA735FCF6A5C0A4E58ABB7A984397970ACB7BE3C64CAE9E4F7D50`) passed
+the bounded invalid-application -> recovery hardware case with ZIP CRC clean and `72/72`
+hash-owned evidence entries exact. The run started from exact accepted whole Flash
+`A9F279C2DEB70937A4A3BED1B0A2919D50374B8BCE4B1C15948B8244F17062CD`, erased
+only application page 59 at `0x0800EC00`, and proved exactly that one page changed while
+metadata and persistence pages remained unchanged.
+
+After HOTPLUG reset the runtime `1209:000C` device was absent and recovery bootloader
+`1209:000D` present. Bootloader `INFO` returned `Ok/RecoveryIdle`, expected offset `0`,
+version floor `1`, committed version `0`, proving the retained authenticated floor did not
+make the damaged application bootable. No USB update `BEGIN/AUTHORIZE/DATA/END` command
+was sent.
+
+Accepted `PRESERVE_PERSISTENCE` recovery then returned whole Flash byte-exact to
+`A9F279C2DEB70937A4A3BED1B0A2919D50374B8BCE4B1C15948B8244F17062CD`.
+Runtime proof passed with `VTOR=0x08002000`, `VECTACTIVE=0`, kernel ticks
+`20939 -> 22724`, runtime `1209:000C` present and bootloader `1209:000D` absent.
+Operator physical reconfirmation is now `OLED=PASS` for `DEUS OS / DESKTOP / READY`. Formal continuation `stm32_os_bootloader_gate5_stage3_acceptance_continuation_v1_20260930.evidence.zip`, SHA-256 `E587AEC687955E4A5B93B1350D1489E4F6451726A454C09ED091A2F4A3539CA3`, exact-binds the technical evidence with zero target I/O/mutation, fully accepts Stage 3, and authorizes Stage 4.
+
+
+### Firmware Update / Bootloader Foundation — Gate-5 Stage-2 technical PASS
+
+`stm32_os_bootloader_gate5_stage2_explicit_update_entry_v4_20260930_180321.evidence.zip`
+(SHA-256 `80C670DF059ED37D0A7E2E7BBCF48F55FCC330B21381B68C93FE5DA385DDF8BA`) passed
+the explicit update-entry / bootloader-INFO hardware case with ZIP CRC clean and `68/68`
+hash-owned evidence entries exact. Runtime `ENTER_BOOTLOADER` returned `Ok/Resetting`,
+`1209:000D` enumerated, bootloader `INFO` returned `Ok/RecoveryIdle` with expected offset `0`,
+version floor `1`, and committed version `1`. No `BEGIN/AUTHORIZE/DATA/END` command was sent;
+whole Flash remained exact at `A9F279C2DEB70937A4A3BED1B0A2919D50374B8BCE4B1C15948B8244F17062CD`
+before, during bootloader idle, and after the return to runtime.
+
+Linux permission handling was constrained to one operator-visible privileged metadata change on
+the ephemeral `1209:000D` `/dev/bus/usb/...` node; the firmware protocol itself ran as user `deus`
+and no persistent udev/configuration change was made. Explicit `mode=HOTPLUG -rst` restored runtime;
+`VTOR=0x08002000`, `VECTACTIVE=0`, kernel ticks advanced `4771 -> 6492`, runtime `1209:000C`
+returned and bootloader `1209:000D` disappeared. Operator physical reconfirmation is now
+`OLED=PASS` for `DEUS OS / DESKTOP / READY`; Stage 2 is fully accepted. Stage 3 is not yet authorized.
+
+
+### Firmware Update / Bootloader Foundation — Stage-1 normal-boot repair accepted
+
+The Gate-5 Stage-1 normal-boot repair is accepted after the original CLEAN run exposed a
+boot handoff failure. Hardware fault capture and direct Flash instruction readback proved
+the causal chain: the old bootloader executed `cpsid i` before application handoff,
+leaking `PRIMASK=1`; the application's first scheduler `svc #0` at `0x0800B720`
+therefore escalated to a FORCED HardFault with stacked PC `0x0800B722`. The narrow
+product repair removes that interrupt mask from normal handoff, while recovery tooling
+uses explicit HOTPLUG final-reset semantics.
+
+The narrow reopen was accepted without rerunning unchanged Host product bytes. Gate-3
+repair evidence SHA-256 is
+`58E7FA5576DACC5BE636A2ABAD5B82E1BFDA1A463182957E7B039BB697F50292`;
+Gate-4 repair evidence SHA-256 is
+`62596F4066E6C0FEB476FBC412951123A61FED87731C6B48B473B28429BBCF07`.
+Accepted repair trees are full
+`1972d7d59057eae8e89fda6b0028ccf07eca5bb1`, firmware
+`b3b6d4136106f6b6a195fb987a0c66a4b7812842`, unchanged Host
+`96d5f1f73ddd65783c4e7f6b10ae61b6a72d0ef4`, and recovery tooling
+`24434b8f19be22251e4fd6129a8d39f06b101b9c`. The accepted immutable repair
+bundle SHA-256 is
+`8871F0E7D770A3CA45A942638552B53B0BABE3EECE946ECB4C0E74DA64616B9E`.
+
+Stage-1 acceptance evidence is
+`stm32_os_stage1_repair_apply_accepted_bundle_v3_20260930_155157.evidence.zip`,
+SHA-256 `3D3A28F0B0C949CCCFB817B7DC726B1B9F63104348EF954ABFEDD08A0F9F0EC5`.
+Its ZIP CRC and all `41/41` hash-owned evidence entries are exact. Post-repair whole
+Flash SHA-256 is
+`A9F279C2DEB70937A4A3BED1B0A2919D50374B8BCE4B1C15948B8244F17062CD`;
+runtime proof shows core running, application `VTOR=0x08002000`, no active HardFault,
+cleared fault record, advancing kernel ticks, runtime USB `1209:000C` present and
+bootloader USB `1209:000D` absent. Physical OLED acceptance is
+`DEUS OS / DESKTOP / READY` = PASS.
+
+Gate-5 Stage 2 is not authorized by this result and requires a separate explicit
+authorization/acceptance step.
+
+## 2026-09-27
+
+### Published — pre-Bootloader resource / architecture recovery — Gates 0–7 accepted
+
+`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is complete and published at commit
+`a8f92f83c2ba8917ad183b1a099c9e21199c9463`, tree
+`013c1f472eb9404de94befdcc3f1e1e5acfc5831`. The accepted production firmware
+candidate remains source tree `a10182e7d0659b9b161073ad49a8816ecb6e7918`, BIN
+SHA-256 `FE1CB8AF32063C0336D276EDAAB0583E6F269C953DCF0E68D4FB6F9B55D583C2`,
+Flash/SRAM `52908/10920`, task margins `304/432` and MSP margin `1592`.
+Gate 7 used an ordinary non-force push and final fetch proved
+`HEAD == origin/main == FETCH_HEAD == a8f92f83c2ba8917ad183b1a099c9e21199c9463`,
+clean worktree/index and ahead/behind `0/0`. Gate-7 evidence SHA-256 is
+`335013389D8AB6C1B09C4BF720185FED82EC4A0D30A2F3F6237CF8ACCA1DE8CE`.
+
+### Firmware Update / Bootloader Foundation Gate 0A accepted
+
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is now the active boundary. New canonical
+design/acceptance records are
+`docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and
+`docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`; exact v1 wire/image ABI is frozen in `docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`.
+
+Gate 0A read-only/source-ownership audit passed from
+`stm32_os_bootloader_gate0a_contract_source_audit_v1_20260927_200959.evidence.zip`,
+SHA-256 `BB3D9210639564D27E0E9FFF57817A10E619991EC3A1960D4D5D29E82E122002`.
+It binds the published recovery state and proves the current standalone
+`0x08000000/54K` linker, no application VTOR relocation, persistence-only Flash writer,
+Asset-era recovery geometry, reserved-but-clear firmware-update capability bit 6, and
+the active Host Core decomposition trigger. No build, target I/O, Flash/reset/option-byte
+mutation, index mutation, commit or push occurred.
+
+The ten Gate-0 architecture decisions are frozen: management-IF2/BKP one-shot update entry, minimal single-interface vendor/bulk WinUSB+libusb bootloader on private-test `1209:000D`, fixed 48-byte image header, HMAC-SHA-256 with external non-repository key material, explicit product/device/origin binding, monotonic rollback floor, executable pages 8..59 (`52K`), firmware metadata A/B pages 60/61, full-retry recoverable in-place programming and bounded bootloader RAM/stack. The corrected STM32F1 metadata rule writes `0xA55A` once from erased `0xFFFF`; no in-place `0xA500` retirement exists.
+
+### Firmware Update / Bootloader Foundation Gate 0 complete
+
+Gate 0B linked feasibility passed from `stm32_os_bootloader_gate0b_linked_feasibility_recomposed_v4_20260927_225243.evidence.zip`, SHA-256 `852DF5AB29AB850FDBB250FD582C2C1D59B0052790E1CDAF8759A5E50C05F780`. ARM GNU 15.3.1 linked the complete acceptance-only bootloader at Flash `5756/8192`, conventional SRAM `1684/2048`, max frame `248/256`, longest linked stack path `648/768`, MSP margin `376`, undefined symbols `0`. The exact current application relocated acceptance-only to `0x08002000/52K` at Flash/SRAM `52932/10920`, end `0x0800EEC4`, leaving metadata and persistence untouched. All 57 native processes exited `0`; stderr was empty; repository/index/poststate stayed exact; target I/O/Flash/reset/RDP/commit/push were absent.
+
+Gate 0 is complete.
+
+### Firmware Update / Bootloader Foundation Gate 1 accepted
+
+Gate 1 Host Core ownership split passed from `stm32_os_bootloader_gate1_host_ownership_split_acceptance_v3_20260927_233619.evidence.zip`, SHA-256 `D0EE276FB34965AB229E21A53F3A6317159F82EF1AD6B6C1F993132692C7C808`. The exact 22-path byte lock passed; `DeusDeviceClient.cs` is reduced to a 377-line facade while the new `DeviceProtocolChannel`, `DeusRpcClient` and `AssetTransferClient` own the shared protocol channel, generic RPC and Asset transactions respectively. Core, Core.Tests and Transport.Tests builds passed with zero warnings/errors; direct MTP tests passed Core `28/28` and Transport `5/5`; pre/post repository state matched and firmware/linker/startup/test source was unchanged. No target/Flash/reset/index/commit/push mutation occurred.
+
+### Firmware Update / Bootloader Foundation Gate 2 accepted
+
+Gate 2 relocated application build / VTOR / handoff foundation passed from `stm32_os_bootloader_gate2_relocated_application_build_acceptance_v2_20260928_145108.evidence.zip`, SHA-256 `CF8492497990C799602E53AAD59490E9EBDA399C40EB81BB13A74422002D0531`. Exact firmware-only tree `637ea07b10cf84882e19cbb8239f31b7f48856a7`; ARM GNU 15.3.1 Flash/SRAM `52932/10920`, BIN end `0x0800EEC4`, vector table and `g_pfnVectors` at `0x08002000`, metadata/persistence symbols exact, stack-usage files `26/26` with `249` records, undefined symbols `0`, exact poststate. Accepted artifacts: BIN `82567F621ED393395810DEB40382EE8477B2975BA1824A407CA9CDDD7B721324`, ELF `DDE555984DA6926CE24C3EAC329E6AB4DDDA4F980E33A05C87258A181036179A`, MAP `0E075E8DC4B3CD64FF89D0B2119FF228CC4834614B15F5006CF3518508DF15B2`. No target/Flash/reset/index/commit/push mutation occurred.
+
+Gate 3 bootloader/update transport/security implementation is current.
+
 ## 2026-09-26
 
 ### Published — Asset / Configuration transfer foundation — Gates 0–7 accepted

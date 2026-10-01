@@ -156,12 +156,12 @@ In particular, do not implicitly start a replacement application after an unreso
 
 None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
 
-These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION` or `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`. Only the measured resource/ownership subset explicitly promoted into `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is active now; the rest does not become active merely by appearing in this backlog.
+These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` or the published `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY`. The Bootloader boundary is now active, and it promotes only the Host Core decomposition trigger needed before update orchestration plus the explicitly frozen update/recovery/security work. The rest does not become active merely by appearing in this backlog.
 
 ## 8. Roadmap placement
 
 This backlog does not own current roadmap state or activation. `docs/CURRENT_STATE.md` is authoritative for the active boundary and `docs/ROADMAP.md` owns forward sequencing.
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` subsequently identified `OLED_UI_LAYOUT_CONFIG_V1`, completed Gates 0–7 and is published at `562e786ffa734da055c23144ec4256bc8961bbaf`. The current measured trigger is target resource pressure before Bootloader work; the active behavior-preserving plan is `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY`. Broader storage remains consumer-driven and must not grow into an abstract framework.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` identified `OLED_UI_LAYOUT_CONFIG_V1` and is published at `562e786ffa734da055c23144ec4256bc8961bbaf`; `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is complete/published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`. The active boundary is now `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0. Host Core decomposition is promoted only because update orchestration triggers it; broader storage and unrelated debt remain consumer-driven.
 
 Optimization rule: remove unnecessary work first, measure next, add complexity only against an observed bottleneck.

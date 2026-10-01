@@ -23,7 +23,7 @@ public sealed class WindowsWinUsbDiscovery : IDeviceDiscovery
 
         try
         {
-            var paths = NativeMethods.EnumerateInterfacePaths(
+            var paths = EnumerateInterfacePaths(
                 ManagementInterfaceGuid);
             IReadOnlyList<DeviceCandidate> candidates = paths
                 .Select(path => new DeviceCandidate(
@@ -72,6 +72,9 @@ public sealed class WindowsWinUsbDiscovery : IDeviceDiscovery
                 exception);
         }
     }
+
+    internal static IReadOnlyList<string> EnumerateInterfacePaths(Guid guid) =>
+        NativeMethods.EnumerateInterfacePaths(guid);
 
     private static class NativeMethods
     {

@@ -1,6 +1,6 @@
 # Deus OS — Pre-Bootloader Resource / Architecture Recovery Acceptance Plan
 
-Status: **GATES 0–6 ACCEPTED BY THE ONE NORMAL LOCAL ACCEPTANCE COMMIT CONTAINING THIS DOCUMENT — GATE 7 ORDINARY NON-FORCE PUBLICATION NEXT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED `a8f92f83c2ba8917ad183b1a099c9e21199c9463` — COMPLETE**
 
 Boundary:
 
@@ -243,11 +243,7 @@ No push in Gate 6.
 
 ## Gate 7 — ordinary non-force publication
 
-One ordinary non-force publication followed by fetch and proof:
-
-- `HEAD == origin/main == FETCH_HEAD`;
-- clean worktree/index;
-- ahead/behind `0/0`.
+Gate 7 is **PASS** from `stm32_os_preboot_resource_gate7_nonforce_publish_v1_20260927_194416.evidence.zip`, SHA-256 `335013389D8AB6C1B09C4BF720185FED82EC4A0D30A2F3F6237CF8ACCA1DE8CE`. The ordinary non-force push published commit `a8f92f83c2ba8917ad183b1a099c9e21199c9463`, tree `013c1f472eb9404de94befdcc3f1e1e5acfc5831`; post-push fetch proved `HEAD == origin/main == FETCH_HEAD`, clean worktree/index and ahead/behind `0/0`.
 
 After Gate 7, next boundary is exactly:
 

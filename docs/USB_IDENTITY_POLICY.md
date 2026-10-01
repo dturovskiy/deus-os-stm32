@@ -24,12 +24,12 @@ Product   Deus OS CDC Console
 Status    published CDC profile / private-test identity
 ```
 
-`0x000A`, `0x000B`, and `0x000C` are pid.codes private **Test PID** allocations under VID `0x1209`. They may be used for private testing only; they must not be used for redistributed, sold, or manufactured devices and are not globally unique product identities.
+`0x000A`, `0x000B`, `0x000C`, and `0x000D` are pid.codes private **Test PID** allocations under VID `0x1209`. They may be used for private testing only; they must not be used for redistributed, sold, or manufactured devices and are not globally unique product identities.
 
 Authoritative allocation references:
 
 - `https://pid.codes/1209/000A/`
-- `https://pid.codes/1209/` (Test PID list including `0x000B` and `0x000C`)
+- `https://pid.codes/1209/` (Test PID list including `0x000B`, `0x000C`, and `0x000D`)
 
 USB-IF remains the authority for USB Vendor IDs. This project does not claim ownership of VID `0x1209`; it uses only the private-test permission granted by that VID owner for these Test PIDs.
 
@@ -55,6 +55,26 @@ The stable management device-interface GUID is not the USB product identity. It 
 
 `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`
 
+## Bootloader development profile
+
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 freezes a fourth private-test identity because the bootloader topology is a single vendor/bulk interface rather than the runtime composite device:
+
+```text
+Boundary  FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION
+VID       0x1209
+PID       0x000D
+Product   Deus OS Bootloader
+Status    Gate-0 contract / private-test vendor-bulk profile
+```
+
+Using a distinct PID prevents the runtime `000C` composite CDC/management descriptor and Windows function-binding history from being reused for the bootloader's different interface-0 topology. Windows bootloader binding is WinUSB through its own Microsoft OS 2.0 descriptor; Linux uses libusb.
+
+The stable bootloader device-interface GUID is a separate host discovery ABI from the runtime management IF2 GUID:
+
+`{F08907B7-BEC4-5FCF-BC4C-B446ED345D87}`
+
+The bootloader Microsoft OS 2.0 descriptor set publishes that value through the `DeviceInterfaceGUIDs` `REG_MULTI_SZ` property for interface 0. Windows bootloader discovery and the descriptor must match exactly.
+
 ## Hard restrictions
 
 - private bench/development testing only;
@@ -74,4 +94,4 @@ A boundary that changes USB class topology in a way that changes host binding sh
 
 ## Gate effect
 
-This document authorizes private testing only. The historical published CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. The accepted/published `USB_MANAGEMENT_DEVICE_FOUNDATION` uses `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`, only within the frozen composite-management boundary. None of these Test PIDs authorize production/distribution use.
+This document authorizes private testing only. The historical published CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. The accepted/published `USB_MANAGEMENT_DEVICE_FOUNDATION` uses `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`. The active Bootloader Gate-0 contract reserves `VID=0x1209`, `PID=0x000D`, product `Deus OS Bootloader`. None of these Test PIDs authorize production/distribution use.

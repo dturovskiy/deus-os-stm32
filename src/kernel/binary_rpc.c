@@ -57,7 +57,6 @@ static int binary_rpc_send_workspace_frame(
     uint16_t payload_length)
 {
     uint8_t *wire;
-    uint16_t crc;
     uint32_t wire_length;
 
     if ((state == (binary_rpc_state_t *)0) ||
@@ -70,29 +69,12 @@ static int binary_rpc_send_workspace_frame(
     }
 
     wire = state->workspace->wire;
-    wire[0] = BINARY_FRAME_MAGIC0;
-    wire[1] = BINARY_FRAME_MAGIC1;
-    wire[2] = BINARY_FRAME_PROTOCOL_VERSION;
-    wire[3] = frame_type;
-    wire[4] = 0u;
-    wire[5] = 0u;
-    wire[6] = (uint8_t)(request_id & 0xFFu);
-    wire[7] = (uint8_t)(request_id >> 8);
-    wire[8] = (uint8_t)(payload_length & 0xFFu);
-    wire[9] = (uint8_t)(payload_length >> 8);
-
-    crc = binary_frame_crc16_ccitt_false(
-        &wire[2],
-        8u + (uint32_t)payload_length);
-    wire[BINARY_FRAME_FIXED_PREFIX_BYTES + payload_length] =
-        (uint8_t)(crc & 0xFFu);
-    wire[BINARY_FRAME_FIXED_PREFIX_BYTES + payload_length + 1u] =
-        (uint8_t)(crc >> 8);
-
-    wire_length =
-        BINARY_FRAME_FIXED_PREFIX_BYTES +
-        (uint32_t)payload_length +
-        BINARY_FRAME_CRC_BYTES;
+    wire_length = binary_frame_finalize_in_place(
+        frame_type,
+        0u,
+        request_id,
+        payload_length,
+        wire);
 
     if (state->active_binding->send_wire(
             state->active_binding->send_context,

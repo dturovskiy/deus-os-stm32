@@ -228,6 +228,42 @@ binary_frame_feed_result_t binary_frame_parser_feed(
     }
 }
 
+uint32_t binary_frame_finalize_in_place(
+    uint8_t frame_type,
+    uint8_t flags,
+    uint16_t request_id,
+    uint16_t payload_length,
+    uint8_t *wire)
+{
+    uint32_t wire_length;
+    uint16_t crc;
+
+    wire_length = BINARY_FRAME_FIXED_PREFIX_BYTES +
+        (uint32_t)payload_length + BINARY_FRAME_CRC_BYTES;
+
+    wire[0] = BINARY_FRAME_MAGIC0;
+    wire[1] = BINARY_FRAME_MAGIC1;
+    wire[2] = BINARY_FRAME_PROTOCOL_VERSION;
+    wire[3] = frame_type;
+    wire[4] = flags;
+    wire[5] = 0u;
+    wire[6] = (uint8_t)(request_id & 0xFFu);
+    wire[7] = (uint8_t)((request_id >> 8) & 0xFFu);
+    wire[8] = (uint8_t)(payload_length & 0xFFu);
+    wire[9] = (uint8_t)((payload_length >> 8) & 0xFFu);
+
+    crc = binary_frame_crc16_ccitt_false(
+        &wire[2],
+        8u + (uint32_t)payload_length);
+
+    wire[BINARY_FRAME_FIXED_PREFIX_BYTES + payload_length] =
+        (uint8_t)(crc & 0xFFu);
+    wire[BINARY_FRAME_FIXED_PREFIX_BYTES + payload_length + 1u] =
+        (uint8_t)((crc >> 8) & 0xFFu);
+
+    return wire_length;
+}
+
 uint32_t binary_frame_encode(
     uint8_t frame_type,
     uint8_t flags,
@@ -239,7 +275,6 @@ uint32_t binary_frame_encode(
 {
     uint32_t index;
     uint32_t wire_length;
-    uint16_t crc;
 
     if ((wire == (uint8_t *)0) ||
         ((payload == (const uint8_t *)0) && (payload_length != 0u)) ||
@@ -256,30 +291,15 @@ uint32_t binary_frame_encode(
         return 0u;
     }
 
-    wire[0] = BINARY_FRAME_MAGIC0;
-    wire[1] = BINARY_FRAME_MAGIC1;
-    wire[2] = BINARY_FRAME_PROTOCOL_VERSION;
-    wire[3] = frame_type;
-    wire[4] = flags;
-    wire[5] = 0u;
-    wire[6] = (uint8_t)(request_id & 0xFFu);
-    wire[7] = (uint8_t)((request_id >> 8) & 0xFFu);
-    wire[8] = (uint8_t)(payload_length & 0xFFu);
-    wire[9] = (uint8_t)((payload_length >> 8) & 0xFFu);
-
     for (index = 0u; index < (uint32_t)payload_length; ++index)
     {
         wire[BINARY_FRAME_FIXED_PREFIX_BYTES + index] = payload[index];
     }
 
-    crc = binary_frame_crc16_ccitt_false(
-        &wire[2],
-        8u + (uint32_t)payload_length);
-
-    wire[BINARY_FRAME_FIXED_PREFIX_BYTES + payload_length] =
-        (uint8_t)(crc & 0xFFu);
-    wire[BINARY_FRAME_FIXED_PREFIX_BYTES + payload_length + 1u] =
-        (uint8_t)((crc >> 8) & 0xFFu);
-
-    return wire_length;
+    return binary_frame_finalize_in_place(
+        frame_type,
+        flags,
+        request_id,
+        payload_length,
+        wire);
 }

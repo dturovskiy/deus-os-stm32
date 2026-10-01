@@ -59,6 +59,8 @@ xorout      0x0000
 
 CRC covers bytes starting at `protocol_version` (offset 2) through the final payload byte. The magic bytes and the CRC field itself are not included.
 
+Application-side response serialization is owned by the Binary Framed layer. `binary_frame_finalize_in_place()` is the shared preconditioned envelope/CRC finalizer used by RPC, Asset and Firmware Update response paths. Its callers must provide a non-null output buffer large enough for `10 + payload_length + 2` bytes and a payload length already proven `<= BINARY_FRAME_MAX_PAYLOAD` (`132` bytes in protocol v1); it does not repeat those bounds checks. The direct RPC/Asset/Firmware Update response paths retain their narrower one-packet response bounds (`<=52` payload bytes where applicable). The checked compatibility API `binary_frame_encode()` retains null/payload/capacity validation before delegating to the same finalizer. This ownership rule changes no wire bytes.
+
 `request_id == 0` is reserved for future unsolicited events. All v1 host requests use IDs `1..65535`; responses echo the request ID exactly.
 
 Unknown nonzero flag bits, nonzero reserved bytes, oversized payloads, malformed payload encoding, and unsupported frame types are protocol errors. A CRC-failed frame is discarded without command execution and without trusting or responding to its request ID.
@@ -74,9 +76,11 @@ Unknown nonzero flag bits, nonzero reserved bytes, oversized payloads, malformed
 0x84  PROTOCOL_ERROR
 ```
 
-No telemetry/event/asset-transfer/firmware-update frame type is implemented in the currently accepted v1 envelope. Future additions must be additive, capability-negotiated and backward-compatible with the accepted frame types, or explicitly advance the protocol version; they must never reinterpret existing frame-type values.
+The accepted v1 envelope is additive. Published Asset transfer already uses its reserved management frame family; firmware-update frame types remain documentation-reserved only until the Bootloader source gate. New additions must remain capability-/mode-negotiated and must never reinterpret existing frame-type values.
 
-Gate 0 for `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` now freezes future additive frame types `0x03 ASSET_TRANSFER_REQUEST` and `0x85 ASSET_TRANSFER_RESPONSE` in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md`. They are **reserved by contract but not implemented or advertised in the current accepted firmware**.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` froze additive frame types `0x03 ASSET_TRANSFER_REQUEST` and `0x85 ASSET_TRANSFER_RESPONSE` in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` and later published their management-IF2 implementation.
+
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 additionally reserves `0x04 FIRMWARE_UPDATE_REQUEST` and `0x86 FIRMWARE_UPDATE_RESPONSE`. They reuse only this v1 envelope; bootloader frames are constrained to one 64-byte USB packet (`payload_length <= 52`). They remain documentation-reserved until the Bootloader source gate authorizes implementation.
 
 ## 5. Flags
 

@@ -155,9 +155,9 @@ Canonical design/acceptance:
 `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
 `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-### Current prerequisite boundary — pre-Bootloader resource / architecture recovery
+### Published prerequisite boundary — pre-Bootloader resource / architecture recovery
 
-`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` — **GATES 0–6 ACCEPTED BY THE ONE NORMAL LOCAL ACCEPTANCE COMMIT CONTAINING THIS ROADMAP / GATE 7 ORDINARY NON-FORCE PUBLICATION NEXT**.
+`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` — **GATES 0–7 ACCEPTED / PUBLISHED `a8f92f83c2ba8917ad183b1a099c9e21199c9463`**.
 
 This behavior-preserving boundary recovered explicit target Flash/SRAM margin and
 resolved the measured scheduler-stack ownership waste without widening product scope.
@@ -168,8 +168,8 @@ Flash bytes and `1024` static-SRAM bytes; accepted runtime margins are task0/tas
 `304/432` and MSP `1592`. The exact six-file recovery remains behavior-preserving:
 `kernel.c -> -Os`, duplicate scheduler default-stack ownership removed, diagnostics
 borrow existing production storage, no USB ring cuts or ABI/linker/update changes.
-Bootloader implementation, linker relocation and update protocol behavior remain
-forbidden until this boundary is published.
+The boundary is published. Bootloader implementation is still forbidden until
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 freezes and proves its own contract.
 
 Canonical design/acceptance:
 `docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`
@@ -183,8 +183,8 @@ Implementation order:
 4. `FLASH_OWNERSHIP_LAYOUT_DECISION_V1` — **docs-only shared contract accepted**;
 5. `OLED_UI_LAYOUT_CONFIG_V1` — **promoted/frozen concrete consumer**;
 6. `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED `562e786ffa734da055c23144ec4256bc8961bbaf`**;
-7. `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` — **GATES 0–6 ACCEPTED BY THE ONE NORMAL LOCAL ACCEPTANCE COMMIT / GATE 7 PUBLICATION NEXT**;
-8. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — only after the recovery boundary is accepted/published; Gate 0 must prove the minimum recovery/update/security implementation fits the frozen 8 KiB bootloader ceiling or explicitly reopen the Flash decision;
+7. `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` — **GATES 0–7 ACCEPTED / PUBLISHED `a8f92f83c2ba8917ad183b1a099c9e21199c9463`**;
+8. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — **GATES 0–6 ACCEPTED LOCALLY / CAPABILITY `0x0000007F` ACTIVE / GATE 7 ORDINARY NON-FORCE PUBLICATION CURRENT**; Gate 0B feasibility SHA-256 `852DF5AB29AB850FDBB250FD582C2C1D59B0052790E1CDAF8759A5E50C05F780`; Gate 1 Host split SHA-256 `D0EE276FB34965AB229E21A53F3A6317159F82EF1AD6B6C1F993132692C7C808`; Gate 2 relocated application SHA-256 `CF8492497990C799602E53AAD59490E9EBDA399C40EB81BB13A74422002D0531`; base Gate 3 acceptance SHA-256 `E016B495CECE75F8BD2A4C120EC0E5506EFF31ED984566007EA6363CC6D35846`; narrow repair evidence Gate 3 `58E7FA5576DACC5BE636A2ABAD5B82E1BFDA1A463182957E7B039BB697F50292`, Gate 4 `62596F4066E6C0FEB476FBC412951123A61FED87731C6B48B473B28429BBCF07`; current repair trees full `1972d7d59057eae8e89fda6b0028ccf07eca5bb1`, firmware `b3b6d4136106f6b6a195fb987a0c66a4b7812842`, host `96d5f1f73ddd65783c4e7f6b10ae61b6a72d0ef4`, recovery tooling `24434b8f19be22251e4fd6129a8d39f06b101b9c`; immutable repair bundle SHA-256 `8871F0E7D770A3CA45A942638552B53B0BABE3EECE946ECB4C0E74DA64616B9E`; Stage-1 repair evidence SHA-256 `3D3A28F0B0C949CCCFB817B7DC726B1B9F63104348EF954ABFEDD08A0F9F0EC5`; Stage-2 technical evidence SHA-256 `80C670DF059ED37D0A7E2E7BBCF48F55FCC330B21381B68C93FE5DA385DDF8BA`; Stage-2 acceptance continuation SHA-256 `DA28EC5CD24A31DCE74F996F22D5D774EE1C5E8BD69AA2F7B9F3791608FD3676`; Stage-3 technical evidence SHA-256 `A507F73C628DA735FCF6A5C0A4E58ABB7A984397970ACB7BE3C64CAE9E4F7D50`; Stage-3 acceptance continuation SHA-256 `E587AEC687955E4A5B93B1350D1489E4F6451726A454C09ED091A2F4A3539CA3`; Stage-4 technical evidence SHA-256 `BD0ABADA1523C4E213A4F2B46997A62FE55124208939786543577D2DD434F281`; Stage-4 acceptance continuation SHA-256 `AD194B3198D19EF14EA726568DF50207DE7B09EBC4EF2C2FBE2E974974121F5D`; Stage-5 technical evidence SHA-256 `2BAADC493338BA31A26F38F33A0488C7F2B7F092F2ABB8B8F420296D2766043F`; Stage-5 acceptance continuation SHA-256 `C35A3319B806B21BC42B48EAF84822DF0F721AEE5EF5222BFA45C959F0BB90EE`; Stage-6 technical/continuation `0C5FD70A063F6E4BB366ED85A45DD4AB060B8B645C5983AF7D3E0E486C2703DA` / `D726C04A812BDAB3262E7D352A146481E627894586ADA89A00DA026614175717`; Stage-7 `43DF41301E005D6E23DEE7C71D3076F97797AF3419232C46A57F3FAA9F916515` / `EFA420DA03CB0300937B1DBC99C73CBBC66B7627577E82E92AC3F1252B5D7CA9`; Stage-8 v2 `D2006CEE054A85ECA59B96288B3CE25AFCF5BF97B5611D994CF8F7F06B3DB61F` / `57761DE3C23839566983172E403884F85B1A583AB7C5C9ADC512E6096F22B921`; Stage-9 `2775E2565EA10BCEF8A72EDEE052D698A515B347C6E177D7ABB972D7F36C1EAB` / `C0240BA36BD79C5DB8413B50B4885A6ADBBE6FB69BF2907A75153CEE89D333EB`; Stage-10 physical-VBUS `24FA0C42644B7E87F88AAD0B775547C7272A591A366D11A4903274C3F47D6CA3` / `E6EB019B021AB95DB16CA3B95E1C3F7C2C7F44D862ABF2711F6B42089F35D560`; host reliability validation/continuation `61D8AEBCA99E712D893474376CA4FEDD63D17D11021E45C0F7701621C712B108` / `253026C36C346C579AD5C1CE0FD528A7F7943A07CC21D792171C14C3350797FD`; Gate-6 validation `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC4BD14FA848FE3FD44FD7`, firmware/host trees `8323c68c931894441ae4db9138ba3838f35bb8b6` / `c95019bedfb6223705e6eba4f4c6d310b1701cdc`, firmware BIN `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`;
 9. networking/service/security extensions.
 
 Deferred optimization/robustness items are trigger-driven, not new immediate roadmap boundaries: I2C IRQ/DMA only after measured bus pressure; scheduler ready-set acceleration only after materially larger task count and measured overhead; CRC acceleration only for measured streaming cost; bounded minimal-copy/backpressure for WinUSB and transfer paths; tickless only for a real power requirement; structured binary event tracing rather than printf-heavy logging; bounded storage/block-device layers when a consumer exists.
@@ -295,7 +295,7 @@ Target progression:
 13. Promote/freeze `OLED_UI_LAYOUT_CONFIG_V1` as the exact non-executable persistence consumer — complete.
 14. Reopen Asset/Configuration Gate 0 for that object and freeze transfer/persistence/resource/fault-recovery contracts — complete; cross-contract closure PASS.
 15. Implement bounded versioned Asset/Configuration transfer + atomic A/B persistence — Gate 1 authorized, then Gates 2–7 acceptance.
-16. Add a recoverable USB firmware-update path and small bootloader as a separate executable-Flash safety boundary.
+16. Recoverable USB firmware-update path + small bootloader — Gates 0–6 accepted locally; capability mask `0x0000007F` active; Gate 7 ordinary non-force publication current.
 17. Add networking/service/security extensions over the same application/service model.
 18. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
 

@@ -19,11 +19,13 @@ typedef enum
     BINARY_FRAME_TYPE_HELLO_REQUEST = 0x01u,
     BINARY_FRAME_TYPE_RPC_REQUEST = 0x02u,
     BINARY_FRAME_TYPE_ASSET_TRANSFER_REQUEST = 0x03u,
+    BINARY_FRAME_TYPE_FIRMWARE_UPDATE_REQUEST = 0x04u,
     BINARY_FRAME_TYPE_HELLO_RESPONSE = 0x81u,
     BINARY_FRAME_TYPE_RPC_DATA = 0x82u,
     BINARY_FRAME_TYPE_RPC_END = 0x83u,
     BINARY_FRAME_TYPE_PROTOCOL_ERROR = 0x84u,
-    BINARY_FRAME_TYPE_ASSET_TRANSFER_RESPONSE = 0x85u
+    BINARY_FRAME_TYPE_ASSET_TRANSFER_RESPONSE = 0x85u,
+    BINARY_FRAME_TYPE_FIRMWARE_UPDATE_RESPONSE = 0x86u
 } binary_frame_type_t;
 
 typedef struct
@@ -70,6 +72,12 @@ binary_frame_feed_result_t binary_frame_parser_feed(
     uint8_t byte,
     binary_frame_view_t *frame);
 uint16_t binary_frame_crc16_ccitt_false(const uint8_t *data, uint32_t length);
+uint32_t binary_frame_finalize_in_place(
+    uint8_t frame_type,
+    uint8_t flags,
+    uint16_t request_id,
+    uint16_t payload_length,
+    uint8_t *wire);
 uint32_t binary_frame_encode(
     uint8_t frame_type,
     uint8_t flags,

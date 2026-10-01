@@ -129,6 +129,28 @@ Consequences:
 - an SWD software reset is initiated from Windows but USB disappearance/re-enumeration must be observed on the Ubuntu/Mac-mini host;
 - physical USB reconnect evidence belongs to the USB-owning host even when the top-level package is orchestrated from Windows.
 
+### 5.1 Target wiring / pin map
+
+The current physical bench must be interpreted together with the target-side pin map below.
+These pins are stable hardware ownership facts for the current STM32F103/Blue-Pill-class
+target unless a later hardware change explicitly updates this document:
+
+| Function | STM32F103 pin(s) | Physical connection / owner |
+| --- | --- | --- |
+| Native USB FS | PA11 `USB_DM`, PA12 `USB_DP` | USB data + normal target VBUS/power to Ubuntu on the Mac mini |
+| Emergency UART / CH340 | PA9 `USART1_TX`, PA10 `USART1_RX` | CH340 on Windows, 115200 8N1; TX/RX/GND connected, adapter VCC disconnected while USB powers target |
+| SWD debug/recovery | PA13 `SWDIO`, PA14 `SWCLK` | ST-LINK on Windows with shared ground; ST-LINK 3.3 V disconnected while USB powers target |
+| OLED / I2C1 | PB6 `I2C1_SCL`, PB7 `I2C1_SDA` | SSD1306-class 128x32 display |
+| Heartbeat LED | PC13 | on-board active-low LED |
+
+Consequences for harnesses and product boundaries:
+
+- native USB acceptance must not repurpose PA11/PA12 or look for the current target USB on Windows unless the cable topology is explicitly changed and re-proven;
+- UART diagnostics remain on PA9/PA10 and are not a silent fallback product-update carrier;
+- SWD remains on PA13/PA14 and is recovery/debug authority, not normal product update;
+- bootloader/update code must not seize PB6/PB7 or require the OLED/I2C path for update correctness;
+- any pin, cable, VCC or host-owner change is a topology change and requires this document to be updated before the next composed hardware gate.
+
 ## 6. Acceptance execution-domain matrix
 
 | Operation | Required execution domain |

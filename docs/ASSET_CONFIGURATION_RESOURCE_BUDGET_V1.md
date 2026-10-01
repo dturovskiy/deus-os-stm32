@@ -267,12 +267,12 @@ Possible responses:
 
 Silent ceiling growth is forbidden.
 
-## 15. Future bootloader relationship
+## 15. Bootloader relationship
 
 The 1-KiB post-Asset application reserve is not bootloader Flash.
 
 Bootloader pages remain the separate 8-KiB lower steady-state region.
 
-The retained 1-KiB application reserve exists so later application relocation/handoff changes do not immediately require consuming the full 54-KiB application region.
+The retained application reserve exists so relocation/handoff does not immediately consume the full 54-KiB physical application ownership. Active Bootloader Gate 0 now freezes a stricter `52K` executable ceiling and uses the remaining physical pages 60/61 as firmware metadata A/B, leaving persistence pages 62/63 untouched.
 
-Bootloader Gate 0 must remeasure application resource state after relocation.
+Gate 0B must remeasure the relocated application against the exact `52K / 53248` executable ceiling before implementation.

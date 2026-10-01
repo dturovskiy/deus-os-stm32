@@ -1,3 +1,4 @@
+using DeusOs.Control.Core;
 using DeusOs.Control.Transport.Linux;
 using DeusOs.Control.Transport.Windows;
 using Xunit;
@@ -39,6 +40,65 @@ public sealed class TransportContractTests
     }
 
     [Fact]
+    public void BootloaderTransportConstantsMatchFirmwareContract()
+    {
+        Assert.Equal(
+            new Guid("F08907B7-BEC4-5FCF-BC4C-B446ED345D87"),
+            WindowsBootloaderWinUsbDiscovery.BootloaderInterfaceGuid);
+        Assert.Equal((ushort)0x1209, LinuxBootloaderLibUsbDiscovery.VendorId);
+        Assert.Equal((ushort)0x000D, LinuxBootloaderLibUsbDiscovery.ProductId);
+        Assert.Equal(0, LinuxBootloaderLibUsbDiscovery.InterfaceNumber);
+        Assert.Equal((byte)0x01, LinuxBootloaderLibUsbDiscovery.OutEndpoint);
+        Assert.Equal((byte)0x81, LinuxBootloaderLibUsbDiscovery.InEndpoint);
+    }
+
+    [Theory]
+    [InlineData(121)]
+    [InlineData(1460)]
+    public void WindowsIoTimeoutErrorsMapToTimeout(int error)
+    {
+        Assert.Equal(
+            HostErrorKind.Timeout,
+            InvokeWindowsIoErrorMapping(
+                error,
+                HostErrorKind.TransportDisconnected));
+    }
+
+    [Fact]
+    public void WindowsTimeoutCodeDoesNotRewriteOpenFailure()
+    {
+        Assert.Equal(
+            HostErrorKind.Open,
+            InvokeWindowsIoErrorMapping(
+                121,
+                HostErrorKind.Open));
+    }
+
+    [Fact]
+    public void WindowsNonTimeoutIoErrorPreservesFallbackKind()
+    {
+        Assert.Equal(
+            HostErrorKind.Open,
+            InvokeWindowsIoErrorMapping(
+                5,
+                HostErrorKind.Open));
+    }
+
+    [Fact]
+    public async Task NonWindowsBootloaderDiscoveryIsInert()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var devices = await new WindowsBootloaderWinUsbDiscovery()
+            .DiscoverAsync(CancellationToken.None);
+
+        Assert.Empty(devices);
+    }
+
+    [Fact]
     public async Task NonWindowsDiscoveryIsInert()
     {
         if (OperatingSystem.IsWindows())
@@ -50,6 +110,40 @@ public sealed class TransportContractTests
             .DiscoverAsync(CancellationToken.None);
 
         Assert.Empty(devices);
+    }
+
+    [Fact]
+    public async Task NonLinuxBootloaderDiscoveryIsInert()
+    {
+        if (OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        var devices = await new LinuxBootloaderLibUsbDiscovery()
+            .DiscoverAsync(CancellationToken.None);
+
+        Assert.Empty(devices);
+    }
+
+    private static HostErrorKind InvokeWindowsIoErrorMapping(
+        int error,
+        HostErrorKind fallbackKind)
+    {
+        var transportType = typeof(WindowsBootloaderWinUsbDiscovery)
+            .Assembly
+            .GetType(
+                "DeusOs.Control.Transport.Windows.WindowsWinUsbTransport",
+                throwOnError: true)!;
+        var method = transportType.GetMethod(
+            "MapIoErrorKind",
+            System.Reflection.BindingFlags.Static |
+            System.Reflection.BindingFlags.NonPublic)!;
+
+        return Assert.IsType<HostErrorKind>(
+            method.Invoke(
+                null,
+                new object[] { error, fallbackKind }));
     }
 
     [Fact]

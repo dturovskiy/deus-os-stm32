@@ -148,27 +148,8 @@ static int asset_send_response(
         0u;
     const uint16_t payload_length =
         (uint16_t)(18u + data_length);
-    const uint32_t wire_length =
-        BINARY_FRAME_FIXED_PREFIX_BYTES +
-        (uint32_t)payload_length +
-        BINARY_FRAME_CRC_BYTES;
-    const uint16_t crc_offset =
-        (uint16_t)(
-            BINARY_FRAME_FIXED_PREFIX_BYTES +
-            payload_length);
-    uint16_t crc;
+    uint32_t wire_length;
 
-    asset_transfer_wire.halfwords[0] =
-        (uint16_t)BINARY_FRAME_MAGIC0 |
-        (uint16_t)((uint16_t)BINARY_FRAME_MAGIC1 << 8);
-    asset_transfer_wire.halfwords[1] =
-        (uint16_t)BINARY_FRAME_PROTOCOL_VERSION |
-        (uint16_t)(
-            (uint16_t)BINARY_FRAME_TYPE_ASSET_TRANSFER_RESPONSE <<
-            8);
-    asset_transfer_wire.halfwords[2] = 0u;
-    asset_transfer_wire.halfwords[3] = request_id;
-    asset_transfer_wire.halfwords[4] = payload_length;
     asset_transfer_wire.halfwords[5] =
         (uint16_t)ASSET_TRANSFER_PROTOCOL_VERSION |
         (uint16_t)((uint16_t)opcode << 8);
@@ -185,13 +166,12 @@ static int asset_send_response(
     asset_transfer_wire.halfwords[12] = next_offset;
     asset_transfer_wire.halfwords[13] = data_length;
 
-    crc = binary_frame_crc16_ccitt_false(
-        &asset_transfer_wire.bytes[2],
-        8u + (uint32_t)payload_length);
-    asset_transfer_wire.bytes[crc_offset] =
-        (uint8_t)(crc & 0xFFu);
-    asset_transfer_wire.bytes[crc_offset + 1u] =
-        (uint8_t)(crc >> 8);
+    wire_length = binary_frame_finalize_in_place(
+        BINARY_FRAME_TYPE_ASSET_TRANSFER_RESPONSE,
+        0u,
+        request_id,
+        payload_length,
+        asset_transfer_wire.bytes);
 
     return send_wire(
         send_context,

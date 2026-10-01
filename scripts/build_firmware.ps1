@@ -8,8 +8,8 @@ param(
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = "Stop"
 
-$FlashAcceptanceCeiling = 54272
-$SramAcceptanceCeiling = 12288
+$FlashAcceptanceCeiling = 53248
+$SramAcceptanceCeiling = 11264
 
 if ($FirmwareSourceTree -notmatch '^[0-9a-f]{40}$') {
     throw "FirmwareSourceTree must be 40 lowercase hex characters"
@@ -157,6 +157,7 @@ $SizeOptimizedSources = @(
     "src/kernel/asset_persistence.c"
     "src/kernel/asset_transfer.c"
     "src/kernel/oled_ui_layout_config_v1.c"
+    "src/kernel/usb_management.c"
 )
 
 for ($i = 0; $i -lt $SourcePaths.Count; ++$i) {
@@ -249,10 +250,10 @@ if ($BinInfo.Length -ne $FlashUsage) {
     throw ("BIN size {0} does not match text+data Flash usage {1}" -f $BinInfo.Length,$FlashUsage)
 }
 if ($FlashUsage -gt $FlashAcceptanceCeiling) {
-    throw ("Flash usage {0} exceeds Asset Gate-2 ceiling {1}" -f $FlashUsage,$FlashAcceptanceCeiling)
+    throw ("Flash usage {0} exceeds Bootloader application ceiling {1}" -f $FlashUsage,$FlashAcceptanceCeiling)
 }
 if ($SramUsage -gt $SramAcceptanceCeiling) {
-    throw ("SRAM usage {0} exceeds Asset Gate-2 ceiling {1}" -f $SramUsage,$SramAcceptanceCeiling)
+    throw ("SRAM usage {0} exceeds Bootloader application ceiling {1}" -f $SramUsage,$SramAcceptanceCeiling)
 }
 
 $BinSha = (Get-FileHash -LiteralPath $Bin -Algorithm SHA256).Hash.ToUpperInvariant()

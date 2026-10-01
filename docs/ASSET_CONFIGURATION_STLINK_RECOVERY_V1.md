@@ -1,6 +1,6 @@
 # Deus OS — Asset / Configuration ST-LINK Recovery Contract v1
 
-Status: **FROZEN CONTRACT — SATISFIED BY PUBLISHED ASSET RECOVERY ACCEPTANCE `562e786ffa734da055c23144ec4256bc8961bbaf` — FUTURE RECOVERY EXECUTION REMAINS CANDIDATE-BOUND**
+Status: **HISTORICAL ASSET-PHASE RECOVERY CONTRACT — SATISFIED BY PUBLISHED ASSET ACCEPTANCE `562e786ffa734da055c23144ec4256bc8961bbaf` — FORBIDDEN FOR `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` RELOCATED IMAGES**
 
 Boundary:
 
@@ -47,7 +47,7 @@ Recovery v1 applies only to the Asset-phase layout:
 
 The application remains reset owner at `0x08000000`.
 
-This contract must be replaced/reopened when a bootloader later owns pages 0..7.
+This contract is now historical-only because `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` relocates the application to `0x08002000` and later gives pages 0..7 to the bootloader. `scripts/create_asset_recovery_bundle.ps1` and `scripts/stm32_asset_recovery.ps1` remain valid only for the published Asset-phase geometry and MUST NOT be used with a Bootloader-boundary relocated image. Gate 4 of the Bootloader boundary owns the replacement immutable recovery bundle/tooling.
 
 ## 4. Recovery bundle contents
 

@@ -240,6 +240,71 @@ public sealed class ClientTests
         Assert.Equal("PONG\r\n", ping.OutputText);
     }
 
+    [Fact]
+    public async Task PublishedFirmwareCapabilityEnablesPublishedBootloaderEntry()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, 0x7F));
+        transport.EnqueueResponse(
+            CreateRpcResponse(
+                ProtocolConstants.RpcSysInfo,
+                2,
+                ValidSysInfo(DefaultSourceTree, 0x7F)));
+        transport.EnqueueResponse(CreateFirmwareUpdateResponse(
+            3,
+            0x01,
+            FirmwareUpdateStatus.Ok,
+            FirmwareUpdateState.Resetting,
+            0,
+            1,
+            1));
+
+        await using var client = new DeusDeviceClient(transport);
+        var negotiation = await client.NegotiateAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.True(
+            (negotiation.SystemInfo.Capabilities &
+             SystemCapability.FirmwareUpdate) != 0);
+
+        var response = await client.EnterBootloaderAsync(
+            FirmwareUpdateAccessPolicy.PublishedOnly,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(FirmwareUpdateStatus.Ok, response.Status);
+        Assert.Equal(FirmwareUpdateState.Resetting, response.State);
+        Assert.Equal(ConnectionState.Recovering, client.State);
+        Assert.Equal(3, transport.Writes.Count);
+        Assert.Equal(
+            (byte)FrameType.FirmwareUpdateRequest,
+            transport.Writes[2][3]);
+        Assert.Equal((byte)0x01, transport.Writes[2][10]);
+    }
+
+    [Fact]
+    public async Task PublishedBootloaderEntryStillRejectsDeviceWithoutFirmwareCapability()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, 0x7F));
+        transport.EnqueueResponse(
+            CreateRpcResponse(
+                ProtocolConstants.RpcSysInfo,
+                2,
+                ValidSysInfo(DefaultSourceTree, 0x3F)));
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        var exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.EnterBootloaderAsync(
+                FirmwareUpdateAccessPolicy.PublishedOnly,
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.IncompatibleProtocol, exception.Kind);
+        Assert.Equal(ConnectionState.Ready, client.State);
+        Assert.Equal(2, transport.Writes.Count);
+    }
+
     private const string DefaultSourceTree =
         "0123456789abcdef0123456789abcdef01234567";
 
@@ -256,13 +321,16 @@ public sealed class ClientTests
     }
 
     private static string ValidSysInfo(
-        string sourceTree = DefaultSourceTree) =>
+        string sourceTree = DefaultSourceTree,
+        uint capabilities = 0x0000001F) =>
         "SYSINFO_ABI=0x00000001 OS_ID=DEUS_OS PLATFORM_ID=STM32F103C8 ARCH_ID=ARMV7M\r\n" +
         $"SOURCE_TREE={sourceTree}\r\n" +
         "PROTOCOL_VERSION=0x00000001 SERVICE_VERSION=0x00000003 APP_RUNTIME_ABI=0x00000001\r\n" +
-        "CAPABILITIES=0x0000001F UNIT_ID_KIND=0x00000000\r\n";
+        $"CAPABILITIES=0x{capabilities:X8} UNIT_ID_KIND=0x00000000\r\n";
 
-    private static byte[] CreateHelloResponse(ushort requestId)
+    private static byte[] CreateHelloResponse(
+        ushort requestId,
+        uint capabilityFlags = 0x0000003F)
     {
         var payload = new byte[16];
         payload[0] = 1;
@@ -273,10 +341,42 @@ public sealed class ClientTests
         BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(6, 2), 132);
         BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(8, 2), 48);
         BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(10, 2), 36);
-        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(12, 4), 0x3F);
+        BinaryPrimitives.WriteUInt32LittleEndian(
+            payload.AsSpan(12, 4),
+            capabilityFlags);
 
         return BinaryFrameCodec.Encode(
             FrameType.HelloResponse,
+            0,
+            requestId,
+            payload);
+    }
+
+    private static byte[] CreateFirmwareUpdateResponse(
+        ushort requestId,
+        byte opcode,
+        FirmwareUpdateStatus status,
+        FirmwareUpdateState state,
+        ushort expectedOffset,
+        uint versionFloor,
+        uint committedVersion)
+    {
+        var payload = new byte[16];
+        payload[0] = opcode;
+        payload[1] = (byte)status;
+        payload[2] = (byte)state;
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(4, 2),
+            expectedOffset);
+        BinaryPrimitives.WriteUInt32LittleEndian(
+            payload.AsSpan(8, 4),
+            versionFloor);
+        BinaryPrimitives.WriteUInt32LittleEndian(
+            payload.AsSpan(12, 4),
+            committedVersion);
+
+        return BinaryFrameCodec.Encode(
+            FrameType.FirmwareUpdateResponse,
             0,
             requestId,
             payload);

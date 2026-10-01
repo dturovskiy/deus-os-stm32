@@ -255,30 +255,27 @@ and passed production `PublishedOnly` hardware smoke. The historical
 `DEFERRED_NO_REAL_CONSUMER` result remains part of the record and explains why
 implementation was originally blocked.
 
-### H. Active pre-Bootloader recovery records
+### H. Published pre-Bootloader recovery records
 
 - `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`
 - `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`
 
-This boundary is behavior-preserving. Gate 0 is accepted; Gate 1 is build/measurement
-only and performs no target I/O or product-source mutation.
+This boundary is complete/published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`.
 
 ## 4. Current and future boundaries
 
 ### Current product implementation state
 
-`PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is active. It starts from the
-published Asset parent `562e786ffa734da055c23144ec4256bc8961bbaf`, with only
-`4` bytes Flash acceptance headroom and `344` bytes static-SRAM acceptance
-headroom. Gate 0 documentation/read-only audit is accepted; Gate 1 is the
-measurement-only resource-attribution step.
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is active at Gate 0 contract/feasibility.
+Published prerequisite: recovery commit `a8f92f83c2ba8917ad183b1a099c9e21199c9463`.
 
-### Planned after the recovery boundary
+Canonical records:
 
-`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`
+- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md`
+- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
-No canonical Bootloader plan/acceptance files yet. Bootloader Gate 0 is not authorized
-until the recovery boundary is accepted and published.
+Gate 0 authorizes documentation/read-only audit and temporary acceptance-only linked
+feasibility prototypes. Product linker/startup/Flash mutation remains forbidden.
 
 ### Later
 
@@ -319,17 +316,18 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after the 2026-09-26 Asset post-publication reconciliation:
+Live documentation inventory after the 2026-09-27 recovery publication / Bootloader Gate-0 activation reconciliation:
 
-- Markdown files in `docs/`: `67`;
-- `*_ACCEPTANCE_PLAN.md` records: `19`;
-- non-acceptance `*_PLAN.md`-named files: `22`;
+- Markdown files in `docs/`: `70`;
+- `*_ACCEPTANCE_PLAN.md` records: `20`;
+- non-acceptance `*_PLAN.md`-named files: `23`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;
 - the sole unmatched same-stem acceptance name is `OLED_CONSOLE_ACCEPTANCE_PLAN.md`, which is the historical semantic pair for `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`;
 - the remaining unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
 - `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` is the canonical operational topology reference, not a product boundary plan;
 - the Asset/Configuration plan and acceptance files form a matched published pair and preserve the historical `DEFERRED_NO_REAL_CONSUMER` record plus final Gates 0–7 publication;
-- the new pre-Bootloader recovery plan and acceptance files form a matched active pair;
-- the current product implementation boundary is `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY`: Gate 0 accepted, Gate 1 measurement-only attribution next.
+- the pre-Bootloader recovery plan and acceptance files form a matched published pair at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`;
+- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the matched active pair; `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` is their exact active wire/image ABI contract;
+- current product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; Gates 0–2 are accepted; Gate 2 evidence SHA-256 `CF8492497990C799602E53AAD59490E9EBDA399C40EB81BB13A74422002D0531`, tree `637ea07b10cf84882e19cbb8239f31b7f48856a7`; Gate 3 bootloader/update transport/security implementation is current.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

@@ -114,14 +114,14 @@ During this phase:
 - pages 62/63 are the only self-programmable Asset/Configuration pages;
 - the current 50652-byte application fits the 54 KiB ceiling with 4644 bytes remaining.
 
-When `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is later implemented, the same 54 KiB application budget shifts upward by exactly 8 KiB:
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 refines the same 54 KiB physical application ownership while shifting it upward by exactly 8 KiB:
 
 ```text
 standalone phase: application 0x08000000..0x0800D7FF
 bootloader phase: application 0x08002000..0x0800F7FF
 ```
 
-Only that bootloader phase changes reset ownership, application linker origin and VTOR/handoff semantics. Persistence pages do not move.
+Only that bootloader phase changes reset ownership, application linker origin and VTOR/handoff semantics. Gate 0 further freezes the internal 54-KiB split as executable pages 8..59 (`52K`) plus firmware metadata A/B pages 60/61 (`2K`). Persistence pages 62/63 do not move.
 
 ## 5. Why the bootloader reservation is 8 KiB
 
@@ -143,15 +143,15 @@ application region          = 54 KiB
 persistent region           = 2 KiB
 ```
 
-The future `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 must produce a static linked-size feasibility proof against this 8 KiB ceiling **before implementation is authorized**.
+The active `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 must produce a static linked-size feasibility proof against this 8 KiB ceiling **before implementation is authorized**.
 
 If the minimum accepted update/recovery/security responsibility cannot fit in 8 KiB, this decision must be explicitly reopened. The project must then choose among reducing application footprint, reducing another reserved budget, changing the update architecture, adding external staging storage, or changing target hardware. Silent region encroachment is forbidden.
 
-## 6. Minimum future bootloader responsibility model
+## 6. Minimum bootloader responsibility model
 
 The reservation is for a deliberately small recovery/update owner, not a second operating system.
 
-The future bootloader is expected to own only responsibilities necessary to make executable update safe and recoverable:
+The active Bootloader contract freezes only responsibilities necessary to make executable update safe and recoverable:
 
 1. own reset at `0x08000000`;
 2. distinguish normal boot from recovery/update entry;
@@ -172,7 +172,7 @@ The bootloader must not own:
 - application UI policy;
 - unrelated diagnostics.
 
-Exact transport framing, update image format, cryptographic/authenticity mechanism and boot-validity metadata remain future `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` design work.
+Exact transport framing, update image format, cryptographic/authenticity mechanism and boot-validity metadata are now active `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate-0 design work; no implementation is authorized until that contract closes.
 
 ## 7. Reset and vector ownership
 
@@ -214,7 +214,7 @@ The bootloader must not reuse these pages for firmware-update staging or bootloa
 
 ## 9. Application-region invariants
 
-The application budget is **54 KiB in both phases**.
+The physical application ownership is **54 KiB in both phases**. In Bootloader steady state Gate 0 refines that ownership to a `52K` executable image plus two 1-KiB firmware-metadata pages A/B at pages 60/61. This does not move the outer `0x08002000..0x0800F7FF` boundary.
 
 ### Asset/Configuration phase — standalone reset owner
 
@@ -233,10 +233,17 @@ After the bootloader becomes reset owner:
 
 ```text
 ORIGIN = 0x08002000
-LENGTH = 54K
+LENGTH = 52K
 ```
 
-The build must fail if application loadable sections exceed `0x0800F800`.
+Firmware metadata is separately fixed inside the same 54-KiB physical ownership:
+
+```text
+slot A = 0x0800F000..0x0800F3FF
+slot B = 0x0800F400..0x0800F7FF
+```
+
+The build must fail if application loadable sections exceed `0x0800F000` or occupy either metadata page.
 
 The relevant linker migration in each phase must add build-failing assertions that prevent:
 

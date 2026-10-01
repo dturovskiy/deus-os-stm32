@@ -11,24 +11,39 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
     private const byte InPipe = 0x84;
     private const uint PipeTransferTimeout = 0x03;
     private const uint IoTimeoutMilliseconds = 2000;
+    private const int ErrorSemTimeout = 121;
+    private const int ErrorTimeout = 1460;
 
     private readonly SafeFileHandle _fileHandle;
     private readonly SafeWinUsbHandle _winUsbHandle;
+    private readonly byte _outPipe;
+    private readonly byte _inPipe;
     private bool _disposed;
 
     private WindowsWinUsbTransport(
         string locator,
         SafeFileHandle fileHandle,
-        SafeWinUsbHandle winUsbHandle)
+        SafeWinUsbHandle winUsbHandle,
+        byte outPipe,
+        byte inPipe)
     {
         Locator = locator;
         _fileHandle = fileHandle;
         _winUsbHandle = winUsbHandle;
+        _outPipe = outPipe;
+        _inPipe = inPipe;
     }
 
     public string Locator { get; }
 
-    public static WindowsWinUsbTransport Open(string locator)
+    public static WindowsWinUsbTransport Open(string locator) =>
+        Open(locator, 2, OutPipe, InPipe);
+
+    internal static WindowsWinUsbTransport Open(
+        string locator,
+        byte interfaceNumber,
+        byte outPipe,
+        byte inPipe)
     {
         var file = NativeMethods.CreateFileW(
             locator,
@@ -60,10 +75,15 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
         var winUsb = new SafeWinUsbHandle(rawWinUsb);
         try
         {
-            ValidateInterface(winUsb);
-            SetTimeout(winUsb, OutPipe);
-            SetTimeout(winUsb, InPipe);
-            return new WindowsWinUsbTransport(locator, file, winUsb);
+            ValidateInterface(winUsb, interfaceNumber, outPipe, inPipe);
+            SetTimeout(winUsb, outPipe);
+            SetTimeout(winUsb, inPipe);
+            return new WindowsWinUsbTransport(
+                locator,
+                file,
+                winUsb,
+                outPipe,
+                inPipe);
         }
         catch
         {
@@ -89,7 +109,7 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
                 {
                     if (!NativeMethods.WinUsb_WritePipe(
                             _winUsbHandle,
-                            OutPipe,
+                            _outPipe,
                             bytes,
                             checked((uint)bytes.Length),
                             out var count,
@@ -133,7 +153,7 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
                 {
                     if (!NativeMethods.WinUsb_ReadPipe(
                             _winUsbHandle,
-                            InPipe,
+                            _inPipe,
                             bytes,
                             checked((uint)bytes.Length),
                             out var count,
@@ -169,7 +189,11 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
         return ValueTask.CompletedTask;
     }
 
-    private static void ValidateInterface(SafeWinUsbHandle handle)
+    private static void ValidateInterface(
+        SafeWinUsbHandle handle,
+        byte interfaceNumber,
+        byte outPipe,
+        byte inPipe)
     {
         if (!NativeMethods.WinUsb_QueryInterfaceSettings(
                 handle,
@@ -181,7 +205,7 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
                 "WinUsb_QueryInterfaceSettings");
         }
 
-        if (descriptor.InterfaceNumber != 2 ||
+        if (descriptor.InterfaceNumber != interfaceNumber ||
             descriptor.InterfaceClass != 0xFF ||
             descriptor.InterfaceSubClass != 0 ||
             descriptor.InterfaceProtocol != 0 ||
@@ -189,7 +213,7 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
         {
             throw new DeusHostException(
                 HostErrorKind.Open,
-                "WinUSB interface does not match IF2 FF/00/00 with two endpoints");
+                $"WinUSB interface does not match IF{interfaceNumber} FF/00/00 with two endpoints");
         }
 
         var sawOut = false;
@@ -216,15 +240,15 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
                     $"unexpected pipe 0x{pipe.PipeId:X2} type/packet");
             }
 
-            sawOut |= pipe.PipeId == OutPipe;
-            sawIn |= pipe.PipeId == InPipe;
+            sawOut |= pipe.PipeId == outPipe;
+            sawIn |= pipe.PipeId == inPipe;
         }
 
         if (!sawOut || !sawIn)
         {
             throw new DeusHostException(
                 HostErrorKind.Open,
-                "required EP4 OUT/IN pipes were not found");
+                $"required OUT 0x{outPipe:X2} / IN 0x{inPipe:X2} pipes were not found");
         }
     }
 
@@ -246,13 +270,23 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
         }
     }
 
+    internal static HostErrorKind MapIoErrorKind(
+        int error,
+        HostErrorKind fallbackKind)
+    {
+        return fallbackKind == HostErrorKind.TransportDisconnected &&
+            (error == ErrorSemTimeout || error == ErrorTimeout)
+            ? HostErrorKind.Timeout
+            : fallbackKind;
+    }
+
     private static DeusHostException CreateIoException(
         HostErrorKind kind,
         string operation)
     {
         var error = Marshal.GetLastWin32Error();
         return new DeusHostException(
-            kind,
+            MapIoErrorKind(error, kind),
             $"{operation} failed ({error}): {new Win32Exception(error).Message}");
     }
 

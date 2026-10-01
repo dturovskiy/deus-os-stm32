@@ -9,23 +9,31 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
 
     private readonly IntPtr _context;
     private readonly IntPtr _handle;
+    private readonly LinuxUsbProfile _profile;
     private bool _claimed;
     private bool _disposed;
 
     private LinuxLibUsbTransport(
         string locator,
         IntPtr context,
-        IntPtr handle)
+        IntPtr handle,
+        LinuxUsbProfile profile)
     {
         Locator = locator;
         _context = context;
         _handle = handle;
+        _profile = profile;
         _claimed = true;
     }
 
     public string Locator { get; }
 
-    public static LinuxLibUsbTransport Open(string locator)
+    public static LinuxLibUsbTransport Open(string locator) =>
+        Open(locator, LinuxLibUsbDiscovery.RuntimeProfile);
+
+    internal static LinuxLibUsbTransport Open(
+        string locator,
+        LinuxUsbProfile profile)
     {
         LinuxLibUsbNative.Check(
             LinuxLibUsbNative.libusb_init(out var context),
@@ -60,8 +68,8 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
                 if (LinuxLibUsbNative.libusb_get_device_descriptor(
                         device,
                         out var descriptor) != 0 ||
-                    descriptor.VendorId != LinuxLibUsbNative.ExpectedVendorId ||
-                    descriptor.ProductId != LinuxLibUsbNative.ExpectedProductId)
+                    descriptor.VendorId != profile.VendorId ||
+                    descriptor.ProductId != profile.ProductId)
                 {
                     continue;
                 }
@@ -80,7 +88,7 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
                     $"Linux device locator '{locator}' is no longer present");
             }
 
-            LinuxLibUsbNative.ValidateManagementTopology(matchedDevice);
+            LinuxLibUsbNative.ValidateTopology(matchedDevice, profile);
 
             LinuxLibUsbNative.Check(
                 LinuxLibUsbNative.libusb_open(matchedDevice, out handle),
@@ -89,13 +97,13 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
 
             var kernelDriver = LinuxLibUsbNative.libusb_kernel_driver_active(
                 handle,
-                LinuxLibUsbNative.ManagementInterface);
+                profile.InterfaceNumber);
 
             if (kernelDriver == 1)
             {
                 throw new DeusHostException(
                     HostErrorKind.Open,
-                    "kernel driver is bound to management IF2; automatic detach is forbidden");
+                    $"kernel driver is bound to IF{profile.InterfaceNumber}; automatic detach is forbidden");
             }
 
             if (kernelDriver < 0 &&
@@ -110,12 +118,12 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
             LinuxLibUsbNative.Check(
                 LinuxLibUsbNative.libusb_claim_interface(
                     handle,
-                    LinuxLibUsbNative.ManagementInterface),
-                "libusb_claim_interface(IF2)",
+                    profile.InterfaceNumber),
+                $"libusb_claim_interface(IF{profile.InterfaceNumber})",
                 HostErrorKind.Open);
             claimed = true;
 
-            return new LinuxLibUsbTransport(locator, context, handle);
+            return new LinuxLibUsbTransport(locator, context, handle, profile);
         }
         catch
         {
@@ -123,7 +131,7 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
             {
                 _ = LinuxLibUsbNative.libusb_release_interface(
                     handle,
-                    LinuxLibUsbNative.ManagementInterface);
+                    profile.InterfaceNumber);
             }
 
             if (handle != IntPtr.Zero)
@@ -156,7 +164,7 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
             {
                 var result = LinuxLibUsbNative.libusb_bulk_transfer(
                     _handle,
-                    LinuxLibUsbNative.OutEndpoint,
+                    _profile.OutEndpoint,
                     bytes,
                     bytes.Length,
                     out var count,
@@ -192,7 +200,7 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
             {
                 var result = LinuxLibUsbNative.libusb_bulk_transfer(
                     _handle,
-                    LinuxLibUsbNative.InEndpoint,
+                    _profile.InEndpoint,
                     bytes,
                     bytes.Length,
                     out var count,
@@ -223,7 +231,7 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
         {
             _ = LinuxLibUsbNative.libusb_release_interface(
                 _handle,
-                LinuxLibUsbNative.ManagementInterface);
+                _profile.InterfaceNumber);
             _claimed = false;
         }
 
