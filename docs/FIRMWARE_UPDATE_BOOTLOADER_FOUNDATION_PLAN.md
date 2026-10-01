@@ -1,6 +1,6 @@
 # Deus OS — Firmware Update / Bootloader Foundation Plan
 
-Status: **GATES 0–6 ACCEPTED LOCALLY / GATE 7 ORDINARY NON-FORCE PUBLICATION CURRENT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED**
 
 Boundary: FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION
 
@@ -32,7 +32,7 @@ The final hardware state was returned to the accepted repair-candidate whole-Fla
 
 A post-Stage-10 host reliability audit then accepted a host-only repair for delayed timed-out response correlation and Windows WinUSB timeout classification. Validation evidence SHA-256 `61D8AEBCA99E712D893474376CA4FEDD63D17D11021E45C0F7701621C712B108` passed Core `39/39`, Transport `12/12`, all Core/Windows/Linux Release builds, exact source/poststate locks and zero target/remote/Git mutation. Formal repair continuation SHA-256 is `253026C36C346C579AD5C1CE0FD528A7F7943A07CC21D792171C14C3350797FD`.
 
-No second firmware-side response-loss mechanism is claimed from the historical INFO/BEGIN/DATA timeout observations and no speculative bootloader patch is authorized. Gate 6 reconciled the canonical documentation, activated `SYSTEM_IDENTITY_CAP_FIRMWARE_UPDATE` (`SYSTEM_IDENTITY_CAPABILITIES = 0x0000007F`) and is locally accepted by the normal acceptance commit containing this record. Gate-6 validation evidence SHA-256 `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC4BD14FA848FE3FD44FD7` passed `92/92` evidence hashes, firmware tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, host tree `c95019bedfb6223705e6eba4f4c6d310b1701cdc`, firmware BIN `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`, Flash/SRAM `53212/10956`, Core `41/41`, Transport `12/12`, all host Release builds and zero target/remote/real-index/ref mutation. Gate 7 is now the ordinary non-force publication step.
+No second firmware-side response-loss mechanism is claimed from the historical INFO/BEGIN/DATA timeout observations and no speculative bootloader patch is authorized. Gate 6 reconciled the canonical documentation, activated `SYSTEM_IDENTITY_CAP_FIRMWARE_UPDATE` (`SYSTEM_IDENTITY_CAPABILITIES = 0x0000007F`) and passed build/test/source-consistency validation. Gate-6 validation evidence SHA-256 `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC4BD14FA848FE3FD44FD7` passed `92/92` evidence hashes, firmware tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, host tree `c95019bedfb6223705e6eba4f4c6d310b1701cdc`, firmware BIN `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`, Flash/SRAM `53212/10956`, Core `41/41`, Transport `12/12`, all host Release builds and zero target/remote/real-index/ref mutation. Gate 6 was accepted by commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; Gate 7 then published that commit/tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb` by ordinary non-force fast-forward. Gate-7 publication evidence SHA-256 is `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95`. Gate 6/7 performed zero target I/O: the published source advertises `0x0000007F`, while the last hardware-proven bench image remains the Stage-10 restored pre-publication whole-Flash `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`. No claim is made that the physical board contains the published image until a separate deployment/smoke establishes that state.
 
 ## 2. Published baseline entering Gate 0
 

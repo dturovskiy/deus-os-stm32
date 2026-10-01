@@ -1,6 +1,6 @@
 # Deus OS — Firmware Update / Bootloader Foundation Acceptance Plan
 
-Status: **GATES 0–6 ACCEPTED LOCALLY / GATE 7 ORDINARY NON-FORCE PUBLICATION CURRENT**
+Status: **GATES 0–7 ACCEPTED / PUBLISHED**
 
 Boundary: FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION
 
@@ -11,7 +11,7 @@ Canonical wire/image protocol: docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md
 Published prerequisite commit: a8f92f83c2ba8917ad183b1a099c9e21199c9463
 Published prerequisite tree: 013c1f472eb9404de94befdcc3f1e1e5acfc5831
 
-Gate-7 publication evidence:
+Published prerequisite Gate-7 evidence:
 stm32_os_preboot_resource_gate7_nonforce_publish_v1_20260927_194416.evidence.zip
 SHA-256 335013389D8AB6C1B09C4BF720185FED82EC4A0D30A2F3F6237CF8ACCA1DE8CE
 
@@ -270,7 +270,7 @@ Final acceptance anchors:
 
 The post-Stage-10 architecture/reliability audit identified two host-side defects and no causally proven second firmware-side response-loss mechanism. The accepted host repair centralizes explicit stale request-ID filtering for timed-out firmware requests while keeping unknown request-ID mismatches fatal, and maps Windows WinUSB pipe timeout errors 121/1460 to `HostErrorKind.Timeout` without changing Open/setup classifications. Validation SHA-256 `61D8AEBCA99E712D893474376CA4FEDD63D17D11021E45C0F7701621C712B108` passed Core `39/39`, Transport `12/12`, all Release builds and zero target/remote/Git mutation; formal repair continuation SHA-256 is `253026C36C346C579AD5C1CE0FD528A7F7943A07CC21D792171C14C3350797FD`.
 
-Gate-5 hardware and technical reliability acceptance are therefore complete. Gate 6 activated capability bit 6 (`SYSTEM_IDENTITY_CAPABILITIES = 0x0000007F`) after documentation reconciliation and is locally accepted by the normal acceptance commit containing this record. Gate-6 validation evidence SHA-256 `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC4BD14FA848FE3FD44FD7` has ZIP CRC clean, `92/92` manifest verification, firmware tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, host tree `c95019bedfb6223705e6eba4f4c6d310b1701cdc`, Core `41/41`, Transport `12/12`, all Core/Windows/Linux Release builds and zero target/remote/real-index/ref mutation. Gate 7 ordinary non-force publication remains pending.
+Gate-5 hardware and technical reliability acceptance are therefore complete. Gate 6 activated capability bit 6 (`SYSTEM_IDENTITY_CAPABILITIES = 0x0000007F`) after documentation reconciliation. Gate-6 validation evidence SHA-256 `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC4BD14FA848FE3FD44FD7` has ZIP CRC clean, `92/92` manifest verification, firmware tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, host tree `c95019bedfb6223705e6eba4f4c6d310b1701cdc`, Core `41/41`, Transport `12/12`, all Core/Windows/Linux Release builds and zero target/remote/real-index/ref mutation. Gate 6 is accepted by commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`; local acceptance continuation SHA-256 is `806D999F1F9677A7E3A3C9D6E0D030079612978561C18A69167A0890A2EBC1CC`. Gate 7 then published the same commit by ordinary non-force fast-forward; publication evidence SHA-256 `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95` proves post-push `HEAD == origin/main == FETCH_HEAD`, clean worktree/index and ahead/behind `0/0`. Gate 6/7 were zero-target publication steps, so the physical bench remains bound to the Stage-10 restored pre-publication whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`; published capability `0x0000007F` is not claimed as installed hardware state without a later explicit deployment/smoke.
 
 ## 12. Gate 0 evidence
 

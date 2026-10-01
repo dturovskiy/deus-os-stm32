@@ -7,7 +7,8 @@ Canonical operational references:
 - current project/gate state: `docs/CURRENT_STATE.md`;
 - current Windows / Mac-mini / USB / UART / ST-LINK ownership: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`;
 - harness/evidence construction rules: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`;
-- Asset recovery contract: `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`.
+- Asset recovery contract: `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`;
+- published Firmware Update / Bootloader design/acceptance: `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
 ## Script classes
 
@@ -49,9 +50,43 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File ".\scripts\build_firmware.ps1" -Pr
 
 The script is build-only. It does not invoke STM32CubeProgrammer, ST-LINK, USB, UART, reset or target Flash programming.
 
-The historical 50652-byte Host Control candidate remains reproducibility history; it is **not** the current Asset build identity. Current Asset acceptance owns its candidate identity through the active Gate-2/5 evidence chain.
+Historical Host Control and Asset candidate sizes remain reproducibility history. The latest published firmware-update candidate identity is owned by `docs/CURRENT_STATE.md` and the published Firmware Update / Bootloader acceptance record; callers must always pass the exact source-tree identity required by the acceptance flow rather than infer it from an older boundary.
 
 When used by an acceptance package, invoke this script through the bounded external-process primitive required by the harness playbook. Do not copy its internal native-tool invocation style into a new monolithic acceptance harness.
+
+## `build_bootloader.ps1`
+
+Purpose:
+
+- build the published 8-KiB bootloader with an explicit external 32-byte update-verification key;
+- keep generated key source/object material in a unique temporary directory and delete it in `finally`;
+- enforce Flash, `.data+.bss`, conventional-SRAM, linker-symbol and undefined-symbol ceilings;
+- emit BIN/ELF/MAP only to caller-selected build output.
+
+**Security:** the resulting bootloader BIN/ELF contains the verification key and is therefore sensitive. Do not place raw key-bearing bootloader output in shareable evidence or publication artifacts.
+
+## `create_firmware_update_package.ps1`
+
+Purpose:
+
+- create the frozen v1 package: 48-byte header + 32-byte HMAC-SHA-256 authenticator + relocated application bytes;
+- validate product/target/version/image bounds and application origin;
+- consume the update key as an external input and clear the in-memory key array before exit.
+
+Generated signed packages are operational update artifacts. Their distribution policy is separate from repository source publication.
+
+## `create_bootloader_recovery_bundle.ps1` / `stm32_bootloader_recovery.ps1`
+
+Purpose:
+
+- construct and operate the candidate-bound bootloader recovery image for pages 0..61;
+- preserve or deliberately clean persistence pages 62/63 according to the selected recovery mode;
+- enforce explicit page erase, no mass erase, no read-unprotect and no option-byte mutation;
+- perform exact post-program readback checks.
+
+The generated recovery ZIP is **PRIVATE / SENSITIVE**. It does not contain a standalone raw key file, but `recovery_region_62pages.bin` contains the compiled key-bearing bootloader. The generated README explicitly forbids adding that ZIP to the repository, shareable evidence or publication artifacts.
+
+These scripts are published recovery/build tooling, not generic operator-facing acceptance harness templates. Hardware acceptance collectors remain responsible for bounded external-process execution, topology ownership, evidence isolation and final operator presentation.
 
 ## `create_asset_recovery_bundle.ps1`
 

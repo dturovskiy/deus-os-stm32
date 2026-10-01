@@ -2,7 +2,7 @@
 
 Status: **CANONICAL DEFERRED POLICY — REVIEW BY MEASUREMENT/TRIGGER, NOT BY SPECULATION**
 
-This document consolidates deferred engineering work identified during `OLED_DIRTY_REGION_OPTIMIZATION`. None of the items below authorizes immediate implementation by itself. Each item requires a real consumer, measurable pressure, or a dedicated independently accepted boundary.
+This document consolidates deferred engineering work identified across accepted boundaries, beginning with `OLED_DIRTY_REGION_OPTIMIZATION` and including the post-publication Firmware Update / Bootloader audit. None of the items below authorizes immediate implementation by itself. Each item requires a real consumer, measurable pressure, or a dedicated independently accepted boundary.
 
 ## 1. Optimization triggers
 
@@ -110,19 +110,11 @@ Do not reopen decomposition merely to reduce line count. Revisit this debt when 
 
 Historical `console_*` naming on transport-neutral dispatch is not itself a functional defect and is not sufficient reason for a rename-only boundary.
 
-### Host Core client decomposition
+### Host Core client decomposition — resolved
 
-The Asset boundary grew `host/src/DeusOs.Control.Core/DeusDeviceClient.cs` to roughly
-1004 lines and added about `+417/-3` lines in that boundary. The client now combines
-session negotiation, frame correlation, generic RPC, application facade behavior and
-Asset transaction orchestration.
+The Asset boundary originally grew `DeusDeviceClient` into a protocol-ownership hotspot. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 1 promoted and completed the needed decomposition: one shared `DeviceProtocolChannel` owns transport/decoder/request correlation/gating, while `DeusRpcClient`, `AssetTransferClient` and `FirmwareUpdateClient` own their transaction domains and `DeusDeviceClient` remains the compatibility/application facade.
 
-This is a real ownership hotspot but not a target Flash/SRAM blocker. Gate-4 acceptance
-of `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` did not promote this debt. Keep it
-separate from that boundary. Promote a host-only decomposition when Bootloader/update
-host work would otherwise add another protocol responsibility:
-retain one shared session/channel and split RPC/Asset/update transaction ownership
-without duplicating transport decoders, locks or reconnect state.
+Do not re-merge these responsibilities into a monolithic client. Any future protocol domain must reuse the shared channel/correlation owner rather than create a second transport decoder, independent request-ID allocator or competing lock.
 
 ### System/service state must remain upstream of presentation
 
@@ -152,16 +144,27 @@ The v1 built-in applications do not own independent peripherals/resources, so th
 
 In particular, do not implicitly start a replacement application after an unresolved resource-release failure unless the ownership transition is proven safe. The policy must define resulting lifecycle state, fallback behavior and resource ownership before resource-owning applications are accepted.
 
+### Firmware Update / Bootloader post-publication robustness
+
+The 2026-10-01 post-publication read-only audit found no acceptance-regression blocker, but retained four bounded robustness items. They are deliberately **deferred**, not patch authorization:
+
+- **Authenticated image-span vector containment.** Published v1 validates the application reset handler against the whole executable application region `0x08002000..0x0800EFFF`, matching the frozen v1 contract. It does not additionally require the reset-handler address to be below `APP_BASE + image_length`. A future tightening may require the entry point to lie inside the authenticated image span so a deliberately shorter signed image cannot branch into stale bytes beyond its signed payload. Treat this as a security/robustness contract change and re-accept it explicitly rather than silently changing v1 semantics.
+- **Bootloader clock-start failure bounds.** Bootloader HSE/PLL ready/switch waits are currently unbounded. Accepted hardware proves the normal oscillator path, not crystal/PLL failure recovery. Promote bounded timeout/fallback behavior only under a dedicated recovery-robustness boundary with resource and hardware acceptance.
+- **Non-DATA firmware-update timeout restart semantics.** DATA has one exact immediate timeout retry because the device contract makes that retry idempotent. INFO/BEGIN/AUTHORIZE/END deliberately do not receive a blind retry. A future host robustness boundary should freeze explicit recovery behavior for ambiguous non-DATA response loss, especially AUTHORIZE and END: reconnect/re-enter recovery, inspect INFO/state, and restart the transaction from BEGIN when required rather than assuming request-level idempotence.
+- **Stale request-ID lifetime under repeated cancellation.** `FirmwareUpdateClient` marks an allocated request ID stale on timeout and user cancellation; the shared channel skips stale IDs until a delayed response consumes them or protocol state is reset. Repeated cancellation without matching delayed responses can theoretically retain IDs in a long-lived session. Add a bounded lifetime/reset policy and wraparound tests if cancellation-heavy firmware workflows become a real consumer.
+
+Historical INFO/BEGIN/DATA response timeouts remain observations, not proof of an additional firmware USB defect. Do not introduce a speculative firmware patch without a causal reproducer.
+
 ### Anti-goals for all follow-up work
 
 None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
 
-These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` or the published `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY`. The Bootloader boundary is now active, and it promotes only the Host Core decomposition trigger needed before update orchestration plus the explicitly frozen update/recovery/security work. The rest does not become active merely by appearing in this backlog.
+These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` or `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The Host Core decomposition trigger was resolved inside the Firmware Update / Bootloader boundary; the remaining items do not become active merely by appearing in this backlog.
 
 ## 8. Roadmap placement
 
 This backlog does not own current roadmap state or activation. `docs/CURRENT_STATE.md` is authoritative for the active boundary and `docs/ROADMAP.md` owns forward sequencing.
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` identified `OLED_UI_LAYOUT_CONFIG_V1` and is published at `562e786ffa734da055c23144ec4256bc8961bbaf`; `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` is complete/published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`. The active boundary is now `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0. Host Core decomposition is promoted only because update orchestration triggers it; broader storage and unrelated debt remain consumer-driven.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` is published at `562e786ffa734da055c23144ec4256bc8961bbaf`; `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`; and `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`. No product feature boundary is currently active. Broader storage, networking/security and robustness debt remain consumer-driven until promoted by `CURRENT_STATE.md` plus a dedicated plan/acceptance contract.
 
 Optimization rule: remove unnecessary work first, measure next, add complexity only against an observed bottleneck.

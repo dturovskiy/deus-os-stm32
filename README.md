@@ -61,6 +61,7 @@ README is an entry point only. It is **not** an authoritative current-state, acc
 - USB management device
 - Windows/Linux host control application
 - bounded Asset/Configuration transfer + persistent A/B configuration
+- recoverable authenticated firmware update + reset-owning USB bootloader
 
 Exact accepted product state, candidate hashes and the current boundary disposition live in `docs/CURRENT_STATE.md`.
 
@@ -68,6 +69,7 @@ Exact accepted product state, candidate hashes and the current boundary disposit
 
 ```text
 OS/
+├── bootloader/
 ├── docs/
 ├── host/
 ├── include/

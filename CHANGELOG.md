@@ -1,5 +1,17 @@
 ## 2026-10-01
 
+### Firmware Update / Bootloader Foundation — Gate-7 published and post-publication audit
+
+Gate 7 published the Gate-6 acceptance commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`, by ordinary non-force fast-forward. Gate-7 evidence SHA-256 `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95` proves post-push `HEAD == origin/main == FETCH_HEAD`, clean worktree/index, ahead/behind `0/0`, matching GitHub `main`, and zero target I/O.
+
+The subsequent read-only post-publication audit found no source-level acceptance blocker and no repository secret/artifact leak. Tracked Git state and repository history contain no firmware binaries/maps/evidence archives/logs/key-file artifact types; product source has no outstanding TODO/FIXME/HACK markers requiring closure; the private recovery bundle is correctly documented as sensitive because it embeds the key-bearing bootloader even though it stores no standalone raw key.
+
+The audit did find documentation drift from the pre-push Gate-6 state. Canonical current/governance/roadmap/architecture/USB/Flash records are reconciled so Firmware Update / Bootloader is a completed published boundary and no new product feature boundary is implicitly active.
+
+The audit also distinguishes published source from the physical bench: Gate 6/7 were zero-target steps, so the last hardware-proven board image remains the Stage-10 restored whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`, while published source advertises `SYSTEM_IDENTITY_CAPABILITIES=0x0000007F`. A future task that requires bench==published source must explicitly deploy and smoke that image; this was not required by the frozen Gate-6 publication contract.
+
+Four non-blocking robustness items are recorded in the deferred backlog rather than patched speculatively: reset-handler containment within authenticated `image_length`, bounded bootloader HSE/PLL startup failure behavior, explicit non-DATA firmware-update timeout/restart semantics, and stale request-ID lifetime under repeated cancellation.
+
 ### Firmware Update / Bootloader Foundation — Gate-6 locally accepted
 
 After Gate-5 hardware/reliability acceptance, Gate 6 reconciled the canonical current-state/design/acceptance/protocol/roadmap records and activated `SYSTEM_IDENTITY_CAP_FIRMWARE_UPDATE` in the runtime system-identity mask. The Gate-6 publication candidate therefore advertises system capabilities `0x0000007F`.

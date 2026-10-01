@@ -1,6 +1,6 @@
 # Deus OS — Foundation Architecture Gap Review
 
-Status: **HISTORICAL NORMATIVE GAP REVIEW — APPLICATION EVENT, SYSTEM IDENTITY, BOUNDED PERSISTENCE AND PRE-BOOTLOADER RESOURCE GAPS RESOLVED; FIRMWARE-UPDATE CONTRACT IS NOW ACTIVE IN `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` GATE 0**
+Status: **HISTORICAL NORMATIVE GAP REVIEW — IDENTIFIED GAPS RESOLVED THROUGH PUBLISHED `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; CURRENT STATE IS OWNED BY `docs/CURRENT_STATE.md`**
 
 Published source baseline reviewed:
 
@@ -11,7 +11,7 @@ Published source baseline reviewed:
 
 This review asks one question: **is the lower kernel/foundation map complete enough that future product direction can change without forcing a rewrite of the accepted substrate?**
 
-Original conclusion: **yes, with a small set of additional contracts that must be explicitly retained in the roadmap.** No missing kernel mechanism blocked the then-current `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` direction. Since this review, the semantic application-event contract was accepted in `APPLICATION_RUNTIME_FOUNDATION`, the system identity/capability gap was closed by `HOST_CONTROL_APPLICATION_FOUNDATION`, bounded recoverable persistence was published by `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` at `562e786ffa734da055c23144ec4256bc8961bbaf`, and resource/architecture recovery was published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`. The remaining firmware-update authenticity/trust, controlled reboot/handoff and bootloader recovery/rollback contracts are now actively owned by `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0; Gate 0A source/ownership audit is accepted and the architecture decision freeze is current.
+Original conclusion: **yes, with a small set of additional contracts that must be explicitly retained in the roadmap.** No missing kernel mechanism blocked the then-current `BOOT_DESKTOP_UI_FOUNDATION` -> `APPLICATION_RUNTIME_FOUNDATION` direction. Since this review, the semantic application-event contract was accepted in `APPLICATION_RUNTIME_FOUNDATION`, the system identity/capability gap was closed by `HOST_CONTROL_APPLICATION_FOUNDATION`, bounded recoverable persistence was published by `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` at `562e786ffa734da055c23144ec4256bc8961bbaf`, and resource/architecture recovery was published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`. The firmware-update authenticity/trust, controlled reboot/handoff and bootloader recovery/rollback contracts were subsequently resolved by the now-published `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. This review is historical; current project disposition is owned by `docs/CURRENT_STATE.md`.
 
 ## 1. Verified foundation already present
 

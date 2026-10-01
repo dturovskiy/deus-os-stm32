@@ -154,7 +154,7 @@ New active boundaries must use dedicated canonical plans instead.
 
 - `ARCHITECTURE.md` — architecture/invariants
 - `ROADMAP.md` — forward ordering
-- `FLASH_OWNERSHIP_LAYOUT_DECISION.md` — shared future internal-Flash ownership/reset/application/persistence map; docs-only and non-authorizing by itself
+- `FLASH_OWNERSHIP_LAYOUT_DECISION.md` — shared internal-Flash ownership/reset/application/metadata/persistence decision; the final map is now realized by the published Firmware Update / Bootloader boundary, while the file remains non-authorizing by itself
 - `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` — current canonical development/acceptance host, cable and physical-interface ownership topology
 - `HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` — harness/evidence operating rules
 - `DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md` — deferred/trigger policy
@@ -197,12 +197,19 @@ These are complete and retained as scoped historical contracts:
 - `USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md`
 - `HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md`
 - `HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md`
+- `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md`
+- `ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md`
+- `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md`
+- `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`
+- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md`
+- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
 
 ### D. Accepted protocol/hardware/UI references and promoted narrow consumer contracts
 
 These describe accepted narrow reference contracts or explicitly promoted consumer contracts rather than source implementation authority:
 
 - `BINARY_FRAMED_TRANSPORT_PROTOCOL.md`
+- `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` — frozen published firmware-update package/wire ABI
 - `ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` — frozen additive binary transfer ABI consumed by the published Asset boundary
 - `ASSET_CONFIGURATION_PERSISTENCE_V1.md` — frozen A/B persistence envelope/atomic selection contract consumed by the published Asset boundary
 - `ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` — frozen Flash/SRAM/stack ceilings that governed the published Asset acceptance
@@ -262,24 +269,23 @@ implementation was originally blocked.
 
 This boundary is complete/published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`.
 
+### I. Published Firmware Update / Bootloader boundary records
+
+- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md`
+- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
+- `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`
+
+This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`; Gate-7 publication evidence SHA-256 is `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95`. The published runtime system capability mask is `0x0000007F`.
+
 ## 4. Current and future boundaries
 
 ### Current product implementation state
 
-`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is active at Gate 0 contract/feasibility.
-Published prerequisite: recovery commit `a8f92f83c2ba8917ad183b1a099c9e21199c9463`.
-
-Canonical records:
-
-- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md`
-- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
-
-Gate 0 authorizes documentation/read-only audit and temporary acceptance-only linked
-feasibility prototypes. Product linker/startup/Flash mutation remains forbidden.
+No product feature boundary is currently active. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is complete/published; current work is post-publication documentation/repository hygiene and architecture review only, as recorded by `docs/CURRENT_STATE.md`.
 
 ### Later
 
-Networking/service extensions.
+Networking/service/security extensions remain the next broad roadmap area but are not active until a concrete consumer/problem is promoted through the normal plan + acceptance-plan rule.
 
 Host-management presentation evolution is described by `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`. That reference does not itself promote a Web/service/network boundary.
 
@@ -316,7 +322,7 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after the 2026-09-27 recovery publication / Bootloader Gate-0 activation reconciliation:
+Live documentation inventory after the 2026-10-01 Firmware Update / Bootloader publication and post-publication documentation audit:
 
 - Markdown files in `docs/`: `70`;
 - `*_ACCEPTANCE_PLAN.md` records: `20`;
@@ -327,7 +333,8 @@ Live documentation inventory after the 2026-09-27 recovery publication / Bootloa
 - `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` is the canonical operational topology reference, not a product boundary plan;
 - the Asset/Configuration plan and acceptance files form a matched published pair and preserve the historical `DEFERRED_NO_REAL_CONSUMER` record plus final Gates 0–7 publication;
 - the pre-Bootloader recovery plan and acceptance files form a matched published pair at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`;
-- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the matched active pair; `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` is their exact active wire/image ABI contract;
-- current product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; Gates 0–2 are accepted; Gate 2 evidence SHA-256 `CF8492497990C799602E53AAD59490E9EBDA399C40EB81BB13A74422002D0531`, tree `637ea07b10cf84882e19cbb8239f31b7f48856a7`; Gate 3 bootloader/update transport/security implementation is current.
+- `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` form a matched published pair; `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` is their frozen published wire/image ABI contract;
+- latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
+- no product feature boundary is currently active; deferred work remains non-authorizing until promoted under §5.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

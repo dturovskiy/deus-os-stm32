@@ -57,14 +57,14 @@ The stable management device-interface GUID is not the USB product identity. It 
 
 ## Bootloader development profile
 
-`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 freezes a fourth private-test identity because the bootloader topology is a single vendor/bulk interface rather than the runtime composite device:
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` froze and now publishes a fourth private-test identity because the bootloader topology is a single vendor/bulk interface rather than the runtime composite device:
 
 ```text
 Boundary  FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION
 VID       0x1209
 PID       0x000D
 Product   Deus OS Bootloader
-Status    Gate-0 contract / private-test vendor-bulk profile
+Status    published Firmware Update / Bootloader private-test vendor-bulk profile
 ```
 
 Using a distinct PID prevents the runtime `000C` composite CDC/management descriptor and Windows function-binding history from being reused for the bootloader's different interface-0 topology. Windows bootloader binding is WinUSB through its own Microsoft OS 2.0 descriptor; Linux uses libusb.
@@ -94,4 +94,4 @@ A boundary that changes USB class topology in a way that changes host binding sh
 
 ## Gate effect
 
-This document authorizes private testing only. The historical published CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. The accepted/published `USB_MANAGEMENT_DEVICE_FOUNDATION` uses `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`. The active Bootloader Gate-0 contract reserves `VID=0x1209`, `PID=0x000D`, product `Deus OS Bootloader`. None of these Test PIDs authorize production/distribution use.
+This document authorizes private testing only. The historical published CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. The accepted/published `USB_MANAGEMENT_DEVICE_FOUNDATION` uses `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`. The published `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` uses `VID=0x1209`, `PID=0x000D`, product `Deus OS Bootloader`. None of these Test PIDs authorize production/distribution use.

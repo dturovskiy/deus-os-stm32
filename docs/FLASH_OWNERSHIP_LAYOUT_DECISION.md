@@ -1,6 +1,6 @@
 # Deus OS — Flash Ownership / Memory Map Decision
 
-Status: **CANONICAL DOCS-ONLY ARCHITECTURE DECISION — NO FLASH/LINKER/STARTUP MUTATION AUTHORIZED BY THIS FILE**
+Status: **CANONICAL ARCHITECTURE DECISION — FINAL MAP REALIZED / THIS FILE DOES NOT AUTHORIZE MUTATION BY ITSELF**
 
 Decision ID:
 
@@ -31,56 +31,48 @@ ST hardware documentation retained as the silicon basis for this decision:
 
 The selected application origin below is therefore both Flash-page aligned and stricter than the Cortex-M3 VTOR alignment requirement.
 
-## 3. Current state versus future owned layout
+## 3. Decision-time state versus realized layout
 
-The current accepted firmware remains a standalone image linked from:
+At the time this decision was frozen, the accepted firmware was still a standalone image linked from `0x08000000`. The two-phase migration below therefore remains important historical rationale: Asset/Configuration first reserved persistence while the application remained reset owner, then the Firmware Update / Bootloader boundary moved reset ownership to the bootloader and relocated the application.
 
-```text
-FLASH ORIGIN = 0x08000000
-FLASH LENGTH = 64 KiB
-```
+That migration is now complete. The published `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` realizes the final layout: bootloader reset ownership at `0x08000000`, executable application origin/VTOR at `0x08002000`, firmware metadata pages 60/61, and unchanged persistence pages 62/63.
 
-and currently owns the reset vector at the beginning of Flash.
+Historical phase descriptions below explain how the final map was reached; they are not statements that the current published application still owns reset at `0x08000000`.
 
-This decision does **not** retroactively change that accepted binary.
-
-The ownership target in Section 4 is reached in **two implementation phases**. Asset/Configuration may reserve and use the top A/B persistence pages while the application remains the standalone reset owner at `0x08000000`. The application moves to `0x08002000` only when a real bootloader is installed at Flash base. This staged rule prevents an Asset-first implementation from producing an unbootable device.
-
-## 4. Frozen future physical map
+## 4. Frozen final physical map — now realized
 
 STM32F103C8 internal Flash:
 
 ```text
 0x08000000  +----------------------------------+
             | Bootloader / recovery            |
-            | pages 0..7                       |
-            | 8 KiB                            |
+            | pages 0..7 / 8 KiB               |
 0x08002000  +----------------------------------+
-            | Application                      |
-            | pages 8..61                      |
-            | 54 KiB maximum                   |
-            |                                  |
-            | current 50652-byte image would   |
-            | leave 4644 bytes inside this     |
-            | application region after         |
-            | relocation                       |
+            | Executable application           |
+            | pages 8..59 / 52 KiB             |
+0x0800F000  +----------------------------------+
+            | Firmware metadata A / page 60    |
+0x0800F400  +----------------------------------+
+            | Firmware metadata B / page 61    |
 0x0800F800  +----------------------------------+
-            | Persistent config slot A         |
-            | page 62 / 1 KiB                  |
+            | Persistent config A / page 62    |
 0x0800FC00  +----------------------------------+
-            | Persistent config slot B         |
-            | page 63 / 1 KiB                  |
+            | Persistent config B / page 63    |
 0x08010000  +----------------------------------+  exclusive end
 ```
 
-Exact ownership:
+Exact realized ownership:
 
 | Region | Start | End inclusive | Size | Erase pages |
 | --- | --- | --- | ---: | --- |
 | Bootloader / recovery | `0x08000000` | `0x08001FFF` | 8192 B | 0..7 |
-| Application | `0x08002000` | `0x0800F7FF` | 55296 B | 8..61 |
+| Executable application | `0x08002000` | `0x0800EFFF` | 53248 B | 8..59 |
+| Firmware metadata A | `0x0800F000` | `0x0800F3FF` | 1024 B | 60 |
+| Firmware metadata B | `0x0800F400` | `0x0800F7FF` | 1024 B | 61 |
 | Persistent slot A | `0x0800F800` | `0x0800FBFF` | 1024 B | 62 |
 | Persistent slot B | `0x0800FC00` | `0x0800FFFF` | 1024 B | 63 |
+
+The original 54-KiB physical application envelope from this decision is therefore realized as 52 KiB of executable application plus two 1-KiB firmware-metadata pages; its outer boundary remains `0x08002000..0x0800F7FF`.
 
 No region may erase or program a page owned by another region.
 
@@ -114,7 +106,7 @@ During this phase:
 - pages 62/63 are the only self-programmable Asset/Configuration pages;
 - the current 50652-byte application fits the 54 KiB ceiling with 4644 bytes remaining.
 
-`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 refines the same 54 KiB physical application ownership while shifting it upward by exactly 8 KiB:
+During the later `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0, the same 54-KiB physical application ownership was refined while shifting upward by exactly 8 KiB:
 
 ```text
 standalone phase: application 0x08000000..0x0800D7FF
@@ -143,7 +135,7 @@ application region          = 54 KiB
 persistent region           = 2 KiB
 ```
 
-The active `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 must produce a static linked-size feasibility proof against this 8 KiB ceiling **before implementation is authorized**.
+The later `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 produced the required static linked-size feasibility proof against this 8-KiB ceiling before implementation was authorized; the boundary has since been accepted and published.
 
 If the minimum accepted update/recovery/security responsibility cannot fit in 8 KiB, this decision must be explicitly reopened. The project must then choose among reducing application footprint, reducing another reserved budget, changing the update architecture, adding external staging storage, or changing target hardware. Silent region encroachment is forbidden.
 
@@ -151,7 +143,7 @@ If the minimum accepted update/recovery/security responsibility cannot fit in 8 
 
 The reservation is for a deliberately small recovery/update owner, not a second operating system.
 
-The active Bootloader contract freezes only responsibilities necessary to make executable update safe and recoverable:
+The published Bootloader contract owns only responsibilities necessary to make executable update safe and recoverable:
 
 1. own reset at `0x08000000`;
 2. distinguish normal boot from recovery/update entry;
@@ -172,7 +164,7 @@ The bootloader must not own:
 - application UI policy;
 - unrelated diagnostics.
 
-Exact transport framing, update image format, cryptographic/authenticity mechanism and boot-validity metadata are now active `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate-0 design work; no implementation is authorized until that contract closes.
+Exact transport framing, update image format, cryptographic/authenticity mechanism and boot-validity metadata were frozen by `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` and are now implemented/published. Their canonical scoped contracts remain the boundary plan, acceptance plan and `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`.
 
 ## 7. Reset and vector ownership
 
@@ -185,7 +177,7 @@ After bootloader implementation:
 - bootloader handoff must establish the application vector-table/MSP/reset-handler contract;
 - application startup must establish/verify `SCB_VTOR = 0x08002000` before normal interrupt-dependent runtime proceeds.
 
-The current `src/startup.s` does not perform that relocation, so this is a future implementation change and must be accepted together with the linker migration.
+The published `src/startup.s` performs this relocation at reset entry and the linker origin is `0x08002000`; that migration was accepted together with the Firmware Update / Bootloader boundary.
 
 No application image linked for `0x08000000` may be treated as bootloader-layout compatible merely because its bytes otherwise validate.
 
