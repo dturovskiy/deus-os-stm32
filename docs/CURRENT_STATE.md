@@ -105,9 +105,9 @@ Authoritative deployment evidence SHA-256 is `77F42EE22978A52FC60AE03D14D10BAC27
 
 ## 4. Current work disposition
 
-There is **no active product feature boundary** after publication and physical deployment verification of `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`.
+There is **no active product feature boundary** after publication and physical deployment verification of `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The active engineering boundary is now the first mandatory closure slice: **`HOST_RPC_TIMEOUT_RECOVERY_HARDENING` / `FDC-01`, Gate 0 contract freeze**.
 
-The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. This is a closure program, not authorization to mix unrelated source changes into one patch. Each source-changing slice still requires its own frozen source boundary, acceptance criteria and evidence before mutation.
+The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. `FDC-01` is the first independently frozen implementation slice. Canonical plan/acceptance: `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` and `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_ACCEPTANCE_PLAN.md`. No `FDC-02+` source mutation is authorized by this activation.
 
 The mandatory closure ledger uses IDs `FDC-01..FDC-10`:
 

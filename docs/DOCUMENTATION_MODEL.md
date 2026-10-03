@@ -324,9 +324,9 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 Live documentation inventory after the 2026-10-01 Firmware Update / Bootloader publication and post-publication documentation audit:
 
-- Markdown files in `docs/`: `70`;
-- `*_ACCEPTANCE_PLAN.md` records: `20`;
-- non-acceptance `*_PLAN.md`-named files: `23`;
+- Markdown files in `docs/`: `72`;
+- `*_ACCEPTANCE_PLAN.md` records: `21`;
+- non-acceptance `*_PLAN.md`-named files: `24`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;
 - the sole unmatched same-stem acceptance name is `OLED_CONSOLE_ACCEPTANCE_PLAN.md`, which is the historical semantic pair for `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`;
 - the remaining unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
@@ -334,7 +334,8 @@ Live documentation inventory after the 2026-10-01 Firmware Update / Bootloader p
 - the Asset/Configuration plan and acceptance files form a matched published pair and preserve the historical `DEFERRED_NO_REAL_CONSUMER` record plus final Gates 0–7 publication;
 - the pre-Bootloader recovery plan and acceptance files form a matched published pair at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`;
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` form a matched published pair; `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` is their frozen published wire/image ABI contract;
+- `HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the active matched `FDC-01` closure pair; they are a post-publication hardening slice, not a product feature boundary;
 - latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
-- no new product feature boundary is currently active; the 2026-10-03 audit has promoted `FDC-01..FDC-10` as a mandatory pre-feature closure program, while unrelated deferred work remains non-authorizing until separately promoted under §5.
+- no new product feature boundary is currently active; `FDC-01 / HOST_RPC_TIMEOUT_RECOVERY_HARDENING` is the active engineering closure boundary inside the mandatory `FDC-01..FDC-10` pre-feature program, while unrelated deferred work remains non-authorizing until separately promoted under §5.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

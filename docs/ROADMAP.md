@@ -257,7 +257,7 @@ The 2026-10-03 architecture/code audit promoted ten residual obligations into a 
 
 ### Slice A — Host long-lived-session hardening
 
-- [ ] `FDC-01` — close generic RPC timeout/cancellation correlation: delayed multi-frame `RPC_DATA...RPC_END` from an abandoned request must never poison a later request; stale-ID retention/wrap must be bounded; ambiguous non-DATA firmware-update response loss must have an explicit adjudication/restart policy rather than blind retry.
+- [ ] `FDC-01` — **ACTIVE / Gate 0 contract freeze:** close generic RPC timeout/cancellation correlation: delayed multi-frame `RPC_DATA...RPC_END` from an abandoned request must never poison a later request; stale-ID retention/wrap must be bounded; ambiguous non-DATA firmware-update response loss must have an explicit adjudication/restart policy rather than blind retry. Canonical slice: `HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`.
 - [ ] `FDC-02` — remove/redefine synchronous `StateChanged` callback execution while `DeusDeviceSession` holds its operation gate; prove callback reentrancy cannot deadlock the session.
 - [ ] `FDC-03` — freeze a service-facing operation allowlist; no raw HTTP/Web proxy over arbitrary `RpcAsync(rpcId, flags)` and no assumption that firmware `SAFE` classification equals remotely authorized read-only behavior.
 - [ ] `FDC-04` — add/reuse typed Core models/parsers for every state surface consumed by the future service; presentation code must not parse ad-hoc `RpcResult.OutputText`.

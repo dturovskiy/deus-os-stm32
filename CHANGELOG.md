@@ -1,5 +1,13 @@
 ## 2026-10-03
 
+### FDC-01 Host RPC timeout/correlation hardening — Gate 0 activated
+
+The first mandatory closure slice is now frozen as `HOST_RPC_TIMEOUT_RECOVERY_HARDENING`, baseline `8bd09ad890ab10bb7fed6ecba21d5ad6a382237b`. The root cause is the mismatch between single-response stale filtering and generic multi-frame RPC: after timeout/cancel an abandoned request may still emit delayed `RPC_DATA...RPC_END`, while the published channel currently retires a stale request ID after discarding only one frame.
+
+Gate 0 selects one channel-owned abandoned-request registry with two response shapes: `SingleResponse` for the accepted firmware-update delayed-response retry case, and `RpcUntilTerminal` for generic RPC until `RPC_END` or `PROTOCOL_ERROR`. Unknown non-abandoned request IDs remain fatal; arbitrary time-based stale expiry is forbidden; unresolved abandoned state reaching request-ID wrap must fail closed and require a fresh client/transport session rather than unsafe ID reuse. INFO/BEGIN/AUTHORIZE/END retain the no-blind-retry rule.
+
+This activation is documentation-only. The frozen source boundary is limited to Host Core correlation/RPC/firmware-update/request-ID ownership plus the two Core test files; STM32 firmware, bootloader, native WinUSB/libusb adapters, CLI/Desktop, scripts, Flash and hardware state are unchanged. Canonical plan/acceptance are `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` and `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_ACCEPTANCE_PLAN.md`.
+
 ### Foundational debt closure program promoted after post-publication architecture/code audit
 
 A fresh architecture/code audit after physical deployment found no forgotten accepted-boundary Gate, but identified ten residual obligations that must be closed before the next Host Management Service/Web/network feature sequence. Canonical IDs are `FDC-01..FDC-10`: generic RPC timeout/cancel correlation; session state-event reentrancy; service operation allowlisting; typed Host Core management models; remaining composition-root convergence; semantic system/service state upstream of presentation; fail-closed application stop failure; bounded boot/runtime/update waits and recovery; bounded native transport cancellation/disposal; and documentation/source-of-truth reconciliation.

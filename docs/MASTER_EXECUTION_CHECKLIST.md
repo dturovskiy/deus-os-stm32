@@ -11,7 +11,7 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice A — Host long-lived-session hardening
 
-- [ ] **FDC-01 — generic RPC timeout/cancellation correlation and abandoned-response cleanup.**
+- [ ] **FDC-01 — generic RPC timeout/cancellation correlation and abandoned-response cleanup — ACTIVE / Gate 0 contract freeze (`HOST_RPC_TIMEOUT_RECOVERY_HARDENING`).**
   - [ ] freeze one policy for RPC timeout/cancel aftermath: bounded stale-request draining **or** forced session reset/reconnect; do not leave the session nominally READY with ambiguous unread multi-frame response state;
   - [ ] delayed `RPC_DATA` and delayed `RPC_END` for an abandoned request cannot poison a later fresh request;
   - [ ] unknown mismatched request IDs that are not explicitly abandoned/stale remain fatal correlation errors;
