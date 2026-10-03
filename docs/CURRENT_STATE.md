@@ -10,7 +10,7 @@ For architecture, roadmap sequence, scoped boundary contracts, evidence policy a
 
 ## 1. Latest completed product boundary
 
-`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED**
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` — **GATES 0–7 ACCEPTED / PUBLISHED / PHYSICAL DEPLOYMENT VERIFIED**
 
 Boundary publication commit:
 
@@ -32,6 +32,8 @@ Gate-7 publication proved:
 - GitHub `main` at the same commit/tree;
 - verified GitHub commit signature;
 - zero target I/O.
+
+Post-publication physical deployment is also accepted from `stm32_os_published_deploy_adjudicated_retry_v7_20261003_141252.evidence.zip`, SHA-256 `77F42EE22978A52FC60AE03D14D10BAC27D38B9FE8E6647D095F646349D75706`. It proves the exact signed published-v2 package SHA-256 `8BD8952AB994011438B55EF56DE6FBEDE3264F375DE97CF6BAABD1AA4D568C7D`, exact published application SHA-256 `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`, bootloader prestate `Ok/RecoveryIdle` with version floor/committed version `1/1`, successful END response `Ok/Committed` with floor/committed version `2/2`, committed metadata B version `2` with marker `0xA55A`, unchanged bootloader/persistence ownership, runtime source tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, runtime/HELLO capabilities `0x0000007F`, `PONG`, health OK and `ROLLBACK_ATTEMPTED=False`. Post-deploy whole-Flash SHA-256 is `FB85D953CAC213DCE3662FA8F2008D42E89AE11A8667FD77E6B3F300958440D6`.
 
 The accepted Gate-6 publication candidate is:
 
@@ -83,21 +85,29 @@ Gate-5 hardware acceptance covers normal boot, explicit update entry, invalid-ap
 
 The post-Stage-10 host reliability repair is accepted. It handles delayed responses from explicitly timed-out firmware requests without weakening unknown request-ID correlation failures, and maps Windows WinUSB pipe timeout codes `121/1460` to `HostErrorKind.Timeout`. No second firmware-side response-loss mechanism is claimed from the historical INFO/BEGIN/DATA timeout observations.
 
-## 3. Published source versus physical bench state
+## 3. Published source and physical bench state
 
-Gate 6 and Gate 7 were deliberately zero-target publication steps. Therefore:
+Gate 6 and Gate 7 were deliberately zero-target publication steps, so the board initially remained on the Stage-10 restored pre-publication baseline whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`. That historical distinction is now closed by the accepted post-publication deployment proof.
 
-- **published source/product identity** is the Gate-6/Gate-7 state above with capability mask `0x0000007F`;
-- **last hardware-proven physical bench image** is the Stage-10 restored pre-publication candidate with whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`;
-- that Stage-10 bench state predates the Gate-6 capability-bit activation, so the physical board must not be assumed to contain the published `0x0000007F` image until a separately authorized deployment/smoke installs and verifies it.
+Current physical bench state is aligned with the published source/product identity:
 
-This distinction is not a Gate-6 acceptance gap: the frozen Gate-6 contract required documentation reconciliation plus build/test/source-consistency validation after complete Gate-5 hardware acceptance, not another target mutation. Any future task that requires **bench == published source** must explicitly establish that state first.
+- deployed signed package SHA-256 `8BD8952AB994011438B55EF56DE6FBEDE3264F375DE97CF6BAABD1AA4D568C7D`;
+- deployed application SHA-256 `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`;
+- post-deploy whole-Flash SHA-256 `FB85D953CAC213DCE3662FA8F2008D42E89AE11A8667FD77E6B3F300958440D6`;
+- metadata A retains the historical version-`1` committed record / marker `0xA55A`, but its digest does not match the current v2 application; metadata B is the single matching current commit, version `2` / marker `0xA55A`;
+- bootloader pages and persistence pages are unchanged from prestate;
+- runtime source tree is `8323c68c931894441ae4db9138ba3838f35bb8b6`;
+- runtime and HELLO capability masks are both `0x0000007F`;
+- runtime `PING=PONG` and health are accepted;
+- deployment rollback was not attempted.
+
+Authoritative deployment evidence SHA-256 is `77F42EE22978A52FC60AE03D14D10BAC27D38B9FE8E6647D095F646349D75706`. The earlier failed published-deploy smoke is historical forensic evidence only: its post-failure harness restored the old version-1 baseline, so that old static Flash state was not evidence that the published package had never transferred or committed.
 
 ## 4. Current work disposition
 
-There is **no active product feature boundary** after publication of `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`.
+There is **no active product feature boundary** after publication and physical deployment verification of `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`.
 
-The post-publication documentation/repository hygiene and architecture audit is complete at the current documentation state. No product source repair or target mutation was authorized by that audit. New work requires explicit promotion of a concrete boundary.
+The post-publication documentation/repository hygiene and architecture audit is complete, and the separately authorized published-image deployment closure is now complete. The board is running the exact published v2 image with capability `0x0000007F`. No further firmware-update forensic or speculative product patch is active. New work requires explicit promotion of a concrete boundary.
 
 The next broad roadmap area remains networking/service/security evolution, but it is **not active** until a concrete consumer/problem is named and a dedicated plan + acceptance plan freeze the boundary.
 

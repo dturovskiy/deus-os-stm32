@@ -1,6 +1,6 @@
 # Deus OS — Firmware Update / Bootloader Protocol v1
 
-Status: **FROZEN V1 ABI — IMPLEMENTED / GATES 0–7 ACCEPTED / PUBLISHED**
+Status: **FROZEN V1 ABI — IMPLEMENTED / GATES 0–7 ACCEPTED / PUBLISHED / PHYSICAL DEPLOYMENT VERIFIED**
 
 Boundary:
 
@@ -14,7 +14,7 @@ Canonical parent design:
 
 This contract freezes the exact v1 firmware-package and wire ABI implemented by the
 accepted Bootloader foundation. Gate-5 hardware acceptance exercises this ABI without
-changing it. This document remains a protocol authority, not an independent authorization
+changing it, and post-publication deployment evidence SHA-256 `77F42EE22978A52FC60AE03D14D10BAC27D38B9FE8E6647D095F646349D75706` proves the published v2 update path through exact `Ok/Committed` completion and runtime verification. This document remains a protocol authority, not an independent authorization
 for source, linker, target Flash, option-byte or RDP mutation.
 
 The bootloader transport is deliberately independent from the runtime RPC registry and

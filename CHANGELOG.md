@@ -1,3 +1,19 @@
+## 2026-10-03
+
+### Published Firmware Update / Bootloader v2 physically deployed and runtime verified
+
+The published `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` image is now physically installed and verified on the STM32 bench. Authoritative evidence is `stm32_os_published_deploy_adjudicated_retry_v7_20261003_141252.evidence.zip`, SHA-256 `77F42EE22978A52FC60AE03D14D10BAC27D38B9FE8E6647D095F646349D75706`.
+
+The accepted deployment starts from the historical Stage-10 baseline whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`, uses exact signed package SHA-256 `8BD8952AB994011438B55EF56DE6FBEDE3264F375DE97CF6BAABD1AA4D568C7D`, verifies bootloader `INFO=Ok/RecoveryIdle` with floor/committed version `1/1`, and receives exact update completion `Ok/Committed` with floor/committed version `2/2`.
+
+Independent post-deploy Flash readback proves exact application SHA-256 `2CB6423F9E8752772256BCDDEBB116EEE5C907CED94911EEF4D5AC5CBF6C64BA`, zero non-`0xFF` bytes in the application tail, metadata A retained as historical version `1`, metadata B committed as version `2` with marker `0xA55A` and matching digest, bootloader unchanged and persistence unchanged. Current whole-Flash SHA-256 is `FB85D953CAC213DCE3662FA8F2008D42E89AE11A8667FD77E6B3F300958440D6`.
+
+Runtime verification proves source tree `8323c68c931894441ae4db9138ba3838f35bb8b6`, runtime and HELLO capability masks `0x0000007F`, `PING=PONG`, health OK and no rollback. The board therefore now matches the published v2 product identity.
+
+The preceding END-timeout forensic is closed without a firmware patch. Retained chronology proved the earlier failed published-deploy smoke executed an exact post-failure restore to the old version-1 baseline; therefore the old `C7EB7201...` Flash state observed afterward did not prove that the published package had failed to transfer or commit. The controlled adjudicated retry then completed with a normal END response and independent Flash/runtime verification.
+
+Harness policy is also tightened from this campaign: authoritative evidence is one self-contained `.evidence.zip` with manifest-owned `run.log`; loose duplicate logs are no longer emitted by default. New failure-pattern guidance records PowerShell automatic-variable parameter collisions, Bash leading-zero USB identifiers, and operator-visible interactive privilege boundaries.
+
 ## 2026-10-01
 
 ### Firmware Update / Bootloader Foundation — Gate-7 published and post-publication audit
@@ -8,7 +24,7 @@ The subsequent read-only post-publication audit found no source-level acceptance
 
 The audit did find documentation drift from the pre-push Gate-6 state. Canonical current/governance/roadmap/architecture/USB/Flash records are reconciled so Firmware Update / Bootloader is a completed published boundary and no new product feature boundary is implicitly active.
 
-The audit also distinguishes published source from the physical bench: Gate 6/7 were zero-target steps, so the last hardware-proven board image remains the Stage-10 restored whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`, while published source advertises `SYSTEM_IDENTITY_CAPABILITIES=0x0000007F`. A future task that requires bench==published source must explicitly deploy and smoke that image; this was not required by the frozen Gate-6 publication contract.
+At the time of the 2026-10-01 audit, Gate 6/7 were zero-target steps, so the then-last hardware-proven board image was the Stage-10 restored whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`, while published source advertised `SYSTEM_IDENTITY_CAPABILITIES=0x0000007F`. That publication/bench distinction was historically correct on 2026-10-01 and is superseded by the 2026-10-03 accepted physical deployment/runtime verification recorded above.
 
 Four non-blocking robustness items are recorded in the deferred backlog rather than patched speculatively: reset-handler containment within authenticated `image_length`, bounded bootloader HSE/PLL startup failure behavior, explicit non-DATA firmware-update timeout/restart semantics, and stale request-ID lifetime under repeated cancellation.
 

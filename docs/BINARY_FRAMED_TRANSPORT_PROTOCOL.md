@@ -76,11 +76,11 @@ Unknown nonzero flag bits, nonzero reserved bytes, oversized payloads, malformed
 0x84  PROTOCOL_ERROR
 ```
 
-The accepted v1 envelope is additive. Published Asset transfer already uses its reserved management frame family; firmware-update frame types remain documentation-reserved only until the Bootloader source gate. New additions must remain capability-/mode-negotiated and must never reinterpret existing frame-type values.
+The accepted v1 envelope is additive. Published Asset transfer uses its management frame family, and the published/deployed Firmware Update / Bootloader foundation uses its separately frozen firmware-update frame family. New additions must remain capability-/mode-negotiated and must never reinterpret existing frame-type values.
 
 `ASSET_CONFIGURATION_TRANSFER_FOUNDATION` froze additive frame types `0x03 ASSET_TRANSFER_REQUEST` and `0x85 ASSET_TRANSFER_RESPONSE` in `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` and later published their management-IF2 implementation.
 
-`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 additionally reserves `0x04 FIRMWARE_UPDATE_REQUEST` and `0x86 FIRMWARE_UPDATE_RESPONSE`. They reuse only this v1 envelope; bootloader frames are constrained to one 64-byte USB packet (`payload_length <= 52`). They remain documentation-reserved until the Bootloader source gate authorizes implementation.
+`FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` froze and implements `0x04 FIRMWARE_UPDATE_REQUEST` and `0x86 FIRMWARE_UPDATE_RESPONSE`. They reuse only this v1 envelope; bootloader frames are constrained to one 64-byte USB packet (`payload_length <= 52`). The boundary is published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` and its v2 image is physically deployed/verified; the exact firmware-update opcode/payload contract remains owned by `docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`.
 
 ## 5. Flags
 

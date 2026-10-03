@@ -103,7 +103,7 @@ Exact current accepted product identities and versions are in `docs/CURRENT_STAT
 
 - Fail closed on unexpected repository/source state.
 - Distinguish PRODUCT, HARNESS, ENVIRONMENT and EVIDENCE/STATE failures.
-- Inspect the authoritative self-contained evidence ZIP before classifying hardware/runtime acceptance; `run.log` is inside it, and any loose external log is optional compatibility output only.
+- Inspect the authoritative self-contained evidence ZIP before classifying hardware/runtime acceptance; `run.log` is inside it. Do not emit a loose duplicate log by default; create one only when the operator explicitly requests compatibility output.
 - Do not treat terminal PASS text alone as acceptance proof.
 - Build acceptance harnesses **primitive-first**: independently prove PowerShell process control, SSH/SCP, Git archive portability, .NET/MTP test invocation and any hardware-access primitive on the real execution domain before composing one collector.
 - Never collapse the current split-host bench into one generic host: USB/libusb lives on `deus@macmini`; ST-LINK/CubeProgrammer and CH340/UART live on Windows. A Windows-driven reset/Flash step that needs runtime proof must verify USB recovery remotely on the Mac mini.
@@ -129,7 +129,7 @@ Acceptance evidence should preserve:
 - build/resource results;
 - hardware/runtime diagnostics where applicable;
 - final classification;
-- one self-contained authoritative evidence ZIP containing chronological `run.log`, structured `outcome.txt`, raw command evidence and hashes; a loose duplicate log is optional only;
+- one self-contained authoritative evidence ZIP containing chronological `run.log`, structured `outcome.txt`, raw command evidence and hashes; no loose duplicate log by default;
 - hashes of bound prior evidence where a composite/repaired verifier is used.
 
 Historical evidence hashes are retained in the relevant boundary acceptance plan, execution ledger and changelog.

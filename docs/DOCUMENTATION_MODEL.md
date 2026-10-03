@@ -275,13 +275,13 @@ This boundary is complete/published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
 - `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`
 
-This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`; Gate-7 publication evidence SHA-256 is `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95`. The published runtime system capability mask is `0x0000007F`.
+This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`; Gate-7 publication evidence SHA-256 is `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95`. Post-publication physical deployment/runtime verification is accepted by evidence SHA-256 `77F42EE22978A52FC60AE03D14D10BAC27D38B9FE8E6647D095F646349D75706`; the physical bench now runs the exact published v2 application with runtime capability mask `0x0000007F`.
 
 ## 4. Current and future boundaries
 
 ### Current product implementation state
 
-No product feature boundary is currently active. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is complete/published; current work is post-publication documentation/repository hygiene and architecture review only, as recorded by `docs/CURRENT_STATE.md`.
+No product feature boundary is currently active. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is complete/published and its physical deployment/runtime closure is accepted; the board is aligned with the published v2 identity. The completed documentation/repository hygiene and deployment-reconciliation work does not itself promote a new product boundary; `docs/CURRENT_STATE.md` owns the current disposition.
 
 ### Later
 

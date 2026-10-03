@@ -135,7 +135,7 @@ application region          = 54 KiB
 persistent region           = 2 KiB
 ```
 
-The later `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 produced the required static linked-size feasibility proof against this 8-KiB ceiling before implementation was authorized; the boundary has since been accepted and published.
+The later `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` Gate 0 produced the required static linked-size feasibility proof against this 8-KiB ceiling before implementation was authorized; the boundary has since been accepted, published and physically deployed/verified. Post-publication deployment preserves bootloader and persistence ownership byte-for-byte while committing published application version `2` in metadata B.
 
 If the minimum accepted update/recovery/security responsibility cannot fit in 8 KiB, this decision must be explicitly reopened. The project must then choose among reducing application footprint, reducing another reserved budget, changing the update architecture, adding external staging storage, or changing target hardware. Silent region encroachment is forbidden.
 

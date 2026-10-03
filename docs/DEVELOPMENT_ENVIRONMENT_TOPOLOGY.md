@@ -99,6 +99,8 @@ The target composite USB device is `1209:000C` / `Deus OS Device`:
 - management IF2 is accessed by the Linux libusb adapter;
 - the target USB cable also supplies normal target VBUS/power in this bench topology.
 
+The firmware-update bootloader enumerates separately as private-test `1209:000D` / `Deus OS Bootloader`. Enumeration alone does not guarantee unprivileged libusb open authority: accepted hardware evidence has observed the current `/dev/bus/usb/BBB/DDD` node as `root:root` mode `664`, causing `LIBUSB_ERROR_ACCESS (-3)` for user `deus`. When a bootloader transaction requires permission repair, the accepted bench fixture is bounded to the exact currently enumerated ephemeral node: one operator-visible interactive privilege step may change that node to owner `deus`, mode `600`; no password is captured, no persistent udev rule is created, and the actual bootloader protocol must then execute unprivileged as `deus`. Bus/device tokens from `lsusb` are already zero-padded decimal strings and must be used as strings when constructing `/dev/bus/usb/$bus/$dev` (for example device `099`), not numerically reinterpreted.
+
 A current Windows harness MUST NOT assume that the STM32 USB device, WinUSB interface or CDC COM port is locally enumerable on Windows. Windows WinUSB remains an accepted product transport for a Windows-attached target, but it is **not the physical owner of target USB in the current bench wiring**.
 
 ## 4. Repository views are not the Mac mini
