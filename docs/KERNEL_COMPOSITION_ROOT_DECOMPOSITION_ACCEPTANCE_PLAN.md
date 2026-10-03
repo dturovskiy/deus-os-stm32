@@ -168,3 +168,7 @@ Fail the boundary for:
 - task margin < `256`;
 - Flash/SRAM above frozen ceilings without explicit pre-approved architectural justification;
 - loss of retained hardware/physical behavior.
+
+## Post-publication `FDC-05` acceptance addendum
+
+Historical Gates 0–7 remain accepted. The mandatory composition-root closure is accepted only after a fresh ownership inventory classifies every remaining major `src/kernel.c` responsibility as either genuinely top-level or moved to a natural bounded owner. Static acceptance must reject catch-all contexts, hidden mutable externs, cycles and line-count-only extraction; build/resource/stack/public-ABI checks must remain clean; hardware/runtime equivalence and physical OLED acceptance are required whenever moved paths can affect target behavior or presentation.

@@ -87,7 +87,7 @@ Owns only that boundary’s frozen design contract:
 - explicit non-goals;
 - gate sequence.
 
-After publication it becomes an immutable historical scoped contract.
+After publication its accepted gate/result record becomes a historical scoped contract. Later documents must not silently rewrite the accepted facts. A clearly labelled **post-publication audit/closure addendum** may be appended when a later audit identifies residual debt that belongs to that scope; such an addendum is forward-looking, does not retroactively invalidate the published boundary and must defer current activation/order to `CURRENT_STATE.md` / `ROADMAP.md`.
 
 ### Boundary `*_ACCEPTANCE_PLAN.md`
 
@@ -119,7 +119,7 @@ Own actual run proof:
 
 ### `DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
 
-Owns trigger-driven possible improvements that are **not active work** until promoted by a new accepted boundary.
+Owns trigger-driven possible improvements that are **not active work** until promoted by `CURRENT_STATE.md` / `ROADMAP.md` into a concrete closure or feature boundary. Once an item is explicitly promoted, the backlog retains provenance while current activation/order comes from those higher-precedence documents; promoted items must not continue to be described elsewhere as merely optional/deferred.
 
 ### `CHANGELOG.md`
 
@@ -129,7 +129,7 @@ Owns chronology only.
 
 Execution ledger and historical checklist only.
 
-Unchecked items in historical sections do not automatically become active work.
+Unchecked items in historical sections do not automatically become active work. A specifically labelled current closure ledger may mirror obligations already promoted by `CURRENT_STATE.md` / `ROADMAP.md`; that mirror is operational tracking, not independent activation authority.
 
 ### `PROJECT_HANDOFF.md`
 
@@ -335,6 +335,6 @@ Live documentation inventory after the 2026-10-01 Firmware Update / Bootloader p
 - the pre-Bootloader recovery plan and acceptance files form a matched published pair at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`;
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` form a matched published pair; `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` is their frozen published wire/image ABI contract;
 - latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
-- no product feature boundary is currently active; deferred work remains non-authorizing until promoted under §5.
+- no new product feature boundary is currently active; the 2026-10-03 audit has promoted `FDC-01..FDC-10` as a mandatory pre-feature closure program, while unrelated deferred work remains non-authorizing until separately promoted under §5.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

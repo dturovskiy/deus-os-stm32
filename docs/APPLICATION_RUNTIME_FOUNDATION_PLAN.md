@@ -388,3 +388,18 @@ This boundary does not add:
 - MPU/process isolation;
 - RTC/tickless/DMA frameworks;
 - new OLED geometry/theme/font system.
+
+## 18. Post-publication lifecycle closure — `FDC-07`
+
+The published v1 runtime remains accepted for its two built-in applications, whose `stop()` callbacks do not own independent resources and are effectively infallible. The 2026-10-03 audit promotes one lifecycle ambiguity into mandatory closure before any resource-owning application or Host Management Service/Web sequence proceeds.
+
+`FDC-07` must freeze fail-closed semantics for a current application's failed `stop()`:
+
+- an unresolved release failure must not silently clear ownership and start a replacement application;
+- resulting lifecycle state, `active_id`, fault accounting and host-visible status must be explicit;
+- `system.home` fallback may occur only when resource ownership has been safely released or an explicitly accepted recovery rule proves it safe;
+- retry/recovery behavior must be bounded and deterministic;
+- a synthetic application/resource-owner failure path must be testable without introducing a real new product application merely for the test;
+- successful start/stop/idempotence behavior of `system.home` and `device.info` must remain unchanged.
+
+Closure requires source/unit/runtime evidence; this addendum is not itself implementation authorization.

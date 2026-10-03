@@ -51,20 +51,22 @@ The pre-Bootloader recovery exists precisely so this boundary does not begin fro
 
 ## 3. Frozen physical Flash ownership
 
-Authoritative steady-state map:
+Authoritative **final published** steady-state map (this supersedes the earlier Gate-0 umbrella wording that treated pages 8..61 as one 54-KiB application/update ownership region):
 
-    0x08000000..0x08001FFF  bootloader/recovery       8 KiB  pages 0..7
-    0x08002000..0x0800F7FF  relocated application    54 KiB pages 8..61
-    0x0800F800..0x0800FBFF  persistence slot A        1 KiB page 62
-    0x0800FC00..0x0800FFFF  persistence slot B        1 KiB page 63
+    0x08000000..0x08001FFF  bootloader/recovery        8 KiB  pages 0..7
+    0x08002000..0x0800EFFF  relocated application     52 KiB  pages 8..59
+    0x0800F000..0x0800F3FF  firmware metadata A        1 KiB  page 60
+    0x0800F400..0x0800F7FF  firmware metadata B        1 KiB  page 61
+    0x0800F800..0x0800FBFF  persistence slot A         1 KiB  page 62
+    0x0800FC00..0x0800FFFF  persistence slot B         1 KiB  page 63
 
 Hard rules:
 
 - bootloader/recovery loadable image <= 8192 bytes;
-- application physical region remains exactly 55296 bytes;
-- application origin changes to 0x08002000 only in this boundary;
+- executable application region is exactly 53248 bytes at origin `0x08002000`;
+- pages 60/61 are bootloader-owned authenticated firmware metadata, not executable application bytes;
 - persistence pages 62/63 do not move and are never implicit update staging;
-- application update may erase/program only pages 8..61;
+- image DATA may erase/program executable pages 8..59 only; metadata commit operations may erase/program only pages 60/61 under the frozen metadata contract;
 - bootloader self-update is outside this foundation unless explicitly reopened.
 
 The accepted forward application discipline remains Flash <=53248, SRAM <=11264, task margins >=256/256 and MSP margin >=1024 unless Gate 0 explicitly reopens a ceiling.
@@ -564,3 +566,18 @@ Primitive isolation may split a gate further but may not weaken security, recove
 Gate 0 passes only when update entry, transport, authenticity/trust, image validity/metadata and host ownership decisions are frozen and the selected real minimum composition fits 8 KiB.
 
 Fail closed as BLOCKED_8K, BLOCKED_SECURITY_CONTRACT, BLOCKED_STORAGE_MODEL or BLOCKED_HOST_OWNERSHIP rather than silently removing a required responsibility.
+
+## 18. Post-publication robustness closure — `FDC-08`
+
+The published v1 update/bootloader boundary remains accepted. The 2026-10-03 architecture/code audit promotes the following residual robustness work into a mandatory closure slice before later service/Web/network expansion:
+
+1. **Authenticated reset-vector span containment.** `vectors_valid(image_length)` must reject a reset handler outside `[APP_BASE, APP_BASE + image_length)`, not merely outside the full executable region. This tightens structural validity to the authenticated payload span while retaining Thumb/MSP checks.
+2. **Bootloader clock-start bounds.** HSE ready, PLL ready and system-clock switch waits must be bounded with explicit fail/recovery behavior that fits the 8-KiB bootloader and reserved SRAM/stack ceilings.
+3. **Normal-runtime clock-start bounds.** The relocated application `clock_init()` must not spin forever on HSE/PLL/switch failure. Failure disposition must preserve deterministic diagnostics/recovery and must not falsely enter a healthy runtime state.
+4. **UART TX wait bound.** Emergency/text UART TX must have an explicit bounded/degraded failure path rather than an infinite TXE wait. The emergency path must remain useful without allowing a failed peripheral to halt production liveness indefinitely.
+5. **Elapsed-time update-entry reset fallback.** The runtime `ENTER_BOOTLOADER` response/reset fallback must be defined by a bounded elapsed-time/deadline contract, not only `4096` task0 service polls whose wall-clock duration depends on scheduling/poll cadence.
+6. **Ambiguous non-DATA response loss.** INFO/BEGIN/AUTHORIZE/END timeout behavior must be explicitly adjudicated. No blind retry is allowed where idempotence is not frozen. Host recovery must reconnect/re-enter, inspect state/INFO where meaningful and restart from BEGIN when required.
+
+The closure must preserve HMAC authenticity, product/target binding, rollback floor, commit-marker-last behavior, exact Flash ownership, persistence isolation, DATA exact-previous retry semantics and published runtime capability behavior. Any protocol-semantic change must be versioned or proven wire-compatible deliberately; do not silently redefine the frozen v1 ABI.
+
+Required acceptance includes fresh bootloader/application resource analysis, deterministic host/unit/static failure-path tests, and hardware recovery evidence for every physically meaningful bounded-failure path. `FDC-08` is not complete merely because loops receive arbitrary spin counters; the failure disposition and recovery owner must be proven.

@@ -217,3 +217,7 @@ The boundary fails if it introduces or requires any of the following:
 - task stack margin below `256` bytes;
 - Flash/SRAM above the frozen Gate 2 ceilings;
 - visual corruption or status-bar regression during application switching.
+
+## Post-publication `FDC-07` acceptance addendum
+
+Historical Gates 0–7 remain accepted. Forward lifecycle hardening is accepted only when a deterministic failing-`stop()` test proves that unresolved resource release cannot silently clear current ownership or start a replacement application. The closure evidence must record resulting lifecycle state/`active_id`, fault accounting, retry/fallback policy, and preserved successful behavior for `system.home` / `device.info`. No real resource-owning application or later service boundary may rely on lifecycle transfer until this proof passes.

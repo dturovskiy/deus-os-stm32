@@ -424,3 +424,36 @@ After push:
 Next boundary:
 
 `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`
+
+## 20. Post-publication host-hardening acceptance addendum
+
+This addendum does not alter the historical Gate-7 acceptance. It defines proof required to close `FDC-01`, `FDC-02`, `FDC-03`, `FDC-04` and `FDC-09` before any long-lived Host Management Service/Web boundary.
+
+### `FDC-01`
+
+Acceptance requires deterministic Core tests proving all of:
+
+- an RPC may time out/cancel after one or more response frames are still delayed;
+- delayed `RPC_DATA` and matching delayed `RPC_END` for the abandoned request are discarded/drained or the session is reset according to the frozen policy;
+- the next fresh RPC completes normally;
+- a mismatched request ID not explicitly classified abandoned/stale remains a `RequestCorrelation` failure;
+- repeated timeout/cancel cannot grow retained stale IDs without bound and request-ID wrap skips zero safely;
+- firmware-update INFO/BEGIN/AUTHORIZE/END response loss follows explicit reconnect/INFO/adjudication/restart semantics with no blind non-idempotent request retry.
+
+### `FDC-02`
+
+Acceptance requires a synthetic subscriber that initiates another session operation from `StateChanged` without deadlock, deterministic notification order, and clean Connect/Recover/Disconnect/Dispose races under the single-session operation model.
+
+### `FDC-03`
+
+Acceptance requires a documented service allowlist plus tests showing arbitrary numeric RPC IDs, caller-controlled protocol flags, destructive `wdogtrip`, scheduler stress diagnostics and other unlisted operations cannot be routed through the service-facing API.
+
+### `FDC-04`
+
+Acceptance requires typed Core models/parsers for every state surface used by service v1, parser malformed/duplicate/bound tests, and static review proving the service presentation layer contains no parsing of STM32 command output text.
+
+### `FDC-09`
+
+Acceptance requires Windows and Linux transport tests plus real-platform smoke proving bounded cancellation/disposal, no orphaned owned transport operation after close, clean reopen/recovery, and isolation of two simultaneous sessions. Native API limitations must be represented by an explicit bounded timeout/ownership policy rather than implied immediate cancellation.
+
+All existing host regression suites and Release builds must remain PASS. These items are closed only by exact accepted evidence and are not satisfied by documentation wording alone.

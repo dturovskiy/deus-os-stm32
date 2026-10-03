@@ -1,5 +1,15 @@
 ## 2026-10-03
 
+### Foundational debt closure program promoted after post-publication architecture/code audit
+
+A fresh architecture/code audit after physical deployment found no forgotten accepted-boundary Gate, but identified ten residual obligations that must be closed before the next Host Management Service/Web/network feature sequence. Canonical IDs are `FDC-01..FDC-10`: generic RPC timeout/cancel correlation; session state-event reentrancy; service operation allowlisting; typed Host Core management models; remaining composition-root convergence; semantic system/service state upstream of presentation; fail-closed application stop failure; bounded boot/runtime/update waits and recovery; bounded native transport cancellation/disposal; and documentation/source-of-truth reconciliation.
+
+`docs/CURRENT_STATE.md` and `docs/ROADMAP.md` promote these items from optional/trigger-driven debt into a mandatory pre-feature closure program. `docs/MASTER_EXECUTION_CHECKLIST.md` carries the executable per-item criteria, and the relevant historical Host Control, application runtime/model, composition-root and firmware-update plans/acceptance plans carry clearly labelled post-publication addenda without rewriting their accepted Gates 0–7 history.
+
+The documentation reconciliation also corrects two concrete current-state drifts discovered during the audit: the final firmware-update Flash map is explicitly `8 KiB bootloader + 52 KiB executable application + metadata A/B + persistence A/B`, rather than the superseded Gate-0 54-KiB application umbrella; and old non-historical `USB CDC later` / broad `UI persistence deferred` wording is reconciled with the already published CDC and narrow `OLED_UI_LAYOUT_CONFIG_V1` persistence foundations. Historical Asset-era 54-KiB contracts and the 2026-10-01 deferred-debt chronology remain preserved as historical facts.
+
+No product source, target, Flash, remote host or hardware state is changed by this documentation promotion. New service/Web/network implementation remains blocked until `FDC-01..FDC-10` are accepted closed through their dedicated slices.
+
 ### Published Firmware Update / Bootloader v2 physically deployed and runtime verified
 
 The published `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` image is now physically installed and verified on the STM32 bench. Authoritative evidence is `stm32_os_published_deploy_adjudicated_retry_v7_20261003_141252.evidence.zip`, SHA-256 `77F42EE22978A52FC60AE03D14D10BAC27D38B9FE8E6647D095F646349D75706`.

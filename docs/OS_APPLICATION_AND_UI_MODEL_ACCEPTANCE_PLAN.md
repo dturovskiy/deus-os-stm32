@@ -199,3 +199,7 @@ This architecture boundary fails if documentation introduces any of the followin
 - host-only desktop ownership;
 - firmware update through the current RPC protocol without a separately accepted update transaction and recovery design;
 - simultaneous implementation of desktop, app loader, Control Panel and bootloader in one source boundary.
+
+## Post-publication `FDC-06` acceptance addendum
+
+Historical Gates 0–7 remain accepted. Semantic-state dependency closure is accepted only when a single bounded system/service state owner feeds both `application_service_snapshot_t` and OLED/status presentation. Static/source review must prove no application/host-visible health, USB or network truth is reconstructed from rendered/UI indicator state; runtime tests must preserve semantic-event/no-rerender behavior; build/resource/stack and physical OLED regressions must remain PASS.

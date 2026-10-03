@@ -107,9 +107,24 @@ Authoritative deployment evidence SHA-256 is `77F42EE22978A52FC60AE03D14D10BAC27
 
 There is **no active product feature boundary** after publication and physical deployment verification of `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`.
 
-The post-publication documentation/repository hygiene and architecture audit is complete, and the separately authorized published-image deployment closure is now complete. The board is running the exact published v2 image with capability `0x0000007F`. No further firmware-update forensic or speculative product patch is active. New work requires explicit promotion of a concrete boundary.
+The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. This is a closure program, not authorization to mix unrelated source changes into one patch. Each source-changing slice still requires its own frozen source boundary, acceptance criteria and evidence before mutation.
 
-The next broad roadmap area remains networking/service/security evolution, but it is **not active** until a concrete consumer/problem is named and a dedicated plan + acceptance plan freeze the boundary.
+The mandatory closure ledger uses IDs `FDC-01..FDC-10`:
+
+1. `FDC-01` — generic RPC timeout/cancellation delayed-response correlation, including multi-frame stale RPC cleanup, bounded stale-ID lifetime/wrap behavior and explicit ambiguous non-DATA firmware-update recovery semantics;
+2. `FDC-02` — `DeusDeviceSession.StateChanged` delivery must not permit reentrant deadlock through callbacks invoked while the session operation gate is held;
+3. `FDC-03` — future host-management service/Web APIs must expose an explicit operation allowlist/authorization surface and must never proxy arbitrary raw `RpcAsync(id, flags)` calls;
+4. `FDC-04` — host-management state required by service/Web must be represented by typed `DeusOs.Control.Core` models/parsers rather than presentation-specific parsing of `RpcResult.OutputText`;
+5. `FDC-05` — composition-root convergence must remove remaining multi-owner reasons to change `src/kernel.c` when natural owners exist, without line-count-only framework refactoring;
+6. `FDC-06` — semantic system/service state must become upstream of OLED/presentation state instead of reconstructing `application_service_snapshot_t` from UI indicator state;
+7. `FDC-07` — application `stop()` failure semantics must be fail-closed before resource-owning applications are accepted;
+8. `FDC-08` — boot/runtime robustness waits and update-entry recovery must become explicitly bounded: authenticated reset-vector span containment, bootloader and runtime HSE/PLL/switch waits, UART TX wait, elapsed-time bootloader-entry reset fallback, and non-DATA update ambiguity handling;
+9. `FDC-09` — Windows/Linux native transport cancellation/shutdown semantics must be bounded and suitable for long-lived/multi-device host service use;
+10. `FDC-10` — documentation drift and obsolete future-tense/deferred claims must be reconciled against the published implementation and canonical source-of-truth model.
+
+The closure program is sequenced as: host long-lived-session hardening (`FDC-01..04,09`), target architecture/lifecycle cleanup (`FDC-05..07`), target/update robustness closure (`FDC-08`), then final documentation/source-of-truth reconciliation (`FDC-10`). `HOST_MANAGEMENT_SERVICE_FOUNDATION` or any equivalent Web/service boundary is blocked until all ten IDs are accepted closed.
+
+The board remains on the exact published v2 image with capability `0x0000007F`; no speculative firmware-update forensic patch is authorized by this audit. The next broad networking/service/security work remains downstream of the closure program.
 
 Host-management presentation evolution remains a non-authorizing direction in `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
 
@@ -171,12 +186,9 @@ Not-active examples include:
 - UI layout/preset/configurator expansion;
 - networking/remote-management security until that boundary is explicitly promoted.
 
-Post-publication firmware-update robustness debt is recorded in the backlog and is **not** implicitly authorized for patching:
+The ten `FDC-01..FDC-10` audit obligations are **not deferred/optional anymore**: they are promoted closure prerequisites for the next service/Web/network feature sequence. Promotion does not authorize an undisciplined patch; source mutation still requires a dedicated frozen closure slice and acceptance proof.
 
-- reset-handler containment inside the authenticated `image_length` span;
-- bounded HSE/PLL startup failure handling in the bootloader;
-- explicit non-DATA firmware-update timeout/restart policy;
-- stale request-ID lifetime under repeated user cancellation.
+The pre-existing firmware-update robustness items are consumed by that program rather than left indefinitely trigger-driven: authenticated `image_length` reset-handler containment, bounded bootloader HSE/PLL startup, explicit non-DATA timeout/restart/adjudication semantics, and bounded stale request-ID lifetime under repeated cancellation/wrap. `FDC-08` additionally covers the newly confirmed normal-runtime HSE/PLL/switch waits, UART TX wait and poll-count-based bootloader-entry reset fallback.
 
 ## 8. Repository/security hygiene state
 
@@ -202,15 +214,16 @@ Resolved/current:
 - Host Core update/RPC/Asset responsibilities share one correlation/channel owner rather than duplicate decoders/locks;
 - firmware-update authenticity, target binding, rollback floor, interruption recovery and publication capability are accepted.
 
-Still intentionally unresolved until a consumer or dedicated robustness boundary requires them:
+Still intentionally unresolved/trigger-driven outside the mandatory closure program:
 
 - stable physical unit identity;
 - live physical “UART peer connected” semantics;
 - product-level ST-LINK attachment state;
 - general filesystem;
 - network mutation security;
-- richer observability/runtime-statistics framework;
-- the four post-publication firmware-update robustness items listed above.
+- richer observability/runtime-statistics framework.
+
+Separately, `FDC-01..FDC-10` are now mandatory closure obligations rather than consumer-triggered debt; their sequencing and closure criteria are recorded in `docs/ROADMAP.md`, `docs/MASTER_EXECUTION_CHECKLIST.md` and the relevant scoped plans.
 
 ## 10. Source-of-truth map
 
@@ -222,7 +235,7 @@ Still intentionally unresolved until a consumer or dedicated robustness boundary
 - scoped boundary design: matching `*_PLAN.md`
 - scoped boundary proof: matching `*_ACCEPTANCE_PLAN.md`
 - actual acceptance proof: accepted evidence/log artifacts
-- deferred improvements: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
+- deferred improvements and promoted debt provenance: `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md`
 - chronology: `CHANGELOG.md`
 - execution history: `docs/MASTER_EXECUTION_CHECKLIST.md`
 - operator reference: `docs/PROJECT_HANDOFF.md`

@@ -251,13 +251,41 @@ The unchecked items below are consumer-driven/deferred rather than active prereq
 - [x] Watchdog integration
 - [ ] Runtime statistics — deferred until observability requirements justify them
 
-## Host management presentation evolution — future / not active
+## Mandatory foundational debt closure before new service/Web/network features
+
+The 2026-10-03 architecture/code audit promoted ten residual obligations into a mandatory pre-feature closure program. These are no longer optional trigger-driven backlog items. They must be closed through small independently accepted slices before `HOST_MANAGEMENT_SERVICE_FOUNDATION` (or an equivalent Web/service/network boundary) may begin.
+
+### Slice A — Host long-lived-session hardening
+
+- [ ] `FDC-01` — close generic RPC timeout/cancellation correlation: delayed multi-frame `RPC_DATA...RPC_END` from an abandoned request must never poison a later request; stale-ID retention/wrap must be bounded; ambiguous non-DATA firmware-update response loss must have an explicit adjudication/restart policy rather than blind retry.
+- [ ] `FDC-02` — remove/redefine synchronous `StateChanged` callback execution while `DeusDeviceSession` holds its operation gate; prove callback reentrancy cannot deadlock the session.
+- [ ] `FDC-03` — freeze a service-facing operation allowlist; no raw HTTP/Web proxy over arbitrary `RpcAsync(rpcId, flags)` and no assumption that firmware `SAFE` classification equals remotely authorized read-only behavior.
+- [ ] `FDC-04` — add/reuse typed Core models/parsers for every state surface consumed by the future service; presentation code must not parse ad-hoc `RpcResult.OutputText`.
+- [ ] `FDC-09` — prove bounded native transport cancellation/disposal on Windows and Linux, including long-lived and two-device/session execution; a cancellation must not leave an unbounded native operation or corrupt a subsequent session.
+
+### Slice B — Target architecture/lifecycle cleanup
+
+- [ ] `FDC-05` — continue composition-root convergence only where ownership is natural: move remaining low-level/platform/service responsibilities out of `src/kernel.c` when doing so removes independent reasons to change the root; no line-count-only framework, god context or hidden extern coupling.
+- [ ] `FDC-06` — invert system-state ownership to `system/service state -> semantic service snapshot -> application/UI consumers`; OLED indicator state must not be the source of truth for health/USB/network state.
+- [ ] `FDC-07` — freeze and implement fail-closed application `stop()` failure semantics before any resource-owning application: unresolved release failure must not silently transfer ownership/start a replacement app.
+
+### Slice C — Target/update robustness closure
+
+- [ ] `FDC-08` — close bounded-wait/recovery debt: reset handler constrained to authenticated `APP_BASE + image_length`; bounded bootloader HSE/PLL/switch behavior; bounded normal-runtime HSE/PLL/switch behavior; bounded UART TX wait/failure semantics; elapsed-time rather than service-poll-count bootloader-entry reset fallback; explicit INFO/BEGIN/AUTHORIZE/END timeout/adjudication/restart semantics. Hardware acceptance must cover the resulting failure paths without weakening the published update trust/ownership model.
+
+### Slice D — Documentation/source-of-truth closure
+
+- [ ] `FDC-10` — remove obsolete future-tense/deferred statements contradicted by published USB CDC/persistence/host/update work, reconcile all touched plans/backlogs/current-state/checklists, run a repo-wide stale-token/open-checkbox audit and `git diff --check`, then record exact final documentation state.
+
+All ten checkboxes above must be accepted closed before the roadmap advances into a new management service/Web/network implementation boundary.
+
+## Host management presentation evolution — future / blocked on FDC-01..FDC-10
 
 The accepted Host Control foundation already provides one transport-neutral Core with CLI + Avalonia presentation. Forward presentation policy is:
 
 - CLI remains the first-class automation/headless/acceptance surface;
 - Avalonia Desktop remains an optional workstation frontend;
-- a future local host-management service/Web frontend may be promoted as its own host boundary when a concrete need exists and must reuse Core/service models rather than duplicate the STM32 protocol;
+- a future local host-management service/Web frontend may be promoted only after `FDC-01..FDC-10` are accepted closed; it must reuse Core/service models rather than duplicate the STM32 protocol;
 - local Web presentation does not require STM32 networking;
 - remote/LAN/Wi-Fi Web exposure belongs to the later network/security sequence and requires an explicit trust/authentication/authorization contract.
 
@@ -265,7 +293,7 @@ Canonical reference: `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
 
 ## Phase 5 - Networking
 
-Future roadmap only; not active until promoted after Asset/Configuration and firmware-update safety foundations.
+Future roadmap only; not active until the published Asset/Configuration and firmware-update safety foundations are retained **and** `FDC-01..FDC-10` are accepted closed.
 
 - [ ] ESP-01 / ESP8266 UART transport
 - [ ] Framed STM32 <-> ESP protocol
@@ -296,8 +324,9 @@ Target progression:
 14. Reopen Asset/Configuration Gate 0 for that object and freeze transfer/persistence/resource/fault-recovery contracts — complete; cross-contract closure PASS.
 15. Implement bounded versioned Asset/Configuration transfer + atomic A/B persistence — Gate 1 authorized, then Gates 2–7 acceptance.
 16. Recoverable USB firmware-update path + small bootloader — Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; capability mask `0x0000007F` active.
-17. Add networking/service/security extensions over the same application/service model.
-18. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
+17. Close the mandatory `FDC-01..FDC-10` foundational-debt program through independently accepted host/target/docs slices.
+18. Only after that closure, add networking/service/security extensions over the same application/service model.
+19. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
 
 Production Windows integration uses the accepted inbox WinUSB stack without a custom kernel-mode driver or COM-port-first product identity. `USB_MANAGEMENT_DEVICE_FOUNDATION` supplies the firmware device/interface metadata; CDC remains an explicit development/debug/recovery profile, not the primary management surface. `HOST_CONTROL_APPLICATION_FOUNDATION` now consumes that accepted interface.
 

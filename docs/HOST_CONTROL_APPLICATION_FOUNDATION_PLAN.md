@@ -596,3 +596,29 @@ Not part of this boundary:
 `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`
 
 That boundary begins with a documentation-only Gate 0 that freezes the bounded persistence contract. No source mutation or persistent target write is authorized before Gate 0 acceptance.
+
+## 18. Post-publication audit addendum — mandatory host closure before long-lived service
+
+This addendum does not rewrite the accepted `HOST_CONTROL_APPLICATION_FOUNDATION` Gates 0–7 result. It records residual obligations discovered by the 2026-10-03 architecture/code audit and promoted by `docs/CURRENT_STATE.md` / `docs/ROADMAP.md` as mandatory prerequisites before a long-lived Host Management Service/Web boundary.
+
+### `FDC-01` — generic RPC timeout/cancellation correlation
+
+The original v1 rule “responses with a different request ID must not complete the active request” remains correct but is incomplete for an abandoned multi-frame RPC. A timeout/cancel may leave delayed `RPC_DATA...RPC_END` bytes in the same transport session. Closure must define one bounded channel/session policy that prevents those frames from poisoning later work while preserving fatal handling for genuinely unknown correlation mismatches. Stale-ID lifetime and request-ID wrap must be bounded, and firmware-update non-DATA ambiguity must use explicit adjudication/restart rather than blind retry.
+
+### `FDC-02` — session state-event delivery
+
+`DeusDeviceSession` remains the single session lifecycle owner, but public state notifications must not execute arbitrary subscriber code under the session operation gate in a way that permits reentrant deadlock. A closure slice must preserve deterministic state ordering while separating mutation serialization from subscriber execution.
+
+### `FDC-03` — service-facing operation policy
+
+The public Core raw RPC capability is an implementation/operator API, not a future Web authorization surface. A future service must expose an explicit typed allowlist. Firmware command classes `SAFE`, `DIAGNOSTIC` and `DESTRUCTIVE` describe target command behavior; they do not by themselves define HTTP/user authorization. No generic `/rpc/{id}` or caller-controlled destructive flags are permitted by the service contract.
+
+### `FDC-04` — typed Core state
+
+The original plan intended typed health/rpcinfo/application models. The current implementation fully types system/application identity but still returns raw `RpcResult.OutputText` for some health/diagnostic surfaces. Before such data is exposed through service/Web, its parser/model belongs in `DeusOs.Control.Core`; presentation/service code must not create a second protocol-text interpretation.
+
+### `FDC-09` — bounded native cancellation/disposal
+
+WinUSB/libusb transport behavior must be proven suitable for a long-lived owner: bounded cancellation, bounded disposal, clean reopen/recovery and independent multi-device/session operation. Platform-native cancellation limitations may be handled by a bounded transport policy, but must not create orphaned operations or ownership races.
+
+These obligations are tracked as open in `docs/MASTER_EXECUTION_CHECKLIST.md`. They are not retroactive failures of the published host foundation; they are mandatory hardening prerequisites for the next long-lived service boundary.

@@ -293,8 +293,7 @@ Semantic components receive clips from this layer.
 
 They must not infer or duplicate global screen geometry.
 
-Runtime UI commands must target a transport-independent config API so the same
-commands can be carried by UART today and USB CDC later.
+Runtime UI commands must target a transport-independent config API. The historical UART-first/CDC-later sequencing is complete: USB CDC is published, and the primary USB management transport is also published. UI configuration semantics must remain independent of UART, CDC or management-transport carriage.
 
 External design files are converted on the PC. The STM32 does not decode PNG,
 SVG, or editor project files.

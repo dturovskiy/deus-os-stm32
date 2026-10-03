@@ -8,9 +8,9 @@ Decision ID:
 
 ## 1. Purpose
 
-This decision freezes the future physical ownership of the 64 KiB internal Flash on the accepted STM32F103C8 target before either persistent Asset/Configuration writes or a firmware-update bootloader is implemented.
+This decision was originally created to freeze the future physical ownership of the 64 KiB internal Flash on the accepted STM32F103C8 target before either persistent Asset/Configuration writes or a firmware-update bootloader existed. That sequencing is historical; the final map is now realized by the published Asset/Configuration and Firmware Update / Bootloader foundations.
 
-It exists to prevent Asset/Configuration persistence from consuming pages that a future recovery/update path needs and to prevent the future bootloader from forcing an ad-hoc migration of already-persisted configuration.
+Its continuing purpose is to prevent one owner from consuming or mutating pages assigned to another owner and to preserve the migration rationale that led to the realized map.
 
 This document is a shared architecture contract. It is not an implementation boundary and does not itself authorize erase/program operations, linker relocation, vector relocation, bootloader code or target mutation.
 
@@ -248,20 +248,21 @@ The repository-owned reproducible build entrypoint remains authoritative and mus
 
 ## 10. Programming ownership rules
 
-Future self-programming code must operate fail-closed:
+Current and future self-programming code must operate fail-closed:
 
 - Asset/Configuration may erase/program only pages 62..63;
-- before bootloader installation, the standalone application may execute from lower Flash but its self-programming path still owns only pages 62..63;
-- after bootloader installation, Bootloader/update may erase/program only pages 8..61;
-- normal application self-programming code may never erase/program pages 0..7;
+- historical pre-bootloader Asset-phase application self-programming owned only pages 62..63 even while executing from lower Flash;
+- bootloader image DATA may erase/program executable pages 8..59 only;
+- bootloader firmware-metadata commit logic may erase/program metadata pages 60/61 only under the frozen authenticated metadata contract;
+- normal application self-programming code may never erase/program bootloader pages 0..7 or firmware-metadata pages 60/61;
 - no boundary may perform mass erase as part of normal product operation;
 - ST-LINK remains recovery/debug tooling outside normal self-programming ownership.
 
 Any test that intentionally violates these ownership ranges must be a separately authorized destructive acceptance diagnostic and must not ship as a normal product path.
 
-## 11. Sequencing unlocked by this decision
+## 11. Historical sequencing unlocked by this decision
 
-The product dependency order becomes:
+The dependency order this decision originally unlocked was:
 
 ```text
 accepted runtime / USB / RPC / host / reproducible-build substrate
@@ -285,7 +286,7 @@ FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION
 network/security/remote management
 ```
 
-Host-only packaging, CLI distribution and local-only Web presentation remain orthogonal unless they introduce target Flash mutation or remote trust exposure.
+That sequence is complete through `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; current forward ordering is owned by `docs/ROADMAP.md` and presently requires `FDC-01..FDC-10` closure before new service/Web/network implementation. Host-only packaging, CLI distribution and local-only Web presentation remain orthogonal to this Flash map unless they introduce target Flash mutation or remote trust exposure.
 
 ## 12. Change rule
 

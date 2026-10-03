@@ -183,3 +183,20 @@ No universal `kernel_context_t`, service locator, hidden extracted-module extern
 Only after this decomposition is accepted and published does roadmap order resume with:
 
 `USB_MANAGEMENT_DEVICE_FOUNDATION`
+
+## 12. Post-publication residual obligation — `FDC-05`
+
+The accepted decomposition materially reduced ownership concentration but did not claim that `src/kernel.c` had reached final composition-root form. The 2026-10-03 audit promotes the remaining composition-root debt from trigger-driven backlog to mandatory closure before the next Host Management Service/Web/network feature sequence.
+
+`FDC-05` closure must inventory the current root's remaining independent reasons to change and move responsibilities only where an already-natural owner exists. Candidate domains include low-level RCC/GPIO/UART/I2C/platform helpers, transport-neutral/service glue and production liveness/service state that can move with coherent bounded ownership.
+
+Closure rules remain stricter than a line-count target:
+
+- no universal `kernel_context_t` or service locator;
+- no hidden `extern` access to root-private mutable state;
+- no dependency cycle;
+- no framework-only extraction or rename-only boundary;
+- no new heap/task/SVC/queue/mutex/generic timer/DMA mechanism merely to enable decomposition;
+- behavior/public ABI/resource budgets and hardware equivalence must be re-proven for every moved path.
+
+`FDC-05` is complete only when the accepted closure evidence shows that remaining `src/kernel.c` responsibilities are genuinely top-level composition/IRQ/fatal glue or have an explicit reason to remain root-owned.

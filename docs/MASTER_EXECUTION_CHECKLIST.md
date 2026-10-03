@@ -5,6 +5,96 @@
 
 This file is a historical execution/checklist ledger. It is **not** the global current-state authority. Current project state and the active next boundary are owned by `docs/CURRENT_STATE.md`.
 
+### Mandatory foundational debt closure program — OPEN 2026-10-03
+
+This section is the executable ledger for the post-publication architecture/code audit. It is intentionally placed ahead of historical accepted-boundary records. `FDC-01..FDC-10` must all be accepted closed before a new Host Management Service/Web/network feature boundary begins. A checkbox may be marked complete only from dedicated build/test/static/hardware evidence appropriate to that item; “code changed” alone is not closure.
+
+#### Slice A — Host long-lived-session hardening
+
+- [ ] **FDC-01 — generic RPC timeout/cancellation correlation and abandoned-response cleanup.**
+  - [ ] freeze one policy for RPC timeout/cancel aftermath: bounded stale-request draining **or** forced session reset/reconnect; do not leave the session nominally READY with ambiguous unread multi-frame response state;
+  - [ ] delayed `RPC_DATA` and delayed `RPC_END` for an abandoned request cannot poison a later fresh request;
+  - [ ] unknown mismatched request IDs that are not explicitly abandoned/stale remain fatal correlation errors;
+  - [ ] repeated timeout/cancel cannot retain request IDs indefinitely; wrap at `0xFFFF -> 0x0001` is covered;
+  - [ ] existing `FirmwareUpdateClient` stale-ID behavior is reconciled with the same bounded channel policy rather than becoming a second independent mechanism;
+  - [ ] INFO/BEGIN/AUTHORIZE/END response loss has explicit reconnect/INFO/adjudicate/restart semantics; no blind non-idempotent retry;
+  - [ ] deterministic Core tests: timeout -> delayed DATA/END -> next RPC PASS; cancel -> delayed frames -> next RPC PASS; stale/wrap stress PASS.
+
+- [ ] **FDC-02 — `DeusDeviceSession.StateChanged` reentrancy/deadlock closure.**
+  - [ ] arbitrary subscriber callbacks are no longer invoked synchronously while `_operationGate` is held, or an equivalent formally non-reentrant delivery mechanism is frozen;
+  - [ ] state ordering remains deterministic across Connect/Execute/recovery/Disconnect/Dispose;
+  - [ ] a subscriber that attempts a session operation cannot deadlock the owner;
+  - [ ] Core tests cover reentrant callback and concurrent close/recovery cases.
+
+- [ ] **FDC-03 — service-facing operation allowlist / no raw RPC proxy.**
+  - [ ] define typed service operations and explicit read/control/destructive exposure classes;
+  - [ ] firmware `SAFE`/`DIAGNOSTIC` command classes are not reused as HTTP authorization policy;
+  - [ ] arbitrary `RpcAsync(rpcId, flags)` is not reachable from Web/HTTP/service input;
+  - [ ] `wdogtrip`, scheduler stress/diagnostic methods, UI mutation/test methods and unlisted RPC IDs are absent unless separately authorized by a future reviewed contract;
+  - [ ] negative tests prove raw/unlisted/destructive access is rejected/not routed.
+
+- [ ] **FDC-04 — typed Host Core management models.**
+  - [ ] every state surface consumed by the future service has a typed Core parser/model or is explicitly excluded from service v1;
+  - [ ] health state required by service/Web is no longer presentation-parsed from raw `RpcResult.OutputText`;
+  - [ ] parsers enforce required keys/shape, forward-compatible unknown fields where appropriate and bounded input;
+  - [ ] CLI/Desktop/service consume the same Core model rather than duplicating protocol text parsing;
+  - [ ] parser/model tests PASS.
+
+- [ ] **FDC-09 — native transport cancellation/disposal for long-lived/multi-device use.**
+  - [ ] Windows WinUSB and Linux libusb I/O have explicit bounded cancellation/disposal semantics;
+  - [ ] user cancellation and session disposal cannot leave an unbounded native operation that outlives ownership;
+  - [ ] two simultaneous independent sessions remain isolated;
+  - [ ] cancellation followed by reopen/recovery produces a clean decoder/channel/session;
+  - [ ] platform transport tests and real Windows/Linux smoke acceptance PASS.
+
+#### Slice B — Target architecture/lifecycle cleanup
+
+- [ ] **FDC-05 — composition-root convergence without framework refactor.**
+  - [ ] inventory the remaining independent reasons to change `src/kernel.c` after published decomposition;
+  - [ ] move low-level RCC/GPIO/UART/I2C/platform helpers only when a natural owner exists;
+  - [ ] move remaining transport-neutral/service/liveness responsibilities only with coherent bounded state ownership;
+  - [ ] no universal `kernel_context_t`, service locator, hidden extracted-state `extern`, dependency cycle or line-count-only module split;
+  - [ ] build/resource/stack/public-ABI regression and hardware equivalence PASS.
+
+- [ ] **FDC-06 — semantic system/service state upstream of UI.**
+  - [ ] define one bounded semantic state owner for health/USB/network/time used by application runtime and OLED presentation;
+  - [ ] `application_service_snapshot_t` is built from semantic system/service state, not from `boot_desktop_ui_snapshot_t`/rendered indicator values;
+  - [ ] OLED status rendering consumes that same semantic state as a downstream consumer;
+  - [ ] semantic-event/no-rerender behavior remains correct;
+  - [ ] firmware build/resource/stack + text/binary lifecycle + physical OLED regression PASS.
+
+- [ ] **FDC-07 — fail-closed application stop failure semantics.**
+  - [ ] freeze lifecycle/result state when the current app `stop()` fails;
+  - [ ] unresolved resource release cannot silently clear ownership and start a replacement application;
+  - [ ] define home-fallback behavior, retry/recovery semantics and fault accounting;
+  - [ ] add a deterministic synthetic/resource-owner failure test before any real resource-owning application is accepted;
+  - [ ] existing two built-ins retain current successful start/stop/idempotence behavior.
+
+#### Slice C — Target/update robustness closure
+
+- [ ] **FDC-08 — bounded target/update robustness.**
+  - [ ] bootloader reset handler must lie inside the authenticated image span `[APP_BASE, APP_BASE + image_length)`, not merely the whole application region;
+  - [ ] bootloader HSE ready, PLL ready and clock-switch waits have bounded failure behavior;
+  - [ ] normal runtime HSE ready, PLL ready and clock-switch waits have bounded failure behavior;
+  - [ ] UART TX wait is bounded with explicit fail/degraded/emergency semantics rather than infinite spin;
+  - [ ] runtime `ENTER_BOOTLOADER` reset fallback uses an elapsed-time/deadline contract, not only `4096` task0 service polls;
+  - [ ] INFO/BEGIN/AUTHORIZE/END ambiguous response loss uses explicit host adjudication/restart semantics and preserves update trust/idempotency rules;
+  - [ ] Flash/SRAM/stack budgets, bootloader 8-KiB ceiling, persistence ownership, rollback floor and HMAC/digest guarantees remain intact;
+  - [ ] deterministic static/unit tests plus hardware recovery/failure acceptance PASS.
+
+#### Slice D — Documentation/source-of-truth closure
+
+- [ ] **FDC-10 — documentation consistency.**
+  - [ ] replace obsolete non-historical “USB CDC later” statements with the published CDC state;
+  - [ ] clarify that narrow `OLED_UI_LAYOUT_CONFIG_V1` persistence is published while broader runtime/custom UI persistence remains deferred;
+  - [ ] reconcile `CURRENT_STATE`, `ROADMAP`, deferred backlog and all affected scoped plan addenda with `FDC-01..FDC-10`;
+  - [ ] preserve historical chronology explicitly instead of rewriting past acceptance facts;
+  - [ ] repo-wide stale future-tense / TODO-style / unchecked-checklist audit produces no unclassified fundamental tail;
+  - [ ] `git diff --check` clean and repository artifact/security hygiene rechecked;
+  - [ ] final documentation-only acceptance records exact changed paths and poststate.
+
+Program exit criterion: **10/10 FDC items accepted closed**. Only then may `HOST_MANAGEMENT_SERVICE_FOUNDATION`/Web or networking/service/security feature implementation be promoted.
+
 ### Published boundary — application runtime foundation — Gates 0–7 accepted
 
 - [x] Gate 0 architecture/source-boundary freeze — PASS / planning parent `5191850ec749c0e7519b24aa53a5cbb9cd477e8c`.
@@ -661,11 +751,11 @@ The STM32 does not decode PNG/SVG/Figma files directly.
 PC tooling converts layouts/assets into target configuration or packed 1-bit
 bitmaps.
 
-Runtime configuration is transport-independent:
+Runtime configuration is transport-independent. Historical UART-first planning has been superseded by the published USB CDC and USB management foundations; UI/config semantics must remain independent of whether the accepted carrier is UART, CDC or the primary management transport:
 
 ```text
-UART now
-USB CDC later
+UART / USB CDC diagnostics / USB management
+        -> shared target configuration semantics
 ```
 
 No keyboard or mouse needs to be physically connected to the STM32 for normal
@@ -694,7 +784,7 @@ Deferred, not blocking the current roadmap:
 
 - [ ] Runtime/custom layout editing — deferred.
 - [ ] PC configurator/import — deferred.
-- [ ] UI persistence — deferred.
+- [x] Narrow `OLED_UI_LAYOUT_CONFIG_V1` persistence — published by `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`; broader runtime/custom layout persistence remains deferred with the broader UI customization work.
 - [x] Uptime `HH:MM` behavior — accepted in `BOOT_DESKTOP_UI_FOUNDATION`.
 - [ ] RTC wall-clock source — deferred.
 

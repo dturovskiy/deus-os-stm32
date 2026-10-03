@@ -96,7 +96,7 @@ Known LF->CRLF Git warnings may be suppressed from operator-facing logs only whe
 
 The accepted `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is a material ownership improvement, not a claim that `src/kernel.c` has reached its final composition-root form. The accepted implementation deliberately stopped before creating speculative abstractions or exposing root-private state merely to reduce line count.
 
-The remaining architecture debt is deferred and trigger-driven:
+This section records residual architecture debt provenance. As of the 2026-10-03 audit, composition-root convergence (`FDC-05`), system/service-state dependency direction (`FDC-06`) and application stop-failure semantics (`FDC-07`) are promoted mandatory closure obligations; the other architecture notes remain trigger-driven unless separately promoted:
 
 ### Composition-root convergence
 
@@ -146,7 +146,7 @@ In particular, do not implicitly start a replacement application after an unreso
 
 ### Firmware Update / Bootloader post-publication robustness
 
-The 2026-10-01 post-publication read-only audit found no acceptance-regression blocker, but retained four bounded robustness items. They are deliberately **deferred**, not patch authorization:
+The 2026-10-01 post-publication read-only audit found no acceptance-regression blocker and retained four bounded robustness items. The 2026-10-03 architecture/code audit subsequently **promoted the relevant items into mandatory `FDC-01` / `FDC-08` closure obligations** before the next service/Web/network feature boundary. This promotion still does not authorize a speculative all-at-once patch: each implementation slice requires a frozen source boundary and acceptance proof.
 
 - **Authenticated image-span vector containment.** Published v1 validates the application reset handler against the whole executable application region `0x08002000..0x0800EFFF`, matching the frozen v1 contract. It does not additionally require the reset-handler address to be below `APP_BASE + image_length`. A future tightening may require the entry point to lie inside the authenticated image span so a deliberately shorter signed image cannot branch into stale bytes beyond its signed payload. Treat this as a security/robustness contract change and re-accept it explicitly rather than silently changing v1 semantics.
 - **Bootloader clock-start failure bounds.** Bootloader HSE/PLL ready/switch waits are currently unbounded. Accepted hardware proves the normal oscillator path, not crystal/PLL failure recovery. Promote bounded timeout/fallback behavior only under a dedicated recovery-robustness boundary with resource and hardware acceptance.
@@ -155,16 +155,33 @@ The 2026-10-01 post-publication read-only audit found no acceptance-regression b
 
 Historical INFO/BEGIN/DATA response timeouts remain observations, not proof of an additional firmware USB defect. Do not introduce a speculative firmware patch without a causal reproducer.
 
+## 8. Promoted mandatory closure obligations — 2026-10-03 audit
+
+The items below are retained here for provenance but are **no longer deferred**. `docs/CURRENT_STATE.md` and `docs/ROADMAP.md` promote them as prerequisites that must be accepted closed before a new Host Management Service/Web/network feature boundary.
+
+1. **`FDC-01` — generic RPC timeout/cancellation correlation.** Close delayed multi-frame `RPC_DATA...RPC_END` poisoning after timeout/cancel; define how abandoned RPCs are drained/discarded or force session reset; bound stale request-ID lifetime and wrap; include the existing firmware-update stale-ID and ambiguous non-DATA response-loss semantics in one coherent host correlation policy. Required deterministic tests include timeout/cancel followed by delayed DATA/END and then a fresh successful RPC, repeated abandoned IDs through wrap, and unknown non-stale mismatches remaining fatal.
+2. **`FDC-02` — session event reentrancy.** `DeusDeviceSession.StateChanged` must not execute arbitrary subscriber code while the session operation gate is held unless a formally proven non-reentrant contract replaces the current public event behavior. Closure requires a deadlock/reentrancy test and preserved ordered state notification semantics.
+3. **`FDC-03` — management service operation allowlist.** A future HTTP/Web/service API must expose explicit typed operations and authorization classes. It must not surface arbitrary public `RpcAsync(rpcId, flags)`, and target `SAFE`/`DIAGNOSTIC` classifications must not be treated as remote authorization policy. Closure requires an allowlist matrix and negative tests proving unlisted/destructive/raw RPC access is unavailable.
+4. **`FDC-04` — typed Core management models.** Any health/diagnostic/application/device state used by a future service must be parsed/modelled in `DeusOs.Control.Core`; HTTP/Avalonia/CLI presentations must not independently parse protocol text. Closure requires parser/model unit tests and proof that the service layer has no STM32 output-string parser.
+5. **`FDC-05` — composition-root convergence.** The accepted decomposition remains valid, but the remaining independent platform/driver/service responsibilities in `src/kernel.c` must be moved when a natural owner exists. Closure is architectural ownership, not a line-count target: no universal context, service locator, hidden extracted-state extern or framework-only split is allowed.
+6. **`FDC-06` — semantic system/service state upstream of presentation.** Replace `UI snapshot -> application_service_snapshot` authority with `system/service state -> semantic snapshot -> application/UI consumers`. Closure requires the OLED status bar and application runtime to consume the same upstream semantic state, with no health/USB/network truth inferred from rendered indicator state.
+7. **`FDC-07` — fail-closed application stop failure.** Before any resource-owning application exists, failed `stop()` must have explicit lifecycle/resource-ownership semantics. A replacement app must not start while prior resource release is unresolved unless ownership safety is proven. Closure requires deterministic failure-path tests and documented resulting states/fallback.
+8. **`FDC-08` — bounded target/update robustness.** Close authenticated reset-vector span containment; bootloader HSE/PLL/switch bounds; normal-runtime HSE/PLL/switch bounds; UART TX wait bounds; elapsed-time bootloader-entry reset fallback instead of raw service-poll count; and explicit INFO/BEGIN/AUTHORIZE/END timeout/adjudication/restart behavior. Resulting paths require resource/static validation and hardware fault/recovery acceptance without weakening update authenticity/rollback/ownership guarantees.
+9. **`FDC-09` — native transport cancellation/disposal.** Windows WinUSB and Linux libusb operations must have bounded cancellation/shutdown semantics suitable for a long-lived service and multiple independent device sessions. Closure requires tests/proof that cancellation/disposal cannot strand an unbounded native operation, leak session ownership, or corrupt a subsequent open/recovery.
+10. **`FDC-10` — documentation/source-of-truth reconciliation.** Remove obsolete future-tense/deferred statements contradicted by published USB CDC, persistence, host management and firmware-update work; preserve clearly labelled historical chronology; reconcile current-state/roadmap/backlog/scoped addenda; run repo-wide stale-token/open-checkbox and `git diff --check` audits.
+
+After all ten are accepted closed, this section remains as historical provenance and the active disposition moves back to future feature selection.
+
 ### Anti-goals for all follow-up work
 
 None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
 
-These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` or `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The Host Core decomposition trigger was resolved inside the Firmware Update / Bootloader boundary; the remaining items do not become active merely by appearing in this backlog.
+These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` or `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The Host Core decomposition trigger was resolved inside the Firmware Update / Bootloader boundary. As of 2026-10-03, only the explicitly promoted `FDC-01..FDC-10` set is mandatory; all other backlog material remains trigger-driven merely by appearing here.
 
-## 8. Roadmap placement
+## 9. Roadmap placement
 
 This backlog does not own current roadmap state or activation. `docs/CURRENT_STATE.md` is authoritative for the active boundary and `docs/ROADMAP.md` owns forward sequencing.
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` is published at `562e786ffa734da055c23144ec4256bc8961bbaf`; `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`; and `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`. No product feature boundary is currently active. Broader storage, networking/security and robustness debt remain consumer-driven until promoted by `CURRENT_STATE.md` plus a dedicated plan/acceptance contract.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` is published at `562e786ffa734da055c23144ec4256bc8961bbaf`; `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`; and `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`. No new product feature boundary is currently active. `FDC-01..FDC-10` are mandatory pre-feature closure work; unrelated storage, networking/security, optimization and observability debt remains consumer-driven until separately promoted by `CURRENT_STATE.md` plus a dedicated plan/acceptance contract.
 
 Optimization rule: remove unnecessary work first, measure next, add complexity only against an observed bottleneck.

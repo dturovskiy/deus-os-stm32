@@ -415,3 +415,25 @@ This documentation boundary does not implement:
 - OLED geometry redesign.
 
 Those remain separate independently accepted boundaries.
+
+## 17. Post-publication semantic-state closure — `FDC-06`
+
+The original application/UI model correctly separates semantic application events from scheduler wake bits, but the current implementation later evolved an inversion where `application_service_snapshot_t` is reconstructed from boot/OLED indicator state. The 2026-10-03 audit promotes that residual coupling into mandatory closure before another host/service/network consumer is added.
+
+`FDC-06` freezes the intended dependency direction:
+
+```text
+system/service state
+        |
+        v
+bounded semantic service snapshot
+        |
+   +----+----+
+   |         |
+application  OLED/status presentation
+runtime
+```
+
+Closure requires one semantic owner for system-health, USB-configured, network-online and time/uptime state. OLED indicators must render from that owner; application snapshots/events must also consume it. Rendered/UI state must never become authoritative input for host-visible or application-visible service semantics.
+
+This closure must preserve the published OLED geometry, application runtime ABI unless explicitly/versionedly reopened, no-rerender event behavior, scheduler/watchdog ownership and all resource/physical regressions. It must not introduce a generic service locator or presentation framework solely to reverse the dependency.

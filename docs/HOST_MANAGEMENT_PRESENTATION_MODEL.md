@@ -1,6 +1,6 @@
 # Deus OS — Host Management Presentation Model
 
-Status: **PLANNING / ARCHITECTURE REFERENCE — NOT AN ACTIVE IMPLEMENTATION BOUNDARY**
+Status: **PLANNING / ARCHITECTURE REFERENCE — BLOCKED ON `FDC-01..FDC-10`; NOT AN ACTIVE IMPLEMENTATION BOUNDARY**
 
 This document defines the intended relationship between the accepted host-management Core, the existing CLI/Desktop presentation surfaces, and a future browser-based management surface.
 
@@ -182,7 +182,23 @@ Future host-management work must preserve:
 8. CDC/UART/ST-LINK remain distinct diagnostics/recovery domains rather than UI backdoors;
 9. capability discovery controls unavailable surfaces; presentation must not infer features from product name alone.
 
-## 11. Promotion / implementation rule
+## 11. Mandatory preconditions from the 2026-10-03 audit
+
+Before this model may be promoted into `HOST_MANAGEMENT_SERVICE_FOUNDATION` or an equivalent Web/service implementation boundary, all `FDC-01..FDC-10` obligations must be accepted closed.
+
+Service-specific hard requirements are:
+
+- `FDC-01`: long-lived Core sessions have deterministic abandoned-RPC cleanup/recovery; delayed multi-frame responses cannot poison later requests;
+- `FDC-02`: session state notifications cannot deadlock or reenter the serialized session owner through callbacks invoked under its operation gate;
+- `FDC-03`: the Web/service contract is an explicit typed allowlist, never a raw numeric RPC/flags proxy;
+- `FDC-04`: state consumed by Web/service is typed in `DeusOs.Control.Core`; HTTP/Web code does not parse target command text;
+- `FDC-09`: WinUSB/libusb cancellation, disposal and reopen are bounded for long-lived and multi-device service use;
+- `FDC-05..08`: target-side ownership/lifecycle/robustness closure is complete so the service is not built on known architecture debt that its own long-lived behavior would trigger;
+- `FDC-10`: canonical docs agree on the accepted closure state.
+
+The first local service boundary must remain localhost-only by default unless a separate security/trust boundary explicitly authorizes broader exposure. Even on localhost, capability discovery and the service allowlist control which operations exist; target command-class labels are not user authorization.
+
+## 12. Promotion / implementation rule
 
 This document is intentionally non-authorizing.
 
@@ -197,7 +213,7 @@ Possible future boundaries include, depending on actual need:
 
 A future boundary may refine this model, but it must explicitly document any departure from these invariants.
 
-## 12. Relationship to existing documents
+## 13. Relationship to existing documents
 
 - Current project state: `docs/CURRENT_STATE.md`
 - Stable system architecture: `docs/ARCHITECTURE.md`

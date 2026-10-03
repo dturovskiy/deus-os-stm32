@@ -44,14 +44,16 @@ Gate 0 is complete. Gate 1 may now perform only the behavior-preserving Host Cor
 
 ## 3. Flash/map invariants
 
-Must retain:
+Final published invariants (the historical Gate-0 precondition was the earlier `ORIGIN 0x08000000 / LENGTH 54K` application layout; Gates 2–7 superseded it with the accepted relocated split below):
 
-    bootloader   0x08000000..0x08001FFF  8192 B
-    application  0x08002000..0x0800F7FF  55296 B
-    persist A    0x0800F800..0x0800FBFF  1024 B
-    persist B    0x0800FC00..0x0800FFFF  1024 B
+    bootloader   0x08000000..0x08001FFF   8192 B
+    application  0x08002000..0x0800EFFF  53248 B
+    metadata A   0x0800F000..0x0800F3FF   1024 B
+    metadata B   0x0800F400..0x0800F7FF   1024 B
+    persist A    0x0800F800..0x0800FBFF   1024 B
+    persist B    0x0800FC00..0x0800FFFF   1024 B
 
-Current product linker must still be the expected precondition ORIGIN 0x08000000, LENGTH 54K and current product startup must still lack a relocated-application VTOR write.
+The accepted application linker origin is `0x08002000`, executable length `52K`, with VTOR at the relocated origin. Pages 60/61 are firmware metadata and pages 62/63 remain persistence; neither pair is executable application capacity.
 
 ## 4. Source ownership inventory
 
@@ -292,3 +294,22 @@ BLOCKED_STORAGE_MODEL if the design requires staging the frozen map cannot suppl
 BLOCKED_HOST_OWNERSHIP if update orchestration would be added without the required host split.
 
 No blocked outcome authorizes weakening the missing responsibility.
+
+## 14. Post-publication `FDC-08` acceptance addendum
+
+This addendum is a forward robustness closure contract and does not alter the historical Gates 0–7 acceptance result.
+
+`FDC-08` is accepted only when all of the following are proven:
+
+- **authenticated vector span:** reset vector is rejected if its handler address is below `APP_BASE`, at/above `APP_BASE + image_length`, non-Thumb or otherwise structurally invalid; tests include a signed/authorized shorter-image case whose vector points into stale bytes beyond the authenticated image span;
+- **bootloader clock bound:** HSE-ready, PLL-ready and system-clock-switch waits have explicit finite bounds and a deterministic recovery/fail state; no fallthrough to update/boot with an invalid clock configuration;
+- **runtime clock bound:** the normal application has equivalent finite startup bounds and a deterministic failure disposition that does not claim normal health;
+- **UART TX bound:** a stuck/not-ready USART TX path cannot spin forever; the chosen degraded/error behavior is explicit and does not silently break watchdog/liveness ownership;
+- **update-entry reset deadline:** `ENTER_BOOTLOADER` response/reset completion is controlled by a measured elapsed-time/deadline rule. Acceptance demonstrates both normal response-TX completion reset and fallback reset when TX completion is not observed;
+- **non-DATA ambiguity:** host tests cover INFO/BEGIN/AUTHORIZE/END timeout or response loss and prove the frozen adjudication/restart behavior. Unknown state must fail closed; no non-idempotent blind retry is accepted;
+- **resource invariants:** bootloader <= 8192 bytes, bootloader SRAM/stack ceilings preserved, application Flash/SRAM/stack ceilings preserved, undefined/heap policy clean;
+- **ownership invariants:** bootloader pages 0..7, executable app pages 8..59, metadata pages 60..61 and persistence pages 62..63 remain exact; persistence is not used as update scratch;
+- **security invariants:** HMAC authenticity, product/target binding, rollback floor, digest validation and commit-marker-last semantics remain intact;
+- **hardware acceptance:** physically meaningful oscillator/reset/update-entry failure/recovery paths are exercised or, where a fault cannot be induced safely on the current bench, a dedicated deterministic injection mechanism is accepted without weakening production behavior.
+
+Final `FDC-08` evidence must also retain successful normal boot, recovery entry, signed update, runtime `PONG`/health and exact whole-Flash ownership/readback checks.
