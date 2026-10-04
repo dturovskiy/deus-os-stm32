@@ -1,6 +1,6 @@
 # Deus OS — Host Typed Management Models Hardening Plan
 
-Status: **GATES 0–3 ACCEPTED / PUBLICATION PENDING / `FDC-04`**
+Status: **CLOSED / PUBLISHED `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d` / `FDC-04`**
 
 Published baseline commit: `0d9adfd8d0ed11478194e2268ede3c57379c8294`
 

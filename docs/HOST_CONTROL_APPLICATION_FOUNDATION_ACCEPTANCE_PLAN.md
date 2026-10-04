@@ -441,13 +441,13 @@ Canonical closure: `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_A
 
 Canonical closure: `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. The published Core-owned catalog/facade exposes exactly five ReadOnly + three Control + zero Destructive service-v1 operations. Raw numeric RPC IDs/flags, bootloader/update and unlisted routing are absent. Gate-2 evidence SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25` proves Core `66/66`, Core/CLI/Desktop Release builds PASS and zero target/Flash mutation; Gate 4/5 publication is `0d9adfd8d0ed11478194e2268ede3c57379c8294`.
 
-### `FDC-04` — GATES 0–3 ACCEPTED / PUBLICATION PENDING (`HOST_TYPED_MANAGEMENT_MODELS_HARDENING`)
+### `FDC-04` — ACCEPTED / CLOSED / PUBLISHED `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`
 
-Authoritative Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4` proves the frozen eight-path candidate, manifest `78/78`, Core `78/78`, Core/CLI/Desktop Release builds PASS, and zero target/Flash mutation. Core owns bounded Ping/Health/app-control parsing; the service facade exposes no `RpcResult`; Desktop has no raw management `OutputText`; CLI raw output is confined to excluded `rpcinfo`; low-level raw compatibility APIs remain intact. Gate 4/5 publication remains before closure.
+Authoritative Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4` proves the frozen eight-path candidate, manifest `78/78`, Core `78/78`, Core/CLI/Desktop Release builds PASS, and zero target/Flash mutation. Core owns bounded Ping/Health/app-control parsing; the service facade exposes no `RpcResult`; Desktop has no raw management `OutputText`; CLI raw output is confined to excluded `rpcinfo`; low-level raw compatibility APIs remain intact. Gate 4/5 publication is `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`, tree `b47361fbdb4e82a6d3ddebdf55d5d3fd7ce4f300`, with fresh-fetch clean `0/0` and valid GitHub signature verification.
 
-### `FDC-09`
+### `FDC-09` — ACTIVE / GATE 0 (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`)
 
-Acceptance requires Windows and Linux transport tests plus real-platform smoke proving bounded cancellation/disposal, no orphaned owned transport operation after close, clean reopen/recovery, and isolation of two simultaneous sessions. Native API limitations must be represented by an explicit bounded timeout/ownership policy rather than implied immediate cancellation.
+Acceptance now freezes the concrete synchronous-native ownership model: pre-entry cancellation prevents native I/O; cancellation after entry is latched until the bounded native call drains; Dispose blocks new entry, drains active I/O, then closes resources; two transport instances are isolated; and Windows/Linux real-platform reopen smoke is required. Runtime and bootloader profiles share the same platform transport owners. Canonical proof contract: `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_ACCEPTANCE_PLAN.md`.
 
 All existing host regression suites and Release builds must remain PASS. These items are closed only by exact accepted evidence and are not satisfied by documentation wording alone.
 

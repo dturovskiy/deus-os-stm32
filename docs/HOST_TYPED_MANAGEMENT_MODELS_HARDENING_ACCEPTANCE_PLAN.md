@@ -1,6 +1,6 @@
 # Deus OS — Host Typed Management Models Hardening Acceptance Plan
 
-Status: **GATES 0–3 ACCEPTED / PUBLICATION PENDING / `FDC-04`**
+Status: **CLOSED / PUBLISHED `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d` / `FDC-04`**
 
 Canonical design: `docs/HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md`
 
@@ -121,3 +121,7 @@ Accepted proof:
 - live repository poststate exactly matches prestate and source hashes are unchanged.
 
 Gate 3 documentation reconciliation records the evidence and accepted source hashes without widening scope. Gate 4/5 publication remains required before `FDC-04` is CLOSED.
+
+## Gate 4/5 publication closure — accepted
+
+FDC-04 was committed normally as `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`, tree `b47361fbdb4e82a6d3ddebdf55d5d3fd7ce4f300`, direct parent `f0614d4182b5f603f43eb79b5dd011b929de0e8c`. Ordinary non-force push and fresh fetch proved `HEAD == origin/main == FETCH_HEAD`, clean ahead/behind `0/0`. Independent GitHub verification matched the same commit/tree/parent with a valid verified signature. FDC-04 is CLOSED/PUBLISHED; FDC-09 is the separately activated next host closure slice.

@@ -1,5 +1,15 @@
 ## 2026-10-04
 
+### FDC-09 Host native transport lifetime hardening — Gate 0 activated
+
+`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING` is now the active final Slice-A host closure boundary on published FDC-04 baseline `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`. The audit confirmed that both platform adapters execute synchronous native USB calls inside `Task.Run(..., cancellationToken)`: cancellation after native entry does not stop `WinUsb_ReadPipe`/`WinUsb_WritePipe` or `libusb_bulk_transfer`, while current transport disposal may close/release native handles without coordinating with an already-running worker.
+
+Gate 0 freezes per-instance **latched bounded cancellation** under the existing 2000-ms native transfer timeout: pre-entry cancellation prevents native I/O; cancellation after entry waits for the native transfer to drain before surfacing cancellation; Dispose marks closing, prevents new native entry, drains active I/O, then releases handles exactly once. Runtime and bootloader profiles already share the same Windows/Linux transport owners, so no parallel bootloader transport patch is authorized. Frozen product/test scope is Windows transport (+ optional test IVT project metadata), Linux transport, and `TransportContractTests.cs`; Core protocol/session and target source remain out of scope.
+
+### FDC-04 Host typed management models hardening — CLOSED / PUBLISHED `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`
+
+Gate 4/5 accepted implementation/docs commit `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`, tree `b47361fbdb4e82a6d3ddebdf55d5d3fd7ce4f300`, direct parent `f0614d4182b5f603f43eb79b5dd011b929de0e8c`. Ordinary non-force push plus fresh fetch proved `HEAD == origin/main == FETCH_HEAD`, clean `0/0`; GitHub independently matched the same valid signed commit. Authoritative Gate-2 evidence remains SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`, manifest `78/78`, Core `78/78`, Core/CLI/Desktop Release builds PASS, target I/O and Flash mutation zero.
+
 ### FDC-04 Host typed management models hardening — Gate 2 accepted / publication pending
 
 `HOST_TYPED_MANAGEMENT_MODELS_HARDENING` accepted the exact eight-path candidate on published Gate-0 baseline `f0614d4182b5f603f43eb79b5dd011b929de0e8c`. Authoritative evidence is `stm32_os_fdc04_host_validation_dotnet_v1_20261004_191243.evidence.zip`, SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`: ZIP CRC clean, manifest `78/78`, exact six-modified-plus-two-new pre/post state, Core `78/78`, Core/CLI/Desktop Release builds PASS, target I/O NONE and Flash mutation NONE.
