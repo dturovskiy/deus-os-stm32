@@ -1,6 +1,6 @@
 # Deus OS — Host Management Presentation Model
 
-Status: **PLANNING / ARCHITECTURE REFERENCE — `FDC-01..FDC-04` CLOSED; `FDC-09` GATES 0–5 ACCEPTED / PUBLICATION PENDING; BLOCKED ON REMAINING `FDC-05..FDC-10`; NOT AN ACTIVE IMPLEMENTATION BOUNDARY**
+Status: **PLANNING / ARCHITECTURE REFERENCE — `FDC-01..FDC-04,FDC-09` CLOSED / PUBLISHED; BLOCKED ON REMAINING `FDC-05..FDC-08,FDC-10`; NOT AN ACTIVE IMPLEMENTATION BOUNDARY**
 
 This document defines the intended relationship between the accepted host-management Core, the existing CLI/Desktop presentation surfaces, and a future browser-based management surface.
 

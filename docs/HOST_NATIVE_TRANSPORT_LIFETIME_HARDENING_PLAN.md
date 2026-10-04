@@ -1,6 +1,6 @@
 # Deus OS — Host Native Transport Lifetime Hardening Plan
 
-Status: **GATES 0–5 ACCEPTED / PUBLICATION PENDING / `FDC-09`**
+Status: **CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73` / `FDC-09`**
 
 Published baseline commit: `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`
 

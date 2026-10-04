@@ -1,6 +1,6 @@
 # Deus OS — Host Native Transport Lifetime Hardening Acceptance Plan
 
-Status: **GATES 0–5 ACCEPTED / GATE 6–7 PUBLICATION PENDING / `FDC-09`**
+Status: **GATES 0–7 ACCEPTED / CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73` / `FDC-09`**
 
 Canonical design: `docs/HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md`
 
@@ -12,6 +12,7 @@ Accepted Gates 0–5 evidence summary:
 - Gate 4 Linux real-platform validation: `stm32_os_fdc09_gate4_linux_real_platform_dotnet_v1_20261004_222724.evidence.zip`, SHA-256 `F084F76AEA3ED28E4BE4E697FCDF323360ED190810EEE4E3F944AD56930E2900`; IF2-only libusb open, cancel-drain `2021 ms`, dispose `3 ms`, same-locator reopen `15 ms`, fresh negotiation/ping, CDC `cdc_acm` ownership `2 -> 2`, topology unchanged, Flash mutation NONE.
 - Gate 3 Windows real-platform validation: `stm32_os_fdc09_gate3_windows_real_platform_dotnet_v5_20261004_225617.evidence.zip`, SHA-256 `B392F3AEA191E0649CBBF2FFEBCE8AA2CA580BE79D25AF4B36FE58FD699728C5`; manifest `93/93` exact, WinUSB cancel-drain `2017 ms`, dispose `3 ms`, physical removal `TransportDisconnected` in `7 ms`, same-locator replug/reopen, fresh negotiation/ping, canonical Mac-mini bench restoration `634 ms`, exact repository poststate and Flash mutation NONE.
 - Post-run presentation audit found `HARNESS-TERMINAL-STRUCTURE-01`: the V5 .NET validator emitted an uncolored final RESULT block and used reserved `PASS`/`FAIL` words in intermediate `[OK]` text, contrary to `HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`. This does not change the finalized evidence bytes or product/runtime observations above; no repeated physical run is required solely for terminal styling. Future harness packages must fail package-generation lint if final green/red/yellow result structure or reserved-word discipline is absent.
+- Gate 6/7 publication: implementation/docs commit `b88a9eee43095665326787cc0345822218c1ba73`, tree `43829e79c4679146aae5156d635680fb3b6dad39`, parent `5bfb0a28815f3712d30482b394a5b44c17a6011c`; ordinary non-force push; fresh fetch `HEAD == origin/main == FETCH_HEAD`; clean ahead/behind `0/0`; independent GitHub verification reports the exact commit/tree/parent and `verification.verified=true` / `reason=valid`.
 
 ## Gate 0 — contract/source-boundary freeze
 

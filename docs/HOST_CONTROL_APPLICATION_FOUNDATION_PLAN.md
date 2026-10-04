@@ -617,7 +617,7 @@ The public Core raw RPC capability remains an implementation/operator API, not a
 
 The accepted candidate adds bounded Core-owned `PingStatus`, `HealthSnapshot`, `ApplicationStartResult` and `ApplicationStopResult` parsing while preserving low-level raw compatibility/operator APIs. `ManagementServiceOperations` exposes zero `RpcResult` return types; Desktop has zero raw management `OutputText` uses; CLI raw `OutputText` is confined to the explicitly excluded `rpcinfo` diagnostic. Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4` proves Core `78/78`, Core/CLI/Desktop Release builds PASS and zero target/Flash mutation; publication is accepted at `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`, tree `b47361fbdb4e82a6d3ddebdf55d5d3fd7ce4f300`.
 
-### `FDC-09` — bounded native cancellation/disposal — GATES 0–5 ACCEPTED / PUBLICATION PENDING (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`)
+### `FDC-09` — bounded native cancellation/disposal — CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73` (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`)
 
 The current WinUSB/libusb adapters use synchronous native bulk calls inside `Task.Run(..., cancellationToken)`, so cancellation after native entry does not terminate the native call while current Dispose can close handles without coordinating with that worker. Gate 0 freezes per-instance latched bounded cancellation under the existing 2000-ms native transfer timeout: managed completion waits for native drain, Dispose blocks new I/O and closes resources only after drain, runtime/bootloader share the same fixed transport owners, and Windows/Linux reopen acceptance is mandatory.
 

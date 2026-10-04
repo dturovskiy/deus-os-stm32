@@ -1,5 +1,11 @@
 ## 2026-10-04
 
+### FDC-09 Host native transport lifetime hardening — CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73`
+
+Gate 6/7 publication is complete. Accepted implementation/docs commit `b88a9eee43095665326787cc0345822218c1ba73`, tree `43829e79c4679146aae5156d635680fb3b6dad39`, direct parent `5bfb0a28815f3712d30482b394a5b44c17a6011c`, was published by ordinary non-force fast-forward. Fresh fetch proved `HEAD == origin/main == FETCH_HEAD == b88a9eee43095665326787cc0345822218c1ba73`, clean ahead/behind `0/0`; GitHub independently confirms the same commit/tree/parent and a valid verified signature. Slice A (`FDC-01..04,09`) is complete; FDC-05 Gate-0 planning/audit is next, with no FDC-05 source mutation authorized until its dedicated plan/acceptance pair freezes the boundary.
+
+The V5 Windows physical proof remains accepted despite the separately classified `HARNESS-TERMINAL-STRUCTURE-01` presentation defect. No hardware rerun is required solely to recover terminal coloring. Future operator harness packages must satisfy the canonical green PASS / red FAIL / yellow warning final-result structure and reserved-word lint before handoff.
+
 ### FDC-09 Host native transport lifetime hardening — Gates 0–5 accepted / publication pending
 
 The exact four-path `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING` candidate has completed deterministic and real-platform acceptance. Gate-2 evidence `stm32_os_fdc09_gate2_host_validation_dotnet_v2_20261004_215723.evidence.zip`, SHA-256 `1B4090EEED139BA7B5E7BEB11C530B0CF4B1EEB44706ADCA079430FAD686FFCE`, proves Transport `24/24`, Core `78/78`, Windows/Linux/Core Release builds, exact source/poststate locks and zero target/Flash mutation.

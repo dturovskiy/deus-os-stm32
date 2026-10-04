@@ -322,7 +322,7 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after FDC-04 publication closure and FDC-09 Gate-0 activation:
+Live documentation inventory after FDC-09 publication closure / Slice-A completion:
 
 - Markdown files in `docs/`: `80`;
 - `*_ACCEPTANCE_PLAN.md` records: `25`;
@@ -338,8 +338,8 @@ Live documentation inventory after FDC-04 publication closure and FDC-09 Gate-0 
 - `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-02` pair at `42245d9d71504482fb189d8351ecce7049542145`;
 - `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-03` pair at `0d9adfd8d0ed11478194e2268ede3c57379c8294`;
 - `HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-04` pair at `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`;
-- `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the active matched `FDC-09` Gate-0 pair; FDC-01..04/FDC-09 are post-publication hardening, not product feature boundaries;
+- `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-09` pair at `b88a9eee43095665326787cc0345822218c1ba73`; FDC-01..04/FDC-09 are post-publication hardening, not product feature boundaries;
 - latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
-- no new product feature boundary is currently active; `FDC-09 / HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING` is the active engineering closure boundary at Gate 0; FDC-05..08/FDC-10 remain non-authorizing until separately promoted.
+- no new product feature boundary is currently active; Slice A (`FDC-01..04,09`) is complete; next engineering authority is FDC-05 Gate-0 planning only, with no FDC-05 source mutation until a dedicated plan/acceptance pair freezes its exact boundary.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

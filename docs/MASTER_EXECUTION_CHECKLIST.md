@@ -44,7 +44,7 @@ This section is the executable ledger for the post-publication architecture/code
   - [x] Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`: manifest `78/78`, Core `78/78`, Core/CLI/Desktop Release PASS, exact candidate pre/post state, target I/O/Flash mutation zero;
   - [x] Gate 4 normal acceptance commit + Gate 5 ordinary non-force publication/fresh-remote verification.
 
-- [ ] **FDC-09 — native transport cancellation/disposal for long-lived/multi-device use — GATES 0–5 ACCEPTED / PUBLICATION PENDING (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`).**
+- [x] **FDC-09 — native transport cancellation/disposal for long-lived/multi-device use — CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73` (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`).**
   - [x] Windows WinUSB and Linux libusb I/O have explicit bounded cancellation/disposal semantics;
   - [x] user cancellation and session disposal cannot leave an unbounded native operation that outlives ownership;
   - [x] two simultaneous independent sessions remain isolated;
