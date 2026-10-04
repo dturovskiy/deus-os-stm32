@@ -1,5 +1,17 @@
 ## 2026-10-04
 
+### FDC-03 Host service operation allowlist hardening — Gate 0 activated
+
+`HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` is now the active host closure slice on published FDC-02 baseline `42245d9d71504482fb189d8351ecce7049542145`. Gate 0 freezes an exact two-new-file implementation boundary: `ManagementServiceOperations.cs` plus `ManagementServiceOperationTests.cs`.
+
+Service v1 is explicitly compile-time allowlisted in Core: ReadOnly = `Ping`, `Health`, `Applications`, `AssetStatus`, `ReadOledUiLayout`; Control = `StartApplication`, `StopApplication`, `WriteOledUiLayout`; Destructive = none. Numeric RPC IDs, caller-controlled protocol flags, generic argument/string command proxying, bootloader entry, watchdog trip, scheduler stress/diagnostics, UI test/mutation and other unlisted commands are excluded. Firmware command classes are not host authorization policy. FDC-04 remains separate for typed management result models/parsers.
+
+No Web/service host, HTTP route, network listener, native transport, firmware/bootloader or target change is authorized by this activation.
+
+### FDC-02 Host session state-event reentrancy hardening — CLOSED / PUBLISHED `42245d9d71504482fb189d8351ecce7049542145`
+
+Gate 4 accepted commit `42245d9d71504482fb189d8351ecce7049542145`, tree `5b04eabfda05bb63dca347e3b67bd2b431da3880`, direct parent `0f32c7c22a2526e5ce53dd877e5cce25209324e9`. Ordinary non-force push and fresh fetch proved `HEAD == origin/main == FETCH_HEAD`, clean `0/0`; GitHub independently matched the same valid signed commit. Authoritative Gate-2 evidence remains SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`, Core `58/58`, Core/Desktop Release builds PASS, target I/O zero.
+
 ### FDC-02 Host session state-event reentrancy hardening — Gate 2 accepted
 
 `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING` has passed bounded implementation/static review and deterministic host validation. `DeusDeviceSession.SetState()` no longer executes arbitrary `StateChanged` subscribers inline while `_operationGate` is owned; one private per-session asynchronous task chain serializes notifications, callback exceptions are isolated, and Connect/Execute/Disconnect recheck disposed state after gate acquisition without disposing the gate into a queued-operation race.

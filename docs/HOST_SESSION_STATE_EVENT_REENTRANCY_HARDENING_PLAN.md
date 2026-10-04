@@ -1,6 +1,6 @@
 # Deus OS — Host Session State-Event Reentrancy Hardening Plan
 
-Status: **GATES 0–3 ACCEPTED / GATE 4 LOCAL ACCEPTANCE COMMIT PENDING / `FDC-02`**
+Status: **CLOSED / PUBLISHED `42245d9d71504482fb189d8351ecce7049542145` / `FDC-02`**
 
 Baseline repository commit: `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`
 
@@ -179,3 +179,16 @@ Authoritative Gate-2 evidence:
 - Flash mutation: NONE.
 
 Gate 3 documentation reconciliation is accepted by the same closure update. Gate 4 local acceptance commit and Gate 5 ordinary non-force publication remain required before `FDC-02` is described as CLOSED/PUBLISHED or before `FDC-03` source mutation is authorized.
+
+
+## 12. Gate-4 / Gate-5 publication closure
+
+FDC-02 is CLOSED / PUBLISHED at commit `42245d9d71504482fb189d8351ecce7049542145`, tree `5b04eabfda05bb63dca347e3b67bd2b431da3880`, direct parent `0f32c7c22a2526e5ce53dd877e5cce25209324e9`.
+
+Publication used an ordinary non-force fast-forward push. Fresh fetch proved:
+
+- `HEAD == origin/main == FETCH_HEAD == 42245d9d71504482fb189d8351ecce7049542145`;
+- clean worktree/index;
+- ahead/behind `0/0`.
+
+GitHub `main` independently resolved to the same commit/tree/parent and reported a valid verified signature. The next independently frozen host closure slice is `FDC-03 / HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING`; this FDC-02 closure does not itself authorize Web/service implementation.

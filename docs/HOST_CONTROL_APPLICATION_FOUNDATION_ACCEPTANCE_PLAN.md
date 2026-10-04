@@ -433,13 +433,13 @@ This addendum does not alter the historical Gate-7 acceptance. It defines proof 
 
 Accepted at published commit `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`. Authoritative Gate-2 evidence SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6` proves Core `51/51`, Release build PASS and zero target I/O. Deterministic tests cover timeout/cancel with delayed `RPC_DATA...RPC_END`, partial streams, terminal stale `PROTOCOL_ERROR`, fresh-RPC recovery, unknown correlation remaining fatal, multiple abandoned IDs, clean/poisoned request-ID wrap, reset safety and firmware-update DATA/no-blind-retry regressions.
 
-### `FDC-02` — GATES 0–3 ACCEPTED / PUBLICATION PENDING
+### `FDC-02` — ACCEPTED / CLOSED / PUBLISHED `42245d9d71504482fb189d8351ecce7049542145`
 
-Canonical closure: `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. Gates 1–3 are accepted by evidence SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`: Core `58/58`, exact connect/recovery order, synchronous reentrant Execute/Disconnect, callback-exception isolation through recovery, unsubscribe, blocked-callback Dispose and Disconnect/Dispose race tests all PASS; Core and Desktop Release builds PASS; target I/O zero. Gate 4/5 publication remains pending.
+Canonical closure: `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. Gates 1–3 are accepted by evidence SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`: Core `58/58`, exact connect/recovery order, synchronous reentrant Execute/Disconnect, callback-exception isolation through recovery, unsubscribe, blocked-callback Dispose and Disconnect/Dispose race tests all PASS; Core and Desktop Release builds PASS; target I/O zero. Gate 4/5 accepted publication commit `42245d9d71504482fb189d8351ecce7049542145`, tree `5b04eabfda05bb63dca347e3b67bd2b431da3880`; ordinary non-force push and fresh fetch proved exact remote alignment and clean `0/0`.
 
-### `FDC-03`
+### `FDC-03` — ACTIVE / GATE 0
 
-Acceptance requires a documented service allowlist plus tests showing arbitrary numeric RPC IDs, caller-controlled protocol flags, destructive `wdogtrip`, scheduler stress diagnostics and other unlisted operations cannot be routed through the service-facing API.
+Canonical closure: `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. Gate 0 freezes one Core-owned compile-time service facade/catalog, ReadOnly/Control/Destructive exposure classes, exactly five read + three control + zero destructive service-v1 operations, and an exact two-new-file source/test boundary. Gate 2 must negatively prove that arbitrary numeric RPC IDs, caller-controlled protocol flags, `EnterBootloaderAsync`, destructive `wdogtrip`, scheduler stress/diagnostics, UI test/mutation and other unlisted operations cannot be routed through the service-facing API; FDC-04 remains responsible for typed result-state models.
 
 ### `FDC-04`
 

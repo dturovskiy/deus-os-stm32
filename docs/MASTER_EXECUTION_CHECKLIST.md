@@ -20,14 +20,14 @@ This section is the executable ledger for the post-publication architecture/code
   - [x] INFO/BEGIN/AUTHORIZE/END retain no blind retry; response loss remains reconnect/INFO/adjudicate/restart semantics;
   - [x] deterministic Core validation PASS: timeout/cancel/partial delayed streams, stale terminal `PROTOCOL_ERROR`, unknown correlation, multiple abandoned IDs, clean/poisoned wrap, reset safety and firmware retry/no-blind-retry regressions; authoritative evidence SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`, Core `51/51`, Release build PASS, target I/O zero.
 
-- [ ] **FDC-02 — `DeusDeviceSession.StateChanged` reentrancy/deadlock closure — GATES 0–3 ACCEPTED / GATE 4–5 PUBLICATION PENDING (`HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING`).**
+- [x] **FDC-02 — `DeusDeviceSession.StateChanged` reentrancy/deadlock closure — CLOSED / PUBLISHED `42245d9d71504482fb189d8351ecce7049542145` (`HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING`).**
   - [x] arbitrary subscriber callbacks are no longer invoked synchronously while `_operationGate` is held; one per-session serialized asynchronous notification chain owns delivery;
   - [x] state ordering remains deterministic across Connect/recovery/Disconnect/Dispose and exact transition sequences are unit-tested;
   - [x] subscribers may synchronously invoke `ExecuteAsync` or `DisconnectAsync` without deadlocking the lifecycle owner;
   - [x] callback exceptions are isolated, unsubscribe is effective for later dispatch, Dispose does not wait for blocked callbacks, and Disconnect/Dispose race is bounded/idempotent;
   - [x] deterministic Gate-2 host validation PASS: evidence SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`, manifest `72/72`, Core `58/58`, Core/Desktop Release builds PASS, exact two-path pre/post state, target I/O and Flash mutation zero.
 
-- [ ] **FDC-03 — service-facing operation allowlist / no raw RPC proxy.**
+- [ ] **FDC-03 — service-facing operation allowlist / no raw RPC proxy — ACTIVE / Gate 0 (`HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING`).**
   - [ ] define typed service operations and explicit read/control/destructive exposure classes;
   - [ ] firmware `SAFE`/`DIAGNOSTIC` command classes are not reused as HTTP authorization policy;
   - [ ] arbitrary `RpcAsync(rpcId, flags)` is not reachable from Web/HTTP/service input;
