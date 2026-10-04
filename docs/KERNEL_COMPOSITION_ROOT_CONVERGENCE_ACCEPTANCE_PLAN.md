@@ -6,7 +6,7 @@ Canonical design: `docs/KERNEL_COMPOSITION_ROOT_CONVERGENCE_PLAN.md`
 
 ## Gate 1 — source/static
 
-Require exact FDC-05 path scope, natural driver ownership, no scheduler/application/UI dependency from low-level drivers, no hidden extracted-state externs, no dependency cycle and no universal context/service locator. `src/kernel.c` must stop defining the extracted peripheral register/state domains.
+Require exact FDC-05 path scope, natural driver ownership, no scheduler/application/UI dependency from low-level drivers, no hidden extracted-state externs, no dependency cycle and no universal context/service locator. `src/kernel.c` must stop defining the extracted peripheral register/state domains. `src/drivers/ssd1306.c` must consume `drivers/i2c1.h`; the historical manual `i2c1_write()` forward declaration and stale statement that I2C1 remains in `kernel.c` are forbidden after extraction.
 
 ## Gate 2 — build/resource/ABI
 

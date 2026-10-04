@@ -28,6 +28,7 @@ Authorized new files:
 Authorized modified files:
 
 - `src/kernel.c`
+- `src/drivers/ssd1306.c` — narrow dependency-seam follow-up: replace the historical manual `i2c1_write()` forward declaration / stale “I2C1 remains in kernel.c” comment with the canonical `drivers/i2c1.h` dependency after I2C1 extraction;
 - `scripts/build_firmware.ps1`
 
 FDC-05 may also consume `system_service_state` introduced by FDC-06 but does not own its semantics.
