@@ -1,5 +1,15 @@
 ## 2026-10-04
 
+### FDC-02 Host session state-event reentrancy hardening — Gate 2 accepted
+
+`HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING` has passed bounded implementation/static review and deterministic host validation. `DeusDeviceSession.SetState()` no longer executes arbitrary `StateChanged` subscribers inline while `_operationGate` is owned; one private per-session asynchronous task chain serializes notifications, callback exceptions are isolated, and Connect/Execute/Disconnect recheck disposed state after gate acquisition without disposing the gate into a queued-operation race.
+
+Authoritative Gate-2 evidence is `stm32_os_fdc02_host_validation_dotnet_v2_20261004_162345.evidence.zip`, SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`. The ZIP CRC is clean and its manifest is `72/72` exact. It proves exact two-path pre/post WIP state at `HEAD == origin/main == 0f32c7c22a2526e5ce53dd877e5cce25209324e9`, staged/untracked `0/0`, Core `58/58` with failed/skipped/errors/not-run all zero, `DeusOs.Control.Core` Release build PASS, `DeusOs.Control.Desktop` restore/build PASS, target I/O NONE and Flash mutation NONE.
+
+The deterministic matrix covers exact connect order, synchronous reentrant Execute and Disconnect from `StateChanged`, exact recovery ordering, throwing-subscriber isolation through Connect/recovery/Disconnect, effective unsubscribe, Dispose completion while a callback is blocked, and bounded/idempotent Disconnect/Dispose race behavior. FDC-01 correlation/native transport/target source remain unchanged.
+
+Gate 3 canonical reconciliation is complete in the local acceptance candidate. FDC-02 remains publication-pending until its normal Gate-4 local commit and Gate-5 ordinary non-force push/fresh-remote verification complete; FDC-03 source mutation is not yet authorized.
+
 ### FDC-01 Host RPC timeout/correlation hardening — Gate 2 accepted
 
 `HOST_RPC_TIMEOUT_RECOVERY_HARDENING` has passed implementation/static review and deterministic host validation. The accepted implementation keeps `DeviceProtocolChannel` as the single decoder/request-ID/correlation owner, adds one channel-owned abandoned-request registry with `SingleResponse` and `RpcUntilTerminal` shapes, marks generic RPC requests abandoned on timeout/cancel, drains delayed `RPC_DATA...RPC_END` or terminal `PROTOCOL_ERROR`, and fails closed if request-ID wrap is reached while unresolved abandoned state remains.

@@ -1,6 +1,6 @@
 # Deus OS — Host Session State-Event Reentrancy Hardening Plan
 
-Status: **ACTIVE — GATE 0 CONTRACT FREEZE / `FDC-02`**
+Status: **GATES 0–3 ACCEPTED / GATE 4 LOCAL ACCEPTANCE COMMIT PENDING / `FDC-02`**
 
 Baseline repository commit: `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`
 
@@ -147,3 +147,35 @@ No physical hardware acceptance is required for this host-only event-delivery sl
 `FDC-02` is CLOSED only when arbitrary `StateChanged` subscriber code can no longer participate inline in the session critical section, notification ordering remains deterministic, callback failure is isolated, reentrant session operations are proven deadlock-free, Desktop compatibility remains intact, and the accepted source is published normally.
 
 Closing `FDC-02` does not authorize or close `FDC-03`, `FDC-04`, `FDC-09` or any target-side FDC item.
+
+
+## 11. Gate-2 / Gate-3 accepted result — 2026-10-04
+
+Implementation and deterministic host validation are accepted for the exact frozen two-path candidate:
+
+- `host/src/DeusOs.Control.Core/DeusDeviceSession.cs` SHA-256 `6E39B68DE0D82906AEFAFDE376E49AD824BA9959332E2C79EACCA34CCB13F03F`;
+- `host/tests/DeusOs.Control.Core.Tests/ClientTests.cs` SHA-256 `7FD188B31FA9A1C41754CE74F15C9750B3F3F8DDCEA221F1C4A521B2BD6FCF5C`.
+
+Accepted implementation properties:
+
+- `SetState()` synchronously updates `State` but never executes public subscribers inline;
+- one private per-session task chain serializes `StateChanged` notification delivery on the default scheduler;
+- callback exceptions are isolated per subscriber and do not fault lifecycle operations or later notifications;
+- Connect/Execute/Disconnect recheck disposed state after acquiring `_operationGate`;
+- `_operationGate` is not disposed, avoiding a queued/reentrant disposed-semaphore race;
+- Dispose remains idempotent and does not wait for arbitrary callback completion;
+- public event signature remains unchanged.
+
+Authoritative Gate-2 evidence:
+
+- file: `stm32_os_fdc02_host_validation_dotnet_v2_20261004_162345.evidence.zip`;
+- SHA-256: `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`;
+- manifest: `72/72` exact;
+- Core tests: `58/58` passed, failed/skipped/errors/not-run all zero;
+- `DeusOs.Control.Core` Release build: PASS;
+- `DeusOs.Control.Desktop` Release build: PASS;
+- exact pre/post changed-path set: two frozen paths, staged `0`, untracked `0`, source hashes unchanged;
+- target I/O: NONE;
+- Flash mutation: NONE.
+
+Gate 3 documentation reconciliation is accepted by the same closure update. Gate 4 local acceptance commit and Gate 5 ordinary non-force publication remain required before `FDC-02` is described as CLOSED/PUBLISHED or before `FDC-03` source mutation is authorized.

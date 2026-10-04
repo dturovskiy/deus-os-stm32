@@ -605,9 +605,9 @@ This addendum does not rewrite the accepted `HOST_CONTROL_APPLICATION_FOUNDATION
 
 This post-publication obligation is closed at `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`. The accepted channel-owned abandonment policy drains delayed multi-frame RPC traffic through terminal `RPC_END`/`PROTOCOL_ERROR`, preserves fatal handling for genuinely unknown correlation mismatches, prevents unresolved request-ID reuse at wrap, shares the same abandonment owner with firmware update, retains one exact DATA timeout retry and retains no blind retry for INFO/BEGIN/AUTHORIZE/END. Authoritative Gate-2 evidence SHA-256: `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`, Core `51/51`, Release build PASS, target I/O zero.
 
-### `FDC-02` — session state-event delivery — ACTIVE
+### `FDC-02` — session state-event delivery — GATES 0–3 ACCEPTED / PUBLICATION PENDING
 
-`DeusDeviceSession` remains the single session lifecycle owner, but public state notifications must not execute arbitrary subscriber code under the session operation gate in a way that permits reentrant deadlock. The active dedicated closure pair is `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`; it freezes one serialized per-session asynchronous notification owner, deterministic transition ordering, callback exception isolation and reentrant operation tests without changing the public `StateChanged` signature.
+`DeusDeviceSession` remains the single session lifecycle owner. Gates 1–3 are accepted: `SetState()` schedules through one serialized per-session asynchronous notification task chain instead of invoking public subscribers inline under `_operationGate`; callback exceptions are isolated; Connect/Execute/Disconnect recheck disposed state after gate acquisition; Dispose is bounded and does not wait for arbitrary callbacks. Authoritative Gate-2 evidence SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB` proves Core `58/58`, Core/Desktop Release builds PASS and zero target I/O. Gate 4/5 publication remains pending.
 
 ### `FDC-03` — service-facing operation policy
 

@@ -415,6 +415,379 @@ public sealed class ClientTests
 
 
     [Fact]
+    public async Task DeviceSessionStateNotificationsPreserveConnectOrder()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        var discovery = new ScriptedDiscovery(transport);
+        await using var session = new DeusDeviceSession(discovery);
+
+        var states = new List<ConnectionState>();
+        var ready = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        session.StateChanged += state =>
+        {
+            lock (states)
+            {
+                states.Add(state);
+            }
+
+            if (state == ConnectionState.Ready)
+            {
+                ready.TrySetResult(true);
+            }
+        };
+
+        await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+
+        await ready.Task.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        ConnectionState[] observedStates;
+        lock (states)
+        {
+            observedStates = states.ToArray();
+        }
+
+        Assert.Equal(
+            new[]
+            {
+                ConnectionState.Discovered,
+                ConnectionState.Opening,
+                ConnectionState.Negotiating,
+                ConnectionState.Ready,
+            },
+            observedStates);
+    }
+
+    [Fact]
+    public async Task StateChangedSubscriberCanSynchronouslyExecuteWithoutDeadlock()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            3,
+            "PONG\r\n"));
+
+        var discovery = new ScriptedDiscovery(transport);
+        await using var session = new DeusDeviceSession(discovery);
+        using var reentrantTimeout = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        reentrantTimeout.CancelAfter(TimeSpan.FromSeconds(1));
+
+        var nestedResult = new TaskCompletionSource<RpcResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        session.StateChanged += state =>
+        {
+            if (state != ConnectionState.Ready)
+            {
+                return;
+            }
+
+            try
+            {
+                var result = session.ExecuteAsync(
+                    (client, token) => client.PingAsync(token),
+                    reentrantTimeout.Token).GetAwaiter().GetResult();
+                nestedResult.TrySetResult(result);
+            }
+            catch (Exception exception)
+            {
+                nestedResult.TrySetException(exception);
+            }
+        };
+
+        await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+
+        var ping = await nestedResult.Task.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal((ushort)3, ping.RequestId);
+        Assert.Equal("PONG\r\n", ping.OutputText);
+        Assert.Equal(ConnectionState.Ready, session.State);
+    }
+
+    [Fact]
+    public async Task StateChangedSubscriberCanSynchronouslyDisconnectWithoutDeadlock()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        var discovery = new ScriptedDiscovery(transport);
+        await using var session = new DeusDeviceSession(discovery);
+        using var reentrantTimeout = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        reentrantTimeout.CancelAfter(TimeSpan.FromSeconds(1));
+
+        var disconnected = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        session.StateChanged += state =>
+        {
+            if (state != ConnectionState.Ready)
+            {
+                return;
+            }
+
+            try
+            {
+                session.DisconnectAsync(reentrantTimeout.Token)
+                    .GetAwaiter()
+                    .GetResult();
+                disconnected.TrySetResult(true);
+            }
+            catch (Exception exception)
+            {
+                disconnected.TrySetException(exception);
+            }
+        };
+
+        await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+
+        await disconnected.Task.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ConnectionState.Disconnected, session.State);
+        Assert.Null(session.Candidate);
+        Assert.Null(session.LastNegotiation);
+    }
+
+    [Fact]
+    public async Task ThrowingStateChangedSubscriberIsIsolatedAcrossRecoveryAndDisconnect()
+    {
+        const string replacementSourceTree =
+            "abcdef0123456789abcdef0123456789abcdef01";
+
+        var first = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(first, DefaultSourceTree);
+
+        var second = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(second, replacementSourceTree);
+
+        var discovery = new ScriptedDiscovery(first, second);
+        await using var session = new DeusDeviceSession(
+            discovery,
+            recoveryTimeout: TimeSpan.FromSeconds(1),
+            recoveryPollInterval: TimeSpan.FromMilliseconds(1));
+
+        var secondReady = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var disconnected = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var readyCount = 0;
+
+        session.StateChanged += _ =>
+            throw new InvalidOperationException("observer failure");
+        session.StateChanged += state =>
+        {
+            if (state == ConnectionState.Ready &&
+                Interlocked.Increment(ref readyCount) == 2)
+            {
+                secondReady.TrySetResult(true);
+            }
+            else if (state == ConnectionState.Disconnected)
+            {
+                disconnected.TrySetResult(true);
+            }
+        };
+
+        var negotiation = await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(DefaultSourceTree, negotiation.SystemInfo.SourceTree);
+
+        var disconnect = await Assert.ThrowsAsync<DeusHostException>(
+            () => session.ExecuteAsync(
+                (client, token) => client.PingAsync(token),
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.TransportDisconnected, disconnect.Kind);
+        Assert.Equal(ConnectionState.Ready, session.State);
+        Assert.Equal(
+            replacementSourceTree,
+            session.LastNegotiation?.SystemInfo.SourceTree);
+
+        await secondReady.Task.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        await session.DisconnectAsync(TestContext.Current.CancellationToken);
+        await disconnected.Task.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ConnectionState.Disconnected, session.State);
+        Assert.Equal(2, discovery.OpenCount);
+    }
+
+    [Fact]
+    public async Task StateChangedUnsubscribePreventsLaterNotifications()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        var discovery = new ScriptedDiscovery(transport);
+        await using var session = new DeusDeviceSession(discovery);
+
+        var observed = new List<ConnectionState>();
+        var ready = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var disconnected = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Action<ConnectionState> removable = state =>
+        {
+            lock (observed)
+            {
+                observed.Add(state);
+            }
+        };
+
+        session.StateChanged += removable;
+        session.StateChanged += state =>
+        {
+            if (state == ConnectionState.Ready)
+            {
+                ready.TrySetResult(true);
+            }
+            else if (state == ConnectionState.Disconnected)
+            {
+                disconnected.TrySetResult(true);
+            }
+        };
+
+        await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+        await ready.Task.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        session.StateChanged -= removable;
+        await session.DisconnectAsync(TestContext.Current.CancellationToken);
+        await disconnected.Task.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        ConnectionState[] removableStates;
+        lock (observed)
+        {
+            removableStates = observed.ToArray();
+        }
+
+        Assert.Equal(
+            new[]
+            {
+                ConnectionState.Discovered,
+                ConnectionState.Opening,
+                ConnectionState.Negotiating,
+                ConnectionState.Ready,
+            },
+            removableStates);
+    }
+
+    [Fact]
+    public async Task DisposeDoesNotWaitForBlockedStateChangedSubscriber()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        var discovery = new ScriptedDiscovery(transport);
+        var session = new DeusDeviceSession(discovery);
+        var callbackStarted = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCallback = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        session.StateChanged += state =>
+        {
+            if (state == ConnectionState.Ready)
+            {
+                callbackStarted.TrySetResult(true);
+                releaseCallback.Task.GetAwaiter().GetResult();
+            }
+        };
+
+        try
+        {
+            await session.ConnectAsync(
+                discovery.Candidate,
+                TestContext.Current.CancellationToken);
+            await callbackStarted.Task.WaitAsync(
+                TimeSpan.FromSeconds(2),
+                TestContext.Current.CancellationToken);
+
+            await session.DisposeAsync().AsTask().WaitAsync(
+                TimeSpan.FromSeconds(1),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(ConnectionState.Disconnected, session.State);
+
+            await session.DisposeAsync();
+        }
+        finally
+        {
+            releaseCallback.TrySetResult(true);
+            await session.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task DisconnectDisposeRaceIsBoundedAndIdempotent()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        var discovery = new ScriptedDiscovery(transport);
+        var session = new DeusDeviceSession(discovery);
+
+        await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+
+        var disconnectTask = Task.Run(async () =>
+        {
+            try
+            {
+                await session.DisconnectAsync(TestContext.Current.CancellationToken);
+                return (Exception?)null;
+            }
+            catch (Exception exception)
+            {
+                return exception;
+            }
+        }, TestContext.Current.CancellationToken);
+        var disposeTask = session.DisposeAsync().AsTask();
+
+        var disconnectException = await disconnectTask.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+        await disposeTask.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(
+            disconnectException is null or ObjectDisposedException,
+            disconnectException?.ToString());
+        Assert.Equal(ConnectionState.Disconnected, session.State);
+
+        await session.DisposeAsync();
+    }
+
+    [Fact]
     public async Task DeviceSessionAutomaticallyRecoversSameLocatorWithFreshNegotiation()
     {
         const string replacementSourceTree =
@@ -438,7 +811,22 @@ public sealed class ClientTests
             recoveryPollInterval: TimeSpan.FromMilliseconds(1));
 
         var states = new List<ConnectionState>();
-        session.StateChanged += states.Add;
+        var secondReady = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var readyCount = 0;
+        session.StateChanged += state =>
+        {
+            lock (states)
+            {
+                states.Add(state);
+            }
+
+            if (state == ConnectionState.Ready &&
+                Interlocked.Increment(ref readyCount) == 2)
+            {
+                secondReady.TrySetResult(true);
+            }
+        };
 
         var initial = await session.ConnectAsync(
             discovery.Candidate,
@@ -457,9 +845,31 @@ public sealed class ClientTests
             replacementSourceTree,
             session.LastNegotiation?.SystemInfo.SourceTree);
         Assert.Equal(2, discovery.OpenCount);
-        Assert.Contains(ConnectionState.Recovering, states);
-        Assert.Contains(ConnectionState.Opening, states);
-        Assert.Contains(ConnectionState.Negotiating, states);
+
+        await secondReady.Task.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+
+        ConnectionState[] observedStates;
+        lock (states)
+        {
+            observedStates = states.ToArray();
+        }
+
+        Assert.Equal(
+            new[]
+            {
+                ConnectionState.Discovered,
+                ConnectionState.Opening,
+                ConnectionState.Negotiating,
+                ConnectionState.Ready,
+                ConnectionState.Recovering,
+                ConnectionState.Discovered,
+                ConnectionState.Opening,
+                ConnectionState.Negotiating,
+                ConnectionState.Ready,
+            },
+            observedStates);
 
         var ping = await session.ExecuteAsync(
             (client, token) => client.PingAsync(token),

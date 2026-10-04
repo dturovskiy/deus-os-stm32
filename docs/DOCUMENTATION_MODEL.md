@@ -322,7 +322,7 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after the 2026-10-04 FDC-01 publication closure and FDC-02 Gate-0 activation:
+Live documentation inventory after FDC-01 publication closure and FDC-02 Gate-2/Gate-3 acceptance, before FDC-02 publication:
 
 - Markdown files in `docs/`: `74`;
 - `*_ACCEPTANCE_PLAN.md` records: `22`;
@@ -335,8 +335,8 @@ Live documentation inventory after the 2026-10-04 FDC-01 publication closure and
 - the pre-Bootloader recovery plan and acceptance files form a matched published pair at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`;
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` form a matched published pair; `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` is their frozen published wire/image ABI contract;
 - `HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-01` pair at `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`;
-- `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the active matched `FDC-02` closure pair; both FDC slices are post-publication hardening, not product feature boundaries;
+- `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the matched `FDC-02` closure pair; Gates 0–3 are accepted and Gates 4–5 publication remain pending; both FDC slices are post-publication hardening, not product feature boundaries;
 - latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
-- no new product feature boundary is currently active; `FDC-02 / HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING` is the active engineering closure boundary inside the mandatory pre-feature program, while unrelated deferred work remains non-authorizing until separately promoted under §5.
+- no new product feature boundary is currently active; `FDC-02 / HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING` is at local-acceptance/publication closure inside the mandatory pre-feature program; `FDC-03` is not yet activated until FDC-02 publication is verified.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

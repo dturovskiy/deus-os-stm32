@@ -433,9 +433,9 @@ This addendum does not alter the historical Gate-7 acceptance. It defines proof 
 
 Accepted at published commit `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`. Authoritative Gate-2 evidence SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6` proves Core `51/51`, Release build PASS and zero target I/O. Deterministic tests cover timeout/cancel with delayed `RPC_DATA...RPC_END`, partial streams, terminal stale `PROTOCOL_ERROR`, fresh-RPC recovery, unknown correlation remaining fatal, multiple abandoned IDs, clean/poisoned request-ID wrap, reset safety and firmware-update DATA/no-blind-retry regressions.
 
-### `FDC-02` — ACTIVE
+### `FDC-02` — GATES 0–3 ACCEPTED / PUBLICATION PENDING
 
-Canonical closure: `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. Acceptance requires a synthetic subscriber that initiates another session operation from `StateChanged` without deadlock, deterministic notification order, callback exception isolation, effective unsubscribe semantics, and clean Connect/Recover/Disconnect/Dispose races under the single-session operation model. Core and Desktop Release-build regression must remain PASS.
+Canonical closure: `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. Gates 1–3 are accepted by evidence SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`: Core `58/58`, exact connect/recovery order, synchronous reentrant Execute/Disconnect, callback-exception isolation through recovery, unsubscribe, blocked-callback Dispose and Disconnect/Dispose race tests all PASS; Core and Desktop Release builds PASS; target I/O zero. Gate 4/5 publication remains pending.
 
 ### `FDC-03`
 

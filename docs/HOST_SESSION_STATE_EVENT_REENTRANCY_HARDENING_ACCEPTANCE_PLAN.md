@@ -1,6 +1,6 @@
 # Deus OS — Host Session State-Event Reentrancy Hardening Acceptance Plan
 
-Status: **ACTIVE — GATE 0 / `FDC-02`**
+Status: **GATES 0–3 ACCEPTED / GATE 4 LOCAL ACCEPTANCE COMMIT PENDING / `FDC-02`**
 
 Canonical design: `docs/HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md`
 
@@ -119,3 +119,41 @@ At minimum distinguish:
 - `FDC02_DOC_RECONCILIATION_FAILURE`
 
 A failure does not authorize Desktop/native-transport/target changes or folding `FDC-03`, `FDC-04` or `FDC-09` into this slice.
+
+
+## Accepted Gate-2 / Gate-3 record — 2026-10-04
+
+Authoritative evidence is `stm32_os_fdc02_host_validation_dotnet_v2_20261004_162345.evidence.zip`, SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`.
+
+The evidence has clean ZIP CRC and `72/72` exact manifest ownership. It exact-binds pre/post repository state to `HEAD == origin/main == 0f32c7c22a2526e5ce53dd877e5cce25209324e9`, exactly two modified tracked paths, staged `0`, untracked `0`, and unchanged source hashes after validation.
+
+Accepted source/test hashes:
+
+- `DeusDeviceSession.cs` — `6E39B68DE0D82906AEFAFDE376E49AD824BA9959332E2C79EACCA34CCB13F03F`;
+- `ClientTests.cs` — `7FD188B31FA9A1C41754CE74F15C9750B3F3F8DDCEA221F1C4A521B2BD6FCF5C`.
+
+Gate 1 static ownership proof PASS:
+
+- `SESSION_LIFECYCLE_OWNER=DeusDeviceSession`;
+- public `StateChanged` signature unchanged;
+- inline `StateChanged.Invoke` absent;
+- notification owner is one serialized per-session task chain;
+- callback exceptions isolated;
+- `_operationGate` is not disposed;
+- post-gate disposed rechecks exist in Connect/Execute/Disconnect;
+- FDC-01 correlation, native transport and target source unchanged.
+
+Gate 2 deterministic validation PASS:
+
+- Core `58/58` passed;
+- exact connect/recovery notification ordering covered;
+- synchronous reentrant Execute and Disconnect covered with bounded deadlines;
+- throwing subscriber isolation covers Connect -> automatic recovery -> Disconnect;
+- unsubscribe semantics covered;
+- Dispose while callback is blocked covered;
+- Disconnect/Dispose race bounded and repeated Dispose idempotent;
+- `DeusOs.Control.Core` Release build PASS;
+- `DeusOs.Control.Desktop` restore + Release build PASS;
+- target I/O and Flash mutation NONE.
+
+Gate 3 canonical reconciliation is complete in the local acceptance candidate. Gate 4 commit and Gate 5 publication are still pending; therefore this record must not yet label FDC-02 CLOSED/PUBLISHED.

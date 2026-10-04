@@ -6,7 +6,9 @@ public sealed class DeusDeviceSession : IAsyncDisposable
     private readonly TimeSpan _recoveryTimeout;
     private readonly TimeSpan _recoveryPollInterval;
     private readonly SemaphoreSlim _operationGate = new(1, 1);
+    private readonly object _stateNotificationLock = new();
 
+    private Task _stateNotificationTail = Task.CompletedTask;
     private DeusDeviceClient? _client;
     private DeviceCandidate? _candidate;
     private bool _disposed;
@@ -50,6 +52,7 @@ public sealed class DeusDeviceSession : IAsyncDisposable
         await _operationGate.WaitAsync(cancellationToken);
         try
         {
+            ThrowIfDisposed();
             await DisposeCurrentClientAsync();
             _candidate = candidate;
             LastNegotiation = null;
@@ -82,6 +85,7 @@ public sealed class DeusDeviceSession : IAsyncDisposable
         await _operationGate.WaitAsync(cancellationToken);
         try
         {
+            ThrowIfDisposed();
             var client = _client;
             if (State != ConnectionState.Ready || client is null)
             {
@@ -131,6 +135,7 @@ public sealed class DeusDeviceSession : IAsyncDisposable
         await _operationGate.WaitAsync(cancellationToken);
         try
         {
+            ThrowIfDisposed();
             await DisposeCurrentClientAsync();
             _candidate = null;
             LastNegotiation = null;
@@ -263,7 +268,51 @@ public sealed class DeusDeviceSession : IAsyncDisposable
         }
 
         State = state;
-        StateChanged?.Invoke(state);
+        ScheduleStateNotification(state);
+    }
+
+    private void ScheduleStateNotification(ConnectionState state)
+    {
+        lock (_stateNotificationLock)
+        {
+            var predecessor = _stateNotificationTail;
+            _stateNotificationTail = Task.Run(
+                () => DispatchStateNotificationAsync(predecessor, state));
+        }
+    }
+
+    private async Task DispatchStateNotificationAsync(
+        Task predecessor,
+        ConnectionState state)
+    {
+        try
+        {
+            await predecessor.ConfigureAwait(false);
+        }
+        catch
+        {
+            // Notification failures are isolated below. Keep the chain alive
+            // even if a future implementation accidentally faults a predecessor.
+        }
+
+        var subscribers = StateChanged;
+        if (subscribers is null)
+        {
+            return;
+        }
+
+        foreach (Action<ConnectionState> subscriber in subscribers.GetInvocationList())
+        {
+            try
+            {
+                subscriber(state);
+            }
+            catch
+            {
+                // Public observers cannot fault lifecycle operations, poison
+                // later notifications, or force the session into Faulted state.
+            }
+        }
     }
 
     private void ThrowIfDisposed()
