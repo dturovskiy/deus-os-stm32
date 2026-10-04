@@ -4,6 +4,9 @@
     <RootNamespace>DeusOs.Control.Transport.Windows</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="DeusOs.Control.Transport.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../DeusOs.Control.Core/DeusOs.Control.Core.csproj" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,101 @@ using DeusOs.Control.Core;
 
 namespace DeusOs.Control.Transport.Linux;
 
+internal sealed class LinuxNativeIoLifetime
+{
+    private readonly object _sync = new();
+    private readonly SemaphoreSlim _operationGate = new(1, 1);
+    private bool _closing;
+    private Task? _disposeTask;
+
+    internal async Task<T> RunAsync<T>(
+        Func<T> nativeOperation,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(nativeOperation);
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfClosing();
+
+        await _operationGate.WaitAsync(cancellationToken);
+        try
+        {
+            ThrowIfClosing();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            T result = default!;
+            Exception? nativeException = null;
+            try
+            {
+                result = await Task.Run(
+                    () =>
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        return nativeOperation();
+                    });
+            }
+            catch (Exception exception)
+            {
+                nativeException = exception;
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (nativeException is not null)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo
+                    .Capture(nativeException)
+                    .Throw();
+            }
+
+            return result;
+        }
+        finally
+        {
+            _operationGate.Release();
+        }
+    }
+
+    internal ValueTask DisposeAsync(Action closeNativeResources)
+    {
+        ArgumentNullException.ThrowIfNull(closeNativeResources);
+
+        Task disposeTask;
+        lock (_sync)
+        {
+            if (_disposeTask is null)
+            {
+                _closing = true;
+                _disposeTask = DisposeCoreAsync(closeNativeResources);
+            }
+
+            disposeTask = _disposeTask;
+        }
+
+        return new ValueTask(disposeTask);
+    }
+
+    private async Task DisposeCoreAsync(Action closeNativeResources)
+    {
+        await _operationGate.WaitAsync();
+        try
+        {
+            closeNativeResources();
+        }
+        finally
+        {
+            _operationGate.Release();
+        }
+    }
+
+    private void ThrowIfClosing()
+    {
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_closing, this);
+        }
+    }
+}
+
 internal sealed class LinuxLibUsbTransport : IDeviceTransport
 {
     private const uint IoTimeoutMilliseconds = 2000;
@@ -10,8 +105,8 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
     private readonly IntPtr _context;
     private readonly IntPtr _handle;
     private readonly LinuxUsbProfile _profile;
+    private readonly LinuxNativeIoLifetime _lifetime = new();
     private bool _claimed;
-    private bool _disposed;
 
     private LinuxLibUsbTransport(
         string locator,
@@ -155,11 +250,8 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
         ReadOnlyMemory<byte> data,
         CancellationToken cancellationToken)
     {
-        ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-
         var bytes = data.ToArray();
-        var transferred = await Task.Run(
+        var transferred = await _lifetime.RunAsync(
             () =>
             {
                 var result = LinuxLibUsbNative.libusb_bulk_transfer(
@@ -190,12 +282,9 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
         Memory<byte> buffer,
         CancellationToken cancellationToken)
     {
-        ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-
         var bytes = new byte[buffer.Length];
 
-        var transferred = await Task.Run(
+        var transferred = await _lifetime.RunAsync(
             () =>
             {
                 var result = LinuxLibUsbNative.libusb_bulk_transfer(
@@ -218,31 +307,19 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
         return transferred;
     }
 
-    public ValueTask DisposeAsync()
-    {
-        if (_disposed)
-        {
-            return ValueTask.CompletedTask;
-        }
+    public ValueTask DisposeAsync() =>
+        _lifetime.DisposeAsync(
+            () =>
+            {
+                if (_claimed)
+                {
+                    _ = LinuxLibUsbNative.libusb_release_interface(
+                        _handle,
+                        _profile.InterfaceNumber);
+                    _claimed = false;
+                }
 
-        _disposed = true;
-
-        if (_claimed)
-        {
-            _ = LinuxLibUsbNative.libusb_release_interface(
-                _handle,
-                _profile.InterfaceNumber);
-            _claimed = false;
-        }
-
-        LinuxLibUsbNative.libusb_close(_handle);
-        LinuxLibUsbNative.libusb_exit(_context);
-
-        return ValueTask.CompletedTask;
-    }
-
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+                LinuxLibUsbNative.libusb_close(_handle);
+                LinuxLibUsbNative.libusb_exit(_context);
+            });
 }

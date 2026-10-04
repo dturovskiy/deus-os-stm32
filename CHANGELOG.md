@@ -1,5 +1,13 @@
 ## 2026-10-04
 
+### FDC-09 Host native transport lifetime hardening — Gates 0–5 accepted / publication pending
+
+The exact four-path `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING` candidate has completed deterministic and real-platform acceptance. Gate-2 evidence `stm32_os_fdc09_gate2_host_validation_dotnet_v2_20261004_215723.evidence.zip`, SHA-256 `1B4090EEED139BA7B5E7BEB11C530B0CF4B1EEB44706ADCA079430FAD686FFCE`, proves Transport `24/24`, Core `78/78`, Windows/Linux/Core Release builds, exact source/poststate locks and zero target/Flash mutation.
+
+Linux Gate-4 evidence `stm32_os_fdc09_gate4_linux_real_platform_dotnet_v1_20261004_222724.evidence.zip`, SHA-256 `F084F76AEA3ED28E4BE4E697FCDF323360ED190810EEE4E3F944AD56930E2900`, proves IF2-only libusb ownership, bounded cancel-drain `2021 ms`, dispose `3 ms`, same-locator reopen `15 ms`, fresh negotiation/ping and unchanged CDC `cdc_acm` ownership `2 -> 2`. Windows Gate-3 evidence `stm32_os_fdc09_gate3_windows_real_platform_dotnet_v5_20261004_225617.evidence.zip`, SHA-256 `B392F3AEA191E0649CBBF2FFEBCE8AA2CA580BE79D25AF4B36FE58FD699728C5`, proves WinUSB cancel-drain `2017 ms`, dispose `3 ms`, physical removal classification `TransportDisconnected` in `7 ms`, same-locator replug/reopen, fresh negotiation/ping and restoration of canonical Mac-mini USB ownership in `634 ms`; Flash mutation remains NONE.
+
+A post-run audit also recorded `HARNESS-TERMINAL-STRUCTURE-01`: recent .NET validators omitted the canonical green/red/yellow final RESULT rendering and used reserved `PASS`/`FAIL` words in intermediate summary text. The physical/product evidence is complete and is not rerun for presentation-only styling. Future harness package generation must lint and reject missing final color structure or reserved-word discipline before operator handoff.
+
 ### FDC-09 Host native transport lifetime hardening — Gate 0 activated
 
 `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING` is now the active final Slice-A host closure boundary on published FDC-04 baseline `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`. The audit confirmed that both platform adapters execute synchronous native USB calls inside `Task.Run(..., cancellationToken)`: cancellation after native entry does not stop `WinUsb_ReadPipe`/`WinUsb_WritePipe` or `libusb_bulk_transfer`, while current transport disposal may close/release native handles without coordinating with an already-running worker.

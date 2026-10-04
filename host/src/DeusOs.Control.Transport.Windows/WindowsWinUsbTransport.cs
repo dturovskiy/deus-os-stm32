@@ -5,6 +5,101 @@ using Microsoft.Win32.SafeHandles;
 
 namespace DeusOs.Control.Transport.Windows;
 
+internal sealed class WindowsNativeIoLifetime
+{
+    private readonly object _sync = new();
+    private readonly SemaphoreSlim _operationGate = new(1, 1);
+    private bool _closing;
+    private Task? _disposeTask;
+
+    internal async Task<T> RunAsync<T>(
+        Func<T> nativeOperation,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(nativeOperation);
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfClosing();
+
+        await _operationGate.WaitAsync(cancellationToken);
+        try
+        {
+            ThrowIfClosing();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            T result = default!;
+            Exception? nativeException = null;
+            try
+            {
+                result = await Task.Run(
+                    () =>
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        return nativeOperation();
+                    });
+            }
+            catch (Exception exception)
+            {
+                nativeException = exception;
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (nativeException is not null)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo
+                    .Capture(nativeException)
+                    .Throw();
+            }
+
+            return result;
+        }
+        finally
+        {
+            _operationGate.Release();
+        }
+    }
+
+    internal ValueTask DisposeAsync(Action closeNativeResources)
+    {
+        ArgumentNullException.ThrowIfNull(closeNativeResources);
+
+        Task disposeTask;
+        lock (_sync)
+        {
+            if (_disposeTask is null)
+            {
+                _closing = true;
+                _disposeTask = DisposeCoreAsync(closeNativeResources);
+            }
+
+            disposeTask = _disposeTask;
+        }
+
+        return new ValueTask(disposeTask);
+    }
+
+    private async Task DisposeCoreAsync(Action closeNativeResources)
+    {
+        await _operationGate.WaitAsync();
+        try
+        {
+            closeNativeResources();
+        }
+        finally
+        {
+            _operationGate.Release();
+        }
+    }
+
+    private void ThrowIfClosing()
+    {
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_closing, this);
+        }
+    }
+}
+
 internal sealed class WindowsWinUsbTransport : IDeviceTransport
 {
     private const byte OutPipe = 0x04;
@@ -18,7 +113,7 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
     private readonly SafeWinUsbHandle _winUsbHandle;
     private readonly byte _outPipe;
     private readonly byte _inPipe;
-    private bool _disposed;
+    private readonly WindowsNativeIoLifetime _lifetime = new();
 
     private WindowsWinUsbTransport(
         string locator,
@@ -97,43 +192,32 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
         ReadOnlyMemory<byte> data,
         CancellationToken cancellationToken)
     {
-        ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-
         var bytes = data.ToArray();
-
-        try
-        {
-            var transferred = await Task.Run(
-                () =>
-                {
-                    if (!NativeMethods.WinUsb_WritePipe(
-                            _winUsbHandle,
-                            _outPipe,
-                            bytes,
-                            checked((uint)bytes.Length),
-                            out var count,
-                            IntPtr.Zero))
-                    {
-                        throw CreateIoException(
-                            HostErrorKind.TransportDisconnected,
-                            "WinUsb_WritePipe");
-                    }
-
-                    return count;
-                },
-                cancellationToken);
-
-            if (transferred != bytes.Length)
+        var transferred = await _lifetime.RunAsync(
+            () =>
             {
-                throw new DeusHostException(
-                    HostErrorKind.TransportDisconnected,
-                    $"short WinUSB write {transferred}/{bytes.Length}");
-            }
-        }
-        catch (OperationCanceledException)
+                if (!NativeMethods.WinUsb_WritePipe(
+                        _winUsbHandle,
+                        _outPipe,
+                        bytes,
+                        checked((uint)bytes.Length),
+                        out var count,
+                        IntPtr.Zero))
+                {
+                    throw CreateIoException(
+                        HostErrorKind.TransportDisconnected,
+                        "WinUsb_WritePipe");
+                }
+
+                return count;
+            },
+            cancellationToken);
+
+        if (transferred != bytes.Length)
         {
-            throw;
+            throw new DeusHostException(
+                HostErrorKind.TransportDisconnected,
+                $"short WinUSB write {transferred}/{bytes.Length}");
         }
     }
 
@@ -141,53 +225,38 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
         Memory<byte> buffer,
         CancellationToken cancellationToken)
     {
-        ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-
         var bytes = new byte[buffer.Length];
-
-        try
-        {
-            var transferred = await Task.Run(
-                () =>
+        var transferred = await _lifetime.RunAsync(
+            () =>
+            {
+                if (!NativeMethods.WinUsb_ReadPipe(
+                        _winUsbHandle,
+                        _inPipe,
+                        bytes,
+                        checked((uint)bytes.Length),
+                        out var count,
+                        IntPtr.Zero))
                 {
-                    if (!NativeMethods.WinUsb_ReadPipe(
-                            _winUsbHandle,
-                            _inPipe,
-                            bytes,
-                            checked((uint)bytes.Length),
-                            out var count,
-                            IntPtr.Zero))
-                    {
-                        throw CreateIoException(
-                            HostErrorKind.TransportDisconnected,
-                            "WinUsb_ReadPipe");
-                    }
+                    throw CreateIoException(
+                        HostErrorKind.TransportDisconnected,
+                        "WinUsb_ReadPipe");
+                }
 
-                    return count;
-                },
-                cancellationToken);
+                return count;
+            },
+            cancellationToken);
 
-            bytes.AsSpan(0, checked((int)transferred)).CopyTo(buffer.Span);
-            return checked((int)transferred);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
+        bytes.AsSpan(0, checked((int)transferred)).CopyTo(buffer.Span);
+        return checked((int)transferred);
     }
 
-    public ValueTask DisposeAsync()
-    {
-        if (!_disposed)
-        {
-            _disposed = true;
-            _winUsbHandle.Dispose();
-            _fileHandle.Dispose();
-        }
-
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask DisposeAsync() =>
+        _lifetime.DisposeAsync(
+            () =>
+            {
+                _winUsbHandle.Dispose();
+                _fileHandle.Dispose();
+            });
 
     private static void ValidateInterface(
         SafeWinUsbHandle handle,
@@ -288,11 +357,6 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
         return new DeusHostException(
             MapIoErrorKind(error, kind),
             $"{operation} failed ({error}): {new Win32Exception(error).Message}");
-    }
-
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     private enum UsbdPipeType : int

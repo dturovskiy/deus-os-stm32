@@ -1,10 +1,17 @@
 # Deus OS — Host Native Transport Lifetime Hardening Acceptance Plan
 
-Status: **ACTIVE — GATE 0 / `FDC-09`**
+Status: **GATES 0–5 ACCEPTED / GATE 6–7 PUBLICATION PENDING / `FDC-09`**
 
 Canonical design: `docs/HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md`
 
 Published baseline commit: `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`
+
+Accepted Gates 0–5 evidence summary:
+
+- Gate 2 deterministic host validation: `stm32_os_fdc09_gate2_host_validation_dotnet_v2_20261004_215723.evidence.zip`, SHA-256 `1B4090EEED139BA7B5E7BEB11C530B0CF4B1EEB44706ADCA079430FAD686FFCE`; Transport `24/24`, Core `78/78`, Windows/Linux/Core Release builds PASS, exact four-path pre/post state, target I/O NONE / Flash mutation NONE.
+- Gate 4 Linux real-platform validation: `stm32_os_fdc09_gate4_linux_real_platform_dotnet_v1_20261004_222724.evidence.zip`, SHA-256 `F084F76AEA3ED28E4BE4E697FCDF323360ED190810EEE4E3F944AD56930E2900`; IF2-only libusb open, cancel-drain `2021 ms`, dispose `3 ms`, same-locator reopen `15 ms`, fresh negotiation/ping, CDC `cdc_acm` ownership `2 -> 2`, topology unchanged, Flash mutation NONE.
+- Gate 3 Windows real-platform validation: `stm32_os_fdc09_gate3_windows_real_platform_dotnet_v5_20261004_225617.evidence.zip`, SHA-256 `B392F3AEA191E0649CBBF2FFEBCE8AA2CA580BE79D25AF4B36FE58FD699728C5`; manifest `93/93` exact, WinUSB cancel-drain `2017 ms`, dispose `3 ms`, physical removal `TransportDisconnected` in `7 ms`, same-locator replug/reopen, fresh negotiation/ping, canonical Mac-mini bench restoration `634 ms`, exact repository poststate and Flash mutation NONE.
+- Post-run presentation audit found `HARNESS-TERMINAL-STRUCTURE-01`: the V5 .NET validator emitted an uncolored final RESULT block and used reserved `PASS`/`FAIL` words in intermediate `[OK]` text, contrary to `HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`. This does not change the finalized evidence bytes or product/runtime observations above; no repeated physical run is required solely for terminal styling. Future harness packages must fail package-generation lint if final green/red/yellow result structure or reserved-word discipline is absent.
 
 ## Gate 0 — contract/source-boundary freeze
 

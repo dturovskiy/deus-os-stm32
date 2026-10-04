@@ -44,12 +44,12 @@ This section is the executable ledger for the post-publication architecture/code
   - [x] Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`: manifest `78/78`, Core `78/78`, Core/CLI/Desktop Release PASS, exact candidate pre/post state, target I/O/Flash mutation zero;
   - [x] Gate 4 normal acceptance commit + Gate 5 ordinary non-force publication/fresh-remote verification.
 
-- [ ] **FDC-09 — native transport cancellation/disposal for long-lived/multi-device use — ACTIVE / Gate 0 (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`).**
-  - [ ] Windows WinUSB and Linux libusb I/O have explicit bounded cancellation/disposal semantics;
-  - [ ] user cancellation and session disposal cannot leave an unbounded native operation that outlives ownership;
-  - [ ] two simultaneous independent sessions remain isolated;
-  - [ ] cancellation followed by reopen/recovery produces a clean decoder/channel/session;
-  - [ ] platform transport tests and real Windows/Linux smoke acceptance PASS.
+- [ ] **FDC-09 — native transport cancellation/disposal for long-lived/multi-device use — GATES 0–5 ACCEPTED / PUBLICATION PENDING (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`).**
+  - [x] Windows WinUSB and Linux libusb I/O have explicit bounded cancellation/disposal semantics;
+  - [x] user cancellation and session disposal cannot leave an unbounded native operation that outlives ownership;
+  - [x] two simultaneous independent sessions remain isolated;
+  - [x] cancellation followed by reopen/recovery produces a clean decoder/channel/session;
+  - [x] platform transport tests and real Windows/Linux smoke acceptance accepted: Transport `24/24`, Core `78/78`, Linux cancel-drain/dispose/reopen `2021/3/15 ms`, Windows cancel-drain `2017 ms`, physical disconnect `TransportDisconnected` in `7 ms`, canonical Mac-mini bench ownership restored.
 
 #### Slice B — Target architecture/lifecycle cleanup
 

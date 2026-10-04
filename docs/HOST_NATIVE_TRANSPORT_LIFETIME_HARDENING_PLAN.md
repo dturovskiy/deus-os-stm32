@@ -1,6 +1,6 @@
 # Deus OS — Host Native Transport Lifetime Hardening Plan
 
-Status: **ACTIVE — GATE 0 CONTRACT FREEZE / `FDC-09`**
+Status: **GATES 0–5 ACCEPTED / PUBLICATION PENDING / `FDC-09`**
 
 Published baseline commit: `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`
 
