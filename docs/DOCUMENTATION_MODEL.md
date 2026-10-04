@@ -340,6 +340,6 @@ Live documentation inventory after FDC-09 publication closure / Slice-A completi
 - `HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-04` pair at `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`;
 - `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-09` pair at `b88a9eee43095665326787cc0345822218c1ba73`; FDC-01..04/FDC-09 are post-publication hardening, not product feature boundaries;
 - latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
-- no new product feature boundary is currently active; Slice A (`FDC-01..04,09`) is complete; next engineering authority is FDC-05 Gate-0 planning only, with no FDC-05 source mutation until a dedicated plan/acceptance pair freezes its exact boundary.
+- no new product feature boundary is currently active; Slice A (`FDC-01..04,09`) is complete; Gate-0 plan/acceptance pairs are frozen for FDC-05, FDC-06, FDC-07, FDC-08 and FDC-10, authorizing only their exact closure boundaries while all service/Web/network feature work remains blocked.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

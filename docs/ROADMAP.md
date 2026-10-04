@@ -265,17 +265,17 @@ The 2026-10-03 architecture/code audit promoted ten residual obligations into a 
 
 ### Slice B — Target architecture/lifecycle cleanup
 
-- [ ] `FDC-05` — continue composition-root convergence only where ownership is natural: move remaining low-level/platform/service responsibilities out of `src/kernel.c` when doing so removes independent reasons to change the root; no line-count-only framework, god context or hidden extern coupling.
-- [ ] `FDC-06` — invert system-state ownership to `system/service state -> semantic service snapshot -> application/UI consumers`; OLED indicator state must not be the source of truth for health/USB/network state.
-- [ ] `FDC-07` — freeze and implement fail-closed application `stop()` failure semantics before any resource-owning application: unresolved release failure must not silently transfer ownership/start a replacement app.
+- [ ] `FDC-05` — **Gate 0 contract frozen** in `KERNEL_COMPOSITION_ROOT_CONVERGENCE_PLAN.md` + acceptance pair; continue composition-root convergence only where ownership is natural: move remaining low-level/platform/service responsibilities out of `src/kernel.c` when doing so removes independent reasons to change the root; no line-count-only framework, god context or hidden extern coupling.
+- [ ] `FDC-06` — **Gate 0 contract frozen** in `SEMANTIC_SYSTEM_SERVICE_STATE_PLAN.md` + acceptance pair; invert system-state ownership to `system/service state -> semantic service snapshot -> application/UI consumers`; OLED indicator state must not be the source of truth for health/USB/network state.
+- [ ] `FDC-07` — **Gate 0 contract frozen** in `APPLICATION_STOP_FAILURE_HARDENING_PLAN.md` + acceptance pair; implement fail-closed application `stop()` failure semantics before any resource-owning application: unresolved release failure must not silently transfer ownership/start a replacement app.
 
 ### Slice C — Target/update robustness closure
 
-- [ ] `FDC-08` — close bounded-wait/recovery debt: reset handler constrained to authenticated `APP_BASE + image_length`; bounded bootloader HSE/PLL/switch behavior; bounded normal-runtime HSE/PLL/switch behavior; bounded UART TX wait/failure semantics; elapsed-time rather than service-poll-count bootloader-entry reset fallback; explicit INFO/BEGIN/AUTHORIZE/END timeout/adjudication/restart semantics. Hardware acceptance must cover the resulting failure paths without weakening the published update trust/ownership model.
+- [ ] `FDC-08` — **Gate 0 contract frozen** in `TARGET_UPDATE_ROBUSTNESS_CLOSURE_PLAN.md` + acceptance pair; close bounded-wait/recovery debt: reset handler constrained to authenticated `APP_BASE + image_length`; bounded bootloader HSE/PLL/switch behavior; bounded normal-runtime HSE/PLL/switch behavior; bounded UART TX wait/failure semantics; elapsed-time rather than service-poll-count bootloader-entry reset fallback; explicit INFO/BEGIN/AUTHORIZE/END timeout/adjudication/restart semantics. Hardware acceptance must cover the resulting failure paths without weakening the published update trust/ownership model.
 
 ### Slice D — Documentation/source-of-truth closure
 
-- [ ] `FDC-10` — remove obsolete future-tense/deferred statements contradicted by published USB CDC/persistence/host/update work, reconcile all touched plans/backlogs/current-state/checklists, run a repo-wide stale-token/open-checkbox audit and `git diff --check`, then record exact final documentation state.
+- [ ] `FDC-10` — **Gate 0 contract frozen** in `DOCUMENTATION_CONSISTENCY_CLOSURE_PLAN.md` + acceptance pair; remove obsolete future-tense/deferred statements contradicted by published USB CDC/persistence/host/update work, reconcile all touched plans/backlogs/current-state/checklists, run a repo-wide stale-token/open-checkbox audit and `git diff --check`, then record exact final documentation state.
 
 All ten checkboxes above must be accepted closed before the roadmap advances into a new management service/Web/network implementation boundary.
 

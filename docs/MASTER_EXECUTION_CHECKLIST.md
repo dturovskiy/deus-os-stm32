@@ -53,22 +53,25 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice B — Target architecture/lifecycle cleanup
 
-- [ ] **FDC-05 — composition-root convergence without framework refactor.**
-  - [ ] inventory the remaining independent reasons to change `src/kernel.c` after published decomposition;
+- [ ] **FDC-05 — composition-root convergence without framework refactor — GATE 0 CONTRACT FROZEN.**
+  - [x] Gate-0 audit/plan pair frozen: `KERNEL_COMPOSITION_ROOT_CONVERGENCE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
+  - [x] inventory the remaining independent reasons to change `src/kernel.c` after published decomposition;
   - [ ] move low-level RCC/GPIO/UART/I2C/platform helpers only when a natural owner exists;
   - [ ] move remaining transport-neutral/service/liveness responsibilities only with coherent bounded state ownership;
   - [ ] no universal `kernel_context_t`, service locator, hidden extracted-state `extern`, dependency cycle or line-count-only module split;
   - [ ] build/resource/stack/public-ABI regression and hardware equivalence PASS.
 
-- [ ] **FDC-06 — semantic system/service state upstream of UI.**
+- [ ] **FDC-06 — semantic system/service state upstream of UI — GATE 0 CONTRACT FROZEN.**
+  - [x] Gate-0 plan pair frozen: `SEMANTIC_SYSTEM_SERVICE_STATE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
   - [ ] define one bounded semantic state owner for health/USB/network/time used by application runtime and OLED presentation;
   - [ ] `application_service_snapshot_t` is built from semantic system/service state, not from `boot_desktop_ui_snapshot_t`/rendered indicator values;
   - [ ] OLED status rendering consumes that same semantic state as a downstream consumer;
   - [ ] semantic-event/no-rerender behavior remains correct;
   - [ ] firmware build/resource/stack + text/binary lifecycle + physical OLED regression PASS.
 
-- [ ] **FDC-07 — fail-closed application stop failure semantics.**
-  - [ ] freeze lifecycle/result state when the current app `stop()` fails;
+- [ ] **FDC-07 — fail-closed application stop failure semantics — GATE 0 CONTRACT FROZEN.**
+  - [x] Gate-0 plan pair frozen: `APPLICATION_STOP_FAILURE_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
+  - [x] freeze lifecycle/result state when the current app `stop()` fails;
   - [ ] unresolved resource release cannot silently clear ownership and start a replacement application;
   - [ ] define home-fallback behavior, retry/recovery semantics and fault accounting;
   - [ ] add a deterministic synthetic/resource-owner failure test before any real resource-owning application is accepted;
@@ -76,7 +79,8 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice C — Target/update robustness closure
 
-- [ ] **FDC-08 — bounded target/update robustness.**
+- [ ] **FDC-08 — bounded target/update robustness — GATE 0 CONTRACT FROZEN.**
+  - [x] Gate-0 plan pair frozen: `TARGET_UPDATE_ROBUSTNESS_CLOSURE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
   - [ ] bootloader reset handler must lie inside the authenticated image span `[APP_BASE, APP_BASE + image_length)`, not merely the whole application region;
   - [ ] bootloader HSE ready, PLL ready and clock-switch waits have bounded failure behavior;
   - [ ] normal runtime HSE ready, PLL ready and clock-switch waits have bounded failure behavior;
@@ -88,7 +92,8 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice D — Documentation/source-of-truth closure
 
-- [ ] **FDC-10 — documentation consistency.**
+- [ ] **FDC-10 — documentation consistency — GATE 0 CONTRACT FROZEN.**
+  - [x] Gate-0 plan pair frozen: `DOCUMENTATION_CONSISTENCY_CLOSURE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
   - [ ] replace obsolete non-historical “USB CDC later” statements with the published CDC state;
   - [ ] clarify that narrow `OLED_UI_LAYOUT_CONFIG_V1` persistence is published while broader runtime/custom UI persistence remains deferred;
   - [ ] reconcile `CURRENT_STATE`, `ROADMAP`, deferred backlog and all affected scoped plan addenda with `FDC-01..FDC-10`;
