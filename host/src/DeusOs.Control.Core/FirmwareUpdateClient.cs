@@ -319,13 +319,13 @@ public sealed class FirmwareUpdateClient : IAsyncDisposable
         catch (DeusHostException exception)
             when (exception.Kind == HostErrorKind.Timeout)
         {
-            MarkRequestIdStale(requestId);
+            AbandonSingleResponse(requestId);
             throw;
         }
         catch (OperationCanceledException exception)
             when (!cancellationToken.IsCancellationRequested)
         {
-            MarkRequestIdStale(requestId);
+            AbandonSingleResponse(requestId);
             throw new DeusHostException(
                 HostErrorKind.Timeout,
                 $"firmware update opcode 0x{opcode:X2} timed out",
@@ -333,7 +333,7 @@ public sealed class FirmwareUpdateClient : IAsyncDisposable
         }
         catch (OperationCanceledException exception)
         {
-            MarkRequestIdStale(requestId);
+            AbandonSingleResponse(requestId);
             throw new DeusHostException(
                 HostErrorKind.Cancelled,
                 $"firmware update opcode 0x{opcode:X2} cancelled",
@@ -341,11 +341,11 @@ public sealed class FirmwareUpdateClient : IAsyncDisposable
         }
     }
 
-    private void MarkRequestIdStale(ushort requestId)
+    private void AbandonSingleResponse(ushort requestId)
     {
         if (requestId != 0)
         {
-            _channel.MarkRequestIdStale(requestId);
+            _channel.AbandonSingleResponse(requestId);
         }
     }
 

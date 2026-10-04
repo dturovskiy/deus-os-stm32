@@ -125,6 +125,235 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task RpcTimeoutDiscardsDelayedStreamBeforeFreshRpc()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        transport.BlockWhenEmpty = true;
+
+        var timeout = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.RpcAsync(
+                ProtocolConstants.RpcPing,
+                timeout: TimeSpan.FromMilliseconds(50),
+                cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Timeout, timeout.Kind);
+
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            3,
+            "OLD\r\n"));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            4,
+            "PONG\r\n"));
+
+        var fresh = await client.PingAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((ushort)4, fresh.RequestId);
+        Assert.Equal("PONG\r\n", fresh.OutputText);
+        Assert.Equal(ConnectionState.Ready, client.State);
+    }
+
+    [Fact]
+    public async Task RpcCancellationDiscardsDelayedStreamBeforeFreshRpc()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        transport.BlockWhenEmpty = true;
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        cancellation.CancelAfter(TimeSpan.FromMilliseconds(50));
+
+        var cancelled = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.PingAsync(cancellation.Token));
+
+        Assert.Equal(HostErrorKind.Cancelled, cancelled.Kind);
+
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            3,
+            "OLD\r\n"));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            4,
+            "PONG\r\n"));
+
+        var fresh = await client.PingAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((ushort)4, fresh.RequestId);
+        Assert.Equal("PONG\r\n", fresh.OutputText);
+    }
+
+    [Fact]
+    public async Task RpcTimeoutAfterPartialDataDiscardsRemainingDelayedStream()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        transport.BlockWhenEmpty = true;
+        transport.EnqueueResponse(CreateRpcDataFrame(
+            ProtocolConstants.RpcPing,
+            3,
+            0,
+            "PART"));
+
+        var timeout = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.RpcAsync(
+                ProtocolConstants.RpcPing,
+                timeout: TimeSpan.FromMilliseconds(50),
+                cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Timeout, timeout.Kind);
+
+        transport.EnqueueResponse(CreateRpcDataFrame(
+            ProtocolConstants.RpcPing,
+            3,
+            1,
+            "LATE"));
+        transport.EnqueueResponse(CreateRpcEndFrame(
+            ProtocolConstants.RpcPing,
+            3,
+            2,
+            8));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            4,
+            "PONG\r\n"));
+
+        var fresh = await client.PingAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((ushort)4, fresh.RequestId);
+        Assert.Equal("PONG\r\n", fresh.OutputText);
+    }
+
+    [Fact]
+    public async Task RpcAbandonedProtocolErrorIsTerminalAndDoesNotPoisonFreshRpc()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        transport.BlockWhenEmpty = true;
+
+        await Assert.ThrowsAsync<DeusHostException>(
+            () => client.RpcAsync(
+                ProtocolConstants.RpcPing,
+                timeout: TimeSpan.FromMilliseconds(50),
+                cancellationToken: TestContext.Current.CancellationToken));
+
+        transport.EnqueueResponse(BinaryFrameCodec.Encode(
+            FrameType.ProtocolError,
+            0,
+            3,
+            new byte[] { 0x03, (byte)FrameType.RpcRequest }));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            4,
+            "PONG\r\n"));
+
+        var fresh = await client.PingAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((ushort)4, fresh.RequestId);
+        Assert.Equal("PONG\r\n", fresh.OutputText);
+    }
+
+    [Fact]
+    public async Task MultipleAbandonedRpcStreamsRemainIsolatedUntilTheirTerminals()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        transport.BlockWhenEmpty = true;
+
+        for (var index = 0; index < 2; ++index)
+        {
+            var timeout = await Assert.ThrowsAsync<DeusHostException>(
+                () => client.RpcAsync(
+                    ProtocolConstants.RpcPing,
+                    timeout: TimeSpan.FromMilliseconds(50),
+                    cancellationToken: TestContext.Current.CancellationToken));
+            Assert.Equal(HostErrorKind.Timeout, timeout.Kind);
+        }
+
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            3,
+            "OLD3\r\n"));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            4,
+            "OLD4\r\n"));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing,
+            5,
+            "PONG\r\n"));
+
+        var fresh = await client.PingAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((ushort)5, fresh.RequestId);
+        Assert.Equal("PONG\r\n", fresh.OutputText);
+    }
+
+    [Fact]
+    public async Task UnresolvedAbandonedRpcFailsClosedAtRequestIdWrap()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        transport.BlockWhenEmpty = true;
+
+        var timeout = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.RpcAsync(
+                ProtocolConstants.RpcPing,
+                timeout: TimeSpan.FromMilliseconds(50),
+                cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(HostErrorKind.Timeout, timeout.Kind);
+
+        transport.ResponseFactory = CreateAutomaticRpcResponse;
+
+        for (var requestId = 4; requestId <= ushort.MaxValue; ++requestId)
+        {
+            var result = await client.PingAsync(TestContext.Current.CancellationToken);
+            if (requestId == 4 || requestId == ushort.MaxValue)
+            {
+                Assert.Equal((ushort)requestId, result.RequestId);
+            }
+        }
+
+        var wrap = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.PingAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.RequestCorrelation, wrap.Kind);
+        Assert.Contains("fresh client/transport session", wrap.Message);
+
+        var renegotiate = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.NegotiateAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.RequestCorrelation, renegotiate.Kind);
+        Assert.Equal(ConnectionState.Faulted, client.State);
+    }
+
+    [Fact]
     public async Task DisconnectClearsPartialDecoderAndSessionState()
     {
         var transport = new ScriptedTransport(readChunkLimit: 512);
@@ -382,6 +611,52 @@ public sealed class ClientTests
             payload);
     }
 
+    private static byte[] CreateAutomaticRpcResponse(byte[] wire)
+    {
+        Assert.Equal((byte)FrameType.RpcRequest, wire[3]);
+        var requestId = BinaryPrimitives.ReadUInt16LittleEndian(wire.AsSpan(6, 2));
+        var rpcId = BinaryPrimitives.ReadUInt16LittleEndian(
+            wire.AsSpan(ProtocolConstants.FixedPrefixBytes, 2));
+        return CreateRpcResponse(rpcId, requestId, "PONG\r\n");
+    }
+
+    private static byte[] CreateRpcDataFrame(
+        ushort rpcId,
+        ushort requestId,
+        ushort sequence,
+        string output)
+    {
+        var bytes = Encoding.UTF8.GetBytes(output);
+        var payload = new byte[4 + bytes.Length];
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(0, 2), rpcId);
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(2, 2), sequence);
+        bytes.AsSpan().CopyTo(payload.AsSpan(4));
+        return BinaryFrameCodec.Encode(
+            FrameType.RpcData,
+            0,
+            requestId,
+            payload);
+    }
+
+    private static byte[] CreateRpcEndFrame(
+        ushort rpcId,
+        ushort requestId,
+        ushort chunkCount,
+        uint totalBytes)
+    {
+        var payload = new byte[10];
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(0, 2), rpcId);
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(2, 2), chunkCount);
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(4, 4), totalBytes);
+        payload[8] = 0;
+        payload[9] = 0;
+        return BinaryFrameCodec.Encode(
+            FrameType.RpcEnd,
+            0,
+            requestId,
+            payload);
+    }
+
     private static byte[] CreateRpcResponse(
         ushort rpcId,
         ushort requestId,
@@ -504,6 +779,8 @@ public sealed class ClientTests
 
         public bool BlockWhenEmpty { get; set; }
 
+        public Func<byte[], byte[]?>? ResponseFactory { get; set; }
+
         public void EnqueueResponse(byte[] wire)
         {
             foreach (var value in wire)
@@ -517,7 +794,15 @@ public sealed class ClientTests
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Writes.Add(data.ToArray());
+            var wire = data.ToArray();
+            Writes.Add(wire);
+
+            var response = ResponseFactory?.Invoke(wire);
+            if (response is not null)
+            {
+                EnqueueResponse(response);
+            }
+
             return ValueTask.CompletedTask;
         }
 

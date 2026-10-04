@@ -56,9 +56,11 @@ internal sealed class DeusRpcClient
         CancellationToken cancellationToken)
     {
         await _channel.EnterAsync(cancellationToken);
+        ushort requestId = 0;
+
         try
         {
-            var requestId = _channel.NextRequestId();
+            requestId = _channel.NextRequestId();
             var payload = RpcRequestEncoder.EncodePayload(rpcId, arguments);
             var wire = BinaryFrameCodec.Encode(
                 FrameType.RpcRequest,
@@ -195,10 +197,28 @@ internal sealed class DeusRpcClient
                     output.ToArray());
             }
         }
+        catch (DeusHostException exception)
+            when (exception.Kind == HostErrorKind.Timeout)
+        {
+            AbandonRpcStream(requestId);
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            AbandonRpcStream(requestId);
+            throw;
+        }
         finally
         {
             _channel.Exit();
         }
     }
 
+    private void AbandonRpcStream(ushort requestId)
+    {
+        if (requestId != 0)
+        {
+            _channel.AbandonRpcStream(requestId);
+        }
+    }
 }

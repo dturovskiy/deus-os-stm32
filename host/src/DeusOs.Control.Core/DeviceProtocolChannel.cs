@@ -4,12 +4,20 @@ internal sealed class DeviceProtocolChannel : IAsyncDisposable
 {
     private const int ReadBufferBytes = 512;
 
+    private enum AbandonedResponseShape
+    {
+        SingleResponse,
+        RpcUntilTerminal,
+    }
+
     private readonly IDeviceTransport _transport;
     private readonly BinaryFrameDecoder _decoder = new();
     private readonly RequestIdAllocator _requestIds = new();
     private readonly Queue<BinaryFrame> _queuedFrames = new();
-    private readonly HashSet<ushort> _staleRequestIds = new();
+    private readonly Dictionary<ushort, AbandonedResponseShape> _abandonedRequests = new();
     private readonly SemaphoreSlim _operationGate = new(1, 1);
+    private bool _requestIdEpochStarted;
+    private bool _freshSessionRequired;
     private bool _disposed;
 
     internal DeviceProtocolChannel(IDeviceTransport transport)
@@ -23,30 +31,49 @@ internal sealed class DeviceProtocolChannel : IAsyncDisposable
     {
         ThrowIfDisposed();
 
+        if (_freshSessionRequired)
+        {
+            throw new DeusHostException(
+                HostErrorKind.RequestCorrelation,
+                "a fresh client/transport session is required before request ids may be reused");
+        }
+
         for (var attempt = 0; attempt < ushort.MaxValue; ++attempt)
         {
             var requestId = _requestIds.Next();
-            if (!_staleRequestIds.Contains(requestId))
+
+            if (_requestIdEpochStarted &&
+                requestId == 1 &&
+                _abandonedRequests.Count != 0)
+            {
+                _freshSessionRequired = true;
+                throw new DeusHostException(
+                    HostErrorKind.RequestCorrelation,
+                    "request id space wrapped while abandoned responses remain outstanding; a fresh client/transport session is required");
+            }
+
+            _requestIdEpochStarted = true;
+
+            if (!_abandonedRequests.ContainsKey(requestId))
             {
                 return requestId;
             }
         }
 
+        _freshSessionRequired = true;
         throw new DeusHostException(
             HostErrorKind.RequestCorrelation,
-            "no request id is available while stale responses remain outstanding");
+            "no request id is available while abandoned responses remain outstanding; a fresh client/transport session is required");
     }
 
-    internal void MarkRequestIdStale(ushort requestId)
+    internal void AbandonSingleResponse(ushort requestId)
     {
-        ThrowIfDisposed();
+        RegisterAbandonedRequest(requestId, AbandonedResponseShape.SingleResponse);
+    }
 
-        if (requestId == 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(requestId));
-        }
-
-        _staleRequestIds.Add(requestId);
+    internal void AbandonRpcStream(ushort requestId)
+    {
+        RegisterAbandonedRequest(requestId, AbandonedResponseShape.RpcUntilTerminal);
     }
 
     internal Task EnterAsync(CancellationToken cancellationToken)
@@ -113,7 +140,7 @@ internal sealed class DeviceProtocolChannel : IAsyncDisposable
             while (_queuedFrames.Count != 0)
             {
                 var queued = _queuedFrames.Dequeue();
-                if (_staleRequestIds.Remove(queued.RequestId))
+                if (DiscardIfAbandoned(queued))
                 {
                     continue;
                 }
@@ -202,8 +229,13 @@ internal sealed class DeviceProtocolChannel : IAsyncDisposable
     {
         _decoder.Reset();
         _queuedFrames.Clear();
-        _staleRequestIds.Clear();
         _requestIds.Reset();
+        _requestIdEpochStarted = false;
+
+        if (_abandonedRequests.Count != 0)
+        {
+            _freshSessionRequired = true;
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -216,6 +248,48 @@ internal sealed class DeviceProtocolChannel : IAsyncDisposable
         _disposed = true;
         _operationGate.Dispose();
         await _transport.DisposeAsync();
+    }
+
+    private void RegisterAbandonedRequest(
+        ushort requestId,
+        AbandonedResponseShape responseShape)
+    {
+        ThrowIfDisposed();
+
+        if (requestId == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(requestId));
+        }
+
+        if (_abandonedRequests.TryGetValue(requestId, out var existing))
+        {
+            if (existing != responseShape)
+            {
+                throw new InvalidOperationException(
+                    $"request id 0x{requestId:X4} is already abandoned with response shape {existing}");
+            }
+
+            return;
+        }
+
+        _abandonedRequests.Add(requestId, responseShape);
+    }
+
+    private bool DiscardIfAbandoned(BinaryFrame frame)
+    {
+        if (!_abandonedRequests.TryGetValue(frame.RequestId, out var responseShape))
+        {
+            return false;
+        }
+
+        if (responseShape == AbandonedResponseShape.SingleResponse ||
+            frame.Type == FrameType.RpcEnd ||
+            frame.Type == FrameType.ProtocolError)
+        {
+            _abandonedRequests.Remove(frame.RequestId);
+        }
+
+        return true;
     }
 
     private void ThrowIfDisposed()

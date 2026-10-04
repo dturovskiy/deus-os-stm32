@@ -1,6 +1,6 @@
 # Deus OS — Host RPC Timeout / Correlation Hardening Acceptance Plan
 
-Status: **ACTIVE — GATE 0 / `FDC-01`**
+Status: **GATES 0–2 PASS — GATES 3–5 CLOSURE IN PROGRESS / `FDC-01`**
 
 Canonical design: `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md`
 
@@ -63,6 +63,24 @@ Validation requirements:
 - `git diff --check` PASS;
 - no target I/O, Flash, bootloader or firmware mutation;
 - no Windows/Linux native transport source mutation.
+
+## Gate-2 result — PASS
+
+Authoritative evidence: `stm32_os_fdc01_host_validation_dotnet_v1_20261004_151712.evidence.zip`, SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`.
+
+Accepted proof:
+
+- evidence ZIP CRC clean; manifest `65/65` exact;
+- pre/post `HEAD == origin/main == 953621bda0e4dd530e9e3a0f149fd9316d811c8d`;
+- exact five modified tracked paths, staged `0`, untracked `0`;
+- fresh tracked-only scratch host worktree and exact five WIP hashes reverified;
+- isolated .NET/NuGet environment on SDK `10.0.201`;
+- xUnit v3 structured result: total `51`, passed `51`, failed `0`, skipped `0`, errors `0`, not-run `0`;
+- Core Release build PASS;
+- target I/O `NONE`, Flash mutation `NONE`;
+- static ownership review confirms one `DeviceProtocolChannel` correlation/abandonment owner, no second decoder/request-ID allocator/stale queue, unknown non-abandoned correlation remains fatal, and firmware non-DATA requests retain no blind retry.
+
+Gate 2 is accepted. Gate 3 reconciliation is now authorized; Gates 4–5 remain pending.
 
 ## Gate 3 — documentation/closure reconciliation
 

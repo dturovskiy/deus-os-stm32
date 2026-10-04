@@ -1,6 +1,6 @@
 # Deus OS — Host RPC Timeout / Correlation Hardening Plan
 
-Status: **ACTIVE — GATE 0 CONTRACT FREEZE / `FDC-01`**
+Status: **GATES 0–2 PASS — ACCEPTANCE/PUBLICATION CLOSURE IN PROGRESS / `FDC-01`**
 
 Baseline repository commit: `8bd09ad890ab10bb7fed6ecba21d5ad6a382237b`
 
@@ -114,6 +114,28 @@ Gate 2 requires:
 - `git diff --check` PASS.
 
 No target I/O or physical hardware mutation is required for this pure host correlation slice unless implementation unexpectedly changes a native transport contract, which is outside the frozen scope and must instead stop/reopen planning.
+
+## 9.1 Gate-2 accepted implementation evidence
+
+Authoritative Gate-2 evidence: `stm32_os_fdc01_host_validation_dotnet_v1_20261004_151712.evidence.zip`, SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`.
+
+Accepted facts:
+
+- ZIP CRC clean and evidence manifest `65/65` exact;
+- exact live pre/post repository state at `HEAD == origin/main == 953621bda0e4dd530e9e3a0f149fd9316d811c8d`;
+- exactly five modified tracked paths, all inside the frozen FDC-01 source/test set;
+- `DeviceProtocolChannel` remains the sole decoder/request-ID/correlation/abandoned-response owner;
+- `DeusRpcClient` registers abandoned multi-frame RPC state on timeout/cancel;
+- `FirmwareUpdateClient` uses the same channel registry for single-response abandonment; DATA retains exactly one same-payload timeout retry while INFO/BEGIN/AUTHORIZE/END retain no blind retry;
+- fresh tracked-only scratch host worktree with no imported `bin/obj` residue;
+- isolated .NET/NuGet environment, .NET SDK `10.0.201`, xUnit.net v3 `4.0.1`;
+- Core tests `51/51` PASS, failed/skipped/errors/not-run all zero;
+- `DeusOs.Control.Core` Release build PASS;
+- `git diff --check` PASS;
+- staged/untracked state remained zero;
+- target I/O and Flash mutation were both zero.
+
+Gate 2 is accepted. Gates 3–5 remain closure/publication steps; no `FDC-02+` source mutation is authorized until those steps finish.
 
 ## 10. Exit criterion
 

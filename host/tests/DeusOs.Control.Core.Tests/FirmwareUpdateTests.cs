@@ -206,6 +206,84 @@ public sealed class FirmwareUpdateTests
     }
 
     [Fact]
+    public async Task BootloaderInfoTimeoutDoesNotBlindRetry()
+    {
+        var transport = new ScriptedTransport();
+        transport.TimeoutOnWriteNumbers.Add(1);
+
+        await using var client = new FirmwareUpdateClient(transport);
+        var exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.InfoAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Timeout, exception.Kind);
+        Assert.Single(transport.Writes);
+        AssertRequest(transport.Writes[0], 1, 0x02, 1, expectedFlags: 0);
+    }
+
+    [Fact]
+    public async Task BootloaderBeginTimeoutDoesNotBlindRetry()
+    {
+        var transport = new ScriptedTransport();
+        transport.TimeoutOnWriteNumbers.Add(1);
+
+        await using var client = new FirmwareUpdateClient(transport);
+        var exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.UpdateAsync(
+                CreatePackage(8, 7),
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Timeout, exception.Kind);
+        Assert.Single(transport.Writes);
+        AssertRequest(transport.Writes[0], 1, 0x03, 49);
+    }
+
+    [Fact]
+    public async Task BootloaderAuthorizeTimeoutDoesNotBlindRetry()
+    {
+        var transport = new ScriptedTransport();
+        transport.TimeoutOnWriteNumbers.Add(2);
+        transport.EnqueueResponse(CreateResponse(
+            1, 0x03, FirmwareUpdateState.HeaderStaged, 0, 0, 0));
+
+        await using var client = new FirmwareUpdateClient(transport);
+        var exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.UpdateAsync(
+                CreatePackage(8, 7),
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Timeout, exception.Kind);
+        Assert.Equal(2, transport.Writes.Count);
+        AssertRequest(transport.Writes[0], 1, 0x03, 49);
+        AssertRequest(transport.Writes[1], 2, 0x04, 33);
+    }
+
+    [Fact]
+    public async Task BootloaderEndTimeoutDoesNotBlindRetry()
+    {
+        var transport = new ScriptedTransport();
+        transport.TimeoutOnWriteNumbers.Add(4);
+        transport.EnqueueResponse(CreateResponse(
+            1, 0x03, FirmwareUpdateState.HeaderStaged, 0, 0, 0));
+        transport.EnqueueResponse(CreateResponse(
+            2, 0x04, FirmwareUpdateState.Authorized, 0, 0, 0));
+        transport.EnqueueResponse(CreateResponse(
+            3, 0x05, FirmwareUpdateState.Receiving, 8, 0, 0));
+
+        await using var client = new FirmwareUpdateClient(transport);
+        var exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.UpdateAsync(
+                CreatePackage(8, 7),
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Timeout, exception.Kind);
+        Assert.Equal(4, transport.Writes.Count);
+        AssertRequest(transport.Writes[0], 1, 0x03, 49);
+        AssertRequest(transport.Writes[1], 2, 0x04, 33);
+        AssertRequest(transport.Writes[2], 3, 0x05, 11);
+        AssertRequest(transport.Writes[3], 4, 0x06, 1);
+    }
+
+    [Fact]
     public async Task BootloaderInfoStillRejectsUnknownRequestIdMismatch()
     {
         var transport = new ScriptedTransport();
@@ -319,10 +397,11 @@ public sealed class FirmwareUpdateTests
         byte[] wire,
         ushort requestId,
         byte opcode,
-        ushort payloadLength)
+        ushort payloadLength,
+        byte expectedFlags = 1)
     {
         Assert.Equal((byte)FrameType.FirmwareUpdateRequest, wire[3]);
-        Assert.Equal((byte)1, wire[4]);
+        Assert.Equal(expectedFlags, wire[4]);
         Assert.Equal(requestId,
             BinaryPrimitives.ReadUInt16LittleEndian(wire.AsSpan(6, 2)));
         Assert.Equal(payloadLength,

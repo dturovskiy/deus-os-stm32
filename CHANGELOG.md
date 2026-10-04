@@ -1,3 +1,17 @@
+## 2026-10-04
+
+### FDC-01 Host RPC timeout/correlation hardening — Gate 2 accepted
+
+`HOST_RPC_TIMEOUT_RECOVERY_HARDENING` has passed implementation/static review and deterministic host validation. The accepted implementation keeps `DeviceProtocolChannel` as the single decoder/request-ID/correlation owner, adds one channel-owned abandoned-request registry with `SingleResponse` and `RpcUntilTerminal` shapes, marks generic RPC requests abandoned on timeout/cancel, drains delayed `RPC_DATA...RPC_END` or terminal `PROTOCOL_ERROR`, and fails closed if request-ID wrap is reached while unresolved abandoned state remains.
+
+`FirmwareUpdateClient` now uses the same channel abandonment owner for single-response request loss. DATA retains exactly one same-payload immediate timeout retry; INFO/BEGIN/AUTHORIZE/END retain no blind retry. Unknown non-abandoned request IDs remain fatal correlation errors.
+
+Authoritative Gate-2 evidence is `stm32_os_fdc01_host_validation_dotnet_v1_20261004_151712.evidence.zip`, SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`. The evidence ZIP has clean CRC and `65/65` exact manifest entries, verifies exact pre/post five-path WIP state at `HEAD == origin/main == 953621bda0e4dd530e9e3a0f149fd9316d811c8d`, runs Core tests `51/51` with failed/skipped/errors/not-run all zero, and passes `DeusOs.Control.Core` Release build. Target I/O and Flash mutation are zero.
+
+The repeated PowerShell validation failures preceding this PASS were harness failures, not FDC-01 product-test failures. The final accepted validator is a typed .NET 10 file-based utility using fresh tracked-only scratch materialization, isolated NuGet/.NET state and structured xUnit XML result counters, eliminating PowerShell pipeline/cardinality ambiguity from the acceptance path.
+
+FDC-01 Gates 3–5 documentation/local-commit/publication closure remain before the item is marked CLOSED. `FDC-02+` source mutation is still blocked until that publication closure completes.
+
 ## 2026-10-03
 
 ### FDC-01 Host RPC timeout/correlation hardening — Gate 0 activated

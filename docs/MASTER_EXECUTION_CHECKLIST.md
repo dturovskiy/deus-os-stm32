@@ -11,14 +11,14 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice A — Host long-lived-session hardening
 
-- [ ] **FDC-01 — generic RPC timeout/cancellation correlation and abandoned-response cleanup — ACTIVE / Gate 0 contract freeze (`HOST_RPC_TIMEOUT_RECOVERY_HARDENING`).**
-  - [ ] freeze one policy for RPC timeout/cancel aftermath: bounded stale-request draining **or** forced session reset/reconnect; do not leave the session nominally READY with ambiguous unread multi-frame response state;
-  - [ ] delayed `RPC_DATA` and delayed `RPC_END` for an abandoned request cannot poison a later fresh request;
-  - [ ] unknown mismatched request IDs that are not explicitly abandoned/stale remain fatal correlation errors;
-  - [ ] repeated timeout/cancel cannot retain request IDs indefinitely; wrap at `0xFFFF -> 0x0001` is covered;
-  - [ ] existing `FirmwareUpdateClient` stale-ID behavior is reconciled with the same bounded channel policy rather than becoming a second independent mechanism;
-  - [ ] INFO/BEGIN/AUTHORIZE/END response loss has explicit reconnect/INFO/adjudicate/restart semantics; no blind non-idempotent retry;
-  - [ ] deterministic Core tests: timeout -> delayed DATA/END -> next RPC PASS; cancel -> delayed frames -> next RPC PASS; stale/wrap stress PASS.
+- [ ] **FDC-01 — generic RPC timeout/cancellation correlation and abandoned-response cleanup — GATES 0–2 PASS / Gates 3–5 closure pending (`HOST_RPC_TIMEOUT_RECOVERY_HARDENING`).**
+  - [x] freeze one policy for RPC timeout/cancel aftermath: one channel-owned abandoned-request registry with `SingleResponse` and `RpcUntilTerminal`; unresolved abandoned state at request-ID wrap fails closed and requires a fresh session;
+  - [x] delayed `RPC_DATA` and delayed `RPC_END` for an abandoned request cannot poison a later fresh request;
+  - [x] unknown mismatched request IDs that are not explicitly abandoned/stale remain fatal correlation errors;
+  - [x] unresolved abandoned IDs cannot be reused; clean wrap remains `0xFFFF -> 0x0001`, while wrap with unresolved abandoned state fails closed;
+  - [x] existing `FirmwareUpdateClient` stale-ID behavior is reconciled with the same channel registry rather than a second independent mechanism;
+  - [x] INFO/BEGIN/AUTHORIZE/END retain no blind retry; response loss remains reconnect/INFO/adjudicate/restart semantics;
+  - [x] deterministic Core validation PASS: timeout/cancel/partial delayed streams, stale terminal `PROTOCOL_ERROR`, unknown correlation, multiple abandoned IDs, clean/poisoned wrap, reset safety and firmware retry/no-blind-retry regressions; authoritative evidence SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`, Core `51/51`, Release build PASS, target I/O zero.
 
 - [ ] **FDC-02 — `DeusDeviceSession.StateChanged` reentrancy/deadlock closure.**
   - [ ] arbitrary subscriber callbacks are no longer invoked synchronously while `_operationGate` is held, or an equivalent formally non-reentrant delivery mechanism is frozen;

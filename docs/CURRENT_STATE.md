@@ -105,9 +105,9 @@ Authoritative deployment evidence SHA-256 is `77F42EE22978A52FC60AE03D14D10BAC27
 
 ## 4. Current work disposition
 
-There is **no active product feature boundary** after publication and physical deployment verification of `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The active engineering boundary is now the first mandatory closure slice: **`HOST_RPC_TIMEOUT_RECOVERY_HARDENING` / `FDC-01`, Gate 0 contract freeze**.
+There is **no active product feature boundary** after publication and physical deployment verification of `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The active engineering boundary remains **`HOST_RPC_TIMEOUT_RECOVERY_HARDENING` / `FDC-01`**, now through **Gate 2 PASS** with acceptance/publication closure in progress.
 
-The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. `FDC-01` is the first independently frozen implementation slice. Canonical plan/acceptance: `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` and `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_ACCEPTANCE_PLAN.md`. No `FDC-02+` source mutation is authorized by this activation.
+The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. `FDC-01` is the first independently frozen implementation slice. Canonical plan/acceptance: `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` and `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_ACCEPTANCE_PLAN.md`. Gate-2 authoritative evidence is `stm32_os_fdc01_host_validation_dotnet_v1_20261004_151712.evidence.zip`, SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`: manifest `65/65` exact, Core `51/51`, Core Release build PASS, exact five-path WIP pre/post state, zero target I/O and zero Flash mutation. No `FDC-02+` source mutation is authorized until FDC-01 publication closure completes.
 
 The mandatory closure ledger uses IDs `FDC-01..FDC-10`:
 
