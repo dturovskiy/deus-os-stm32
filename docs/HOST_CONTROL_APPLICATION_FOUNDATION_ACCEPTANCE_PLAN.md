@@ -441,9 +441,9 @@ Canonical closure: `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_A
 
 Canonical closure: `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. The published Core-owned catalog/facade exposes exactly five ReadOnly + three Control + zero Destructive service-v1 operations. Raw numeric RPC IDs/flags, bootloader/update and unlisted routing are absent. Gate-2 evidence SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25` proves Core `66/66`, Core/CLI/Desktop Release builds PASS and zero target/Flash mutation; Gate 4/5 publication is `0d9adfd8d0ed11478194e2268ede3c57379c8294`.
 
-### `FDC-04` — ACTIVE / GATE 0 (`HOST_TYPED_MANAGEMENT_MODELS_HARDENING`)
+### `FDC-04` — GATES 0–3 ACCEPTED / PUBLICATION PENDING (`HOST_TYPED_MANAGEMENT_MODELS_HARDENING`)
 
-Acceptance requires shared typed Core models/parsers for remaining service-v1 Ping/Health/app-control outputs, parser malformed/duplicate/bound tests, typed service/CLI/Desktop consumption and static review proving those presentation/service paths contain no parsing of STM32 command output text. Existing low-level raw RPC compatibility APIs remain intact; CLI `rpcinfo` remains an explicitly excluded diagnostic surface.
+Authoritative Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4` proves the frozen eight-path candidate, manifest `78/78`, Core `78/78`, Core/CLI/Desktop Release builds PASS, and zero target/Flash mutation. Core owns bounded Ping/Health/app-control parsing; the service facade exposes no `RpcResult`; Desktop has no raw management `OutputText`; CLI raw output is confined to excluded `rpcinfo`; low-level raw compatibility APIs remain intact. Gate 4/5 publication remains before closure.
 
 ### `FDC-09`
 

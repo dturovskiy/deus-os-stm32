@@ -132,9 +132,8 @@ internal static class Program
                 for (var index = 0; index < count; ++index)
                 {
                     var result = await session.ExecuteAsync(
-                        (client, token) => client.PingAsync(token),
+                        (client, token) => client.PingStatusAsync(token),
                         CancellationToken.None);
-                    EnsureSuccess(result, "ping");
 
                     if (result.RequestId == 0 || !requestIds.Add(result.RequestId))
                     {
@@ -166,12 +165,12 @@ internal static class Program
 
                     if (count == 1)
                     {
-                        Console.Write(result.OutputText);
+                        Console.WriteLine("PONG");
                     }
                     else
                     {
                         Console.WriteLine(
-                            $"PING_INDEX={index + 1} REQUEST_ID=0x{result.RequestId:X4} OUTPUT={result.OutputText.Trim()}");
+                            $"PING_INDEX={index + 1} REQUEST_ID=0x{result.RequestId:X4} OUTPUT=PONG");
                     }
                 }
 
@@ -187,10 +186,9 @@ internal static class Program
             case "health":
             {
                 var result = await session.ExecuteAsync(
-                    (client, token) => client.HealthAsync(token),
+                    (client, token) => client.HealthSnapshotAsync(token),
                     CancellationToken.None);
-                EnsureSuccess(result, "health");
-                Console.Write(result.OutputText);
+                PrintHealth(result);
                 return 0;
             }
 
@@ -214,9 +212,9 @@ internal static class Program
             {
                 var id = ParseApplicationId(parsed.CommandArgument);
                 var result = await session.ExecuteAsync(
-                    (client, token) => client.StartApplicationAsync(id, token),
+                    (client, token) => client.StartApplicationControlAsync(id, token),
                     CancellationToken.None);
-                Console.Write(result.OutputText);
+                PrintApplicationStart(result);
                 PrintApplications(await session.ExecuteAsync(
                     (client, token) => client.ApplicationsAsync(token),
                     CancellationToken.None));
@@ -226,9 +224,9 @@ internal static class Program
             case "app-stop":
             {
                 var result = await session.ExecuteAsync(
-                    (client, token) => client.StopApplicationAsync(token),
+                    (client, token) => client.StopApplicationControlAsync(token),
                     CancellationToken.None);
-                Console.Write(result.OutputText);
+                PrintApplicationStop(result);
                 PrintApplications(await session.ExecuteAsync(
                     (client, token) => client.ApplicationsAsync(token),
                     CancellationToken.None));
@@ -317,6 +315,30 @@ internal static class Program
                 $"0x{application.Id:X4} {application.Name} " +
                 $"{application.State} active={application.Active}");
         }
+    }
+
+    private static void PrintHealth(HealthSnapshot health)
+    {
+        Console.WriteLine(
+            $"HEALTH TICK=0x{health.Tick:X8} " +
+            $"PC13=0x{(health.Pc13High ? 1u : 0u):X8} " +
+            $"WDOG_ACTIVE=0x{(health.WatchdogActive ? 1u : 0u):X8} " +
+            $"WDOG_RELOAD_COUNT=0x{health.WatchdogReloadCount:X8} " +
+            $"RESET_FLAGS=0x{health.ResetFlags:X8} " +
+            $"IWDG_RESET=0x{(health.IwdgReset ? 1u : 0u):X8}");
+    }
+
+    private static void PrintApplicationStart(ApplicationStartResult result)
+    {
+        Console.WriteLine(
+            $"APP_START_OK ID=0x{(uint)result.ApplicationId:X8} " +
+            $"ACTIVE_ID=0x{(uint)result.ActiveId:X8}");
+    }
+
+    private static void PrintApplicationStop(ApplicationStopResult result)
+    {
+        Console.WriteLine(
+            $"APP_STOP_OK ACTIVE_ID=0x{(uint)result.ActiveId:X8}");
     }
 
     private static void PrintAssetStatus(AssetStatusSnapshot status)

@@ -161,6 +161,16 @@ public sealed class DeusDeviceClient : IAsyncDisposable
         CancellationToken cancellationToken = default) =>
         RpcAsync(ProtocolConstants.RpcHealth, cancellationToken: cancellationToken);
 
+    public async Task<PingStatus> PingStatusAsync(
+        CancellationToken cancellationToken = default) =>
+        ManagementStateParser.ParsePing(
+            await PingAsync(cancellationToken));
+
+    public async Task<HealthSnapshot> HealthSnapshotAsync(
+        CancellationToken cancellationToken = default) =>
+        ManagementStateParser.ParseHealth(
+            await HealthAsync(cancellationToken));
+
     public Task<RpcResult> RpcInfoAsync(
         CancellationToken cancellationToken = default) =>
         RpcAsync(ProtocolConstants.RpcRpcInfo, cancellationToken: cancellationToken);
@@ -205,6 +215,28 @@ public sealed class DeusDeviceClient : IAsyncDisposable
         EnsureRpcSuccess(result, "appstop");
         return result;
     }
+
+    public async Task<ApplicationStartResult> StartApplicationControlAsync(
+        ushort applicationId,
+        CancellationToken cancellationToken = default)
+    {
+        var parsed = ManagementStateParser.ParseApplicationStart(
+            await StartApplicationAsync(applicationId, cancellationToken));
+
+        if (parsed.ApplicationId != applicationId)
+        {
+            throw new DeusHostException(
+                HostErrorKind.Protocol,
+                $"appstart acknowledged application 0x{parsed.ApplicationId:X4} instead of 0x{applicationId:X4}");
+        }
+
+        return parsed;
+    }
+
+    public async Task<ApplicationStopResult> StopApplicationControlAsync(
+        CancellationToken cancellationToken = default) =>
+        ManagementStateParser.ParseApplicationStop(
+            await StopApplicationAsync(cancellationToken));
 
 
     public async Task<AssetStatusSnapshot> AssetStatusAsync(

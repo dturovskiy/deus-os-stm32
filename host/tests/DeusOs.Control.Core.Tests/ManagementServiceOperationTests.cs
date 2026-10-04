@@ -130,6 +130,10 @@ public sealed class ManagementServiceOperationTests
             Assert.DoesNotContain("Diagnostic", method.Name, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("Stress", method.Name, StringComparison.OrdinalIgnoreCase);
 
+            Assert.DoesNotContain(
+                typeof(RpcResult),
+                method.ReturnType.GenericTypeArguments);
+
             foreach (var parameter in method.GetParameters())
             {
                 Assert.DoesNotContain(
@@ -162,16 +166,26 @@ public sealed class ManagementServiceOperationTests
         transport.EnqueueResponse(
             CreateRpcResponse(ProtocolConstants.RpcPing, 3, "PONG\r\n"));
         transport.EnqueueResponse(
-            CreateRpcResponse(ProtocolConstants.RpcHealth, 4, "HEALTH=OK\r\n"));
+            CreateRpcResponse(
+                ProtocolConstants.RpcHealth,
+                4,
+                "HEALTH TICK=0x0000002A PC13=0x00000001 WDOG_ACTIVE=0x00000001 " +
+                "WDOG_RELOAD_COUNT=0x00000010 RESET_FLAGS=0x00000004 IWDG_RESET=0x00000000\r\n"));
         transport.EnqueueResponse(
             CreateRpcResponse(
                 ProtocolConstants.RpcAppList,
                 5,
                 ValidApplicationList()));
         transport.EnqueueResponse(
-            CreateRpcResponse(ProtocolConstants.RpcAppStart, 6, "APP_START=OK\r\n"));
+            CreateRpcResponse(
+                ProtocolConstants.RpcAppStart,
+                6,
+                "APP_START_OK ID=0x00000002 ACTIVE_ID=0x00000002\r\n"));
         transport.EnqueueResponse(
-            CreateRpcResponse(ProtocolConstants.RpcAppStop, 7, "APP_STOP=OK\r\n"));
+            CreateRpcResponse(
+                ProtocolConstants.RpcAppStop,
+                7,
+                "APP_STOP_OK ACTIVE_ID=0x00000000\r\n"));
 
         var discovery = new ScriptedDiscovery(transport);
         await using var session = new DeusDeviceSession(discovery);
@@ -194,12 +208,20 @@ public sealed class ManagementServiceOperationTests
         var stop = await operations.StopApplicationAsync(
             TestContext.Current.CancellationToken);
 
-        Assert.Equal("PONG\r\n", ping.OutputText);
-        Assert.Equal("HEALTH=OK\r\n", health.OutputText);
+        Assert.Equal((ushort)3, ping.RequestId);
+        Assert.Equal((uint)0x2A, health.Tick);
+        Assert.True(health.Pc13High);
+        Assert.True(health.WatchdogActive);
+        Assert.Equal((uint)0x10, health.WatchdogReloadCount);
+        Assert.Equal((uint)0x04, health.ResetFlags);
+        Assert.False(health.IwdgReset);
         Assert.Equal((uint)2, applications.RegistryCount);
         Assert.Equal((ushort)1, applications.ActiveId);
-        Assert.Equal("APP_START=OK\r\n", start.OutputText);
-        Assert.Equal("APP_STOP=OK\r\n", stop.OutputText);
+        Assert.Equal((ushort)6, start.RequestId);
+        Assert.Equal((ushort)2, start.ApplicationId);
+        Assert.Equal((ushort)2, start.ActiveId);
+        Assert.Equal((ushort)7, stop.RequestId);
+        Assert.Equal((ushort)0, stop.ActiveId);
 
         Assert.Equal(7, transport.Writes.Count);
         Assert.Equal(

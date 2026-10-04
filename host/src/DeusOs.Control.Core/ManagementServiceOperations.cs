@@ -112,16 +112,16 @@ public sealed class ManagementServiceOperations
 
     public NegotiationResult? LastNegotiation => _session.LastNegotiation;
 
-    public Task<RpcResult> PingAsync(
+    public Task<PingStatus> PingAsync(
         CancellationToken cancellationToken = default) =>
         _session.ExecuteAsync(
-            (client, token) => client.PingAsync(token),
+            (client, token) => client.PingStatusAsync(token),
             cancellationToken);
 
-    public Task<RpcResult> HealthAsync(
+    public Task<HealthSnapshot> HealthAsync(
         CancellationToken cancellationToken = default) =>
         _session.ExecuteAsync(
-            (client, token) => client.HealthAsync(token),
+            (client, token) => client.HealthSnapshotAsync(token),
             cancellationToken);
 
     public Task<ApplicationSnapshot> ApplicationsAsync(
@@ -146,19 +146,19 @@ public sealed class ManagementServiceOperations
                 token),
             cancellationToken);
 
-    public Task<RpcResult> StartApplicationAsync(
+    public Task<ApplicationStartResult> StartApplicationAsync(
         ushort applicationId,
         CancellationToken cancellationToken = default) =>
         _session.ExecuteAsync(
-            (client, token) => client.StartApplicationAsync(
+            (client, token) => client.StartApplicationControlAsync(
                 applicationId,
                 token),
             cancellationToken);
 
-    public Task<RpcResult> StopApplicationAsync(
+    public Task<ApplicationStopResult> StopApplicationAsync(
         CancellationToken cancellationToken = default) =>
         _session.ExecuteAsync(
-            (client, token) => client.StopApplicationAsync(token),
+            (client, token) => client.StopApplicationControlAsync(token),
             cancellationToken);
 
     public Task<AssetCommitResult> WriteOledUiLayoutAsync(

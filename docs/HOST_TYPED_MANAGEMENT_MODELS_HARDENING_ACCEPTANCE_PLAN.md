@@ -1,6 +1,6 @@
 # Deus OS — Host Typed Management Models Hardening Acceptance Plan
 
-Status: **ACTIVE — GATE 0 / `FDC-04`**
+Status: **GATES 0–3 ACCEPTED / PUBLICATION PENDING / `FDC-04`**
 
 Canonical design: `docs/HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md`
 
@@ -97,3 +97,27 @@ At minimum:
 - `FDC04_DOC_RECONCILIATION_FAILURE`
 
 A failure does not authorize service/Web implementation, transport changes or target changes.
+
+## Gate 2/3 accepted result — publication pending
+
+Authoritative evidence: `stm32_os_fdc04_host_validation_dotnet_v1_20261004_191243.evidence.zip`, SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`.
+
+Accepted proof:
+
+- ZIP CRC PASS; manifest `78/78` exact;
+- exact pre/post repository baseline `HEAD == origin/main == f0614d4182b5f603f43eb79b5dd011b929de0e8c`;
+- exact candidate shape: six modified tracked paths + two SHA-bound new paths, staged count zero;
+- Core `78/78`, failed/skipped/errors/not-run all zero;
+- Core Release build PASS;
+- CLI Release build PASS;
+- Desktop Release build PASS;
+- `MODEL_PARSER_OWNER=DeusOs.Control.Core.ManagementStateParser`;
+- low-level raw compatibility APIs preserved;
+- service-facade `RpcResult` return types `0`;
+- Desktop raw `OutputText` uses `0`;
+- CLI raw `OutputText` uses `1`, confined to `rpcinfo`;
+- protocol/channel/session/native transport/target source unchanged;
+- target I/O NONE; Flash mutation NONE;
+- live repository poststate exactly matches prestate and source hashes are unchanged.
+
+Gate 3 documentation reconciliation records the evidence and accepted source hashes without widening scope. Gate 4/5 publication remains required before `FDC-04` is CLOSED.

@@ -1,6 +1,6 @@
 # Deus OS — Host Typed Management Models Hardening Plan
 
-Status: **ACTIVE — GATE 0 CONTRACT FREEZE / `FDC-04`**
+Status: **GATES 0–3 ACCEPTED / PUBLICATION PENDING / `FDC-04`**
 
 Published baseline commit: `0d9adfd8d0ed11478194e2268ede3c57379c8294`
 
@@ -159,3 +159,20 @@ No physical hardware acceptance is required because wire/target behavior is unch
 ## 12. Exit criterion
 
 `FDC-04` is CLOSED only when every service-v1 management state/control acknowledgement that previously escaped as raw `RpcResult` has an accepted typed Core representation or is explicitly excluded, service/Desktop/CLI consume those models without duplicating target-text parsing, existing low-level compatibility APIs remain intact, full regressions/builds pass and the accepted source is published normally.
+
+## 13. Gate-2/3 accepted candidate — publication pending
+
+Gate 2 accepted `stm32_os_fdc04_host_validation_dotnet_v1_20261004_191243.evidence.zip`, SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`. ZIP CRC is clean and manifest verification is `78/78` exact. Core tests are `78/78` with failed/skipped/errors/not-run all zero; Core, CLI and Desktop Release builds PASS; target I/O and Flash mutation are zero.
+
+Accepted source/test SHA-256 values are:
+
+- `host/src/DeusOs.Control.Cli/Program.cs` — `D74C59FF6099081A595788978CF6B42D0D55406CCAC7B9145869F819DE860F03`;
+- `host/src/DeusOs.Control.Core/DeusDeviceClient.cs` — `CEDB67F7314977BB8F8D6FB6CDEC45A15E88AFA3923C7807DA238FCCD0906CA8`;
+- `host/src/DeusOs.Control.Core/ManagementServiceOperations.cs` — `F255EF9AAAC391992E79D18F25223466D3EFA440B8EBB3747ABC36BFFECCE881`;
+- `host/src/DeusOs.Control.Core/ManagementStateModels.cs` — `79AB1697CC2E1181B03B93DF4D0C3E30F1F4B44849DA83851DE100FD137D67D8`;
+- `host/src/DeusOs.Control.Desktop/DesktopController.cs` — `14E139AAD8C4792AF3E3BD12DCC1EC505BE892BE2EA68558BD0077B982946E85`;
+- `host/src/DeusOs.Control.Desktop/MainWindow.cs` — `BC4C81A7D7DBE5B3C0A069AD51C158FEA3EAC0AC674563101DBE770AE0737B73`;
+- `host/tests/DeusOs.Control.Core.Tests/ManagementServiceOperationTests.cs` — `62B52078BC9B8E72E1A00642B2B88A8E1F59D54AB0A9049E81C13B872E375A4D`;
+- `host/tests/DeusOs.Control.Core.Tests/ManagementStateModelTests.cs` — `2AB4F632F38D95E9CB46D9936B540216AEF887226142A2C903476487E787CD87`.
+
+Static acceptance additionally proves `ManagementStateParser` is the Core parser owner, low-level raw compatibility APIs remain present, `ManagementServiceOperations` has zero `RpcResult` return types, Desktop has zero raw `OutputText` uses, and CLI has exactly one raw `OutputText` use confined to `rpcinfo`. Gate 3 canonical reconciliation is complete in the local publication candidate. FDC-04 remains publication-pending until Gates 4–5 complete.

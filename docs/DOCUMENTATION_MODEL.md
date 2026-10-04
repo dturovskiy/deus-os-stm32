@@ -322,7 +322,7 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after FDC-03 publication closure and FDC-04 Gate-0 activation:
+Live documentation inventory after FDC-04 Gate-2/3 acceptance and before publication:
 
 - Markdown files in `docs/`: `78`;
 - `*_ACCEPTANCE_PLAN.md` records: `24`;
@@ -337,8 +337,8 @@ Live documentation inventory after FDC-03 publication closure and FDC-04 Gate-0 
 - `HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-01` pair at `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`;
 - `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-02` pair at `42245d9d71504482fb189d8351ecce7049542145`;
 - `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-03` pair at `0d9adfd8d0ed11478194e2268ede3c57379c8294`;
-- `HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the active matched `FDC-04` Gate-0 pair; FDC-01..04 are post-publication hardening, not product feature boundaries;
+- `HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the matched `FDC-04` pair with Gates 0–3 accepted and publication pending; FDC-01..04 are post-publication hardening, not product feature boundaries;
 - latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
-- no new product feature boundary is currently active; `FDC-04 / HOST_TYPED_MANAGEMENT_MODELS_HARDENING` is the active engineering closure boundary at Gate 0; FDC-05+ and FDC-09 remain non-authorizing until separately promoted.
+- no new product feature boundary is currently active; `FDC-04 / HOST_TYPED_MANAGEMENT_MODELS_HARDENING` remains the active engineering closure boundary through publication, with Gates 0–3 accepted; FDC-05+ and FDC-09 remain non-authorizing until separately promoted.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

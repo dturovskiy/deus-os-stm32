@@ -36,12 +36,13 @@ This section is the executable ledger for the post-publication architecture/code
   - [x] Gate-2 evidence SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25`: manifest `78/78`, Core `66/66`, Core/CLI/Desktop Release builds PASS, exact candidate pre/post state, target I/O/Flash mutation zero;
   - [x] Gate 4 normal acceptance commit + Gate 5 ordinary non-force publication/fresh-remote verification.
 
-- [ ] **FDC-04 — typed Host Core management models — ACTIVE / Gate 0 (`HOST_TYPED_MANAGEMENT_MODELS_HARDENING`).**
-  - [ ] every state surface consumed by the future service has a typed Core parser/model or is explicitly excluded from service v1;
-  - [ ] health state required by service/Web is no longer presentation-parsed from raw `RpcResult.OutputText`;
-  - [ ] parsers enforce required keys/shape, forward-compatible unknown fields where appropriate and bounded input;
-  - [ ] CLI/Desktop/service consume the same Core model rather than duplicating protocol text parsing;
-  - [ ] parser/model tests PASS.
+- [ ] **FDC-04 — typed Host Core management models — GATES 0–3 ACCEPTED / PUBLICATION PENDING (`HOST_TYPED_MANAGEMENT_MODELS_HARDENING`).**
+  - [x] every service-v1 state/control acknowledgement has a typed Core parser/model or is explicitly excluded (`rpcinfo` diagnostic);
+  - [x] health state required by service/Web is no longer presentation-parsed from raw `RpcResult.OutputText`;
+  - [x] parsers enforce required keys/shape, bounded input, boolean/application-ID ranges and forward-compatible unknown fields where appropriate;
+  - [x] CLI/Desktop/service consume shared Core models rather than duplicating protocol text parsing;
+  - [x] Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`: manifest `78/78`, Core `78/78`, Core/CLI/Desktop Release PASS, exact candidate pre/post state, target I/O/Flash mutation zero;
+  - [ ] Gate 4 normal acceptance commit + Gate 5 ordinary non-force publication/fresh-remote verification.
 
 - [ ] **FDC-09 — native transport cancellation/disposal for long-lived/multi-device use.**
   - [ ] Windows WinUSB and Linux libusb I/O have explicit bounded cancellation/disposal semantics;

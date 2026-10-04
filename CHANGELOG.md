@@ -1,5 +1,11 @@
 ## 2026-10-04
 
+### FDC-04 Host typed management models hardening — Gate 2 accepted / publication pending
+
+`HOST_TYPED_MANAGEMENT_MODELS_HARDENING` accepted the exact eight-path candidate on published Gate-0 baseline `f0614d4182b5f603f43eb79b5dd011b929de0e8c`. Authoritative evidence is `stm32_os_fdc04_host_validation_dotnet_v1_20261004_191243.evidence.zip`, SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`: ZIP CRC clean, manifest `78/78`, exact six-modified-plus-two-new pre/post state, Core `78/78`, Core/CLI/Desktop Release builds PASS, target I/O NONE and Flash mutation NONE.
+
+Static ownership acceptance proves `ManagementStateParser` is the sole new Core parser owner; low-level raw compatibility APIs remain present; `ManagementServiceOperations` has zero `RpcResult` return types; Desktop has zero raw `OutputText` uses; CLI has exactly one raw `OutputText` use confined to the explicitly excluded `rpcinfo` diagnostic. Gate 3 documentation reconciliation is complete in the local publication candidate. FDC-04 remains publication-pending until normal Gate-4 commit and Gate-5 non-force push/fresh-remote verification.
+
 ### FDC-04 Host typed management models hardening — Gate 0 activated
 
 `HOST_TYPED_MANAGEMENT_MODELS_HARDENING` is now the active host closure slice on published FDC-03 baseline `0d9adfd8d0ed11478194e2268ede3c57379c8294`. Gate 0 freezes an exact eight-path source/test boundary: one new Core management-model/parser file, typed wrapper additions in `DeusDeviceClient`, convergence of `ManagementServiceOperations`, CLI and Desktop onto the typed models, one new parser/model test file, and updates to the FDC-03 service tests.

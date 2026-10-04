@@ -238,9 +238,12 @@ public sealed class MainWindow : Window
 
     private async Task RefreshHealthCoreAsync()
     {
-        var result = await _controller.HealthAsync(CancellationToken.None);
-        EnsureSuccess(result, "health");
-        _health.Text = result.OutputText.Trim();
+        var health = await _controller.HealthAsync(CancellationToken.None);
+        _health.Text =
+            $"tick 0x{health.Tick:X8} | PC13 {(health.Pc13High ? "HIGH" : "LOW")} | " +
+            $"watchdog {(health.WatchdogActive ? "active" : "inactive")} | " +
+            $"reloads {health.WatchdogReloadCount} | reset 0x{health.ResetFlags:X8} | " +
+            $"IWDG reset {(health.IwdgReset ? "yes" : "no")}";
     }
 
     private async Task StartSelectedAsync()
@@ -391,8 +394,7 @@ public sealed class MainWindow : Window
 
             try
             {
-                var result = await _controller.PingAsync(cancellationToken);
-                EnsureSuccess(result, "liveness ping");
+                _ = await _controller.PingAsync(cancellationToken);
             }
             catch (DeusHostException exception)
                 when (exception.Kind == HostErrorKind.Cancelled &&
@@ -485,13 +487,4 @@ public sealed class MainWindow : Window
             ready && applications && applicationControl;
     }
 
-    private static void EnsureSuccess(RpcResult result, string operation)
-    {
-        if (!result.IsSuccess)
-        {
-            throw new DeusHostException(
-                HostErrorKind.RpcStatus,
-                $"{operation} failed with status {result.StatusDomain}/{result.StatusCode}");
-        }
-    }
 }
