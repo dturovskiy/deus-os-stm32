@@ -1,6 +1,6 @@
 # Deus OS — Host RPC Timeout / Correlation Hardening Acceptance Plan
 
-Status: **GATES 0–2 PASS — GATES 3–5 CLOSURE IN PROGRESS / `FDC-01`**
+Status: **CLOSED — GATES 0–5 ACCEPTED / PUBLISHED `c863b5ab9d00ab96de7c8f8275f905ed52c8740e` / `FDC-01`**
 
 Canonical design: `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md`
 
@@ -80,7 +80,7 @@ Accepted proof:
 - target I/O `NONE`, Flash mutation `NONE`;
 - static ownership review confirms one `DeviceProtocolChannel` correlation/abandonment owner, no second decoder/request-ID allocator/stale queue, unknown non-abandoned correlation remains fatal, and firmware non-DATA requests retain no blind retry.
 
-Gate 2 is accepted. Gate 3 reconciliation is now authorized; Gates 4–5 remain pending.
+Gate 2 was accepted by the evidence above; the Gate-3/4/5 results recorded below subsequently completed closure/publication.
 
 ## Gate 3 — documentation/closure reconciliation
 
@@ -113,6 +113,37 @@ Post-push require:
 - `HEAD == origin/main` after fresh synchronization;
 - clean worktree/index;
 - ahead/behind `0/0`.
+
+## Gate-3 result — PASS
+
+Canonical reconciliation recorded the exact Gate-2 evidence and preserved the five-path accepted product candidate without further source mutation.
+
+## Gate-4 result — PASS
+
+One normal local acceptance commit was created:
+
+- commit `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`;
+- tree `146704385bcaf0b7196b3519b8fe17488200fe63`;
+- parent `953621bda0e4dd530e9e3a0f149fd9316d811c8d`;
+- message `fix: harden host rpc timeout recovery`;
+- exact accepted set: five frozen Host Core/test paths plus six canonical docs;
+- staged diff check PASS; post-commit repository clean; local branch ahead `1/0` before publication.
+
+## Gate-5 result — PASS / PUBLISHED
+
+Publication used an ordinary non-force fast-forward only:
+
+`953621b..c863b5a  main -> main`
+
+Fresh synchronization proved:
+
+- `HEAD == origin/main == FETCH_HEAD == c863b5ab9d00ab96de7c8f8275f905ed52c8740e`;
+- clean worktree/index;
+- ahead/behind `0/0`.
+
+Independent GitHub `main` lookup confirmed the same commit/tree/parent and a verified valid signature.
+
+`FDC-01` is CLOSED. The next active closure boundary is `FDC-02 / HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING`; this acceptance does not authorize `FDC-03+` source work.
 
 ## Failure classifications
 

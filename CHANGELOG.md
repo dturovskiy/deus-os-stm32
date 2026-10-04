@@ -10,7 +10,9 @@ Authoritative Gate-2 evidence is `stm32_os_fdc01_host_validation_dotnet_v1_20261
 
 The repeated PowerShell validation failures preceding this PASS were harness failures, not FDC-01 product-test failures. The final accepted validator is a typed .NET 10 file-based utility using fresh tracked-only scratch materialization, isolated NuGet/.NET state and structured xUnit XML result counters, eliminating PowerShell pipeline/cardinality ambiguity from the acceptance path.
 
-FDC-01 Gates 3–5 documentation/local-commit/publication closure remain before the item is marked CLOSED. `FDC-02+` source mutation is still blocked until that publication closure completes.
+FDC-01 Gates 3–5 are now closed: accepted implementation/docs were committed as `c863b5ab9d00ab96de7c8f8275f905ed52c8740e` (tree `146704385bcaf0b7196b3519b8fe17488200fe63`, parent `953621bda0e4dd530e9e3a0f149fd9316d811c8d`) and published by ordinary non-force fast-forward `953621b..c863b5a`. Fresh fetch proved `HEAD == origin/main == FETCH_HEAD == c863b5ab9d00ab96de7c8f8275f905ed52c8740e`, clean `0/0`; GitHub independently reports the same commit with a valid verified signature. `FDC-01` is CLOSED/PUBLISHED.
+
+`FDC-02` is now activated as `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING`, baseline `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`. Its Gate-0 contract freezes `DeusDeviceSession` as the sole lifecycle owner while moving public `StateChanged` subscriber execution outside the `_operationGate` critical section through one serialized per-session asynchronous notification mechanism. Required closure includes deterministic transition order, callback exception isolation, reentrant session-operation tests, bounded Disconnect/Dispose behavior, Core tests and Core/Desktop Release-build regression. Only `DeusDeviceSession.cs` and `ClientTests.cs` product/test mutation is authorized; `FDC-03+`, native transports and target code remain blocked.
 
 ## 2026-10-03
 

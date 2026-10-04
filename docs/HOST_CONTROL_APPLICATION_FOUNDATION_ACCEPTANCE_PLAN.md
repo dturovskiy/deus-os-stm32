@@ -429,20 +429,13 @@ Next boundary:
 
 This addendum does not alter the historical Gate-7 acceptance. It defines proof required to close `FDC-01`, `FDC-02`, `FDC-03`, `FDC-04` and `FDC-09` before any long-lived Host Management Service/Web boundary.
 
-### `FDC-01`
+### `FDC-01` — ACCEPTED / CLOSED
 
-Acceptance requires deterministic Core tests proving all of:
+Accepted at published commit `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`. Authoritative Gate-2 evidence SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6` proves Core `51/51`, Release build PASS and zero target I/O. Deterministic tests cover timeout/cancel with delayed `RPC_DATA...RPC_END`, partial streams, terminal stale `PROTOCOL_ERROR`, fresh-RPC recovery, unknown correlation remaining fatal, multiple abandoned IDs, clean/poisoned request-ID wrap, reset safety and firmware-update DATA/no-blind-retry regressions.
 
-- an RPC may time out/cancel after one or more response frames are still delayed;
-- delayed `RPC_DATA` and matching delayed `RPC_END` for the abandoned request are discarded/drained or the session is reset according to the frozen policy;
-- the next fresh RPC completes normally;
-- a mismatched request ID not explicitly classified abandoned/stale remains a `RequestCorrelation` failure;
-- repeated timeout/cancel cannot grow retained stale IDs without bound and request-ID wrap skips zero safely;
-- firmware-update INFO/BEGIN/AUTHORIZE/END response loss follows explicit reconnect/INFO/adjudication/restart semantics with no blind non-idempotent request retry.
+### `FDC-02` — ACTIVE
 
-### `FDC-02`
-
-Acceptance requires a synthetic subscriber that initiates another session operation from `StateChanged` without deadlock, deterministic notification order, and clean Connect/Recover/Disconnect/Dispose races under the single-session operation model.
+Canonical closure: `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. Acceptance requires a synthetic subscriber that initiates another session operation from `StateChanged` without deadlock, deterministic notification order, callback exception isolation, effective unsubscribe semantics, and clean Connect/Recover/Disconnect/Dispose races under the single-session operation model. Core and Desktop Release-build regression must remain PASS.
 
 ### `FDC-03`
 

@@ -1,6 +1,6 @@
 # Deus OS — Host RPC Timeout / Correlation Hardening Plan
 
-Status: **GATES 0–2 PASS — ACCEPTANCE/PUBLICATION CLOSURE IN PROGRESS / `FDC-01`**
+Status: **CLOSED — GATES 0–5 ACCEPTED / PUBLISHED `c863b5ab9d00ab96de7c8f8275f905ed52c8740e` / `FDC-01`**
 
 Baseline repository commit: `8bd09ad890ab10bb7fed6ecba21d5ad6a382237b`
 
@@ -135,7 +135,29 @@ Accepted facts:
 - staged/untracked state remained zero;
 - target I/O and Flash mutation were both zero.
 
-Gate 2 is accepted. Gates 3–5 remain closure/publication steps; no `FDC-02+` source mutation is authorized until those steps finish.
+Gate 2 was accepted by the evidence above; Gates 3–5 subsequently closed through the exact acceptance commit/publication recorded below.
+
+## 9.2 Gates 3–5 closure / publication
+
+Gate 3 canonical reconciliation accepted the exact Gate-2 source/test candidate without further product-source mutation.
+
+Gate 4 local acceptance commit:
+
+- commit `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`;
+- tree `146704385bcaf0b7196b3519b8fe17488200fe63`;
+- parent `953621bda0e4dd530e9e3a0f149fd9316d811c8d`;
+- subject `fix: harden host rpc timeout recovery`;
+- exact accepted set: five frozen Host Core/test paths plus six canonical documentation records;
+- staged `git diff --cached --check` PASS; post-commit worktree/index clean.
+
+Gate 5 publication:
+
+- ordinary non-force fast-forward `953621b..c863b5a  main -> main`;
+- fresh fetch proved `HEAD == origin/main == FETCH_HEAD == c863b5ab9d00ab96de7c8f8275f905ed52c8740e`;
+- ahead/behind `0/0`, clean repository;
+- independent GitHub `main` lookup matched commit `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`, tree `146704385bcaf0b7196b3519b8fe17488200fe63`, parent `953621bda0e4dd530e9e3a0f149fd9316d811c8d`, with verified signature (`valid`).
+
+`FDC-01` is therefore CLOSED / PUBLISHED. The next independently frozen host closure slice is `FDC-02 / HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING`.
 
 ## 10. Exit criterion
 

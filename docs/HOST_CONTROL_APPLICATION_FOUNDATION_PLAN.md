@@ -601,13 +601,13 @@ That boundary begins with a documentation-only Gate 0 that freezes the bounded p
 
 This addendum does not rewrite the accepted `HOST_CONTROL_APPLICATION_FOUNDATION` Gates 0–7 result. It records residual obligations discovered by the 2026-10-03 architecture/code audit and promoted by `docs/CURRENT_STATE.md` / `docs/ROADMAP.md` as mandatory prerequisites before a long-lived Host Management Service/Web boundary.
 
-### `FDC-01` — generic RPC timeout/cancellation correlation
+### `FDC-01` — generic RPC timeout/cancellation correlation — CLOSED / PUBLISHED
 
-The original v1 rule “responses with a different request ID must not complete the active request” remains correct but is incomplete for an abandoned multi-frame RPC. A timeout/cancel may leave delayed `RPC_DATA...RPC_END` bytes in the same transport session. Closure must define one bounded channel/session policy that prevents those frames from poisoning later work while preserving fatal handling for genuinely unknown correlation mismatches. Stale-ID lifetime and request-ID wrap must be bounded, and firmware-update non-DATA ambiguity must use explicit adjudication/restart rather than blind retry.
+This post-publication obligation is closed at `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`. The accepted channel-owned abandonment policy drains delayed multi-frame RPC traffic through terminal `RPC_END`/`PROTOCOL_ERROR`, preserves fatal handling for genuinely unknown correlation mismatches, prevents unresolved request-ID reuse at wrap, shares the same abandonment owner with firmware update, retains one exact DATA timeout retry and retains no blind retry for INFO/BEGIN/AUTHORIZE/END. Authoritative Gate-2 evidence SHA-256: `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`, Core `51/51`, Release build PASS, target I/O zero.
 
-### `FDC-02` — session state-event delivery
+### `FDC-02` — session state-event delivery — ACTIVE
 
-`DeusDeviceSession` remains the single session lifecycle owner, but public state notifications must not execute arbitrary subscriber code under the session operation gate in a way that permits reentrant deadlock. A closure slice must preserve deterministic state ordering while separating mutation serialization from subscriber execution.
+`DeusDeviceSession` remains the single session lifecycle owner, but public state notifications must not execute arbitrary subscriber code under the session operation gate in a way that permits reentrant deadlock. The active dedicated closure pair is `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`; it freezes one serialized per-session asynchronous notification owner, deterministic transition ordering, callback exception isolation and reentrant operation tests without changing the public `StateChanged` signature.
 
 ### `FDC-03` — service-facing operation policy
 

@@ -11,7 +11,7 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice A — Host long-lived-session hardening
 
-- [ ] **FDC-01 — generic RPC timeout/cancellation correlation and abandoned-response cleanup — GATES 0–2 PASS / Gates 3–5 closure pending (`HOST_RPC_TIMEOUT_RECOVERY_HARDENING`).**
+- [x] **FDC-01 — generic RPC timeout/cancellation correlation and abandoned-response cleanup — CLOSED / PUBLISHED `c863b5ab9d00ab96de7c8f8275f905ed52c8740e` (`HOST_RPC_TIMEOUT_RECOVERY_HARDENING`).**
   - [x] freeze one policy for RPC timeout/cancel aftermath: one channel-owned abandoned-request registry with `SingleResponse` and `RpcUntilTerminal`; unresolved abandoned state at request-ID wrap fails closed and requires a fresh session;
   - [x] delayed `RPC_DATA` and delayed `RPC_END` for an abandoned request cannot poison a later fresh request;
   - [x] unknown mismatched request IDs that are not explicitly abandoned/stale remain fatal correlation errors;
@@ -20,7 +20,7 @@ This section is the executable ledger for the post-publication architecture/code
   - [x] INFO/BEGIN/AUTHORIZE/END retain no blind retry; response loss remains reconnect/INFO/adjudicate/restart semantics;
   - [x] deterministic Core validation PASS: timeout/cancel/partial delayed streams, stale terminal `PROTOCOL_ERROR`, unknown correlation, multiple abandoned IDs, clean/poisoned wrap, reset safety and firmware retry/no-blind-retry regressions; authoritative evidence SHA-256 `992A3C38908BC6F5E0E40EA844612A235F7DF2A5960184B6CA19A2F1B1DDEEE6`, Core `51/51`, Release build PASS, target I/O zero.
 
-- [ ] **FDC-02 — `DeusDeviceSession.StateChanged` reentrancy/deadlock closure.**
+- [ ] **FDC-02 — `DeusDeviceSession.StateChanged` reentrancy/deadlock closure — ACTIVE / Gate 0 contract freeze (`HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING`).**
   - [ ] arbitrary subscriber callbacks are no longer invoked synchronously while `_operationGate` is held, or an equivalent formally non-reentrant delivery mechanism is frozen;
   - [ ] state ordering remains deterministic across Connect/Execute/recovery/Disconnect/Dispose;
   - [ ] a subscriber that attempts a session operation cannot deadlock the owner;
