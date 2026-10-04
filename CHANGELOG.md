@@ -1,5 +1,13 @@
 ## 2026-10-04
 
+### FDC-03 Host service operation allowlist hardening — Gate 2 accepted / publication pending
+
+`HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` accepted the exact two-file candidate on Gate-0 publication baseline `1fe0315916deaf551dc0249f2dffb424abd5e7dc`. Production `ManagementServiceOperations.cs` SHA-256 is `299F3344EF1BF79736DEB5A9D5ED6D2E1AA63513683DE6711BBD8FAFCD1CE668`; `ManagementServiceOperationTests.cs` SHA-256 is `A7A43385AE9F1BF754BCDD56E2AF17781AAD871584766374C228D49F539259D1`.
+
+Authoritative evidence is `stm32_os_fdc03_host_validation_dotnet_v2_20261004_184243.evidence.zip`, SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25`: CRC clean, manifest `78/78`, static service catalog `8 = 5 ReadOnly + 3 Control + 0 Destructive`, no raw RPC/bootloader/flags/dynamic-registry route, exactly three `PublishedOnly` Asset routes, Core `66/66`, Core/CLI/Desktop Release builds PASS, exact pre/post candidate state, target I/O NONE and Flash mutation NONE.
+
+The preceding v1 test run correctly exposed two invalid synthetic `sysinfo` capability fixtures; only the test fixture changed and the production facade remained byte-identical. Gate 3 documentation reconciliation is complete in the local publication candidate. FDC-03 remains publication-pending until normal Gate-4 commit and Gate-5 non-force push/fresh-remote verification.
+
 ### FDC-03 Host service operation allowlist hardening — Gate 0 activated
 
 `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` is now the active host closure slice on published FDC-02 baseline `42245d9d71504482fb189d8351ecce7049542145`. Gate 0 freezes an exact two-new-file implementation boundary: `ManagementServiceOperations.cs` plus `ManagementServiceOperationTests.cs`.

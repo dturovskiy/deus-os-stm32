@@ -1,6 +1,6 @@
 # Deus OS — Host Service Operation Allowlist Hardening Plan
 
-Status: **ACTIVE — GATE 0 CONTRACT FREEZE / `FDC-03`**
+Status: **GATES 0–3 ACCEPTED / PUBLICATION PENDING / `FDC-03`**
 
 Baseline repository commit: `42245d9d71504482fb189d8351ecce7049542145`
 
@@ -193,3 +193,18 @@ No physical hardware acceptance is required because this boundary adds no transp
 `FDC-03` is CLOSED only when a future service has a stable Core-owned typed operation surface whose allowlist is explicit, reviewable and incapable of routing caller-selected raw RPC IDs/flags; destructive operations are absent from service v1; negative tests prove raw/unlisted/destructive access is unavailable; regressions build cleanly; and the accepted source is published normally.
 
 Closing FDC-03 does not activate a Web/service feature boundary and does not close FDC-04/FDC-09 or any target-side FDC item.
+
+## 14. Gate-2 accepted implementation record — 2026-10-04
+
+Gate 0 was published at `1fe0315916deaf551dc0249f2dffb424abd5e7dc`. Gate 1 then added exactly the two frozen files:
+
+- `host/src/DeusOs.Control.Core/ManagementServiceOperations.cs` — SHA-256 `299F3344EF1BF79736DEB5A9D5ED6D2E1AA63513683DE6711BBD8FAFCD1CE668`;
+- `host/tests/DeusOs.Control.Core.Tests/ManagementServiceOperationTests.cs` — SHA-256 `A7A43385AE9F1BF754BCDD56E2AF17781AAD871584766374C228D49F539259D1`.
+
+The accepted service-v1 catalog/facade contains exactly eight operations: five ReadOnly, three Control and zero Destructive. Static proof confirms no direct `RpcAsync`, bootloader/update route, caller protocol flags, dynamic RPC-registry expansion or `PrepublicationAcceptance` Asset policy. All three Asset routes are hard-bound to `PublishedOnly`.
+
+Authoritative Gate-2 evidence is `stm32_os_fdc03_host_validation_dotnet_v2_20261004_184243.evidence.zip`, SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25`. ZIP CRC is clean and manifest verification is `78/78` exact. It proves Core `66/66` with failed/skipped/errors/not-run all zero, Core Release build PASS, CLI restore/build PASS, Desktop restore/build PASS, exact pre/post two-file candidate state, target I/O NONE and Flash mutation NONE.
+
+The preceding v1 run was a valid failing test run, not accepted evidence: two synthetic test fixtures omitted mandatory baseline system capability bits and failed negotiation before exercising the facade. Only the test fixture was corrected; production `ManagementServiceOperations.cs` remained byte-identical.
+
+Gate 3 canonical reconciliation is accepted in the publication candidate. `FDC-03` remains publication-pending until Gate 4 normal commit and Gate 5 ordinary non-force push/fresh-remote verification complete. `FDC-04` source work is not authorized by this record.

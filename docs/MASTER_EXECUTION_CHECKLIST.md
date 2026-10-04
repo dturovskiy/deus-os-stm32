@@ -27,12 +27,14 @@ This section is the executable ledger for the post-publication architecture/code
   - [x] callback exceptions are isolated, unsubscribe is effective for later dispatch, Dispose does not wait for blocked callbacks, and Disconnect/Dispose race is bounded/idempotent;
   - [x] deterministic Gate-2 host validation PASS: evidence SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`, manifest `72/72`, Core `58/58`, Core/Desktop Release builds PASS, exact two-path pre/post state, target I/O and Flash mutation zero.
 
-- [ ] **FDC-03 — service-facing operation allowlist / no raw RPC proxy — ACTIVE / Gate 0 (`HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING`).**
-  - [ ] define typed service operations and explicit read/control/destructive exposure classes;
-  - [ ] firmware `SAFE`/`DIAGNOSTIC` command classes are not reused as HTTP authorization policy;
-  - [ ] arbitrary `RpcAsync(rpcId, flags)` is not reachable from Web/HTTP/service input;
-  - [ ] `wdogtrip`, scheduler stress/diagnostic methods, UI mutation/test methods and unlisted RPC IDs are absent unless separately authorized by a future reviewed contract;
-  - [ ] negative tests prove raw/unlisted/destructive access is rejected/not routed.
+- [ ] **FDC-03 — service-facing operation allowlist / no raw RPC proxy — GATES 0–3 ACCEPTED / PUBLICATION PENDING (`HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING`).**
+  - [x] define typed service operations and explicit read/control/destructive exposure classes;
+  - [x] firmware `SAFE`/`DIAGNOSTIC` command classes are not reused as HTTP authorization policy;
+  - [x] arbitrary `RpcAsync(rpcId, flags)` is not reachable from Web/HTTP/service input;
+  - [x] `wdogtrip`, scheduler stress/diagnostic methods, UI mutation/test methods and unlisted RPC IDs are absent unless separately authorized by a future reviewed contract;
+  - [x] negative tests prove raw/unlisted/destructive access is rejected/not routed;
+  - [x] Gate-2 evidence SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25`: manifest `78/78`, Core `66/66`, Core/CLI/Desktop Release builds PASS, exact candidate pre/post state, target I/O/Flash mutation zero;
+  - [ ] Gate 4 normal acceptance commit + Gate 5 ordinary non-force publication/fresh-remote verification.
 
 - [ ] **FDC-04 — typed Host Core management models.**
   - [ ] every state surface consumed by the future service has a typed Core parser/model or is explicitly excluded from service v1;

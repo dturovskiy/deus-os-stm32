@@ -336,8 +336,8 @@ Live documentation inventory after FDC-02 publication closure and FDC-03 Gate-0 
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` form a matched published pair; `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` is their frozen published wire/image ABI contract;
 - `HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-01` pair at `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`;
 - `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-02` pair at `42245d9d71504482fb189d8351ecce7049542145`;
-- `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the active matched `FDC-03` Gate-0 pair; FDC-01/FDC-02/FDC-03 are post-publication hardening, not product feature boundaries;
+- `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the matched `FDC-03` pair with Gates 0–3 accepted and publication pending; FDC-01/FDC-02/FDC-03 are post-publication hardening, not product feature boundaries;
 - latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
-- no new product feature boundary is currently active; `FDC-03 / HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` is the active engineering closure boundary inside the mandatory pre-feature program, while FDC-04+ remain non-authorizing until separately promoted.
+- no new product feature boundary is currently active; `FDC-03 / HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` remains the active engineering closure boundary through publication, with Gates 0–3 accepted; FDC-04+ remain non-authorizing until separately promoted.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

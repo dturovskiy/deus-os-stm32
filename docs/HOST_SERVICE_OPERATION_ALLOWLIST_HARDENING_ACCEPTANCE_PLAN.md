@@ -1,6 +1,6 @@
 # Deus OS — Host Service Operation Allowlist Hardening Acceptance Plan
 
-Status: **ACTIVE — GATE 0 / `FDC-03`**
+Status: **GATES 0–3 ACCEPTED / PUBLICATION PENDING / `FDC-03`**
 
 Canonical design: `docs/HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md`
 
@@ -96,3 +96,30 @@ At minimum distinguish:
 - `FDC03_DOC_RECONCILIATION_FAILURE`
 
 A failure does not authorize Web/service implementation, target changes, native transport changes or folding FDC-04/FDC-09 into this slice.
+
+## Accepted Gates 1–3 record — 2026-10-04
+
+Gate 1 candidate is exactly two new files on Gate-0 publication baseline `1fe0315916deaf551dc0249f2dffb424abd5e7dc`:
+
+- `ManagementServiceOperations.cs` SHA-256 `299F3344EF1BF79736DEB5A9D5ED6D2E1AA63513683DE6711BBD8FAFCD1CE668`;
+- `ManagementServiceOperationTests.cs` SHA-256 `A7A43385AE9F1BF754BCDD56E2AF17781AAD871584766374C228D49F539259D1`.
+
+Authoritative Gate-2 evidence: `stm32_os_fdc03_host_validation_dotnet_v2_20261004_184243.evidence.zip`, SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25`.
+
+Accepted proof:
+
+- ZIP CRC PASS; manifest `78/78` exact;
+- prestate/poststate `HEAD == origin/main == 1fe0315916deaf551dc0249f2dffb424abd5e7dc`;
+- tracked diff `0`, staged `0`, untracked set exactly the two frozen candidate files;
+- static catalog proof: total `8`, ReadOnly `5`, Control `3`, Destructive `0`;
+- raw RPC call absent; bootloader route absent; caller protocol flags absent; dynamic registry expansion absent;
+- exactly three Asset routes use `AssetAccessPolicy.PublishedOnly`;
+- Core tests `66/66`, failed/skipped/errors/not-run all `0`;
+- Core Release build PASS;
+- CLI restore + Release build PASS;
+- Desktop restore + Release build PASS;
+- target I/O NONE; Flash mutation NONE.
+
+The earlier validator-v1 run correctly reported `66 total / 64 passed / 2 failed`; both failures were invalid synthetic `sysinfo` capability fixtures that violated the already frozen mandatory base capability mask before facade execution. The fixture-only correction was revalidated by the full v2 matrix above.
+
+Gate 3 documentation reconciliation is accepted. Gate 4/5 commit/publication remain pending; therefore FDC-03 is not yet CLOSED/PUBLISHED and FDC-04 source mutation remains unauthorized.
