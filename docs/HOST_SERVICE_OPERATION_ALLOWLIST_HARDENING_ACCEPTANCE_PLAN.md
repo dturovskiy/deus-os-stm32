@@ -1,6 +1,6 @@
 # Deus OS — Host Service Operation Allowlist Hardening Acceptance Plan
 
-Status: **GATES 0–3 ACCEPTED / PUBLICATION PENDING / `FDC-03`**
+Status: **CLOSED / PUBLISHED `0d9adfd8d0ed11478194e2268ede3c57379c8294` / `FDC-03`**
 
 Canonical design: `docs/HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md`
 
@@ -123,3 +123,9 @@ Accepted proof:
 The earlier validator-v1 run correctly reported `66 total / 64 passed / 2 failed`; both failures were invalid synthetic `sysinfo` capability fixtures that violated the already frozen mandatory base capability mask before facade execution. The fixture-only correction was revalidated by the full v2 matrix above.
 
 Gate 3 documentation reconciliation is accepted. Gate 4/5 commit/publication remain pending; therefore FDC-03 is not yet CLOSED/PUBLISHED and FDC-04 source mutation remains unauthorized.
+
+## Gate 4/5 publication closure — 2026-10-04
+
+Acceptance commit `0d9adfd8d0ed11478194e2268ede3c57379c8294`, tree `e8b3a2051d6c2e43266b72cdac21ca28084dc4b8`, direct parent `1fe0315916deaf551dc0249f2dffb424abd5e7dc`. Ordinary non-force publication and fresh fetch proved exact local/remote alignment and clean `0/0`; GitHub independently matched the same valid signed commit.
+
+FDC-03 is CLOSED / PUBLISHED. FDC-04 is activated separately by its own Gate-0 plan/acceptance; no Web/service feature boundary is authorized by this closure.

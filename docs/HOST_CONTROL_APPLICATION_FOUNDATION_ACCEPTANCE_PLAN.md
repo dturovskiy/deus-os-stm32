@@ -437,13 +437,13 @@ Accepted at published commit `c863b5ab9d00ab96de7c8f8275f905ed52c8740e`. Authori
 
 Canonical closure: `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. Gates 1–3 are accepted by evidence SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`: Core `58/58`, exact connect/recovery order, synchronous reentrant Execute/Disconnect, callback-exception isolation through recovery, unsubscribe, blocked-callback Dispose and Disconnect/Dispose race tests all PASS; Core and Desktop Release builds PASS; target I/O zero. Gate 4/5 accepted publication commit `42245d9d71504482fb189d8351ecce7049542145`, tree `5b04eabfda05bb63dca347e3b67bd2b431da3880`; ordinary non-force push and fresh fetch proved exact remote alignment and clean `0/0`.
 
-### `FDC-03` — ACTIVE / GATE 0
+### `FDC-03` — ACCEPTED / CLOSED / PUBLISHED `0d9adfd8d0ed11478194e2268ede3c57379c8294`
 
-Canonical closure: `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. Gate 0 freezes one Core-owned compile-time service facade/catalog, ReadOnly/Control/Destructive exposure classes, exactly five read + three control + zero destructive service-v1 operations, and an exact two-new-file source/test boundary. Gate 2 must negatively prove that arbitrary numeric RPC IDs, caller-controlled protocol flags, `EnterBootloaderAsync`, destructive `wdogtrip`, scheduler stress/diagnostics, UI test/mutation and other unlisted operations cannot be routed through the service-facing API; FDC-04 remains responsible for typed result-state models.
+Canonical closure: `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. The published Core-owned catalog/facade exposes exactly five ReadOnly + three Control + zero Destructive service-v1 operations. Raw numeric RPC IDs/flags, bootloader/update and unlisted routing are absent. Gate-2 evidence SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25` proves Core `66/66`, Core/CLI/Desktop Release builds PASS and zero target/Flash mutation; Gate 4/5 publication is `0d9adfd8d0ed11478194e2268ede3c57379c8294`.
 
-### `FDC-04`
+### `FDC-04` — ACTIVE / GATE 0 (`HOST_TYPED_MANAGEMENT_MODELS_HARDENING`)
 
-Acceptance requires typed Core models/parsers for every state surface used by service v1, parser malformed/duplicate/bound tests, and static review proving the service presentation layer contains no parsing of STM32 command output text.
+Acceptance requires shared typed Core models/parsers for remaining service-v1 Ping/Health/app-control outputs, parser malformed/duplicate/bound tests, typed service/CLI/Desktop consumption and static review proving those presentation/service paths contain no parsing of STM32 command output text. Existing low-level raw RPC compatibility APIs remain intact; CLI `rpcinfo` remains an explicitly excluded diagnostic surface.
 
 ### `FDC-09`
 
@@ -456,3 +456,9 @@ All existing host regression suites and Release builds must remain PASS. These i
 `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` has accepted Gates 1–3 on Gate-0 publication baseline `1fe0315916deaf551dc0249f2dffb424abd5e7dc`. The exact candidate adds only `ManagementServiceOperations.cs` and `ManagementServiceOperationTests.cs`; the production source SHA-256 is `299F3344EF1BF79736DEB5A9D5ED6D2E1AA63513683DE6711BBD8FAFCD1CE668` and test SHA-256 is `A7A43385AE9F1BF754BCDD56E2AF17781AAD871584766374C228D49F539259D1`.
 
 Authoritative evidence SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25` proves manifest `78/78`, static service catalog `8 = 5 ReadOnly + 3 Control + 0 Destructive`, no raw RPC/bootloader/flags/dynamic-registry exposure, three `PublishedOnly` Asset routes, Core `66/66`, Core/CLI/Desktop Release builds PASS, exact pre/post state and zero target/Flash mutation. Gate 4/5 publication remains required before FDC-03 is CLOSED.
+
+### FDC-03 publication closure / FDC-04 activation addendum — 2026-10-04
+
+FDC-03 publication is complete at `0d9adfd8d0ed11478194e2268ede3c57379c8294`, tree `e8b3a2051d6c2e43266b72cdac21ca28084dc4b8`, direct parent `1fe0315916deaf551dc0249f2dffb424abd5e7dc`. Ordinary non-force push and fresh fetch proved `HEAD == origin/main == FETCH_HEAD`, clean `0/0`; GitHub independently matched the same commit/tree/parent with a valid verified signature. Gate-2 evidence remains SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25`, Core `66/66`, Core/CLI/Desktop Release builds PASS, target I/O/Flash mutation zero.
+
+FDC-04 is now separately active as `HOST_TYPED_MANAGEMENT_MODELS_HARDENING`. Its Gate-0 contract preserves low-level raw RPC compatibility while adding typed Core representations for remaining service-v1 Ping/Health/app-control outputs and converging ManagementServiceOperations, CLI and Desktop on those shared models. The exact authorized eight-path source/test boundary is owned by the FDC-04 plan/acceptance pair; this addendum does not authorize FDC-05+, FDC-09, Web/service, transport or target mutation.

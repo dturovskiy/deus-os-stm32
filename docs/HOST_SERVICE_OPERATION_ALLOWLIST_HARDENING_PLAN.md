@@ -1,6 +1,6 @@
 # Deus OS — Host Service Operation Allowlist Hardening Plan
 
-Status: **GATES 0–3 ACCEPTED / PUBLICATION PENDING / `FDC-03`**
+Status: **CLOSED / PUBLISHED `0d9adfd8d0ed11478194e2268ede3c57379c8294` / `FDC-03`**
 
 Baseline repository commit: `42245d9d71504482fb189d8351ecce7049542145`
 
@@ -208,3 +208,9 @@ Authoritative Gate-2 evidence is `stm32_os_fdc03_host_validation_dotnet_v2_20261
 The preceding v1 run was a valid failing test run, not accepted evidence: two synthetic test fixtures omitted mandatory baseline system capability bits and failed negotiation before exercising the facade. Only the test fixture was corrected; production `ManagementServiceOperations.cs` remained byte-identical.
 
 Gate 3 canonical reconciliation is accepted in the publication candidate. `FDC-03` remains publication-pending until Gate 4 normal commit and Gate 5 ordinary non-force push/fresh-remote verification complete. `FDC-04` source work is not authorized by this record.
+
+## 15. Gate-4/5 publication closure — 2026-10-04
+
+Accepted implementation/docs were committed as `0d9adfd8d0ed11478194e2268ede3c57379c8294`, tree `e8b3a2051d6c2e43266b72cdac21ca28084dc4b8`, direct parent `1fe0315916deaf551dc0249f2dffb424abd5e7dc`. Ordinary non-force push fast-forwarded `main`; fresh fetch proved `HEAD == origin/main == FETCH_HEAD == 0d9adfd8d0ed11478194e2268ede3c57379c8294`, clean ahead/behind `0/0`. GitHub independently reported the same commit/tree/parent with a valid verified signature.
+
+`FDC-03 / HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` is therefore CLOSED / PUBLISHED. The next independently frozen closure is `FDC-04 / HOST_TYPED_MANAGEMENT_MODELS_HARDENING`; FDC-03 publication does not authorize Web/service implementation.
