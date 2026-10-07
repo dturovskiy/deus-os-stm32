@@ -1,5 +1,15 @@
 ## 2026-10-07
 
+### RDC-03 Target dead API cleanup — CLOSED / PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489`
+
+Exactly ten re-proven dead target APIs were removed: nine post-decomposition Application Runtime accessors and unused `oled_ui_layout_config_v1_apply()`. Bridge ownership, OLED validate/activate owners and checked source/protocol compatibility `binary_frame_encode()` remain intact.
+
+Gate-2 deterministic equivalence evidence `stm32_os_target_dead_api_cleanup_gate2_final_validation_v2_20261007_212047.evidence.zip`, SHA-256 `224F04F33A91DAC295D0716ABF52B1457CC7DDA8C98316D17098243CBB05FE33`, proves exact accepted baseline reproduction, candidate tree `3bdb90d3f9b7e270d32bad58b9c639c40b97150b`, candidate BIN SHA-256 `F0DA0AA44388D181426D9222C955649D573BBAE7BE0A610CDA9439A835C44016`, Flash/SRAM `51972/10968`, exact global symbols/runtime sections/retained stack records and zero non-provenance BIN differences. The collector's retained-symbol summary failure is adjudicated as a harness oracle defect from CRLF regex handling plus the intentionally GC-elided source compatibility encoder.
+
+Exact-candidate hardware acceptance deployed the signed candidate and passed USB management, application lifecycle, scheduler/IWDG and UART diagnostics. Its final tail-erasure failure is adjudicated as `HARNESS_APPLICATION_TAIL_ERASE_ORACLE_01` because the bootloader contract lazily erases only DATA-touched application pages. Read-only continuation evidence `stm32_os_target_dead_api_cleanup_gate3_readonly_continuation_v2_20261007_232443.evidence.zip`, SHA-256 `046E4F1F30A69CDAE00B6B9A37B2C02E16A05F7A4F4EBBA56AB1F48E23341AB9`, has `39/39` exact internal hashes and proves exact application readback, unchanged bootloader/persistence, correct final-touched-page erase semantics, runtime health before/after SWD and exact repository poststate. Operator review is `PHYSICAL_OLED=PASS`.
+
+Acceptance commit `e516fdc1d8818007db40ee12669d28f3f828c489` was published by ordinary non-force fast-forward from direct parent `5b0f6b9586ac5397c877efb2a83601a43a080f19`; fresh fetch proved clean `HEAD == origin/main`, ahead/behind `0/0`. RDC-04 Tooling Output Directory Safety is now active.
+
 ### RDC-02 Host dead-surface cleanup — CLOSED / PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d`
 
 The Linux Host transport profile migration is now cleaned of eight re-proven unreachable internal remnants: five duplicated native constants, the runtime-only `ValidateManagementTopology()` wrapper, unused `libusb_get_device_address` P/Invoke, and the one-argument `LinuxLibUsbTransport.Open(string)` shim. Public runtime profile constants, runtime/bootloader `LinuxUsbProfile` ownership, profile-aware `ValidateTopology(...)`/`Open(..., profile)`, raw `SysInfoAsync()` compatibility and active Asset protocol APIs remain unchanged.

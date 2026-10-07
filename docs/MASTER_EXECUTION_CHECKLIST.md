@@ -111,8 +111,8 @@ The FDC program is complete, but a subsequent audit found additional confirmed c
 
 - [x] **RDC-01 — Asset transaction/session recovery hardening — CLOSED/PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`; Core `84/84`, evidence `F63A788E08FEBDD4454A7BF3AD217ABF009B1BD24413EB83F51C7AD6D71E95FA`.**
 - [x] **RDC-02 — Host dead-surface cleanup — CLOSED/PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d`; Transport `24/24`, Core `84/84`, evidence `44C5DBFA295087F1F2BFD5A453E63C3855EBC0508EEC5D3BEF283F99D4482B84`.**
-- [ ] **RDC-03 — Target dead API cleanup.**
-- [ ] **RDC-04 — repository PowerShell destructive-output safety.**
+- [x] **RDC-03 — Target dead API cleanup — CLOSED/PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489`; Gate-2 deterministic equivalence + exact-candidate Gate-3 hardware/runtime PASS, `PHYSICAL_OLED=PASS`.**
+- [ ] **RDC-04 — repository PowerShell destructive-output safety — ACTIVE; Gate-0 plan/acceptance freezes one shared fail-closed generated-output reset primitive before script mutation.**
 - [ ] **RDC-05 — minimal deterministic CI baseline.**
 - [ ] **RDC-06 — remaining kernel composition-root ownership cleanup.**
 - [ ] **RDC-07 — bootloader readability/maintainability normalization.**

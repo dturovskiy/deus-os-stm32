@@ -1,6 +1,6 @@
 # Deus OS — Target Dead API Cleanup Acceptance Plan
 
-Status: **ACTIVE — GATES 0–3 ACCEPTED / GATE 4 LOCAL ACCEPTANCE COMMIT PENDING**
+Status: **CLOSED / PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489`**
 
 Canonical design:
 
@@ -148,9 +148,17 @@ Operator physical review after the accepted candidate deployment is `PHYSICAL_OL
 
 Exact staged path review, staged diff check PASS, one normal commit, clean post-commit state.
 
+### Gate-4 result — PASS / LOCAL ACCEPTANCE COMMIT
+
+Exact staged name/status contained only the seven authorized RDC-03 paths; `git diff --cached --check` passed. Local acceptance commit `e516fdc1d8818007db40ee12669d28f3f828c489` (`refactor: remove dead target api surface`) has direct parent `5b0f6b9586ac5397c877efb2a83601a43a080f19` and left the worktree/index clean.
+
 ## Gate 5 — ordinary non-force publication
 
 Fresh direct-parent proof, ordinary fast-forward push and post-push fresh fetch with `HEAD == origin/main == FETCH_HEAD`, clean worktree/index and ahead/behind `0/0`.
+
+### Gate-5 result — PASS / PUBLISHED
+
+Fresh pre-push fetch proved `origin/main == 5b0f6b9586ac5397c877efb2a83601a43a080f19`, exactly the direct parent of `e516fdc1d8818007db40ee12669d28f3f828c489`. Publication used an ordinary non-force fast-forward `5b0f6b9..e516fdc  main -> main`. Fresh post-push fetch proved `HEAD == origin/main == e516fdc1d8818007db40ee12669d28f3f828c489`, clean worktree/index and ahead/behind `0/0`. RDC-03 is CLOSED/PUBLISHED; RDC-04 is the next mandatory maintenance boundary.
 
 ## Failure classes
 

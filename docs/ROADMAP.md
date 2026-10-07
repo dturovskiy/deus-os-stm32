@@ -285,8 +285,8 @@ A subsequent repo-wide audit found additional **confirmed current debt** after F
 
 - [x] `RDC-01` — Asset transaction/session recovery hardening — CLOSED/PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`; bounded post-failure cleanup uses the published idempotent `ABORT` contract without masking the primary failure or adding blind retry.
 - [x] `RDC-02` — Host dead-surface cleanup — CLOSED/PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d`; eight re-proven unreachable Linux transport remnants removed while published compatibility/profile ownership remains intact.
-- [ ] `RDC-03` — Target dead API cleanup: remove re-proven declaration/implementation-only target surface with GNU/map/resource/behavior proof; retain frozen compatibility APIs.
-- [ ] `RDC-04` — repository PowerShell destructive-output safety: fail closed before recursive deletion and avoid divergent copy-pasted path guards.
+- [x] `RDC-03` — Target dead API cleanup — CLOSED/PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489`; ten dead target APIs removed, retained compatibility owners preserved, deterministic BIN equivalence and exact-candidate hardware/runtime acceptance PASS.
+- [ ] `RDC-04` — **ACTIVE** — repository PowerShell destructive-output safety: exact three-script caller-controlled delete surface frozen; one shared fail-closed reset/ownership primitive required before mutation.
 - [ ] `RDC-05` — minimal CI baseline for deterministic host/build/static checks; physical bench acceptance remains external.
 - [ ] `RDC-06` — remaining kernel composition-root ownership cleanup: coherent ownership only, no line-count gaming/framework refactor.
 - [ ] `RDC-07` — bootloader readability/maintainability normalization: behavior-preserving security-sensitive source cleanup with equivalence proof.

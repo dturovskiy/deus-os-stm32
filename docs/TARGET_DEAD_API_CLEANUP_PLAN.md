@@ -1,6 +1,6 @@
 # Deus OS — Target Dead API Cleanup Plan
 
-Status: **ACTIVE — GATES 0–3 ACCEPTED / GATE 4 LOCAL ACCEPTANCE COMMIT PENDING**
+Status: **CLOSED / PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489`**
 
 Boundary ID:
 
@@ -129,10 +129,10 @@ Gate 3 is accepted for exact candidate tree `3bdb90d3f9b7e270d32bad58b9c639c40b9
 - Gate 0 — exact ten-symbol deletion/retained-surface/equivalence freeze.
 - Gate 1 — implementation/static source review.
 - Gate 2 — fresh baseline/candidate GNU build, map/symbol/resource and normalized-BIN equivalence.
-- Gate 3 — conditional hardware-equivalence disposition and evidence reconciliation.
+- Gate 3 — exact-candidate hardware/runtime acceptance plus evidence reconciliation.
 - Gate 4 — one normal local acceptance commit.
 - Gate 5 — ordinary non-force publication + fresh-fetch clean `0/0`.
 
 ## 9. Exit criterion
 
-RDC-03 closes only when exactly ten dead APIs are absent, retained compatibility/bridge owners are unchanged, fresh candidate build/resource/symbol proof passes, and either normalized executable equivalence is exact or a dedicated candidate-bound hardware gate proves the changed executable.
+RDC-03 closes only when exactly ten dead APIs are absent, retained compatibility/bridge owners are unchanged, deterministic build/resource/symbol/whole-BIN provenance-substitution proof passes, exact-candidate hardware/runtime acceptance passes, publication is ordinary/non-force and the final repository poststate is clean.

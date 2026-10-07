@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01..02 CLOSED / RDC-03 NEXT**
+Status: **ACTIVE — RDC-01..03 CLOSED / RDC-04 ACTIVE**
 
 Program ID:
 
@@ -58,7 +58,7 @@ Required boundary:
 
 Closure accepted at `09a432f6c0b73ef2425add5950b6f6d5dee3733d`. Gate-2 evidence SHA-256 `44C5DBFA295087F1F2BFD5A453E63C3855EBC0508EEC5D3BEF283F99D4482B84` proves Transport `24/24`, Core `84/84`, warning-clean Linux transport/Core Release builds and zero target/Flash mutation. Eight unreachable Linux transport remnants were removed without changing profile-aware runtime/bootloader ownership or retained compatibility APIs.
 
-### RDC-03 — Target dead API cleanup
+### RDC-03 — CLOSED / PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489` — Target dead API cleanup
 
 Confirmed declaration/implementation-only target surface currently includes:
 
@@ -71,20 +71,22 @@ Required boundary:
 
 `TARGET_DEAD_API_CLEANUP`
 
-Closure requires warning-clean GNU build, map/symbol proof, resource/stack checks and behavior/hardware proof appropriate to the exact target-source candidate.
+Closure accepted at `e516fdc1d8818007db40ee12669d28f3f828c489`. Exactly ten dead target APIs were removed. Gate-2 evidence SHA-256 `224F04F33A91DAC295D0716ABF52B1457CC7DDA8C98316D17098243CBB05FE33` plus forensic adjudication prove exact baseline reproduction, candidate Flash/SRAM `51972/10968`, global symbol/layout/stack invariants and zero non-provenance BIN differences. Gate-3 read-only continuation evidence SHA-256 `046E4F1F30A69CDAE00B6B9A37B2C02E16A05F7A4F4EBBA56AB1F48E23341AB9` proves exact candidate application readback, unchanged bootloader/persistence ownership and runtime health; operator physical OLED is PASS.
 
-### RDC-04 — Repository PowerShell destructive-output safety
+### RDC-04 — ACTIVE — Repository PowerShell destructive-output safety
 
 Confirmed tooling footgun:
 
 - repository-owned build/recovery scripts accept caller-controlled `OutputDir`;
-- at least `build_firmware.ps1`, `create_asset_recovery_bundle.ps1` and `create_bootloader_recovery_bundle.ps1` can recursively remove that directory before regeneration.
+- exactly three tracked scripts currently combine caller-controlled output directories with recursive reset before regeneration: current `build_firmware.ps1`, current `create_bootloader_recovery_bundle.ps1`, and historical-only `create_asset_recovery_bundle.ps1`.
 
 Required boundary:
 
 `TOOLING_OUTPUT_DIRECTORY_SAFETY`
 
 The fix must be fail-closed, avoid three divergent copy-pasted validators, distinguish current versus historical tooling, and prove allowed/forbidden path semantics under PowerShell 7 before destructive action. Any change to `build_firmware.ps1` must respect firmware candidate-identity consequences.
+
+RDC-04 Gate 0 is activated by `docs/TOOLING_OUTPUT_DIRECTORY_SAFETY_PLAN.md` + `_ACCEPTANCE_PLAN.md`. The selected design centralizes validation and recursive reset in one repository-owned primitive; no script mutation is authorized until that plan pair is published.
 
 ### RDC-05 — Minimal continuous-integration baseline
 
