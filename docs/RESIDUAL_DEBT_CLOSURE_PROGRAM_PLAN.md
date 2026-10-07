@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — GATES 0–2 ACCEPTED / GATE 3 DOCS COMMIT PENDING**
+Status: **ACTIVE — GOVERNANCE PUBLISHED `2fb687d4bd57e8029e89d450038b712acb6d9dea` / RDC-01 NEXT**
 
 Program ID:
 

@@ -6,6 +6,8 @@ A post-FDC10 read-only audit plus accepted Host Asset correlation hardening show
 
 The mandatory sequence covers Asset transaction/session recovery, Host and target dead-surface cleanup, PowerShell destructive-output safety, a minimal deterministic CI baseline, bounded remaining kernel composition-root ownership cleanup, bootloader readability normalization, and a final documentation/source-of-truth sweep. Consumer-driven future capabilities such as generic timers/queues, DMA, filesystem, networking, low-power and richer observability remain deferred rather than being mislabeled as current debt. The active next maintenance boundary is RDC-01; this governance activation is docs-only and authorizes no source/target/Flash/hardware mutation.
 
+Governance commit `2fb687d4bd57e8029e89d450038b712acb6d9dea` was published by ordinary non-force fast-forward from direct parent `d649e133cbe39fa6155520c657136ca99cee61ae`; fresh post-push fetch proved `HEAD == origin/main`, clean worktree/index and ahead/behind `0/0`. The program remains ACTIVE; only its governance freeze is published.
+
 ### Host Asset request-correlation hardening — CLOSED / PUBLISHED `40aab02b4e0c04466453be4c31041f8649c13c1b`
 
 A narrow Host Core maintenance candidate closes a confirmed single-response correlation gap in `AssetTransferClient`: once an Asset request owns a nonzero request ID, native timeout or cancellation now registers that ID through the existing channel-owned `AbandonSingleResponse()` model before the original failure propagates. No new decoder, stale queue, retry policy, protocol `ABORT`, wire value, native transport or target behavior is introduced.

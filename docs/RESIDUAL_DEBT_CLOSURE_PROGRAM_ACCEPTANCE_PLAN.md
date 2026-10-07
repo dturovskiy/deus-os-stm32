@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Acceptance Plan
 
-Status: **ACTIVE — GATES 0–2 ACCEPTED / GATE 3 DOCS COMMIT PENDING**
+Status: **ACTIVE PROGRAM / GOVERNANCE GATES 0–4 ACCEPTED / PUBLISHED `2fb687d4bd57e8029e89d450038b712acb6d9dea`**
 
 Canonical program:
 
@@ -59,9 +59,19 @@ Exact candidate is docs-only: 11 changed paths, zero product/source/tooling/test
 
 One normal local docs-only commit after exact staged-path review.
 
+### Gate-3 result — PASS
+
+Exact staged set contained 11 documentation/governance paths and no source/tooling/test path. `git diff --cached --check` PASS. Local acceptance commit `2fb687d4bd57e8029e89d450038b712acb6d9dea` (`docs: promote residual debt closure program`) is a docs-only child of baseline `d649e133cbe39fa6155520c657136ca99cee61ae`.
+
 ## Gate 4 — ordinary non-force publication
 
 Fresh fetch/direct-parent proof before push; post-push fresh fetch must prove `HEAD == origin/main == FETCH_HEAD`, clean worktree/index and ahead/behind `0/0`.
+
+### Gate-4 result — PASS / PUBLISHED
+
+Fresh pre-push fetch proved `origin/main == d649e133cbe39fa6155520c657136ca99cee61ae`, exactly the parent of governance commit `2fb687d4bd57e8029e89d450038b712acb6d9dea`. Publication used an ordinary non-force fast-forward `d649e13..2fb687d  main -> main`. Fresh post-push fetch then proved `HEAD == origin/main == 2fb687d4bd57e8029e89d450038b712acb6d9dea`, clean worktree/index and ahead/behind `0/0`.
+
+Program governance is accepted/published. The program itself remains ACTIVE until RDC-01..RDC-08 close.
 
 ## Program execution acceptance
 
