@@ -93,7 +93,7 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice D — Documentation/source-of-truth closure
 
-- [x] **FDC-10 — documentation consistency — FINAL CLOSURE COMPLETE / PUBLICATION OWNED BY THIS DOCS-ONLY REVISION.**
+- [x] **FDC-10 — documentation consistency — FINAL CLOSURE COMPLETE / PUBLISHED `9c02e27f50349c9a0240ab24d34720580c3f3269`.**
   - [x] Gate-0 plan pair frozen: `DOCUMENTATION_CONSISTENCY_CLOSURE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
   - [x] obsolete non-historical USB/persistence/update/current-state claims reconciled with published state;
   - [x] narrow `OLED_UI_LAYOUT_CONFIG_V1` persistence remains distinct from broader deferred/custom UI work;

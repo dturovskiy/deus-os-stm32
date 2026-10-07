@@ -88,9 +88,11 @@ The generated recovery ZIP is **PRIVATE / SENSITIVE**. It does not contain a sta
 
 These scripts are published recovery/build tooling, not generic operator-facing acceptance harness templates. Hardware acceptance collectors remain responsible for bounded external-process execution, topology ownership, evidence isolation and final operator presentation.
 
-## `create_asset_recovery_bundle.ps1`
+## `create_asset_recovery_bundle.ps1` — historical Asset-phase tooling
 
-Purpose:
+This generator is retained for reproducibility of the published pre-Bootloader Asset boundary only. It assumes the historical application-at-`0x08000000` Asset geometry and **must not** be used for the current Bootloader-boundary relocated application. Current recovery is owned by `create_bootloader_recovery_bundle.ps1` / `stm32_bootloader_recovery.ps1` and the published Firmware Update / Bootloader recovery contract.
+
+Historical purpose:
 
 - construct a candidate-bound `ASSET_CONFIGURATION_STLINK_RECOVERY_V1` bundle;
 - consume explicit caller-owned provenance:

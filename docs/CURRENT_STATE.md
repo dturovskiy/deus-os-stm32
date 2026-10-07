@@ -105,9 +105,9 @@ Authoritative consolidated hardware evidence is `stm32_os_fdc05_08_consolidated_
 
 ## 4. Current work disposition
 
-There is **no active new product feature boundary**. `FDC-01..09` are now CLOSED/PUBLISHED, including shared FDC-05..08 publication commit `6aa2df19ab02c14bde38833e738fe825008102e8`; consolidated Gate-1..3 evidence SHA-256 is `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` and final hardware Gate-4 evidence SHA-256 is `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`. `FDC-10` is the final documentation/source-of-truth closure and is completed by this docs-only revision without product/target mutation. The foundational-debt blocker is therefore removed, but this does **not** itself activate Host Management Service/Web/network work; the next feature boundary still requires explicit promotion and its own frozen plan/acceptance pair.
+There is **no active new product feature boundary**. `FDC-01..FDC-10` are CLOSED/PUBLISHED; FDC-05..08 share publication commit `6aa2df19ab02c14bde38833e738fe825008102e8`, and the final docs-only FDC-10 publication is `9c02e27f50349c9a0240ab24d34720580c3f3269`. Consolidated FDC-05..08 Gate-1..3 evidence SHA-256 is `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` and final hardware Gate-4 evidence SHA-256 is `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`. The foundational-debt blocker is removed, but this does **not** activate Host Management Service/Web/network work; the next product feature boundary still requires explicit promotion and its own frozen plan/acceptance pair.
 
-The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. FDC-01..04 and FDC-09 are CLOSED/PUBLISHED at their accepted commits; FDC-05..08 are CLOSED/PUBLISHED together at `6aa2df19ab02c14bde38833e738fe825008102e8`. The only remaining ledger item is FDC-10 documentation consistency. FDC-10 is docs-only: no product source, target, Flash or hardware mutation is authorized. Once its documentation audit/commit/publication is accepted, the ten-item closure program is complete and future feature selection may resume through a new explicit boundary.
+The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. That ten-item program is now complete: FDC-01..04 and FDC-09 are CLOSED/PUBLISHED at their accepted commits, FDC-05..08 are CLOSED/PUBLISHED together at `6aa2df19ab02c14bde38833e738fe825008102e8`, and FDC-10 is CLOSED/PUBLISHED docs-only at `9c02e27f50349c9a0240ab24d34720580c3f3269`. Future feature selection may resume only through a new explicit boundary; completion of the debt program itself authorizes no product, target, Flash or hardware mutation.
 
 The mandatory closure ledger uses IDs `FDC-01..FDC-10`:
 
@@ -120,11 +120,11 @@ The mandatory closure ledger uses IDs `FDC-01..FDC-10`:
 7. `FDC-07` — **CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`** — failed application `stop()` preserves unresolved ownership/`active_id`, marks `FAILED`, increments one fault and starts no replacement; deterministic + hardware lifecycle proof accepted;
 8. `FDC-08` — **CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`** — bounded boot/runtime clock and UART waits, authenticated image-span vectors, wrap-safe reset deadline and non-DATA adjudication accepted; hardware evidence proves authenticated v3 update/recovery and exact final Flash/metadata/persistence ownership;
 9. `FDC-09` — **CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73`** — per-instance latched bounded native cancellation/drain ownership is accepted for WinUSB/libusb; deterministic Transport `24/24` + Core `78/78`, Linux real-platform and Windows WinUSB cancel/disconnect/reopen proofs are accepted;
-10. `FDC-10` — **CLOSED / DOCS-ONLY PUBLICATION OWNED BY THIS REVISION** — repo-wide stale/open-checkbox/source-of-truth/artifact/security hygiene reconciliation; this revision completes the ten-item foundational-debt program.
+10. `FDC-10` — **CLOSED / PUBLISHED `9c02e27f50349c9a0240ab24d34720580c3f3269` (DOCS-ONLY)** — repo-wide stale/open-checkbox/source-of-truth/artifact/security hygiene reconciliation completed the ten-item foundational-debt program without product/target mutation.
 
-The closure program is sequenced as: host long-lived-session hardening (`FDC-01..04,09`), target architecture/lifecycle cleanup (`FDC-05..07`), target/update robustness closure (`FDC-08`), then final documentation/source-of-truth reconciliation (`FDC-10`). `HOST_MANAGEMENT_SERVICE_FOUNDATION` or any equivalent Web/service boundary is blocked until all ten IDs are accepted closed.
+The completed closure program was sequenced as: host long-lived-session hardening (`FDC-01..04,09`), target architecture/lifecycle cleanup (`FDC-05..07`), target/update robustness closure (`FDC-08`), then final documentation/source-of-truth reconciliation (`FDC-10`). Those prerequisites are now satisfied; `HOST_MANAGEMENT_SERVICE_FOUNDATION` or any equivalent Web/service boundary remains inactive until it is separately promoted with a concrete consumer and dedicated plan/acceptance contract.
 
-The board runs the exact published FDC-05..08 candidate-v3 bytes (`bb99acf111dfa3a78193b4e5d3376fa077defa1e`, application SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`) with capability `0x0000007F`, matching published commit `6aa2df19ab02c14bde38833e738fe825008102e8`. Networking/service/security work remains unactivated until FDC-10 is published and a separate next boundary is explicitly promoted.
+The board runs the exact published FDC-05..08 candidate-v3 bytes (`bb99acf111dfa3a78193b4e5d3376fa077defa1e`, application SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`) with capability `0x0000007F`, matching published commit `6aa2df19ab02c14bde38833e738fe825008102e8`. Networking/service/security work remains unactivated until a separate next boundary is explicitly promoted.
 
 Host-management presentation evolution remains a non-authorizing direction in `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
 
@@ -186,7 +186,7 @@ Not-active examples include:
 - UI layout/preset/configurator expansion;
 - networking/remote-management security until that boundary is explicitly promoted.
 
-The ten `FDC-01..FDC-10` audit obligations are **not deferred/optional anymore**: they are promoted closure prerequisites for the next service/Web/network feature sequence. Promotion does not authorize an undisciplined patch; source mutation still requires a dedicated frozen closure slice and acceptance proof.
+The ten `FDC-01..FDC-10` audit obligations are **closed/published**, not deferred work. Their completion removes the former prerequisite blocker; any new source mutation still requires a dedicated frozen feature or maintenance slice and acceptance proof.
 
 The pre-existing firmware-update robustness items are consumed by that program rather than left indefinitely trigger-driven: authenticated `image_length` reset-handler containment, bounded bootloader HSE/PLL startup, explicit non-DATA timeout/restart/adjudication semantics, and bounded stale request-ID lifetime under repeated cancellation/wrap. `FDC-08` additionally covers the newly confirmed normal-runtime HSE/PLL/switch waits, UART TX wait and poll-count-based bootloader-entry reset fallback.
 
@@ -223,7 +223,7 @@ Still intentionally unresolved/trigger-driven outside the mandatory closure prog
 - network mutation security;
 - richer observability/runtime-statistics framework.
 
-Separately, `FDC-01..FDC-10` are now mandatory closure obligations rather than consumer-triggered debt; their sequencing and closure criteria are recorded in `docs/ROADMAP.md`, `docs/MASTER_EXECUTION_CHECKLIST.md` and the relevant scoped plans.
+The completed `FDC-01..FDC-10` program remains historical closure provenance; its sequencing and closure criteria are recorded in `docs/ROADMAP.md`, `docs/MASTER_EXECUTION_CHECKLIST.md` and the relevant scoped plans.
 
 ## 10. Source-of-truth map
 

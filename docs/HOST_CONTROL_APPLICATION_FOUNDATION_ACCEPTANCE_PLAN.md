@@ -445,9 +445,9 @@ Canonical closure: `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` + `_ACCE
 
 Authoritative Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4` proves the frozen eight-path candidate, manifest `78/78`, Core `78/78`, Core/CLI/Desktop Release builds PASS, and zero target/Flash mutation. Core owns bounded Ping/Health/app-control parsing; the service facade exposes no `RpcResult`; Desktop has no raw management `OutputText`; CLI raw output is confined to excluded `rpcinfo`; low-level raw compatibility APIs remain intact. Gate 4/5 publication is `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`, tree `b47361fbdb4e82a6d3ddebdf55d5d3fd7ce4f300`, with fresh-fetch clean `0/0` and valid GitHub signature verification.
 
-### `FDC-09` — ACTIVE / GATE 0 (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`)
+### `FDC-09` — ACCEPTED / CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73` (`HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING`)
 
-Acceptance now freezes the concrete synchronous-native ownership model: pre-entry cancellation prevents native I/O; cancellation after entry is latched until the bounded native call drains; Dispose blocks new entry, drains active I/O, then closes resources; two transport instances are isolated; and Windows/Linux real-platform reopen smoke is required. Runtime and bootloader profiles share the same platform transport owners. Canonical proof contract: `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_ACCEPTANCE_PLAN.md`.
+Canonical closure: `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`. The accepted concrete synchronous-native ownership model prevents pre-entry cancelled I/O, latches cancellation after native entry until the bounded call drains, blocks Dispose until active I/O drains, isolates transport instances, and reuses the same platform transport owners for runtime and bootloader profiles. Deterministic Transport `24/24` + Core `78/78`, Linux real-platform and Windows WinUSB cancel/disconnect/reopen proofs are accepted; ordinary non-force publication/fresh-fetch closure is `b88a9eee43095665326787cc0345822218c1ba73`.
 
 All existing host regression suites and Release builds must remain PASS. These items are closed only by exact accepted evidence and are not satisfied by documentation wording alone.
 

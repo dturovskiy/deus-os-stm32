@@ -2,7 +2,7 @@
 
 Status: **CANONICAL OPERATIONAL ENVIRONMENT / HARDWARE-OWNERSHIP REFERENCE**
 
-Last audited: 2026-09-25
+Last audited: 2026-10-07
 
 This document owns the current development, hardware-attachment and acceptance-execution topology. It does **not** define product acceptance state, active gate status or firmware architecture; those remain owned by `docs/CURRENT_STATE.md`, the active boundary plan/acceptance pair and `docs/ARCHITECTURE.md`.
 
@@ -214,13 +214,13 @@ These proofs authorize reuse of the **primitive semantics**, not blind reuse of 
 
 ## 9. USB-management rule for the current bench
 
-For current Asset/Configuration hardware acceptance:
+For current published Asset/Configuration operation and any later acceptance that reuses this topology:
 
 - management IF2 traffic must be exercised through Linux/libusb on the Mac-mini Ubuntu host unless the operator explicitly rewires target USB to Windows and that topology change is re-proven;
 - the Linux adapter is a first-class implementation, not a test shim: it discovers `1209:000C`, validates vendor IF2 `FF/00/00`, claims only interface 2 and uses EP4 OUT/IN `0x04/0x84`; it must not detach a kernel driver from IF2;
-- production `deus-cp config ...` uses `AssetAccessPolicy.PublishedOnly`; while system capability bit 5 remains OFF during pre-publication Gates 1–5, ordinary CLI Asset commands are expected to reject the feature;
-- Gate-5 acceptance that intentionally exercises the pre-publication Asset carrier must use the transport-neutral Core with `AssetAccessPolicy.PrepublicationAcceptance` through an acceptance-only helper/runner, not weaken the production CLI policy;
-- Windows may still drive ST-LINK fault selectors, Flash corruption/readback and reset;
+- production `deus-cp config ...` uses `AssetAccessPolicy.PublishedOnly`; the published target advertises the accepted Asset capability, so ordinary CLI Asset operations are governed by the published capability/identity contract rather than the historical pre-publication gate state;
+- historical Asset Gates 1–5 intentionally kept system capability bit 5 OFF and used `AssetAccessPolicy.PrepublicationAcceptance` only inside acceptance-only helpers/runners; that historical mechanism must not be treated as current product policy or reintroduced into the production CLI;
+- Windows may still drive ST-LINK fault selectors, Flash corruption/readback and reset when a separately authorized acceptance boundary requires those operations;
 - Windows may still observe UART diagnostics;
 - after a Windows-driven reset or Flash operation, runtime USB recovery/HELLO/RPC proof must be performed on the Mac-mini USB host;
 - a package that looks only for local Windows WinUSB and declares the target absent is a harness-topology defect, not product evidence.

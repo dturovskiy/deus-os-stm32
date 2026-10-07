@@ -1,6 +1,6 @@
 # Deus OS — Documentation Consistency Closure Plan
 
-Status: **FDC-10 / GATES 0–5 ACCEPTED / GATES 6–7 OWNED BY THIS DOCS-ONLY REVISION**
+Status: **FDC-10 / GATES 0–7 ACCEPTED / PUBLISHED `9c02e27f50349c9a0240ab24d34720580c3f3269`**
 
 Baseline: `21e45b1dd7b1b5b701b087f44d1b29676ce0e6d9`
 
@@ -58,7 +58,7 @@ The final inventory contains `90` Markdown files in `docs/`, `30` `*_ACCEPTANCE_
 
 Repo-wide classification corrected stale current claims for FDC-05..08 publication, physical bench/published candidate alignment, FDC-06 semantic-state ownership, Host Management prerequisites and the published CDC identity wording. Historical chronology and genuinely deferred consumer-driven items remain intentionally unchanged. Product source contains no `TODO/FIXME/HACK/XXX/TBD` marker. Tracked build/firmware/map/evidence/archive/log/key/certificate-like artifact types are absent; obvious private-key/token/certificate signatures are absent; `.gitignore` and `.gitattributes` remain appropriate.
 
-The exact FDC-05..08 source/docs candidate is already published at `6aa2df19ab02c14bde38833e738fe825008102e8`; FDC-10 performs documentation-only mutation and no target/Flash/hardware operation. Gates 6–7 for FDC-10 are one normal docs acceptance commit plus ordinary non-force publication/fresh-fetch proof.
+The exact FDC-05..08 source/docs candidate is published at `6aa2df19ab02c14bde38833e738fe825008102e8`. FDC-10 performed documentation-only mutation with no target/Flash/hardware operation; Gate 6 committed that reconciliation and Gate 7 published it by ordinary non-force push at `9c02e27f50349c9a0240ab24d34720580c3f3269`, followed by fresh-fetch clean `0/0` proof.
 
 ## Exit criterion
 

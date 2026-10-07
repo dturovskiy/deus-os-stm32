@@ -275,7 +275,7 @@ The 2026-10-03 architecture/code audit promoted ten residual obligations into a 
 
 ### Slice D — Documentation/source-of-truth closure
 
-- [x] `FDC-10` — **FINAL DOCUMENTATION CONSISTENCY CLOSURE COMPLETE:** repo-wide inventory, stale/current claim reconciliation, open-checkbox classification, documentation inventory, artifact/security hygiene and source-of-truth synchronization accepted; final docs-only commit/publication closes the ten-item program.
+- [x] `FDC-10` — **CLOSED / PUBLISHED `9c02e27f50349c9a0240ab24d34720580c3f3269`:** repo-wide inventory, stale/current claim reconciliation, open-checkbox classification, documentation inventory, artifact/security hygiene and source-of-truth synchronization accepted; the ten-item program is complete.
 
 All ten foundational-debt checkboxes above are accepted closed. This removes the prerequisite blocker but does not automatically activate a management service/Web/network implementation boundary; promotion still requires a concrete consumer plus dedicated plan/acceptance contract.
 

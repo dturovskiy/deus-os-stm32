@@ -281,7 +281,7 @@ This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a2
 
 ### Current product implementation state
 
-No product feature boundary is currently active. The last named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; post-publication hardening `FDC-01..09` is published, including shared FDC-05..08 commit `6aa2df19ab02c14bde38833e738fe825008102e8`. FDC-10 completes documentation/source-of-truth reconciliation only. Closure of the foundational-debt program does not itself promote a new feature boundary; `docs/CURRENT_STATE.md` owns the current disposition.
+No product feature boundary is currently active. The last named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; post-publication hardening `FDC-01..09` is published, including shared FDC-05..08 commit `6aa2df19ab02c14bde38833e738fe825008102e8`, and FDC-10 documentation/source-of-truth reconciliation is published docs-only at `9c02e27f50349c9a0240ab24d34720580c3f3269`. Closure of the foundational-debt program does not itself promote a new feature boundary; `docs/CURRENT_STATE.md` owns the current disposition.
 
 ### Later
 
@@ -340,7 +340,7 @@ Live documentation inventory at FDC-10 final reconciliation:
 - `HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-04` pair at `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`;
 - `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-09` pair at `b88a9eee43095665326787cc0345822218c1ba73`;
 - `KERNEL_COMPOSITION_ROOT_CONVERGENCE`, `SEMANTIC_SYSTEM_SERVICE_STATE`, `APPLICATION_STOP_FAILURE_HARDENING` and `TARGET_UPDATE_ROBUSTNESS_CLOSURE` plan/acceptance pairs are closed/published together at `6aa2df19ab02c14bde38833e738fe825008102e8` as FDC-05..08;
-- `DOCUMENTATION_CONSISTENCY_CLOSURE` is the final FDC-10 docs-only pair and records the repo-wide reconciliation that completes the ten-item closure program;
+- `DOCUMENTATION_CONSISTENCY_CLOSURE` is the final FDC-10 docs-only pair, published at `9c02e27f50349c9a0240ab24d34720580c3f3269`, and records the repo-wide reconciliation that completed the ten-item closure program;
 - latest named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; later FDC commits are hardening/closure, not a new product-feature boundary;
 - no new product feature boundary is currently active. All `FDC-01..FDC-10` foundational obligations are closed; future service/Web/network work may be considered but remains inactive until separately promoted.
 

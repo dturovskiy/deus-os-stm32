@@ -96,7 +96,7 @@ Known LF->CRLF Git warnings may be suppressed from operator-facing logs only whe
 
 The accepted `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is a material ownership improvement, not a claim that `src/kernel.c` has reached its final composition-root form. The accepted implementation deliberately stopped before creating speculative abstractions or exposing root-private state merely to reduce line count.
 
-This section records residual architecture debt provenance. The 2026-10-03 audit promoted composition-root convergence (`FDC-05`), system/service-state dependency direction (`FDC-06`) and application stop-failure semantics (`FDC-07`) into mandatory closure obligations. As of the 2026-10-07 Gate-5 reconciliation, those three obligations are accepted through Gates 0–5 on exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e`; only their Gate-6/7 publication remains. The other architecture notes remain trigger-driven unless separately promoted:
+This section records residual architecture debt provenance. The 2026-10-03 audit promoted composition-root convergence (`FDC-05`), system/service-state dependency direction (`FDC-06`) and application stop-failure semantics (`FDC-07`) into mandatory closure obligations. Those obligations are now CLOSED/PUBLISHED together at `6aa2df19ab02c14bde38833e738fe825008102e8` on exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e`. The other architecture notes remain trigger-driven unless separately promoted:
 
 ### Composition-root convergence
 
@@ -173,7 +173,7 @@ After all ten are accepted closed, this section remains as historical provenance
 
 None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
 
-These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` or `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The Host Core decomposition trigger was resolved inside the Firmware Update / Bootloader boundary. As of 2026-10-07, `FDC-01..04` and `FDC-09` are CLOSED/PUBLISHED; `FDC-05..08` are accepted through Gate 5 on the exact shared candidate and await only local commit/publication; `FDC-10` remains the final documentation closure after that publication. All other backlog material remains trigger-driven merely by appearing here.
+These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` or `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The Host Core decomposition trigger was resolved inside the Firmware Update / Bootloader boundary. `FDC-01..FDC-10` are now CLOSED/PUBLISHED, with FDC-05..08 at `6aa2df19ab02c14bde38833e738fe825008102e8` and final docs-only FDC-10 at `9c02e27f50349c9a0240ab24d34720580c3f3269`. All other backlog material remains trigger-driven merely by appearing here.
 
 ## 9. Roadmap placement
 
