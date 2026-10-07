@@ -123,9 +123,6 @@ internal sealed class LinuxLibUsbTransport : IDeviceTransport
 
     public string Locator { get; }
 
-    public static LinuxLibUsbTransport Open(string locator) =>
-        Open(locator, LinuxLibUsbDiscovery.RuntimeProfile);
-
     internal static LinuxLibUsbTransport Open(
         string locator,
         LinuxUsbProfile profile)

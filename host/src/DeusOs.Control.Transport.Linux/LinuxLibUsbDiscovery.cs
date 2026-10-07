@@ -76,11 +76,6 @@ public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
 
 internal static class LinuxLibUsbNative
 {
-    internal const ushort ExpectedVendorId = LinuxLibUsbDiscovery.VendorId;
-    internal const ushort ExpectedProductId = LinuxLibUsbDiscovery.ProductId;
-    internal const int ManagementInterface = LinuxLibUsbDiscovery.InterfaceNumber;
-    internal const byte OutEndpoint = LinuxLibUsbDiscovery.OutEndpoint;
-    internal const byte InEndpoint = LinuxLibUsbDiscovery.InEndpoint;
     internal const int ErrorNoDevice = -4;
     internal const int ErrorTimeout = -7;
 
@@ -240,9 +235,6 @@ internal static class LinuxLibUsbNative
         return $"usb:{bus:D3}:{path}";
     }
 
-    internal static void ValidateManagementTopology(IntPtr device) =>
-        ValidateTopology(device, LinuxLibUsbDiscovery.RuntimeProfile);
-
     internal static void ValidateTopology(
         IntPtr device,
         LinuxUsbProfile profile)
@@ -397,9 +389,6 @@ internal static class LinuxLibUsbNative
 
     [DllImport("libusb-1.0.so.0", CallingConvention = CallingConvention.Cdecl)]
     internal static extern byte libusb_get_bus_number(IntPtr device);
-
-    [DllImport("libusb-1.0.so.0", CallingConvention = CallingConvention.Cdecl)]
-    internal static extern byte libusb_get_device_address(IntPtr device);
 
     [DllImport("libusb-1.0.so.0", CallingConvention = CallingConvention.Cdecl)]
     internal static extern int libusb_get_port_numbers(
