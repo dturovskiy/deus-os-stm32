@@ -120,29 +120,13 @@ int application_view_set_row(
 
 void application_runtime_reset(application_runtime_t *runtime);
 int application_runtime_initialize(application_runtime_t *runtime);
-int application_runtime_is_initialized(const application_runtime_t *runtime);
-
 uint32_t application_runtime_registry_count(void);
 const application_descriptor_t *application_runtime_registry_at(uint32_t index);
 const application_descriptor_t *application_runtime_find(uint16_t id);
 const char *application_runtime_state_name(application_lifecycle_state_t state);
-int application_runtime_state_get(
-    const application_runtime_t *runtime,
-    uint16_t id,
-    application_lifecycle_state_t *state_out);
-
-uint16_t application_runtime_active_id(const application_runtime_t *runtime);
-uint32_t application_runtime_fault_count(const application_runtime_t *runtime);
-uint32_t application_runtime_event_count(const application_runtime_t *runtime);
-uint32_t application_runtime_view_revision(const application_runtime_t *runtime);
-uint16_t application_runtime_last_event_type(
-    const application_runtime_t *runtime);
-uint16_t application_runtime_last_event_source(
-    const application_runtime_t *runtime);
 
 const application_view_t *application_runtime_view_get(
     const application_runtime_t *runtime);
-int application_runtime_view_dirty(const application_runtime_t *runtime);
 void application_runtime_view_consumed(application_runtime_t *runtime);
 int application_runtime_stop_failure_self_test(void);
 

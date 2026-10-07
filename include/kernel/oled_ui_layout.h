@@ -25,10 +25,6 @@ int oled_ui_layout_config_v1_validate(
     const uint8_t *payload,
     uint32_t length);
 
-int oled_ui_layout_config_v1_apply(
-    const uint8_t *payload,
-    uint32_t length);
-
 void oled_ui_layout_config_v1_activate_validated(
     const uint8_t *payload);
 

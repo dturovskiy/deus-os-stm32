@@ -412,13 +412,6 @@ int application_runtime_initialize(application_runtime_t *runtime)
         (uint8_t)APPLICATION_STATE_STOPPED;
 }
 
-int application_runtime_is_initialized(const application_runtime_t *runtime)
-{
-    return
-        (runtime != (const application_runtime_t *)0) &&
-        (runtime->initialized != 0u);
-}
-
 uint32_t application_runtime_registry_count(void)
 {
     return (uint32_t)(
@@ -471,86 +464,6 @@ const char *application_runtime_state_name(application_lifecycle_state_t state)
     }
 }
 
-int application_runtime_state_get(
-    const application_runtime_t *runtime,
-    uint16_t id,
-    application_lifecycle_state_t *state_out)
-{
-    uint32_t index;
-
-    if ((runtime == (const application_runtime_t *)0) ||
-        (state_out == (application_lifecycle_state_t *)0) ||
-        (application_runtime_index_from_id(id, &index) == 0))
-    {
-        return 0;
-    }
-
-    *state_out = (application_lifecycle_state_t)runtime->states[index];
-    return 1;
-}
-
-uint16_t application_runtime_active_id(const application_runtime_t *runtime)
-{
-    if (runtime == (const application_runtime_t *)0)
-    {
-        return 0u;
-    }
-
-    return runtime->active_id;
-}
-
-uint32_t application_runtime_fault_count(const application_runtime_t *runtime)
-{
-    if (runtime == (const application_runtime_t *)0)
-    {
-        return 0u;
-    }
-
-    return runtime->fault_count;
-}
-
-uint32_t application_runtime_event_count(const application_runtime_t *runtime)
-{
-    if (runtime == (const application_runtime_t *)0)
-    {
-        return 0u;
-    }
-
-    return runtime->event_count;
-}
-
-uint32_t application_runtime_view_revision(const application_runtime_t *runtime)
-{
-    if (runtime == (const application_runtime_t *)0)
-    {
-        return 0u;
-    }
-
-    return runtime->view_revision;
-}
-
-uint16_t application_runtime_last_event_type(
-    const application_runtime_t *runtime)
-{
-    if (runtime == (const application_runtime_t *)0)
-    {
-        return 0u;
-    }
-
-    return runtime->last_event_type;
-}
-
-uint16_t application_runtime_last_event_source(
-    const application_runtime_t *runtime)
-{
-    if (runtime == (const application_runtime_t *)0)
-    {
-        return 0u;
-    }
-
-    return runtime->last_event_source;
-}
-
 const application_view_t *application_runtime_view_get(
     const application_runtime_t *runtime)
 {
@@ -561,13 +474,6 @@ const application_view_t *application_runtime_view_get(
     }
 
     return &runtime->view;
-}
-
-int application_runtime_view_dirty(const application_runtime_t *runtime)
-{
-    return
-        (runtime != (const application_runtime_t *)0) &&
-        (runtime->view_dirty != 0u);
 }
 
 void application_runtime_view_consumed(application_runtime_t *runtime)

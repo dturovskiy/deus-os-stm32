@@ -67,18 +67,3 @@ void oled_ui_layout_config_v1_activate_validated(
         (int32_t)payload[3],
         (int32_t)payload[4]);
 }
-
-int oled_ui_layout_config_v1_apply(
-    const uint8_t *payload,
-    uint32_t length)
-{
-    if (oled_ui_layout_config_v1_validate(
-            payload,
-            length) == 0)
-    {
-        return 0;
-    }
-
-    oled_ui_layout_config_v1_activate_validated(payload);
-    return 1;
-}
