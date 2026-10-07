@@ -1,5 +1,13 @@
 ## 2026-10-07
 
+### RDC-01 Host Asset transaction recovery — CLOSED / PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`
+
+Host Core now closes ambiguous Asset write sessions with one bounded best-effort same-transfer `ABORT` after BEGIN may have activated a volatile session and a subsequent BEGIN/WRITE/COMMIT path fails or is cancelled. Cleanup uses an independent two-second deadline, reuses the accepted channel-owned single-response abandonment model, never masks the primary failure and performs no mutation retry. Successful COMMIT closes the cleanup window, so post-COMMIT STATUS/readback failures do not emit ABORT.
+
+Gate-2 evidence `stm32_os_host_asset_transaction_recovery_gate2_host_validation_v1_20261007_190709.evidence.zip`, SHA-256 `F63A788E08FEBDD4454A7BF3AD217ABF009B1BD24413EB83F51C7AD6D71E95FA`, proves exact five-path binding, warning-clean Core Release build and executed Core `84/84` PASS with `TARGET_IO=NONE` / `FLASH_MUTATION=NONE`. Its `outcome.txt` retained one stale `CORE_STATIC_TEST_METHODS=80` literal; this is reconciled as `HARNESS-EVIDENCE-RECORD-CARDINALITY-01` because the hash-verified manifest, run log and executed MTP summary independently prove `84`.
+
+Acceptance commit `699382a58c4c9570cdf36a05693044461e87c58b` was published by ordinary non-force fast-forward from direct parent `7ba9b303b176f8329be98f29f3f1ce1e6ad5e510`; fresh fetch proved clean `HEAD == origin/main`, ahead/behind `0/0`. RDC-02 Host dead-surface cleanup is next.
+
 ### Residual debt-first governance — mandatory RDC-01..RDC-08 before new features
 
 A post-FDC10 read-only audit plus accepted Host Asset correlation hardening showed that the completed FDC program did not exhaust all concrete current technical/tooling/maintainability/documentation debt. Project governance is therefore tightened: no new product feature boundary may be promoted until `RESIDUAL_DEBT_CLOSURE_PROGRAM` closes RDC-01..RDC-08 and its final documentation sweep finds no unclassified current debt.

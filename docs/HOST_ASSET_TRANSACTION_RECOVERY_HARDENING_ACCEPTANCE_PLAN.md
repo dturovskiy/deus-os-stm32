@@ -1,6 +1,6 @@
 # Deus OS — Host Asset Transaction Recovery Hardening Acceptance Plan
 
-Status: **ACTIVE — GATES 0–3 ACCEPTED / GATE 4 COMMIT PENDING**
+Status: **CLOSED / PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b` — GATES 0–5 ACCEPTED**
 
 Canonical design:
 
@@ -94,9 +94,19 @@ RDC-01 closes only bounded Host-side volatile transaction/session cleanup. It ch
 
 Require exact staged-path review, no unrelated files, staged diff check PASS, one normal local commit and clean post-commit state.
 
+### Gate-4 result — PASS
+
+Exact staged set contained the five accepted boundary paths only. `git diff --cached --check` PASS. Local acceptance commit `699382a58c4c9570cdf36a05693044461e87c58b` (`fix: harden host asset transaction recovery`) is a direct child of baseline `7ba9b303b176f8329be98f29f3f1ce1e6ad5e510`; post-commit worktree/index was clean with ahead/behind `1/0`.
+
 ## Gate 5 — ordinary non-force publication
 
 Require fresh fetch/direct-parent proof before push. After push require fresh fetch with `HEAD == origin/main == FETCH_HEAD`, clean worktree/index and ahead/behind `0/0`.
+
+### Gate-5 result — PASS / PUBLISHED
+
+Fresh pre-push fetch proved `origin/main == 7ba9b303b176f8329be98f29f3f1ce1e6ad5e510`, exactly the parent of acceptance commit `699382a58c4c9570cdf36a05693044461e87c58b`. Publication used ordinary non-force fast-forward `7ba9b30..699382a  main -> main`. Fresh post-push fetch proved `HEAD == origin/main == 699382a58c4c9570cdf36a05693044461e87c58b`, clean worktree/index and ahead/behind `0/0`.
+
+`RDC-01 / HOST_ASSET_TRANSACTION_RECOVERY_HARDENING` is CLOSED/PUBLISHED. No target/wire/retry behavior was promoted by this closure.
 
 ## Failure classes
 

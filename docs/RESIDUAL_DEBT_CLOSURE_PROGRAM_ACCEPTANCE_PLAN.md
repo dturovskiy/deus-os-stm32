@@ -77,4 +77,10 @@ Program governance is accepted/published. The program itself remains ACTIVE unti
 
 Each RDC item owns its own gates and evidence. This program-level acceptance record tracks only governance/order and the final all-debt exit criterion.
 
+Current program progress:
+
+- `RDC-01 / HOST_ASSET_TRANSACTION_RECOVERY_HARDENING` — **CLOSED/PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`**; Core `84/84`, Gate-2 evidence SHA-256 `F63A788E08FEBDD4454A7BF3AD217ABF009B1BD24413EB83F51C7AD6D71E95FA`, target I/O NONE / Flash mutation NONE;
+- `RDC-02 / HOST_DEAD_SURFACE_CLEANUP` — next mandatory maintenance boundary;
+- `RDC-03..RDC-08` — queued mandatory debt.
+
 Program exit requires RDC-01..RDC-08 CLOSED/PUBLISHED plus final RDC-08 audit with no unclassified current debt.

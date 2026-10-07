@@ -283,7 +283,7 @@ All ten foundational-debt checkboxes above are accepted closed. That removes the
 
 A subsequent repo-wide audit found additional **confirmed current debt** after FDC-10. These items are now mandatory pre-feature obligations under `RESIDUAL_DEBT_CLOSURE_PROGRAM`; no new product feature boundary may begin until all are CLOSED/PUBLISHED.
 
-- [ ] `RDC-01` — Asset transaction/session recovery hardening: bounded post-failure cleanup using the published idempotent `ABORT` contract without masking the primary failure or adding blind retry.
+- [x] `RDC-01` — Asset transaction/session recovery hardening — CLOSED/PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`; bounded post-failure cleanup uses the published idempotent `ABORT` contract without masking the primary failure or adding blind retry.
 - [ ] `RDC-02` — Host dead-surface cleanup: remove only re-proven unused Host remnants; retain published compatibility/operator/protocol APIs.
 - [ ] `RDC-03` — Target dead API cleanup: remove re-proven declaration/implementation-only target surface with GNU/map/resource/behavior proof; retain frozen compatibility APIs.
 - [ ] `RDC-04` — repository PowerShell destructive-output safety: fail closed before recursive deletion and avoid divergent copy-pasted path guards.

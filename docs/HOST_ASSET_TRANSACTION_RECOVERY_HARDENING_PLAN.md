@@ -1,6 +1,6 @@
 # Deus OS — Host Asset Transaction Recovery Hardening Plan
 
-Status: **ACTIVE — GATES 0–3 ACCEPTED / GATE 4 COMMIT PENDING**
+Status: **CLOSED / PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b` — GATES 0–5 ACCEPTED**
 
 Boundary ID:
 

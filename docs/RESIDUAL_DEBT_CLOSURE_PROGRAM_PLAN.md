@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — GOVERNANCE PUBLISHED `2fb687d4bd57e8029e89d450038b712acb6d9dea` / RDC-01 NEXT**
+Status: **ACTIVE — RDC-01 CLOSED / RDC-02 NEXT**
 
 Program ID:
 
@@ -29,7 +29,7 @@ No new Host Management Service/Web/networking or other product-feature boundary 
 
 ## 2. Mandatory residual-debt ledger
 
-### RDC-01 — Asset transaction/session recovery hardening
+### RDC-01 — CLOSED / PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b` — Asset transaction/session recovery hardening
 
 Confirmed debt:
 
@@ -41,7 +41,7 @@ Required boundary:
 
 `HOST_ASSET_TRANSACTION_RECOVERY_HARDENING`
 
-Closure must prove correlation correctness first, preserve the primary failure, define when best-effort ABORT is safe, and avoid blind mutation retry.
+Closure accepted at `699382a58c4c9570cdf36a05693044461e87c58b`. Gate-2 evidence SHA-256 `F63A788E08FEBDD4454A7BF3AD217ABF009B1BD24413EB83F51C7AD6D71E95FA` proves Core `84/84`, warning-clean Release build and zero target/Flash mutation. Host Core now performs one bounded best-effort same-transfer `ABORT` while a volatile session may be active, preserves the primary failure and performs no blind mutation retry.
 
 ### RDC-02 — Host dead-surface cleanup
 
