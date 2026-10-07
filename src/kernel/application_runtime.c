@@ -578,6 +578,81 @@ void application_runtime_view_consumed(application_runtime_t *runtime)
     }
 }
 
+static int application_runtime_stop_owner(
+    application_runtime_t *runtime,
+    uint32_t current_index,
+    application_stop_callback_t stop,
+    const application_service_snapshot_t *services)
+{
+    runtime->states[current_index] =
+        (uint8_t)APPLICATION_STATE_STOPPING;
+
+    if ((stop == (application_stop_callback_t)0) ||
+        (stop(services) == 0))
+    {
+        runtime->states[current_index] =
+            (uint8_t)APPLICATION_STATE_FAILED;
+        application_counter_increment(&runtime->fault_count);
+        return 0;
+    }
+
+    runtime->states[current_index] =
+        (uint8_t)APPLICATION_STATE_STOPPED;
+    runtime->active_id = 0u;
+    return 1;
+}
+
+static int application_runtime_failing_stop(
+    const application_service_snapshot_t *services)
+{
+    (void)services;
+    return 0;
+}
+
+int application_runtime_stop_failure_self_test(void)
+{
+    application_runtime_t runtime;
+    application_service_snapshot_t services = { 0 };
+
+    application_runtime_reset(&runtime);
+    runtime.initialized = 1u;
+    runtime.active_id = APPLICATION_ID_DEVICE_INFO;
+    runtime.states[0] = (uint8_t)APPLICATION_STATE_RUNNING;
+    runtime.states[1] = (uint8_t)APPLICATION_STATE_RUNNING;
+
+    if (application_runtime_stop_owner(
+            &runtime,
+            1u,
+            application_runtime_failing_stop,
+            &services) != 0)
+    {
+        return 0;
+    }
+
+    if ((runtime.active_id != APPLICATION_ID_DEVICE_INFO) ||
+        (runtime.states[1] != (uint8_t)APPLICATION_STATE_FAILED) ||
+        (runtime.states[0] != (uint8_t)APPLICATION_STATE_RUNNING) ||
+        (runtime.fault_count != 1u))
+    {
+        return 0;
+    }
+
+    runtime.states[0] = (uint8_t)APPLICATION_STATE_STOPPED;
+    if (application_runtime_start(
+            &runtime,
+            APPLICATION_ID_SYSTEM_HOME,
+            &services) != 0)
+    {
+        return 0;
+    }
+
+    return
+        (runtime.active_id == APPLICATION_ID_DEVICE_INFO) &&
+        (runtime.states[1] == (uint8_t)APPLICATION_STATE_FAILED) &&
+        (runtime.states[0] == (uint8_t)APPLICATION_STATE_STOPPED) &&
+        (runtime.fault_count == 1u);
+}
+
 int application_runtime_start(
     application_runtime_t *runtime,
     uint16_t id,
@@ -606,31 +681,32 @@ int application_runtime_start(
         return 0;
     }
 
-    if ((runtime->active_id != 0u) &&
-        (application_runtime_index_from_id(
-            runtime->active_id,
-            &current_index) != 0))
+    if (runtime->active_id != 0u)
     {
-        const application_descriptor_t *current =
-            &application_registry[current_index];
+        const application_descriptor_t *current;
 
-        runtime->states[current_index] =
-            (uint8_t)APPLICATION_STATE_STOPPING;
-
-        if ((current->stop == (application_stop_callback_t)0) ||
-            (current->stop(services) == 0))
+        if (application_runtime_index_from_id(
+                runtime->active_id,
+                &current_index) == 0)
         {
-            runtime->states[current_index] =
-                (uint8_t)APPLICATION_STATE_FAILED;
-            application_counter_increment(&runtime->fault_count);
-        }
-        else
-        {
-            runtime->states[current_index] =
-                (uint8_t)APPLICATION_STATE_STOPPED;
+            return 0;
         }
 
-        runtime->active_id = 0u;
+        current = &application_registry[current_index];
+
+        if (runtime->states[current_index] == (uint8_t)APPLICATION_STATE_FAILED)
+        {
+            return 0;
+        }
+
+        if (application_runtime_stop_owner(
+                runtime,
+                current_index,
+                current->stop,
+                services) == 0)
+        {
+            return 0;
+        }
     }
 
     target = &application_registry[target_index];

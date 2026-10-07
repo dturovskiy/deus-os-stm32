@@ -28,8 +28,12 @@ foreach ($Tool in @($Gcc,$Objcopy,$Size,$Nm)) {
 
 $SourcePaths = @(
     "src/drivers/flash_persistence.c"
+    "src/drivers/i2c1.c"
     "src/drivers/iwdg.c"
     "src/drivers/ssd1306.c"
+    "src/drivers/status_led.c"
+    "src/drivers/stm32f103_clock.c"
+    "src/drivers/usart1.c"
     "src/drivers/usb_device.c"
     "src/gfx/font3x5.c"
     "src/gfx/font5x6.c"
@@ -52,13 +56,18 @@ $SourcePaths = @(
     "src/kernel/scheduler_diagnostics.c"
     "src/kernel/scheduler.c"
     "src/kernel/system_identity.c"
+    "src/kernel/system_service_state.c"
     "src/kernel/usb_management.c"
 )
 
 $ObjectNames = @(
     "src_drivers_flash_persistence.o"
+    "src_drivers_i2c1.o"
     "src_drivers_iwdg.o"
     "src_drivers_ssd1306.o"
+    "src_drivers_status_led.o"
+    "src_drivers_stm32f103_clock.o"
+    "src_drivers_usart1.o"
     "src_drivers_usb_device.o"
     "src_gfx_font3x5.o"
     "src_gfx_font5x6.o"
@@ -81,6 +90,7 @@ $ObjectNames = @(
     "src_kernel_scheduler_diagnostics.o"
     "src_kernel_scheduler.o"
     "src_kernel_system_identity.o"
+    "src_kernel_system_service_state.o"
     "src_kernel_usb_management.o"
 )
 
@@ -153,10 +163,18 @@ $Objects = [System.Collections.Generic.List[string]]::new()
 
 $SizeOptimizedSources = @(
     "src/drivers/flash_persistence.c"
+    "src/drivers/i2c1.c"
+    "src/drivers/status_led.c"
+    "src/drivers/stm32f103_clock.c"
+    "src/drivers/usart1.c"
     "src/kernel.c"
+    "src/kernel/application_commands.c"
+    "src/kernel/application_runtime.c"
     "src/kernel/asset_persistence.c"
     "src/kernel/asset_transfer.c"
     "src/kernel/oled_ui_layout_config_v1.c"
+    "src/kernel/scheduler.c"
+    "src/kernel/system_service_state.c"
     "src/kernel/usb_management.c"
 )
 

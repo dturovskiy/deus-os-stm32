@@ -265,13 +265,13 @@ The 2026-10-03 architecture/code audit promoted ten residual obligations into a 
 
 ### Slice B — Target architecture/lifecycle cleanup
 
-- [ ] `FDC-05` — **Gate 0 contract frozen** in `KERNEL_COMPOSITION_ROOT_CONVERGENCE_PLAN.md` + acceptance pair; continue composition-root convergence only where ownership is natural: move remaining low-level/platform/service responsibilities out of `src/kernel.c` when doing so removes independent reasons to change the root; no line-count-only framework, god context or hidden extern coupling.
-- [ ] `FDC-06` — **Gate 0 contract frozen** in `SEMANTIC_SYSTEM_SERVICE_STATE_PLAN.md` + acceptance pair; invert system-state ownership to `system/service state -> semantic service snapshot -> application/UI consumers`; OLED indicator state must not be the source of truth for health/USB/network state.
-- [ ] `FDC-07` — **Gate 0 contract frozen** in `APPLICATION_STOP_FAILURE_HARDENING_PLAN.md` + acceptance pair; implement fail-closed application `stop()` failure semantics before any resource-owning application: unresolved release failure must not silently transfer ownership/start a replacement app.
+- [ ] `FDC-05` — **Gates 0–5 accepted / Gates 6–7 pending** on exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e`: clock/USART1/I2C1/PC13 ownership convergence, build/resource/ABI and hardware equivalence are accepted with no framework/god-context substitution. Publication is the only remaining FDC-05 work.
+- [ ] `FDC-06` — **Gates 0–5 accepted / Gates 6–7 pending**: `system_service_state` is the accepted upstream authority for application/OLED health/USB/network/time semantics; event/no-rerender and physical OLED behavior are accepted on the shared exact candidate. Publication remains.
+- [ ] `FDC-07` — **Gates 0–5 accepted / Gates 6–7 pending**: failed stop preserves unresolved owner/`active_id`, marks `FAILED`, increments one fault and starts no replacement; synthetic failure proof and existing built-in lifecycle hardware regression are accepted. Publication remains.
 
 ### Slice C — Target/update robustness closure
 
-- [ ] `FDC-08` — **Gate 0 contract frozen** in `TARGET_UPDATE_ROBUSTNESS_CLOSURE_PLAN.md` + acceptance pair; close bounded-wait/recovery debt: reset handler constrained to authenticated `APP_BASE + image_length`; bounded bootloader HSE/PLL/switch behavior; bounded normal-runtime HSE/PLL/switch behavior; bounded UART TX wait/failure semantics; elapsed-time rather than service-poll-count bootloader-entry reset fallback; explicit INFO/BEGIN/AUTHORIZE/END timeout/adjudication/restart semantics. Hardware acceptance must cover the resulting failure paths without weakening the published update trust/ownership model.
+- [ ] `FDC-08` — **Gates 0–5 accepted / Gates 6–7 pending**: bounded clock/UART waits, authenticated image-span vectors, wrap-safe update-entry deadline and non-DATA adjudication are accepted. Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788`; final hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` proves authenticated v3 update/recovery and exact final Flash/metadata/persistence ownership. Publication remains.
 
 ### Slice D — Documentation/source-of-truth closure
 

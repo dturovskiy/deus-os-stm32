@@ -1,6 +1,6 @@
 # Deus OS — Target / Update Robustness Closure Plan
 
-Status: **FDC-08 / GATE 0 CONTRACT FROZEN**
+Status: **FDC-08 / GATES 0–5 ACCEPTED / GATES 6–7 PENDING**
 
 Baseline: `21e45b1dd7b1b5b701b087f44d1b29676ce0e6d9`
 
@@ -45,6 +45,10 @@ No change to firmware package layout, HMAC/digest algorithms, target/product bin
 ## Gates
 
 0 contract freeze; 1 exact implementation/static proof; 2 fresh application+bootloader build/resource/stack/host tests; 3 deterministic negative/static fault-path tests; 4 real hardware clock/update-entry/update ambiguity/recovery acceptance; 5 docs/security-ownership reconciliation; 6 local commit; 7 ordinary publication.
+
+## Gate 5 accepted state
+
+Exact candidate tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e`, application `51972/53248` bytes / SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`, has completed Gates 1–4. Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` proves bounded clock/UART control flow, wrap-safe 250-ms reset-deadline semantics, authenticated image-span vector containment, exact one-retry DATA policy and no-blind-retry non-DATA policy. Final hardware evidence `stm32_os_fdc05_08_consolidated_hardware_gate4_v18_20261007_115017.evidence.zip`, SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`, proves authenticated v3 update, BEGIN reconnect adjudication, DATA exact retry behavior, no END replay, runtime/bootloader recovery, composite reset-deadline acceptance, final candidate runtime recovery, exact signed-image/tail/bootloader/metadata/persistence Flash identity and unchanged trust ownership. Linux USB removal/enumeration timing is retained only as environment observation, not misrepresented as the MCU reset timestamp or a product enumeration bound. Gate 5 docs/security-ownership reconciliation is complete; Gates 6–7 remain commit/publication only.
 
 ## Exit criterion
 

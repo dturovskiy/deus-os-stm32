@@ -1,6 +1,6 @@
 # Deus OS — Host Management Presentation Model
 
-Status: **PLANNING / ARCHITECTURE REFERENCE — `FDC-01..FDC-04,FDC-09` CLOSED / PUBLISHED; BLOCKED ON REMAINING `FDC-05..FDC-08,FDC-10`; NOT AN ACTIVE IMPLEMENTATION BOUNDARY**
+Status: **PLANNING / ARCHITECTURE REFERENCE — `FDC-01..FDC-04,FDC-09` CLOSED / PUBLISHED; `FDC-05..FDC-08` GATES 0–5 ACCEPTED / PUBLICATION PENDING; BLOCKED ON THEIR GATES 6–7 + `FDC-10`; NOT AN ACTIVE IMPLEMENTATION BOUNDARY**
 
 This document defines the intended relationship between the accepted host-management Core, the existing CLI/Desktop presentation surfaces, and a future browser-based management surface.
 
@@ -193,8 +193,8 @@ Service-specific hard requirements are:
 - `FDC-03`: the Web/service contract is an explicit typed allowlist, never a raw numeric RPC/flags proxy;
 - `FDC-04`: state consumed by Web/service is typed in `DeusOs.Control.Core`; HTTP/Web code does not parse target command text;
 - `FDC-09`: WinUSB/libusb cancellation, disposal and reopen are bounded for long-lived and multi-device service use;
-- `FDC-05..08`: target-side ownership/lifecycle/robustness closure is complete so the service is not built on known architecture debt that its own long-lived behavior would trigger;
-- `FDC-10`: canonical docs agree on the accepted closure state.
+- `FDC-05..08`: target-side ownership/lifecycle/robustness implementation and Gates 0–5 are accepted on exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e`; their normal Gate-6/7 commit/publication must complete before promotion;
+- `FDC-10`: canonical docs agree on the accepted published closure state.
 
 The first local service boundary must remain localhost-only by default unless a separate security/trust boundary explicitly authorizes broader exposure. Even on localhost, capability discovery and the service allowlist control which operations exist; target command-class labels are not user authorization.
 

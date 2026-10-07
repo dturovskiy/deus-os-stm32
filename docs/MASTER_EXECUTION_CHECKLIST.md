@@ -53,42 +53,43 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice B — Target architecture/lifecycle cleanup
 
-- [ ] **FDC-05 — composition-root convergence without framework refactor — GATE 0 CONTRACT FROZEN.**
+- [ ] **FDC-05 — composition-root convergence without framework refactor — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.**
   - [x] Gate-0 audit/plan pair frozen: `KERNEL_COMPOSITION_ROOT_CONVERGENCE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
-  - [x] inventory the remaining independent reasons to change `src/kernel.c` after published decomposition;
-  - [ ] move low-level RCC/GPIO/UART/I2C/platform helpers only when a natural owner exists;
-  - [ ] move remaining transport-neutral/service/liveness responsibilities only with coherent bounded state ownership;
-  - [ ] no universal `kernel_context_t`, service locator, hidden extracted-state `extern`, dependency cycle or line-count-only module split;
-  - [ ] build/resource/stack/public-ABI regression and hardware equivalence PASS.
+  - [x] natural RCC/clock, USART1, I2C1 and PC13 owners extracted without framework-only refactor;
+  - [x] no universal `kernel_context_t`, service locator, hidden extracted-state `extern`, dependency cycle or line-count-only split;
+  - [x] build/resource/stack/public-ABI regression and hardware equivalence PASS;
+  - [x] Gate-5 docs/architecture reconciliation records exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e` and v18 hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`;
+  - [ ] Gate 6 local acceptance commit + Gate 7 ordinary publication/fresh-fetch clean `0/0`.
 
-- [ ] **FDC-06 — semantic system/service state upstream of UI — GATE 0 CONTRACT FROZEN.**
+- [ ] **FDC-06 — semantic system/service state upstream of UI — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.**
   - [x] Gate-0 plan pair frozen: `SEMANTIC_SYSTEM_SERVICE_STATE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
-  - [ ] define one bounded semantic state owner for health/USB/network/time used by application runtime and OLED presentation;
-  - [ ] `application_service_snapshot_t` is built from semantic system/service state, not from `boot_desktop_ui_snapshot_t`/rendered indicator values;
-  - [ ] OLED status rendering consumes that same semantic state as a downstream consumer;
-  - [ ] semantic-event/no-rerender behavior remains correct;
-  - [ ] firmware build/resource/stack + text/binary lifecycle + physical OLED regression PASS.
+  - [x] one bounded semantic state owner supplies health/USB/network/time to application runtime and OLED presentation;
+  - [x] `application_service_snapshot_t` is built from semantic state, not `boot_desktop_ui_snapshot_t` indicators;
+  - [x] OLED status rendering consumes the same upstream semantic state;
+  - [x] semantic-event/no-rerender behavior and physical OLED regression PASS;
+  - [x] build/resource/stack + exact hardware Flash identity PASS;
+  - [ ] Gate 6 local acceptance commit + Gate 7 ordinary publication/fresh-fetch clean `0/0`.
 
-- [ ] **FDC-07 — fail-closed application stop failure semantics — GATE 0 CONTRACT FROZEN.**
+- [ ] **FDC-07 — fail-closed application stop failure semantics — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.**
   - [x] Gate-0 plan pair frozen: `APPLICATION_STOP_FAILURE_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
-  - [x] freeze lifecycle/result state when the current app `stop()` fails;
-  - [ ] unresolved resource release cannot silently clear ownership and start a replacement application;
-  - [ ] define home-fallback behavior, retry/recovery semantics and fault accounting;
-  - [ ] add a deterministic synthetic/resource-owner failure test before any real resource-owning application is accepted;
-  - [ ] existing two built-ins retain current successful start/stop/idempotence behavior.
+  - [x] failed `stop()` produces `FAILED`, preserves unresolved `active_id`, increments fault count once and starts no replacement/home fallback;
+  - [x] deterministic synthetic failing-stop proof PASS with no production runtime residue;
+  - [x] existing Home/Device Info start, repeated-start idempotence, normal stop/home fallback and invalid-start regression PASS;
+  - [x] Gate-5 docs reconciliation complete on exact candidate;
+  - [ ] Gate 6 local acceptance commit + Gate 7 ordinary publication/fresh-fetch clean `0/0`.
 
 #### Slice C — Target/update robustness closure
 
-- [ ] **FDC-08 — bounded target/update robustness — GATE 0 CONTRACT FROZEN.**
+- [ ] **FDC-08 — bounded target/update robustness — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.**
   - [x] Gate-0 plan pair frozen: `TARGET_UPDATE_ROBUSTNESS_CLOSURE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
-  - [ ] bootloader reset handler must lie inside the authenticated image span `[APP_BASE, APP_BASE + image_length)`, not merely the whole application region;
-  - [ ] bootloader HSE ready, PLL ready and clock-switch waits have bounded failure behavior;
-  - [ ] normal runtime HSE ready, PLL ready and clock-switch waits have bounded failure behavior;
-  - [ ] UART TX wait is bounded with explicit fail/degraded/emergency semantics rather than infinite spin;
-  - [ ] runtime `ENTER_BOOTLOADER` reset fallback uses an elapsed-time/deadline contract, not only `4096` task0 service polls;
-  - [ ] INFO/BEGIN/AUTHORIZE/END ambiguous response loss uses explicit host adjudication/restart semantics and preserves update trust/idempotency rules;
-  - [ ] Flash/SRAM/stack budgets, bootloader 8-KiB ceiling, persistence ownership, rollback floor and HMAC/digest guarantees remain intact;
-  - [ ] deterministic static/unit tests plus hardware recovery/failure acceptance PASS.
+  - [x] reset handler constrained to authenticated `[APP_BASE, APP_BASE + image_length)`;
+  - [x] bootloader and runtime HSE/PLL/clock-switch waits are bounded;
+  - [x] UART TX wait is bounded with explicit failure semantics;
+  - [x] runtime `ENTER_BOOTLOADER` reset fallback uses wrap-safe elapsed-time/deadline semantics;
+  - [x] INFO/BEGIN/AUTHORIZE/END retain no blind retry; DATA retains exactly one exact timeout retry;
+  - [x] Flash/SRAM/stack, bootloader 8-KiB ceiling, persistence ownership, rollback floor and HMAC/digest guarantees remain intact;
+  - [x] deterministic Gate-1..3 proof SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` + final hardware Gate-4 evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` PASS;
+  - [ ] Gate 6 local acceptance commit + Gate 7 ordinary publication/fresh-fetch clean `0/0`.
 
 #### Slice D — Documentation/source-of-truth closure
 

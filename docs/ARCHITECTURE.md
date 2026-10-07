@@ -21,6 +21,12 @@ The published kernel/transport substrate is sufficient to proceed to boot/deskto
 - startup/context-switch/register drivers remain arch/platform-specific while kernel/services/apps/UI/protocol semantics should avoid leaking STM32 register details upward;
 - heap, filesystem, generic DMA framework, RTC, MPU isolation and broad power-management facilities are not current prerequisites.
 
+### Accepted FDC-05..08 architecture candidate — publication pending
+
+Exact candidate tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e` has completed FDC-05..08 Gates 0–5. The architecture now has natural `stm32f103_clock`, `usart1`, `i2c1` and `status_led` low-level owners while `src/kernel.c` remains the composition root; one bounded `system_service_state` is upstream of both application-runtime and OLED presentation semantics; failed application stop preserves unresolved ownership and fails closed; target/update waits are bounded, reset vectors are constrained to the authenticated image span, and non-DATA update ambiguity is adjudicated without blind replay while DATA retains exactly one exact retry.
+
+Consolidated Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` and hardware Gate-4 evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` accept the exact candidate application (`51972/53248`, SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`), physical/runtime equivalence and unchanged trust/persistence ownership. These bytes are accepted but not yet the published Git boundary; FDC-05..08 Gates 6–7 remain commit/publication only.
+
 ## Published boundary — Host control application foundation
 
 `HOST_CONTROL_APPLICATION_FOUNDATION` is accepted through Gate 7 and published at `e0f49f168542fa1cf49bca451e01b0c077aa8d18`, tree `42c77f2cf3d7e9f7f5c1ff24d9d437f61a397be6`. The accepted firmware/host source identities are `b895955f7738aceb6fca0272d510cc433378c6ab` / `2c5afd9914851300aed15e321cf69c3a2c3daeed`. The host is C# / `net10.0`, with transport-neutral Core + CLI + Avalonia `12.1.2` Desktop, direct Windows WinUSB and Linux libusb adapters over the existing management interface 2. `sysinfo=0x0024` advances command service to v3 / registry 36 while binary framing remains v1.

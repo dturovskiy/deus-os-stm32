@@ -3,6 +3,7 @@
 #include "kernel/asset_transfer.h"
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
+#include "kernel/time.h"
 #include "kernel/usb_management.h"
 
 #define REG32(address) (*(volatile uint32_t *)(uintptr_t)(address))
@@ -28,7 +29,7 @@
 #define FIRMWARE_UPDATE_STATE_RESETTING 0x80u
 #define FIRMWARE_UPDATE_RESPONSE_PAYLOAD_BYTES 16u
 #define FIRMWARE_UPDATE_RESPONSE_WIRE_BYTES 28u
-#define FIRMWARE_UPDATE_RESET_FALLBACK_POLLS 4096u
+#define FIRMWARE_UPDATE_RESET_FALLBACK_MS 250u
 #define FIRMWARE_UPDATE_TOKEN1 0xD35Au
 #define FIRMWARE_UPDATE_TOKEN2 0x2CA5u
 
@@ -50,7 +51,8 @@ static binary_rpc_state_t usb_management_rpc_state;
 static firmware_update_response_wire_t firmware_update_response_wire;
 static uint32_t usb_management_last_bus_reset_count;
 static uint32_t firmware_update_reset_baseline_packet_count;
-static uint32_t firmware_update_reset_fallback_polls;
+static kernel_time_ms_t firmware_update_reset_deadline;
+static uint32_t firmware_update_reset_pending;
 
 __attribute__((cold, noreturn)) static void firmware_update_system_reset(void)
 {
@@ -79,7 +81,7 @@ __attribute__((cold)) static void firmware_update_write_entry_token(void)
 
 __attribute__((cold, noinline)) static void firmware_update_reset_service(void)
 {
-    if (firmware_update_reset_fallback_polls == 0u)
+    if (firmware_update_reset_pending == 0u)
     {
         return;
     }
@@ -90,9 +92,9 @@ __attribute__((cold, noinline)) static void firmware_update_reset_service(void)
         firmware_update_system_reset();
     }
 
-    --firmware_update_reset_fallback_polls;
-
-    if (firmware_update_reset_fallback_polls == 0u)
+    if (kernel_time_reached(
+            kernel_time_now(),
+            firmware_update_reset_deadline) != 0)
     {
         firmware_update_system_reset();
     }
@@ -159,7 +161,7 @@ __attribute__((cold, noinline)) static void firmware_update_handle_runtime_frame
         return;
     }
 
-    if (firmware_update_reset_fallback_polls != 0u)
+    if (firmware_update_reset_pending != 0u)
     {
         (void)firmware_update_send_response(
             frame,
@@ -182,8 +184,9 @@ __attribute__((cold, noinline)) static void firmware_update_handle_runtime_frame
     }
 
     firmware_update_write_entry_token();
-    firmware_update_reset_fallback_polls =
-        FIRMWARE_UPDATE_RESET_FALLBACK_POLLS;
+    firmware_update_reset_deadline =
+        kernel_time_now() + FIRMWARE_UPDATE_RESET_FALLBACK_MS;
+    firmware_update_reset_pending = 1u;
 }
 
 static void usb_management_protocol_reset(void)
@@ -215,7 +218,8 @@ int usb_management_runtime_init(binary_rpc_workspace_t *workspace)
         workspace);
     asset_transfer_init();
     firmware_update_reset_baseline_packet_count = 0u;
-    firmware_update_reset_fallback_polls = 0u;
+    firmware_update_reset_deadline = 0u;
+    firmware_update_reset_pending = 0u;
 
     usb_management_last_bus_reset_count =
         usb_device_diagnostics.bus_reset_count;
@@ -238,7 +242,7 @@ uint32_t usb_management_runtime_service(
         return 0u;
     }
 
-    if (firmware_update_reset_fallback_polls != 0u)
+    if (firmware_update_reset_pending != 0u)
     {
         firmware_update_reset_service();
     }
@@ -273,7 +277,7 @@ uint32_t usb_management_runtime_service(
                 BINARY_FRAME_TYPE_FIRMWARE_UPDATE_REQUEST)
             {
                 firmware_update_handle_runtime_frame(&frame, binding);
-                if (firmware_update_reset_fallback_polls != 0u)
+                if (firmware_update_reset_pending != 0u)
                 {
                     firmware_update_reset_service();
                 }

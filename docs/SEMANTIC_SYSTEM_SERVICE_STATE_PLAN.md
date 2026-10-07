@@ -1,6 +1,6 @@
 # Deus OS — Semantic System / Service State Plan
 
-Status: **FDC-06 / GATE 0 CONTRACT FROZEN**
+Status: **FDC-06 / GATES 0–5 ACCEPTED / GATES 6–7 PENDING**
 
 Baseline: `21e45b1dd7b1b5b701b087f44d1b29676ce0e6d9`
 
@@ -65,6 +65,10 @@ No public RPC/command/application ABI change is authorized.
 5. documentation reconciliation;
 6. local acceptance commit;
 7. ordinary non-force publication.
+
+## Gate 5 accepted state
+
+Exact candidate tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e` implements `system_service_state` as the single bounded upstream authority for uptime/minute, system health, USB configured and network-offline truth. Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` proves direct semantic consumers, equal-state/no-event behavior and retained resource/ABI bounds. Hardware Gate-4 evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` proves the exact candidate runtime semantics and binds the accepted physical OLED observation through the unchanged candidate. Gate 5 documentation reconciliation is complete; Gates 6–7 remain commit/publication only.
 
 ## Exit criterion
 

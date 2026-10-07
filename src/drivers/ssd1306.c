@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "drivers/i2c1.h"
 #include "drivers/ssd1306.h"
 
 #define SSD1306_ADDRESS          0x3Cu
@@ -7,15 +8,6 @@
 #define SSD1306_CMD_NOP          0xE3u
 #define SSD1306_PATTERN_DATA     16u
 #define SSD1306_FLUSH_CHUNK_DATA 16u
-
-/*
- * Slice-1 transport seam.
- *
- * I2C1 remains in kernel.c in this refactor so controller extraction can be
- * hardware-validated independently from transport extraction. The SSD1306
- * public API does not expose this dependency.
- */
-int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length);
 
 static ssd1306_present_stats_t ssd1306_last_present_stats;
 

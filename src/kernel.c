@@ -2,6 +2,10 @@
 #include "kernel/time.h"
 #include "drivers/ssd1306.h"
 #include "drivers/iwdg.h"
+#include "drivers/i2c1.h"
+#include "drivers/status_led.h"
+#include "drivers/stm32f103_clock.h"
+#include "drivers/usart1.h"
 #include "drivers/usb_device.h"
 #include "gfx/mono_fb.h"
 #include "gfx/font5x7.h"
@@ -20,110 +24,10 @@
 #include "kernel/binary_rpc.h"
 #include "kernel/usb_management.h"
 #include "kernel/system_identity.h"
+#include "kernel/system_service_state.h"
 
 #define REG32(addr) (*(volatile uint32_t *)(addr))
-#define REG8(addr)  (*(volatile uint8_t *)(addr))
-
-/* Flash interface */
-#define FLASH_ACR       REG32(0x40022000u)
-#define FLASH_LATENCY_2 0x2u
-#define FLASH_PRFTBE     (1u << 4)
-
-/* Reset and clock control */
-#define RCC_CR          REG32(0x40021000u)
-#define RCC_CFGR        REG32(0x40021004u)
-#define RCC_APB2ENR     REG32(0x40021018u)
-#define RCC_APB1RSTR     REG32(0x40021010u)
-#define RCC_APB1ENR      REG32(0x4002101Cu)
-#define RCC_CSR          REG32(0x40021024u)
-
-#define RCC_HSEON       (1u << 16)
-#define RCC_HSERDY      (1u << 17)
-#define RCC_PLLON       (1u << 24)
-#define RCC_PLLRDY      (1u << 25)
-
-#define RCC_SW_MASK     (0x3u << 0)
-#define RCC_SW_PLL      (0x2u << 0)
-#define RCC_SWS_MASK    (0x3u << 2)
-#define RCC_SWS_PLL     (0x2u << 2)
-#define RCC_PPRE1_DIV2  (0x4u << 8)
-#define RCC_ADCPRE_DIV6 (0x2u << 14)
-#define RCC_PLLSRC_HSE  (1u << 16)
-#define RCC_PLLMUL_X9   (0x7u << 18)
-#define RCC_USBPRE      (1u << 22)
-
-#define RCC_IOPAEN      (1u << 2)
-#define RCC_IOPCEN      (1u << 4)
-#define RCC_USART1EN    (1u << 14)
-#define RCC_CSR_RMVF     (1u << 24)
-#define RCC_CSR_IWDGRSTF (1u << 29)
-
-/* GPIOA / GPIOC */
-#define GPIOA_CRH       REG32(0x40010804u)
-#define GPIOB_CRL       REG32(0x40010C00u)
-
-#define GPIOC_CRH       REG32(0x40011004u)
-#define GPIOC_ODR       REG32(0x4001100Cu)
-#define GPIOC_BSRR      REG32(0x40011010u)
-
-#define GPIO_PIN_13     (1u << 13)
-#define GPIO_RESET_13   (1u << 29)
-
-/* USART1 */
-#define USART1_SR       REG32(0x40013800u)
-#define USART1_DR       REG32(0x40013804u)
-#define USART1_BRR      REG32(0x40013808u)
-#define USART1_CR1      REG32(0x4001380Cu)
-
-#define USART_SR_PE     (1u << 0)
-#define USART_SR_FE     (1u << 1)
-#define USART_SR_NE     (1u << 2)
-#define USART_SR_ORE    (1u << 3)
-#define USART_SR_RXNE   (1u << 5)
-#define USART_SR_TXE    (1u << 7)
-#define USART_CR1_RE    (1u << 2)
-#define USART_CR1_TE    (1u << 3)
-#define USART_CR1_RXNEIE (1u << 5)
-#define USART_CR1_UE    (1u << 13)
-
-/* Cortex-M3 NVIC */
-#define NVIC_ISER1      REG32(0xE000E104u)
-#define NVIC_ICPR1      REG32(0xE000E284u)
-#define NVIC_IPR_USART1 REG8(0xE000E425u)
-#define NVIC_USART1_BIT (1u << 5)
-#define NVIC_USART1_PRIORITY 0x80u
-#define I2C1_CR1         REG32(0x40005400u)
-#define I2C1_CR2         REG32(0x40005404u)
-#define I2C1_DR          REG32(0x40005410u)
-#define I2C1_SR1         REG32(0x40005414u)
-#define I2C1_SR2         REG32(0x40005418u)
-#define I2C1_CCR         REG32(0x4000541Cu)
-#define I2C1_TRISE       REG32(0x40005420u)
-
-#define RCC_APB2ENR_IOPBEN   (1u << 3)
-#define RCC_APB1ENR_I2C1EN   (1u << 21)
-#define RCC_APB1RSTR_I2C1RST (1u << 21)
-
-#define I2C_CR1_PE        (1u << 0)
-#define I2C_CR1_START     (1u << 8)
-#define I2C_CR1_STOP      (1u << 9)
-
-#define I2C_SR1_SB        (1u << 0)
-#define I2C_SR1_ADDR      (1u << 1)
-#define I2C_SR1_BTF       (1u << 2)
-#define I2C_SR1_TXE       (1u << 7)
-
-
-#define OLED_GLYPH_ADVANCE         6u
-#define I2C_SR1_BERR      (1u << 8)
-#define I2C_SR1_ARLO      (1u << 9)
-#define I2C_SR1_AF        (1u << 10)
-#define I2C_SR2_BUSY      (1u << 1)
-
-#define I2C1_PCLK_MHZ     36u
-#define I2C1_CCR_100KHZ   180u
-#define I2C1_TRISE_100KHZ 37u
-#define I2C_SPIN_LIMIT    100000u
+#define OLED_GLYPH_ADVANCE 6u
 
 #define PRODUCTION_CONSOLE_STACK_WORDS 256u
 #define PRODUCTION_CONSOLE_STACK_BYTES \
@@ -144,10 +48,8 @@
     (PRODUCTION_UART_RX_EVENT | \
      PRODUCTION_USB_CDC_RX_EVENT | \
      PRODUCTION_USB_MANAGEMENT_RX_EVENT)
-#define BOOT_DESKTOP_UI_SPLASH_MIN_MS    1000u
-#define BOOT_DESKTOP_UI_POLL_MS          250u
-#define BOOT_DESKTOP_UI_MAX_MINUTES      5999u
-#define BOOT_DESKTOP_UI_SATURATE_MINUTES 6000u
+#define BOOT_DESKTOP_UI_SPLASH_MIN_MS 1000u
+#define BOOT_DESKTOP_UI_POLL_MS       250u
 
 typedef enum
 {
@@ -163,13 +65,6 @@ typedef struct
     uint8_t network_indicator;
     uint32_t total_minutes;
 } boot_desktop_ui_snapshot_t;
-
-/*
- * PCLK2 = 72 MHz.
- * USARTDIV = 72,000,000 / (16 * 115,200) = 39.0625
- * BRR = mantissa 39, fraction 1 = 0x0271.
- */
-#define USART1_BRR_115200 0x0271u
 
 /* Cortex-M3 SysTick */
 #define SYST_CSR        REG32(0xE000E010u)
@@ -240,18 +135,6 @@ typedef struct
 volatile uint32_t kernel_ticks;
 volatile fault_record_t fault_record;
 
-#define UART_RX_RING_CAPACITY 128u
-#define UART_RX_RING_MASK     (UART_RX_RING_CAPACITY - 1u)
-
-static volatile uint8_t uart_rx_ring[UART_RX_RING_CAPACITY];
-static volatile uint32_t uart_rx_head;
-static volatile uint32_t uart_rx_tail;
-static volatile uint32_t uart_rx_irq_count;
-static volatile uint32_t uart_rx_byte_count;
-static volatile uint32_t uart_rx_drop_count;
-static volatile uint32_t uart_rx_error_count;
-static volatile uint32_t uart_rx_high_water;
-
 static uint8_t oled_framebuffer[SSD1306_FRAMEBUFFER_BYTES];
 static mono_fb_t oled_surface;
 static oled_console_t oled_console_state;
@@ -287,7 +170,6 @@ static boot_desktop_ui_state_t boot_desktop_ui_state;
 static kernel_time_ms_t boot_desktop_ui_splash_started_at;
 static uint32_t boot_desktop_ui_splash_visible;
 static uint32_t boot_desktop_ui_initialized;
-static uint32_t boot_desktop_ui_uptime_saturated;
 static uint32_t boot_desktop_ui_snapshot_valid;
 static uint32_t boot_desktop_ui_panel_initialized;
 static uint32_t boot_desktop_ui_layout_revision;
@@ -315,11 +197,9 @@ int kernel_time_elapsed(kernel_time_ms_t start, kernel_time_ms_t duration)
 
 static void production_reset_cause_capture(void)
 {
-    production_reset_flags = RCC_CSR;
+    production_reset_flags = stm32f103_reset_flags_capture_and_clear();
     production_iwdg_reset =
-        ((production_reset_flags & RCC_CSR_IWDGRSTF) != 0u) ? 1u : 0u;
-
-    RCC_CSR |= RCC_CSR_RMVF;
+        (stm32f103_reset_was_iwdg(production_reset_flags) != 0) ? 1u : 0u;
 }
 
 static void production_watchdog_reload(void)
@@ -331,110 +211,10 @@ static void production_watchdog_reload(void)
     }
 }
 
-static uint32_t clock_init(void)
-{
-    FLASH_ACR = FLASH_PRFTBE | FLASH_LATENCY_2;
-
-    RCC_CR |= RCC_HSEON;
-    while ((RCC_CR & RCC_HSERDY) == 0u)
-    {
-    }
-
-    RCC_CFGR =
-        RCC_PPRE1_DIV2 |
-        RCC_ADCPRE_DIV6 |
-        RCC_PLLSRC_HSE |
-        RCC_PLLMUL_X9;
-
-    RCC_CR |= RCC_PLLON;
-    while ((RCC_CR & RCC_PLLRDY) == 0u)
-    {
-    }
-
-    RCC_CFGR = (RCC_CFGR & ~RCC_SW_MASK) | RCC_SW_PLL;
-    while ((RCC_CFGR & RCC_SWS_MASK) != RCC_SWS_PLL)
-    {
-    }
-
-    /*
-     * STM32F103 USB FS requires 48 MHz. With the accepted 72 MHz PLL,
-     * USBPRE=0 selects PLLCLK/1.5 = 48 MHz before USBEN is asserted.
-     */
-    RCC_CFGR &= ~RCC_USBPRE;
-
-    return 72000000u;
-}
-
-static void gpio_init(void)
-{
-    RCC_APB2ENR |= RCC_IOPCEN;
-
-    /* PC13: general-purpose push-pull output, 2 MHz. */
-    GPIOC_CRH &= ~(0xFu << 20);
-    GPIOC_CRH |=  (0x2u << 20);
-
-    /* Blue Pill LED is active-low. */
-    GPIOC_BSRR = GPIO_PIN_13;
-}
-
-static void uart_init(void)
-{
-    /*
-     * Enable GPIOA and USART1 on APB2.
-     *
-     * PA9 / USART1_TX:
-     * MODE9 = 11 -> output, max speed 50 MHz
-     * CNF9  = 10 -> alternate-function push-pull
-     * nibble = 0b1011 = 0xB
-     */
-    RCC_APB2ENR |= RCC_IOPAEN | RCC_USART1EN;
-
-    /*
-     * PA10 / USART1_RX:
-     * MODE10 = 00 -> input
-     * CNF10  = 01 -> floating input
-     * nibble = 0b0100 = 0x4
-     *
-     * HW-193 TXD is connected to PA10 for the bidirectional console.
-     */
-    GPIOA_CRH &= ~((0xFu << 4) | (0xFu << 8));
-    GPIOA_CRH |=  ((0xBu << 4) | (0x4u << 8));
-
-    uart_rx_head = 0u;
-    uart_rx_tail = 0u;
-    uart_rx_irq_count = 0u;
-    uart_rx_byte_count = 0u;
-    uart_rx_drop_count = 0u;
-    uart_rx_error_count = 0u;
-    uart_rx_high_water = 0u;
-
-    USART1_BRR = USART1_BRR_115200;
-
-    NVIC_ICPR1 = NVIC_USART1_BIT;
-    NVIC_IPR_USART1 = NVIC_USART1_PRIORITY;
-    NVIC_ISER1 = NVIC_USART1_BIT;
-
-    USART1_CR1 =
-        USART_CR1_RE |
-        USART_CR1_TE |
-        USART_CR1_RXNEIE |
-        USART_CR1_UE;
-}
-
-static void uart_putc(char c)
-{
-    while ((USART1_SR & USART_SR_TXE) == 0u)
-    {
-    }
-
-    USART1_DR = (uint32_t)(uint8_t)c;
-}
-
 static int console_uart_write_byte(void *context, uint8_t byte)
 {
     (void)context;
-    uart_putc((char)byte);
-    return 1;
+    return usart1_write_byte(byte);
 }
 
 static int console_usb_cdc_write_byte(void *context, uint8_t byte)
@@ -508,62 +288,14 @@ static void console_write_hex32(
 
 static int uart_try_getc(char *c)
 {
-    const uint32_t tail = uart_rx_tail;
-
-    if (tail == uart_rx_head)
-    {
-        return 0;
-    }
-
-    *c = (char)uart_rx_ring[tail & UART_RX_RING_MASK];
-    uart_rx_tail = tail + 1u;
-
-    return 1;
+    return usart1_try_read(c);
 }
 
 void USART1_IRQHandler(void)
 {
-    const uint32_t status = USART1_SR;
-
-    ++uart_rx_irq_count;
-
-    if ((status & (USART_SR_PE | USART_SR_FE | USART_SR_NE | USART_SR_ORE)) != 0u)
+    if (usart1_irq_service() != 0)
     {
-        ++uart_rx_error_count;
-    }
-
-    if ((status & USART_SR_RXNE) != 0u)
-    {
-        const uint8_t byte = (uint8_t)USART1_DR;
-        const uint32_t head = uart_rx_head;
-        const uint32_t depth = head - uart_rx_tail;
-
-        ++uart_rx_byte_count;
-
-        if (depth < UART_RX_RING_CAPACITY)
-        {
-            const uint32_t next_head = head + 1u;
-            const uint32_t next_depth = depth + 1u;
-
-            uart_rx_ring[head & UART_RX_RING_MASK] = byte;
-            uart_rx_head = next_head;
-
-            scheduler_event_signal(
-                PRODUCTION_UART_RX_EVENT);
-
-            if (next_depth > uart_rx_high_water)
-            {
-                uart_rx_high_water = next_depth;
-            }
-        }
-        else
-        {
-            ++uart_rx_drop_count;
-        }
-    }
-    else if ((status & (USART_SR_PE | USART_SR_FE | USART_SR_NE | USART_SR_ORE)) != 0u)
-    {
-        (void)USART1_DR;
+        scheduler_event_signal(PRODUCTION_UART_RX_EVENT);
     }
 }
 
@@ -581,7 +313,10 @@ static void uart_emergency_write(const char *text)
 {
     while (*text != '\0')
     {
-        uart_putc(*text);
+        if (usart1_write_byte((uint8_t)*text) == 0)
+        {
+            return;
+        }
         ++text;
     }
 }
@@ -594,7 +329,10 @@ static void uart_emergency_write_hex32(uint32_t value)
 
     for (uint32_t shift = 28u;; shift -= 4u)
     {
-        uart_putc(hex[(value >> shift) & 0xFu]);
+        if (usart1_write_byte((uint8_t)hex[(value >> shift) & 0xFu]) == 0)
+        {
+            return;
+        }
 
         if (shift == 0u)
         {
@@ -657,236 +395,6 @@ static console_command_state_t usb_cdc_command_state =
         0u
     }
 };
-
-static void i2c1_init(void)
-{
-    RCC_APB2ENR |= RCC_APB2ENR_IOPBEN;
-    RCC_APB1ENR |= RCC_APB1ENR_I2C1EN;
-
-    GPIOB_CRL &= ~((0xFu << 24) | (0xFu << 28));
-    GPIOB_CRL |=  ((0xFu << 24) | (0xFu << 28));
-
-    RCC_APB1RSTR |= RCC_APB1RSTR_I2C1RST;
-    RCC_APB1RSTR &= ~RCC_APB1RSTR_I2C1RST;
-
-    I2C1_CR1 = 0u;
-    I2C1_CR2 = I2C1_PCLK_MHZ;
-    I2C1_CCR = I2C1_CCR_100KHZ;
-    I2C1_TRISE = I2C1_TRISE_100KHZ;
-    I2C1_CR1 = I2C_CR1_PE;
-}
-
-static int i2c1_wait_bus_free(void)
-{
-    uint32_t spins = I2C_SPIN_LIMIT;
-
-    while ((I2C1_SR2 & I2C_SR2_BUSY) != 0u)
-    {
-        if (spins == 0u)
-        {
-            return 0;
-        }
-
-        --spins;
-    }
-
-    return 1;
-}
-
-static int i2c1_probe(uint8_t address)
-{
-    uint32_t spins;
-    uint32_t sr1;
-
-    if (i2c1_wait_bus_free() == 0)
-    {
-        return -1;
-    }
-
-    I2C1_SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF);
-    I2C1_CR1 |= I2C_CR1_START;
-
-    spins = I2C_SPIN_LIMIT;
-
-    while ((I2C1_SR1 & I2C_SR1_SB) == 0u)
-    {
-        if (spins == 0u)
-        {
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return -1;
-        }
-
-        --spins;
-    }
-
-    I2C1_DR = ((uint32_t)address << 1);
-
-    spins = I2C_SPIN_LIMIT;
-
-    for (;;)
-    {
-        sr1 = I2C1_SR1;
-
-        if ((sr1 & I2C_SR1_ADDR) != 0u)
-        {
-            (void)I2C1_SR1;
-            (void)I2C1_SR2;
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return 1;
-        }
-
-        if ((sr1 & I2C_SR1_AF) != 0u)
-        {
-            I2C1_SR1 &= ~I2C_SR1_AF;
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return 0;
-        }
-
-        if ((sr1 & (I2C_SR1_BERR | I2C_SR1_ARLO)) != 0u)
-        {
-            I2C1_SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO);
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return -1;
-        }
-
-        if (spins == 0u)
-        {
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return -1;
-        }
-
-        --spins;
-    }
-}
-
-int i2c1_write(uint8_t address, const uint8_t *data, uint32_t length)
-{
-    uint32_t spins;
-    uint32_t sr1;
-    uint32_t index;
-
-    if ((data == (const uint8_t *)0) || (length == 0u))
-    {
-        return 0;
-    }
-
-    if (i2c1_wait_bus_free() == 0)
-    {
-        return 0;
-    }
-
-    I2C1_SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF);
-    I2C1_CR1 |= I2C_CR1_START;
-
-    spins = I2C_SPIN_LIMIT;
-
-    while ((I2C1_SR1 & I2C_SR1_SB) == 0u)
-    {
-        if (spins == 0u)
-        {
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return 0;
-        }
-
-        --spins;
-    }
-
-    I2C1_DR = ((uint32_t)address << 1);
-
-    spins = I2C_SPIN_LIMIT;
-
-    for (;;)
-    {
-        sr1 = I2C1_SR1;
-
-        if ((sr1 & I2C_SR1_ADDR) != 0u)
-        {
-            (void)I2C1_SR1;
-            (void)I2C1_SR2;
-            break;
-        }
-
-        if ((sr1 & (I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO)) != 0u)
-        {
-            I2C1_SR1 &= ~(I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO);
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return 0;
-        }
-
-        if (spins == 0u)
-        {
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return 0;
-        }
-
-        --spins;
-    }
-
-    for (index = 0u; index < length; ++index)
-    {
-        spins = I2C_SPIN_LIMIT;
-
-        for (;;)
-        {
-            sr1 = I2C1_SR1;
-
-            if ((sr1 & I2C_SR1_TXE) != 0u)
-            {
-                break;
-            }
-
-            if ((sr1 & (I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO)) != 0u)
-            {
-                I2C1_SR1 &= ~(I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO);
-                I2C1_CR1 |= I2C_CR1_STOP;
-                return 0;
-            }
-
-            if (spins == 0u)
-            {
-                I2C1_CR1 |= I2C_CR1_STOP;
-                return 0;
-            }
-
-            --spins;
-        }
-
-        I2C1_DR = data[index];
-    }
-
-    spins = I2C_SPIN_LIMIT;
-
-    for (;;)
-    {
-        sr1 = I2C1_SR1;
-
-        if ((sr1 & I2C_SR1_BTF) != 0u)
-        {
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return 1;
-        }
-
-        if ((sr1 & (I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO)) != 0u)
-        {
-            I2C1_SR1 &= ~(I2C_SR1_AF | I2C_SR1_BERR | I2C_SR1_ARLO);
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return 0;
-        }
-
-        if (spins == 0u)
-        {
-            I2C1_CR1 |= I2C_CR1_STOP;
-            return 0;
-        }
-
-        --spins;
-    }
-}
-
-
-
-
-
 
 
 static void oled_fb_draw_char_1x(uint32_t x, uint32_t y, char c)
@@ -1519,10 +1027,10 @@ static void boot_desktop_ui_initialize(void)
     boot_desktop_ui_state = BOOT_DESKTOP_UI_SPLASH;
     boot_desktop_ui_splash_started_at = 0u;
     boot_desktop_ui_splash_visible = 0u;
-    boot_desktop_ui_uptime_saturated = 0u;
     boot_desktop_ui_snapshot_valid = 0u;
     boot_desktop_ui_panel_initialized = 0u;
     boot_desktop_ui_layout_revision = oled_ui_layout_revision();
+    system_service_state_reset();
     oled_status_bar_init(&boot_desktop_ui_status);
     boot_desktop_ui_initialized = 1u;
 }
@@ -1542,42 +1050,41 @@ static void boot_desktop_ui_update_state(void)
     }
 }
 
-static uint32_t boot_desktop_ui_display_minutes(void)
+static void system_service_state_refresh(void)
 {
-    uint32_t total_minutes =
-        kernel_time_now() / 60000u;
-
-    if (
-        (boot_desktop_ui_uptime_saturated != 0u) ||
-        (total_minutes >= BOOT_DESKTOP_UI_SATURATE_MINUTES)
-    ) {
-        boot_desktop_ui_uptime_saturated = 1u;
-        return BOOT_DESKTOP_UI_MAX_MINUTES;
-    }
-
-    return total_minutes;
+    system_service_state_update(
+        kernel_time_now(),
+        (uint8_t)(boot_desktop_ui_runtime_ready() != 0),
+        (uint8_t)(usb_cdc_is_configured() != 0),
+        0u);
 }
 
 static void boot_desktop_ui_snapshot_build(
     boot_desktop_ui_snapshot_t *snapshot)
 {
+    system_service_state_snapshot_t service_state;
+
     if (snapshot == (boot_desktop_ui_snapshot_t *)0)
     {
         return;
     }
 
+    system_service_state_snapshot_get(&service_state);
+
     snapshot->state = boot_desktop_ui_state;
     snapshot->system_indicator =
-        (boot_desktop_ui_runtime_ready() != 0) ?
+        (service_state.system_healthy != 0u) ?
             OLED_STATUS_INDICATOR_FILLED :
             OLED_STATUS_INDICATOR_RING;
     snapshot->usb_indicator =
-        (usb_cdc_is_configured() != 0) ?
+        (service_state.usb_configured != 0u) ?
             OLED_STATUS_INDICATOR_FILLED :
             OLED_STATUS_INDICATOR_RING;
-    snapshot->network_indicator = OLED_STATUS_INDICATOR_RING;
-    snapshot->total_minutes =
-        boot_desktop_ui_display_minutes();
+    snapshot->network_indicator =
+        (service_state.network_online != 0u) ?
+            OLED_STATUS_INDICATOR_FILLED :
+            OLED_STATUS_INDICATOR_RING;
+    snapshot->total_minutes = service_state.displayed_minute;
 }
 
 static int boot_desktop_ui_snapshot_equal(
@@ -1600,27 +1107,21 @@ static int boot_desktop_ui_snapshot_equal(
 }
 
 static void boot_desktop_ui_application_snapshot_build(
-    const boot_desktop_ui_snapshot_t *ui_snapshot,
     application_service_snapshot_t *application_snapshot)
 {
-    if (
-        (ui_snapshot == (const boot_desktop_ui_snapshot_t *)0) ||
-        (application_snapshot == (application_service_snapshot_t *)0)
-    ) {
+    system_service_state_snapshot_t service_state;
+
+    if (application_snapshot == (application_service_snapshot_t *)0)
+    {
         return;
     }
 
-    application_snapshot->uptime_ms = kernel_time_now();
-    application_snapshot->displayed_minute = ui_snapshot->total_minutes;
-    application_snapshot->system_healthy =
-        (ui_snapshot->system_indicator == OLED_STATUS_INDICATOR_FILLED) ?
-            1u : 0u;
-    application_snapshot->usb_configured =
-        (ui_snapshot->usb_indicator == OLED_STATUS_INDICATOR_FILLED) ?
-            1u : 0u;
-    application_snapshot->network_online =
-        (ui_snapshot->network_indicator == OLED_STATUS_INDICATOR_FILLED) ?
-            1u : 0u;
+    system_service_state_snapshot_get(&service_state);
+    application_snapshot->uptime_ms = service_state.uptime_ms;
+    application_snapshot->displayed_minute = service_state.displayed_minute;
+    application_snapshot->system_healthy = service_state.system_healthy;
+    application_snapshot->usb_configured = service_state.usb_configured;
+    application_snapshot->network_online = service_state.network_online;
     application_snapshot->reserved = 0u;
 }
 
@@ -1639,7 +1140,7 @@ static int boot_desktop_ui_application_service(
         return 1;
     }
 
-    boot_desktop_ui_application_snapshot_build(ui_snapshot, &current);
+    boot_desktop_ui_application_snapshot_build(&current);
 
     return application_runtime_bridge_service(&current);
 }
@@ -1647,8 +1148,6 @@ static int boot_desktop_ui_application_service(
 static int boot_desktop_ui_application_snapshot_current(
     application_service_snapshot_t *snapshot)
 {
-    boot_desktop_ui_snapshot_t ui_snapshot;
-
     if (
         (snapshot == (application_service_snapshot_t *)0) ||
         (boot_desktop_ui_state != BOOT_DESKTOP_UI_HOME) ||
@@ -1657,8 +1156,8 @@ static int boot_desktop_ui_application_snapshot_current(
         return 0;
     }
 
-    boot_desktop_ui_snapshot_build(&ui_snapshot);
-    boot_desktop_ui_application_snapshot_build(&ui_snapshot, snapshot);
+    system_service_state_refresh();
+    boot_desktop_ui_application_snapshot_build(snapshot);
     return 1;
 }
 
@@ -1677,6 +1176,7 @@ static int boot_desktop_ui_render(int force)
     }
 
     boot_desktop_ui_update_state();
+    system_service_state_refresh();
     boot_desktop_ui_snapshot_build(&snapshot);
 
     if (boot_desktop_ui_application_service(&snapshot) == 0)
@@ -2180,51 +1680,46 @@ static void console_write_fault(command_service_context_t *context)
 
 static void console_uart_rx_stats(command_service_context_t *context)
 {
-    const uint32_t head = uart_rx_head;
-    const uint32_t tail = uart_rx_tail;
-    const uint32_t depth = head - tail;
-    const uint32_t irq_count = uart_rx_irq_count;
-    const uint32_t byte_count = uart_rx_byte_count;
-    const uint32_t drop_count = uart_rx_drop_count;
-    const uint32_t error_count = uart_rx_error_count;
-    const uint32_t high_water = uart_rx_high_water;
+    usart1_diagnostics_t diagnostics;
+
+    usart1_diagnostics_get(&diagnostics);
 
     console_write(context, "RX_CAPACITY=");
-    console_write_hex32(context, UART_RX_RING_CAPACITY);
+    console_write_hex32(context, diagnostics.capacity);
     console_write(context, "\r\n");
 
     console_write(context, "RX_IRQ_COUNT=");
-    console_write_hex32(context, irq_count);
+    console_write_hex32(context, diagnostics.irq_count);
     console_write(context, "\r\n");
 
     console_write(context, "RX_BYTE_COUNT=");
-    console_write_hex32(context, byte_count);
+    console_write_hex32(context, diagnostics.byte_count);
     console_write(context, "\r\n");
 
     console_write(context, "RX_DROP_COUNT=");
-    console_write_hex32(context, drop_count);
+    console_write_hex32(context, diagnostics.drop_count);
     console_write(context, "\r\n");
 
     console_write(context, "RX_ERROR_COUNT=");
-    console_write_hex32(context, error_count);
+    console_write_hex32(context, diagnostics.error_count);
     console_write(context, "\r\n");
 
     console_write(context, "RX_HIGH_WATER=");
-    console_write_hex32(context, high_water);
+    console_write_hex32(context, diagnostics.high_water);
     console_write(context, "\r\n");
 
     console_write(context, "RX_DEPTH=");
-    console_write_hex32(context, depth);
+    console_write_hex32(context, diagnostics.depth);
     console_write(context, "\r\n");
 
     if (
-        (irq_count != 0u) &&
-        (byte_count != 0u) &&
-        (drop_count == 0u) &&
-        (error_count == 0u) &&
-        (high_water != 0u) &&
-        (high_water <= UART_RX_RING_CAPACITY) &&
-        (depth <= UART_RX_RING_CAPACITY))
+        (diagnostics.irq_count != 0u) &&
+        (diagnostics.byte_count != 0u) &&
+        (diagnostics.drop_count == 0u) &&
+        (diagnostics.error_count == 0u) &&
+        (diagnostics.high_water != 0u) &&
+        (diagnostics.high_water <= diagnostics.capacity) &&
+        (diagnostics.depth <= diagnostics.capacity))
     {
         console_write_line(context, "RX_IRQ_RING_OK");
     }
@@ -2783,7 +2278,7 @@ static command_service_status_t console_execute_safe_method(
             console_write(context, "HEALTH TICK=");
             console_write_hex32(context, kernel_time_now());
             console_write(context, " PC13=");
-            console_write_hex32(context, (GPIOC_ODR & GPIO_PIN_13) != 0u ? 1u : 0u);
+            console_write_hex32(context, status_led_raw_level());
             console_write(context, " WDOG_ACTIVE=");
             console_write_hex32(context, production_watchdog_active);
             console_write(context, " WDOG_RELOAD_COUNT=");
@@ -3141,14 +2636,7 @@ static void production_heartbeat_task(void *argument)
 
         production_heartbeat_led_on ^= 1u;
 
-        if (production_heartbeat_led_on != 0u)
-        {
-            GPIOC_BSRR = GPIO_RESET_13;
-        }
-        else
-        {
-            GPIOC_BSRR = GPIO_PIN_13;
-        }
+        status_led_set(production_heartbeat_led_on);
 
         ++production_heartbeat_count;
         production_watchdog_reload();
@@ -3248,9 +2736,9 @@ void fault_capture(
     {
         for (uint32_t i = 0u; i < exception_number; ++i)
         {
-            GPIOC_BSRR = GPIO_RESET_13;
+            status_led_set(1u);
             panic_delay();
-            GPIOC_BSRR = GPIO_PIN_13;
+            status_led_set(0u);
             panic_delay();
         }
 
@@ -3282,10 +2770,18 @@ void kernel_main(void)
     int start_result;
 
     production_reset_cause_capture();
-    core_clock_hz = clock_init();
+    status_led_init();
+    core_clock_hz = stm32f103_clock_init_72mhz();
+    if (core_clock_hz == 0u)
+    {
+        status_led_set(1u);
+        for (;;)
+        {
+            __asm volatile ("wfi");
+        }
+    }
 
-    gpio_init();
-    uart_init();
+    usart1_init();
     i2c1_init();
     mono_fb_init(
         &oled_surface,
@@ -3295,6 +2791,10 @@ void kernel_main(void)
     oled_console_init(&oled_console_state);
     asset_persistence_init();
     application_runtime_bridge_reset();
+    if (application_runtime_stop_failure_self_test() == 0)
+    {
+        production_fail_closed("APP_STOP_SELFTEST_ERR");
+    }
     faults_init();
     if (usb_device_init(core_clock_hz) == 0)
     {

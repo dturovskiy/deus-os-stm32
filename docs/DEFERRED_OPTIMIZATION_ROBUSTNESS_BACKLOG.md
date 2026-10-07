@@ -96,15 +96,16 @@ Known LF->CRLF Git warnings may be suppressed from operator-facing logs only whe
 
 The accepted `KERNEL_COMPOSITION_ROOT_DECOMPOSITION` is a material ownership improvement, not a claim that `src/kernel.c` has reached its final composition-root form. The accepted implementation deliberately stopped before creating speculative abstractions or exposing root-private state merely to reduce line count.
 
-This section records residual architecture debt provenance. As of the 2026-10-03 audit, composition-root convergence (`FDC-05`), system/service-state dependency direction (`FDC-06`) and application stop-failure semantics (`FDC-07`) are promoted mandatory closure obligations; the other architecture notes remain trigger-driven unless separately promoted:
+This section records residual architecture debt provenance. The 2026-10-03 audit promoted composition-root convergence (`FDC-05`), system/service-state dependency direction (`FDC-06`) and application stop-failure semantics (`FDC-07`) into mandatory closure obligations. As of the 2026-10-07 Gate-5 reconciliation, those three obligations are accepted through Gates 0–5 on exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e`; only their Gate-6/7 publication remains. The other architecture notes remain trigger-driven unless separately promoted:
 
 ### Composition-root convergence
 
-`src/kernel.c` still owns more than final composition-root responsibilities. Future extraction candidates remain:
+FDC-05 has accepted the concrete low-level convergence needed by the mandatory closure: RCC/clock, USART1, I2C1 and PC13 status LED now have natural bounded owners. Remaining possible root work is intentionally trigger-driven rather than an open FDC-05 requirement:
 
-- transport-neutral command execution/domain dispatch that is still rooted in the historical `console_*` implementation;
-- production task/liveness glue when its bounded state can move with a coherent owner instead of being exported through hidden `extern` state or a catch-all context;
-- low-level RCC/GPIO/UART/I2C/register helpers when a natural platform/driver owner exists.
+- transport-neutral command execution/domain dispatch that remains rooted in historical `console_*` naming/organization;
+- production task/liveness glue only if a future bounded owner removes another concrete reason to change the root.
+
+Do not reopen already-accepted low-level ownership or invent a catch-all context merely to reduce `src/kernel.c` line count.
 
 Do not reopen decomposition merely to reduce line count. Revisit this debt when a new feature would otherwise add another independent reason to change `src/kernel.c`, when host/management work would duplicate domain dispatch, or when low-level platform code blocks clean driver/service layering.
 
@@ -118,13 +119,11 @@ Do not re-merge these responsibilities into a monolithic client. Any future prot
 
 ### System/service state must remain upstream of presentation
 
-The current boot/desktop integration reconstructs `application_service_snapshot_t` from `boot_desktop_ui_snapshot_t`. This is behaviorally valid for the accepted single OLED presentation path, but it must not become the long-term dependency direction.
+FDC-06 has accepted the intended dependency direction on exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e`:
 
-Before system state gains multiple presentation/management consumers, the intended direction is:
+`runtime/time/USB facts -> system_service_state -> application runtime + OLED presentation`.
 
-`system/service state -> bounded semantic service snapshot -> application runtime and presentation consumers`.
-
-UI indicator state must not become the authoritative source of system health, USB state, network state or future host-visible service state. Revisit this before a second presentation target, richer host-control state, networking state, or other non-OLED consumer is introduced.
+`application_service_snapshot_t` and OLED status composition now consume the same semantic owner; rendered indicator values are no longer authoritative for system health, USB or network truth. A future second renderer may still justify presentation refactoring, but semantic service-state ownership itself is no longer open debt.
 
 ### Application runtime bridge presentation coupling
 
@@ -140,17 +139,15 @@ Do not reuse this mechanism as a concurrent diagnostic service, retain the borro
 
 ### Application stop-failure semantics
 
-The v1 built-in applications do not own independent peripherals/resources, so their stop callbacks are bounded and effectively trivial. Before an application may own a resource whose release can fail, freeze explicit fail-closed lifecycle semantics for a failed current-application `stop()`.
-
-In particular, do not implicitly start a replacement application after an unresolved resource-release failure unless the ownership transition is proven safe. The policy must define resulting lifecycle state, fallback behavior and resource ownership before resource-owning applications are accepted.
+FDC-07 has frozen and accepted fail-closed stop semantics before any resource-owning application exists. If current-app `stop()` fails, the state becomes `FAILED`, fault count increments once, `active_id` remains the unresolved owner, and replacement/home start does not occur. The deterministic synthetic failure proof and existing built-in lifecycle hardware regression are accepted on the shared candidate. Future resource-owning applications must preserve this ownership rule or reopen it explicitly.
 
 ### Firmware Update / Bootloader post-publication robustness
 
 The 2026-10-01 post-publication read-only audit found no acceptance-regression blocker and retained four bounded robustness items. The 2026-10-03 architecture/code audit subsequently **promoted the relevant items into mandatory `FDC-01` / `FDC-08` closure obligations** before the next service/Web/network feature boundary. This promotion still does not authorize a speculative all-at-once patch: each implementation slice requires a frozen source boundary and acceptance proof.
 
-- **Authenticated image-span vector containment.** Published v1 validates the application reset handler against the whole executable application region `0x08002000..0x0800EFFF`, matching the frozen v1 contract. It does not additionally require the reset-handler address to be below `APP_BASE + image_length`. A future tightening may require the entry point to lie inside the authenticated image span so a deliberately shorter signed image cannot branch into stale bytes beyond its signed payload. Treat this as a security/robustness contract change and re-accept it explicitly rather than silently changing v1 semantics.
-- **Bootloader clock-start failure bounds.** Bootloader HSE/PLL ready/switch waits are currently unbounded. Accepted hardware proves the normal oscillator path, not crystal/PLL failure recovery. Promote bounded timeout/fallback behavior only under a dedicated recovery-robustness boundary with resource and hardware acceptance.
-- **Non-DATA firmware-update timeout restart semantics.** `FDC-01` has closed the host request-level policy: DATA keeps one exact idempotent timeout retry, while INFO/BEGIN/AUTHORIZE/END have no blind request retry and must be adjudicated through reconnect/INFO/restart logic. The remaining end-to-end recovery/fault-injection proof, especially ambiguous AUTHORIZE/END behavior against the real bootloader and bounded target waits, remains part of `FDC-08`; do not weaken authenticity/rollback semantics or infer idempotence.
+- **Authenticated image-span vector containment — accepted in FDC-08.** Candidate bootloader validates the reset-handler Thumb address inside `[APP_BASE, APP_BASE + image_length)` rather than merely the whole executable region; Gate-1..3 deterministic/static proof and final Flash acceptance are bound to the exact candidate.
+- **Boot/runtime clock and UART wait bounds — accepted in FDC-08.** HSE/PLL/switch and USART1 TX waits are finite with explicit owner failure semantics; hardware acceptance proves normal operation while deterministic/static seams own unsafe oscillator-failure proof.
+- **Non-DATA firmware-update timeout restart semantics — accepted end-to-end in FDC-08.** INFO/BEGIN/AUTHORIZE/END retain no blind request retry; DATA retains one exact immediate retry. Consolidated hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` proves authenticated update/recovery, ambiguity adjudication and unchanged authenticity/rollback/persistence ownership.
 - **Stale request-ID lifetime under repeated cancellation — resolved by `FDC-01`.** Published FDC-01 commit `c863b5ab9d00ab96de7c8f8275f905ed52c8740e` replaced the earlier ad-hoc stale-ID description with one channel-owned abandoned-request registry. Unresolved abandoned IDs cannot be reused; delayed single responses or RPC streams retire through their frozen terminal semantics; request-ID wrap with unresolved abandonment fails closed and requires a fresh session. Deterministic wrap/multi-abandonment tests are part of the accepted `51/51` Core result.
 
 Historical INFO/BEGIN/DATA response timeouts remain observations, not proof of an additional firmware USB defect. Do not introduce a speculative firmware patch without a causal reproducer.
@@ -163,10 +160,10 @@ The items below are retained here for provenance but are **no longer deferred**.
 2. **`FDC-02` — session event reentrancy — CLOSED / PUBLISHED `42245d9d71504482fb189d8351ecce7049542145`.** One per-session serialized asynchronous notification chain removes public callbacks from the lifecycle critical section; callback/recovery/dispose/unsubscribe regressions pass in Core `58/58` with evidence SHA-256 `E01040E5D0C896BA966752C38FEC889AFFC44D64B5FD943BC28067D6C21A62DB`.
 3. **`FDC-03` — management service operation allowlist — CLOSED / PUBLISHED `0d9adfd8d0ed11478194e2268ede3c57379c8294`.** The Core-owned typed service facade/catalog contains exactly eight operations (5 ReadOnly / 3 Control / 0 Destructive); numeric RPC IDs/flags/unlisted commands and bootloader/update routing are absent. Gate-2 evidence SHA-256 `32C57FBA8AE04B9FAA9A4456FA846C3BD58ED9BD05D242FD00280B634A737D25`, Core `66/66`, Core/CLI/Desktop Release PASS.
 4. **`FDC-04` — typed Core management models — CLOSED / PUBLISHED `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`.** Core owns bounded typed Ping/Health/app-control parsing; service/Desktop consume those models without raw `RpcResult`/`OutputText`, CLI raw output is confined to excluded `rpcinfo`, and compatibility/operator raw APIs remain. Gate-2 evidence SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`, Core `78/78`, Core/CLI/Desktop Release PASS.
-5. **`FDC-05` — composition-root convergence.** The accepted decomposition remains valid, but the remaining independent platform/driver/service responsibilities in `src/kernel.c` must be moved when a natural owner exists. Closure is architectural ownership, not a line-count target: no universal context, service locator, hidden extracted-state extern or framework-only split is allowed.
-6. **`FDC-06` — semantic system/service state upstream of presentation.** Replace `UI snapshot -> application_service_snapshot` authority with `system/service state -> semantic snapshot -> application/UI consumers`. Closure requires the OLED status bar and application runtime to consume the same upstream semantic state, with no health/USB/network truth inferred from rendered indicator state.
-7. **`FDC-07` — fail-closed application stop failure.** Before any resource-owning application exists, failed `stop()` must have explicit lifecycle/resource-ownership semantics. A replacement app must not start while prior resource release is unresolved unless ownership safety is proven. Closure requires deterministic failure-path tests and documented resulting states/fallback.
-8. **`FDC-08` — bounded target/update robustness.** Close authenticated reset-vector span containment; bootloader HSE/PLL/switch bounds; normal-runtime HSE/PLL/switch bounds; UART TX wait bounds; elapsed-time bootloader-entry reset fallback instead of raw service-poll count; and explicit INFO/BEGIN/AUTHORIZE/END timeout/adjudication/restart behavior. Resulting paths require resource/static validation and hardware fault/recovery acceptance without weakening update authenticity/rollback/ownership guarantees.
+5. **`FDC-05` — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.** Natural clock/USART1/I2C1/PC13 ownership convergence is accepted without universal context/service-locator/hidden-state coupling.
+6. **`FDC-06` — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.** `system_service_state` is the accepted semantic authority upstream of both application-runtime and OLED consumers; UI indicators no longer reconstruct system truth.
+7. **`FDC-07` — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.** Failed stop preserves unresolved ownership/`active_id`, marks `FAILED`, increments fault count once and starts no replacement; synthetic + hardware lifecycle proof accepted.
+8. **`FDC-08` — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.** Authenticated image-span vectors, bounded boot/runtime/UART waits, wrap-safe reset fallback and explicit non-DATA adjudication are accepted; Gate-4 final hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` proves update/recovery and exact trust/persistence ownership.
 9. **`FDC-09` — native transport cancellation/disposal — CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73`.** `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING` implements per-instance latched bounded cancellation for synchronous WinUSB/libusb calls: an entered native call drains under the existing 2000-ms transfer timeout before cancellation completes, Dispose blocks new I/O and closes handles only after drain, runtime/bootloader reuse the same transport owners, deterministic isolation tests pass, and Linux/Windows real-platform reopen proof is accepted.
 10. **`FDC-10` — documentation/source-of-truth reconciliation.** Remove obsolete future-tense/deferred statements contradicted by published USB CDC, persistence, host management and firmware-update work; preserve clearly labelled historical chronology; reconcile current-state/roadmap/backlog/scoped addenda; run repo-wide stale-token/open-checkbox and `git diff --check` audits.
 
@@ -176,12 +173,12 @@ After all ten are accepted closed, this section remains as historical provenance
 
 None of the debt above authorizes a speculative generic HAL, universal `kernel_context_t`, service locator, heap, dynamic allocation, generic queue/mutex/timer framework, new task, or framework-only refactor. Ownership must move only with a concrete reason-to-change and bounded state.
 
-These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` or `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The Host Core decomposition trigger was resolved inside the Firmware Update / Bootloader boundary. As of 2026-10-04, the promoted closure program remains mandatory; `FDC-01` and `FDC-02` are CLOSED/PUBLISHED, `FDC-03` is active at Gate 0, and `FDC-04..FDC-10` remain open. All other backlog material remains trigger-driven merely by appearing here.
+These items did **not** block the subsequently published `USB_MANAGEMENT_DEVICE_FOUNDATION`, `HOST_CONTROL_APPLICATION_FOUNDATION`, `ASSET_CONFIGURATION_TRANSFER_FOUNDATION`, `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` or `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. The Host Core decomposition trigger was resolved inside the Firmware Update / Bootloader boundary. As of 2026-10-07, `FDC-01..04` and `FDC-09` are CLOSED/PUBLISHED; `FDC-05..08` are accepted through Gate 5 on the exact shared candidate and await only local commit/publication; `FDC-10` remains the final documentation closure after that publication. All other backlog material remains trigger-driven merely by appearing here.
 
 ## 9. Roadmap placement
 
 This backlog does not own current roadmap state or activation. `docs/CURRENT_STATE.md` is authoritative for the active boundary and `docs/ROADMAP.md` owns forward sequencing.
 
-`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` is published at `562e786ffa734da055c23144ec4256bc8961bbaf`; `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`; and `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`. No new product feature boundary is currently active. `FDC-01` and `FDC-02` are CLOSED/PUBLISHED; the remaining `FDC-03..FDC-10` obligations are mandatory pre-feature closure work. `FDC-03 / HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` is the active engineering slice. Unrelated storage, networking/security, optimization and observability debt remains consumer-driven until separately promoted by `CURRENT_STATE.md` plus a dedicated plan/acceptance contract.
+`ASSET_CONFIGURATION_TRANSFER_FOUNDATION` is published at `562e786ffa734da055c23144ec4256bc8961bbaf`; `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY` at `a8f92f83c2ba8917ad183b1a099c9e21199c9463`; and `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`. No new product feature boundary is active. `FDC-01..04,09` are CLOSED/PUBLISHED; `FDC-05..08` have accepted Gates 0–5 and are at commit/publication; `FDC-10` is next after that publication. Unrelated storage, networking/security, optimization and observability debt remains consumer-driven until separately promoted by `CURRENT_STATE.md` plus a dedicated plan/acceptance contract.
 
 Optimization rule: remove unnecessary work first, measure next, add complexity only against an observed bottleneck.

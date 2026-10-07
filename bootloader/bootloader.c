@@ -97,6 +97,7 @@
 #define FLASH_CR_STRT (1u << 6)
 #define FLASH_CR_LOCK (1u << 7)
 #define FLASH_READY_SPIN_LIMIT 4000000u
+#define CLOCK_READY_SPIN_LIMIT 1000000u
 
 #define DBGMCU_IDCODE REG32(0xE0042000u)
 #define SCB_VTOR REG32(0xE000ED08u)
@@ -380,12 +381,17 @@ static int header_target_valid(const uint8_t *h){
     return load_le32(h)==PRODUCT_ID && load_le16(h+6)==TARGET_DEVICE_ID &&
            device_id()==TARGET_DEVICE_ID;
 }
-static int vectors_valid(uint32_t image_len){
-    uint32_t msp=REG32(APP_BASE),reset=REG32(APP_BASE+4u),handler=reset&~1u;
-    if(image_len<8u)return 0;
+static int vector_values_valid(uint32_t msp,uint32_t reset,uint32_t image_len){
+    uint32_t handler=reset&~1u,image_end;
+    if(image_len<8u || image_len>APP_MAX_BYTES)return 0;
+    image_end=APP_BASE+image_len;
+    if(image_end<APP_BASE || image_end>APP_END)return 0;
     if((msp&7u)!=0u || msp<RAM_BASE || msp>RAM_END)return 0;
-    if((reset&1u)==0u || handler<APP_BASE || handler>=APP_END)return 0;
+    if((reset&1u)==0u || handler<APP_BASE || handler>=image_end)return 0;
     return 1;
+}
+static int vectors_valid(uint32_t image_len){
+    return vector_values_valid(REG32(APP_BASE),REG32(APP_BASE+4u),image_len);
 }
 static int app_matches_header(const uint8_t *header){
     uint8_t digest[32];uint32_t len=load_le32(header+8);
@@ -473,10 +479,15 @@ __attribute__((noreturn)) static void handoff_app(void){
     __builtin_unreachable();
 }
 static uint32_t clock_init(void){
-    FLASH_ACR=FLASH_PRFTBE|FLASH_LATENCY_2;RCC_CR|=RCC_HSEON;while((RCC_CR&RCC_HSERDY)==0u){}
+    uint32_t spins;
+    FLASH_ACR=FLASH_PRFTBE|FLASH_LATENCY_2;
+    RCC_CR|=RCC_HSEON;spins=CLOCK_READY_SPIN_LIMIT;
+    while((RCC_CR&RCC_HSERDY)==0u){if(spins--==0u)return 0u;}
     RCC_CFGR=RCC_PPRE1_DIV2|RCC_ADCPRE_DIV6|RCC_PLLSRC_HSE|RCC_PLLMUL_X9;
-    RCC_CR|=RCC_PLLON;while((RCC_CR&RCC_PLLRDY)==0u){}
-    RCC_CFGR=(RCC_CFGR&~RCC_SW_MASK)|RCC_SW_PLL;while((RCC_CFGR&RCC_SWS_MASK)!=RCC_SWS_PLL){}
+    RCC_CR|=RCC_PLLON;spins=CLOCK_READY_SPIN_LIMIT;
+    while((RCC_CR&RCC_PLLRDY)==0u){if(spins--==0u)return 0u;}
+    RCC_CFGR=(RCC_CFGR&~RCC_SW_MASK)|RCC_SW_PLL;spins=CLOCK_READY_SPIN_LIMIT;
+    while((RCC_CFGR&RCC_SWS_MASK)!=RCC_SWS_PLL){if(spins--==0u)return 0u;}
     RCC_CFGR&=~RCC_USBPRE;return 72000000u;
 }
 
@@ -693,9 +704,12 @@ static void usb_poll(void){
 }
 
 void boot_main(void){
-    int explicit_update=consume_update_token();scan_metadata();
+    uint32_t clock_hz;int explicit_update;
+    explicit_update=consume_update_token();scan_metadata();
     if(!explicit_update && committed_version!=0u)handoff_app();
     update_state=STATE_RECOVERY_IDLE;expected_offset=0u;previous_valid=0u;reset_after_tx=0u;
-    usb_init(clock_init());
+    clock_hz=clock_init();
+    if(clock_hz==0u){for(;;){__asm volatile("wfi");}}
+    usb_init(clock_hz);
     for(;;)usb_poll();
 }

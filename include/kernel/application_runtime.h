@@ -144,6 +144,7 @@ const application_view_t *application_runtime_view_get(
     const application_runtime_t *runtime);
 int application_runtime_view_dirty(const application_runtime_t *runtime);
 void application_runtime_view_consumed(application_runtime_t *runtime);
+int application_runtime_stop_failure_self_test(void);
 
 int application_runtime_start(
     application_runtime_t *runtime,
