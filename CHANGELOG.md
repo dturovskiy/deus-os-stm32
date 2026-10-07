@@ -1,5 +1,11 @@
 ## 2026-10-07
 
+### Host Asset request-correlation hardening — Gates 0–3 accepted / local commit pending
+
+A narrow Host Core maintenance candidate closes a confirmed single-response correlation gap in `AssetTransferClient`: once an Asset request owns a nonzero request ID, native timeout or cancellation now registers that ID through the existing channel-owned `AbandonSingleResponse()` model before the original failure propagates. No new decoder, stale queue, retry policy, protocol `ABORT`, wire value, native transport or target behavior is introduced.
+
+Gate-2 evidence `stm32_os_host_asset_request_correlation_gate2_host_validation_v2_20261007_181012.evidence.zip`, SHA-256 `F574489FE68B35D42DEB8BB0E8EE88FB029B8FAAED5C7F926BB7194C256D3285`, proves exact five-path candidate binding, .NET 10/Microsoft.Testing.Platform policy scope, isolated locked restore, Core Release build with zero warnings/errors, executed Core `80/80` PASS, temporary-index whitespace validation and unchanged live poststate with `TARGET_IO=NONE` / `FLASH_MUTATION=NONE`. Volatile Asset transaction/session cleanup via `ABORT` remains outside this boundary.
+
 ### FDC-10 documentation/source-of-truth closure — final foundational-debt reconciliation
 
 Repo-wide documentation reconciliation closes the ten-item `FDC-01..FDC-10` foundational-debt program. The final inventory is `90` Markdown files in `docs/`, `30` acceptance-plan records and `33` non-acceptance plan-named files; unmatched plan names are limited to the explicitly historical/deferred IMPLEMENTATION/OLED set and there is no orphan active boundary. Stale current claims were corrected for FDC-05..08 publication, physical bench/source alignment, FDC-06 semantic-state ownership, Host Management prerequisites and published CDC identity wording while historical chronology and genuinely deferred consumer-driven roadmap items were preserved.

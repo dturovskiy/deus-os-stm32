@@ -128,6 +128,8 @@ The board runs the exact published FDC-05..08 candidate-v3 bytes (`bb99acf111dfa
 
 Host-management presentation evolution remains a non-authorizing direction in `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
 
+A host-only maintenance boundary is active: `HOST_ASSET_REQUEST_CORRELATION_HARDENING`, baseline `0713da56a3fe7a6b62f4c548d3248b4ed7fb2e57`. Gates 0–3 are accepted. Gate-2 evidence `stm32_os_host_asset_request_correlation_gate2_host_validation_v2_20261007_181012.evidence.zip`, SHA-256 `F574489FE68B35D42DEB8BB0E8EE88FB029B8FAAED5C7F926BB7194C256D3285`, proves Core `80/80`, warning-clean Core Release build, exact candidate/poststate binding, target I/O NONE and Flash mutation NONE. The boundary is limited to Asset single-response request-correlation recovery after timeout/cancellation by reusing the existing channel-owned abandonment model. It authorizes no target/native-transport/script/wire mutation and explicitly excludes Asset `ABORT` transaction cleanup. Gate 4 local acceptance commit is next; canonical plan/acceptance: `docs/HOST_ASSET_REQUEST_CORRELATION_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`.
+
 ## 5. Current development/acceptance topology
 
 Canonical topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.

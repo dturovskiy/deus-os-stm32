@@ -354,6 +354,97 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task AssetCancellationDiscardsDelayedSingleResponseBeforeFreshAssetRequest()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, 0x7F));
+        transport.EnqueueResponse(
+            CreateRpcResponse(
+                ProtocolConstants.RpcSysInfo,
+                2,
+                ValidSysInfo(DefaultSourceTree, 0x3F)));
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        transport.BlockWhenEmpty = true;
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        cancellation.CancelAfter(TimeSpan.FromMilliseconds(50));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.AssetStatusAsync(
+                AssetAccessPolicy.PublishedOnly,
+                cancellation.Token));
+
+        Assert.Equal(
+            (ushort)3,
+            BinaryPrimitives.ReadUInt16LittleEndian(
+                transport.Writes[2].AsSpan(6, 2)));
+
+        transport.EnqueueResponse(CreateAssetStatusResponse(3));
+        transport.EnqueueResponse(CreateAssetStatusResponse(4));
+
+        var fresh = await client.AssetStatusAsync(
+            AssetAccessPolicy.PublishedOnly,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(AssetTransferStatus.Ok, fresh.Status);
+        Assert.Equal(AssetTransferSessionState.None, fresh.SessionState);
+        Assert.Equal(
+            (ushort)4,
+            BinaryPrimitives.ReadUInt16LittleEndian(
+                transport.Writes[3].AsSpan(6, 2)));
+        Assert.Equal(ConnectionState.Ready, client.State);
+    }
+
+    [Fact]
+    public async Task AssetNativeTimeoutDiscardsDelayedSingleResponseBeforeFreshAssetRequest()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, 0x7F));
+        transport.EnqueueResponse(
+            CreateRpcResponse(
+                ProtocolConstants.RpcSysInfo,
+                2,
+                ValidSysInfo(DefaultSourceTree, 0x3F)));
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        transport.ResponseFactory = _ =>
+            throw new DeusHostException(
+                HostErrorKind.Timeout,
+                "synthetic Asset native timeout");
+
+        var timeout = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.AssetStatusAsync(
+                AssetAccessPolicy.PublishedOnly,
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Timeout, timeout.Kind);
+        Assert.Equal(
+            (ushort)3,
+            BinaryPrimitives.ReadUInt16LittleEndian(
+                transport.Writes[2].AsSpan(6, 2)));
+
+        transport.ResponseFactory = null;
+        transport.EnqueueResponse(CreateAssetStatusResponse(3));
+        transport.EnqueueResponse(CreateAssetStatusResponse(4));
+
+        var fresh = await client.AssetStatusAsync(
+            AssetAccessPolicy.PublishedOnly,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(AssetTransferStatus.Ok, fresh.Status);
+        Assert.Equal(
+            (ushort)4,
+            BinaryPrimitives.ReadUInt16LittleEndian(
+                transport.Writes[3].AsSpan(6, 2)));
+        Assert.Equal(ConnectionState.Ready, client.State);
+    }
+
+    [Fact]
     public async Task DisconnectClearsPartialDecoderAndSessionState()
     {
         var transport = new ScriptedTransport(readChunkLimit: 512);
@@ -986,6 +1077,26 @@ public sealed class ClientTests
 
         return BinaryFrameCodec.Encode(
             FrameType.HelloResponse,
+            0,
+            requestId,
+            payload);
+    }
+
+    private static byte[] CreateAssetStatusResponse(ushort requestId)
+    {
+        var payload = new byte[
+            AssetTransferProtocol.CommonResponseBytes + 8];
+        payload[0] = AssetTransferProtocol.Version;
+        payload[1] = (byte)AssetTransferOpcode.Status;
+        payload[2] = (byte)AssetTransferStatus.Ok;
+        payload[3] = (byte)AssetTransferSessionState.None;
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(4, 2),
+            AssetTransferProtocol.OledUiLayoutObjectType);
+        payload[16] = 8;
+
+        return BinaryFrameCodec.Encode(
+            FrameType.AssetTransferResponse,
             0,
             requestId,
             payload);

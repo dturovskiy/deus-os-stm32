@@ -270,21 +270,45 @@ internal sealed class AssetTransferClient
         ReadOnlyMemory<byte> payload,
         CancellationToken cancellationToken)
     {
-        var requestId = _channel.NextRequestId();
-        var wire = BinaryFrameCodec.Encode(
-            FrameType.AssetTransferRequest,
-            flags,
-            requestId,
-            payload.Span);
+        ushort requestId = 0;
 
-        await _channel.WriteAsync(wire, cancellationToken);
+        try
+        {
+            requestId = _channel.NextRequestId();
+            var wire = BinaryFrameCodec.Encode(
+                FrameType.AssetTransferRequest,
+                flags,
+                requestId,
+                payload.Span);
 
-        var frame = await _channel.ReadMatchingFrameAsync(
-            requestId,
-            FrameType.AssetTransferResponse,
-            cancellationToken);
+            await _channel.WriteAsync(wire, cancellationToken);
 
-        return AssetTransferProtocol.ParseResponse(frame, opcode);
+            var frame = await _channel.ReadMatchingFrameAsync(
+                requestId,
+                FrameType.AssetTransferResponse,
+                cancellationToken);
+
+            return AssetTransferProtocol.ParseResponse(frame, opcode);
+        }
+        catch (DeusHostException exception)
+            when (exception.Kind == HostErrorKind.Timeout)
+        {
+            AbandonSingleResponse(requestId);
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            AbandonSingleResponse(requestId);
+            throw;
+        }
+    }
+
+    private void AbandonSingleResponse(ushort requestId)
+    {
+        if (requestId != 0)
+        {
+            _channel.AbandonSingleResponse(requestId);
+        }
     }
 
     private async Task<byte[]> ReadAssetPayloadCoreAsync(
