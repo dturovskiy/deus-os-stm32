@@ -445,6 +445,375 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task AssetWriteBeginTimeoutAttemptsAbortAndPreservesPrimaryFailure()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, 0x7F));
+        transport.EnqueueResponse(
+            CreateRpcResponse(
+                ProtocolConstants.RpcSysInfo,
+                2,
+                ValidSysInfo(DefaultSourceTree, 0x7F)));
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        ushort transferId = 0;
+        ushort beginRequestId = 0;
+        ushort abortRequestId = 0;
+        var abortSeen = false;
+
+        transport.ResponseFactory = wire =>
+        {
+            var frame = DecodeSingleFrame(wire);
+            if (frame.Type != FrameType.AssetTransferRequest)
+            {
+                return null;
+            }
+
+            var opcode = (AssetTransferOpcode)frame.Payload[1];
+            switch (opcode)
+            {
+                case AssetTransferOpcode.Status:
+                    return CreateAssetStatusResponse(frame.RequestId);
+
+                case AssetTransferOpcode.Begin:
+                    beginRequestId = frame.RequestId;
+                    transferId = BinaryPrimitives.ReadUInt16LittleEndian(
+                        frame.Payload.AsSpan(4, 2));
+                    transport.EnqueueResponse(
+                        CreateAssetResponse(
+                            frame.RequestId,
+                            AssetTransferOpcode.Begin,
+                            AssetTransferStatus.Ok,
+                            AssetTransferSessionState.Receiving,
+                            transferId,
+                            0,
+                            AssetTransferProtocol.OledUiLayoutBytes,
+                            0));
+
+                    throw new DeusHostException(
+                        HostErrorKind.Timeout,
+                        "synthetic ambiguous Asset BEGIN timeout");
+
+                case AssetTransferOpcode.Abort:
+                    abortSeen = true;
+                    abortRequestId = frame.RequestId;
+                    Assert.Equal((byte)0, frame.Flags);
+                    Assert.Equal(
+                        transferId,
+                        BinaryPrimitives.ReadUInt16LittleEndian(
+                            frame.Payload.AsSpan(4, 2)));
+
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.Abort,
+                        AssetTransferStatus.Ok,
+                        AssetTransferSessionState.None,
+                        transferId,
+                        0,
+                        0,
+                        0);
+
+                default:
+                    throw new InvalidOperationException(
+                        $"unexpected Asset opcode {opcode}");
+            }
+        };
+
+        var timeout = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.WriteOledUiLayoutAsync(
+                OledUiLayoutConfigV1.Default,
+                AssetAccessPolicy.PublishedOnly,
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Timeout, timeout.Kind);
+        Assert.Equal(
+            "synthetic ambiguous Asset BEGIN timeout",
+            timeout.Message);
+        Assert.True(abortSeen);
+        Assert.NotEqual((ushort)0, transferId);
+        Assert.Equal((ushort)(beginRequestId + 1), abortRequestId);
+        Assert.Equal(ConnectionState.Ready, client.State);
+    }
+
+    [Fact]
+    public async Task AssetWriteFailureAttemptsAbortWithoutMaskingPrimaryError()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, 0x7F));
+        transport.EnqueueResponse(
+            CreateRpcResponse(
+                ProtocolConstants.RpcSysInfo,
+                2,
+                ValidSysInfo(DefaultSourceTree, 0x7F)));
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        ushort transferId = 0;
+        var abortSeen = false;
+
+        transport.ResponseFactory = wire =>
+        {
+            var frame = DecodeSingleFrame(wire);
+            if (frame.Type != FrameType.AssetTransferRequest)
+            {
+                return null;
+            }
+
+            var opcode = (AssetTransferOpcode)frame.Payload[1];
+            switch (opcode)
+            {
+                case AssetTransferOpcode.Status:
+                    return CreateAssetStatusResponse(frame.RequestId);
+
+                case AssetTransferOpcode.Begin:
+                    transferId = BinaryPrimitives.ReadUInt16LittleEndian(
+                        frame.Payload.AsSpan(4, 2));
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.Begin,
+                        AssetTransferStatus.Ok,
+                        AssetTransferSessionState.Receiving,
+                        transferId,
+                        0,
+                        AssetTransferProtocol.OledUiLayoutBytes,
+                        0);
+
+                case AssetTransferOpcode.WriteChunk:
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.WriteChunk,
+                        AssetTransferStatus.BadOffset,
+                        AssetTransferSessionState.Receiving,
+                        transferId,
+                        0,
+                        AssetTransferProtocol.OledUiLayoutBytes,
+                        0);
+
+                case AssetTransferOpcode.Abort:
+                    abortSeen = true;
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.Abort,
+                        AssetTransferStatus.BadTransferId,
+                        AssetTransferSessionState.Receiving,
+                        transferId,
+                        0,
+                        AssetTransferProtocol.OledUiLayoutBytes,
+                        0);
+
+                default:
+                    throw new InvalidOperationException(
+                        $"unexpected Asset opcode {opcode}");
+            }
+        };
+
+        var failure = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.WriteOledUiLayoutAsync(
+                OledUiLayoutConfigV1.Default,
+                AssetAccessPolicy.PublishedOnly,
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Protocol, failure.Kind);
+        Assert.Contains("asset write failed", failure.Message);
+        Assert.Contains("BadOffset", failure.Message);
+        Assert.False(
+            failure.Message.Contains(
+                "abort",
+                StringComparison.OrdinalIgnoreCase));
+        Assert.True(abortSeen);
+        Assert.Equal(ConnectionState.Ready, client.State);
+    }
+
+    [Fact]
+    public async Task AssetWriteCallerCancellationStillAttemptsIndependentAbort()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, 0x7F));
+        transport.EnqueueResponse(
+            CreateRpcResponse(
+                ProtocolConstants.RpcSysInfo,
+                2,
+                ValidSysInfo(DefaultSourceTree, 0x7F)));
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        ushort transferId = 0;
+        var abortSeen = false;
+
+        transport.ResponseFactory = wire =>
+        {
+            var frame = DecodeSingleFrame(wire);
+            if (frame.Type != FrameType.AssetTransferRequest)
+            {
+                return null;
+            }
+
+            var opcode = (AssetTransferOpcode)frame.Payload[1];
+            switch (opcode)
+            {
+                case AssetTransferOpcode.Status:
+                    return CreateAssetStatusResponse(frame.RequestId);
+
+                case AssetTransferOpcode.Begin:
+                    transferId = BinaryPrimitives.ReadUInt16LittleEndian(
+                        frame.Payload.AsSpan(4, 2));
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.Begin,
+                        AssetTransferStatus.Ok,
+                        AssetTransferSessionState.Receiving,
+                        transferId,
+                        0,
+                        AssetTransferProtocol.OledUiLayoutBytes,
+                        0);
+
+                case AssetTransferOpcode.WriteChunk:
+                    cancellation.Cancel();
+                    throw new OperationCanceledException(cancellation.Token);
+
+                case AssetTransferOpcode.Abort:
+                    abortSeen = true;
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.Abort,
+                        AssetTransferStatus.Ok,
+                        AssetTransferSessionState.None,
+                        transferId,
+                        0,
+                        0,
+                        0);
+
+                default:
+                    throw new InvalidOperationException(
+                        $"unexpected Asset opcode {opcode}");
+            }
+        };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.WriteOledUiLayoutAsync(
+                OledUiLayoutConfigV1.Default,
+                AssetAccessPolicy.PublishedOnly,
+                cancellation.Token));
+
+        Assert.True(cancellation.IsCancellationRequested);
+        Assert.True(abortSeen);
+        Assert.Equal(ConnectionState.Ready, client.State);
+    }
+
+    [Fact]
+    public async Task AssetWritePostCommitFailureDoesNotSendAbort()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, 0x7F));
+        transport.EnqueueResponse(
+            CreateRpcResponse(
+                ProtocolConstants.RpcSysInfo,
+                2,
+                ValidSysInfo(DefaultSourceTree, 0x7F)));
+
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        ushort transferId = 0;
+        var statusCount = 0;
+        var abortSeen = false;
+
+        transport.ResponseFactory = wire =>
+        {
+            var frame = DecodeSingleFrame(wire);
+            if (frame.Type != FrameType.AssetTransferRequest)
+            {
+                return null;
+            }
+
+            var opcode = (AssetTransferOpcode)frame.Payload[1];
+            switch (opcode)
+            {
+                case AssetTransferOpcode.Status:
+                    ++statusCount;
+                    if (statusCount == 1)
+                    {
+                        return CreateAssetStatusResponse(frame.RequestId);
+                    }
+
+                    return CreateAssetStatusResponse(
+                        frame.RequestId,
+                        AssetTransferStatus.InternalError,
+                        committedGeneration: 2);
+
+                case AssetTransferOpcode.Begin:
+                    transferId = BinaryPrimitives.ReadUInt16LittleEndian(
+                        frame.Payload.AsSpan(4, 2));
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.Begin,
+                        AssetTransferStatus.Ok,
+                        AssetTransferSessionState.Receiving,
+                        transferId,
+                        0,
+                        AssetTransferProtocol.OledUiLayoutBytes,
+                        0);
+
+                case AssetTransferOpcode.WriteChunk:
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.WriteChunk,
+                        AssetTransferStatus.Ok,
+                        AssetTransferSessionState.CompleteUncommitted,
+                        transferId,
+                        0,
+                        AssetTransferProtocol.OledUiLayoutBytes,
+                        AssetTransferProtocol.OledUiLayoutBytes);
+
+                case AssetTransferOpcode.Commit:
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.Commit,
+                        AssetTransferStatus.Ok,
+                        AssetTransferSessionState.None,
+                        transferId,
+                        2,
+                        AssetTransferProtocol.OledUiLayoutBytes,
+                        AssetTransferProtocol.OledUiLayoutBytes);
+
+                case AssetTransferOpcode.Abort:
+                    abortSeen = true;
+                    return CreateAssetResponse(
+                        frame.RequestId,
+                        AssetTransferOpcode.Abort,
+                        AssetTransferStatus.Ok,
+                        AssetTransferSessionState.None,
+                        transferId,
+                        2,
+                        0,
+                        0);
+
+                default:
+                    throw new InvalidOperationException(
+                        $"unexpected Asset opcode {opcode}");
+            }
+        };
+
+        var failure = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.WriteOledUiLayoutAsync(
+                OledUiLayoutConfigV1.Default,
+                AssetAccessPolicy.PublishedOnly,
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(HostErrorKind.Protocol, failure.Kind);
+        Assert.Contains("post-write status", failure.Message);
+        Assert.False(abortSeen);
+        Assert.Equal(2, statusCount);
+        Assert.Equal(ConnectionState.Ready, client.State);
+    }
+
+    [Fact]
     public async Task DisconnectClearsPartialDecoderAndSessionState()
     {
         var transport = new ScriptedTransport(readChunkLimit: 512);
@@ -1082,18 +1451,70 @@ public sealed class ClientTests
             payload);
     }
 
-    private static byte[] CreateAssetStatusResponse(ushort requestId)
+    private static byte[] CreateAssetStatusResponse(
+        ushort requestId,
+        AssetTransferStatus status = AssetTransferStatus.Ok,
+        uint committedGeneration = 0)
     {
+        var metadata = new byte[8];
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            metadata.AsSpan(0, 2),
+            AssetTransferProtocol.OledUiLayoutBytes);
+
+        return CreateAssetResponse(
+            requestId,
+            AssetTransferOpcode.Status,
+            status,
+            AssetTransferSessionState.None,
+            0,
+            committedGeneration,
+            0,
+            0,
+            metadata);
+    }
+
+    private static BinaryFrame DecodeSingleFrame(byte[] wire)
+    {
+        var batch = new BinaryFrameDecoder().Feed(wire);
+        Assert.Empty(batch.Errors);
+        return Assert.Single(batch.Frames);
+    }
+
+    private static byte[] CreateAssetResponse(
+        ushort requestId,
+        AssetTransferOpcode opcode,
+        AssetTransferStatus status,
+        AssetTransferSessionState sessionState,
+        ushort transferId,
+        uint committedGeneration,
+        ushort totalLength,
+        ushort nextOffset,
+        byte[]? data = null)
+    {
+        data ??= Array.Empty<byte>();
         var payload = new byte[
-            AssetTransferProtocol.CommonResponseBytes + 8];
+            AssetTransferProtocol.CommonResponseBytes + data.Length];
         payload[0] = AssetTransferProtocol.Version;
-        payload[1] = (byte)AssetTransferOpcode.Status;
-        payload[2] = (byte)AssetTransferStatus.Ok;
-        payload[3] = (byte)AssetTransferSessionState.None;
+        payload[1] = (byte)opcode;
+        payload[2] = (byte)status;
+        payload[3] = (byte)sessionState;
         BinaryPrimitives.WriteUInt16LittleEndian(
             payload.AsSpan(4, 2),
             AssetTransferProtocol.OledUiLayoutObjectType);
-        payload[16] = 8;
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(6, 2),
+            transferId);
+        BinaryPrimitives.WriteUInt32LittleEndian(
+            payload.AsSpan(8, 4),
+            committedGeneration);
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(12, 2),
+            totalLength);
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(14, 2),
+            nextOffset);
+        payload[16] = checked((byte)data.Length);
+        data.CopyTo(payload, AssetTransferProtocol.CommonResponseBytes);
 
         return BinaryFrameCodec.Encode(
             FrameType.AssetTransferResponse,

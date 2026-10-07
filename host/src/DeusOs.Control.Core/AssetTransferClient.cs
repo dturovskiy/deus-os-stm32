@@ -130,6 +130,9 @@ internal sealed class AssetTransferClient
         linked.CancelAfter(TimeSpan.FromSeconds(5));
 
         await _channel.EnterAsync(linked.Token);
+        ushort transferId = 0;
+        var sessionMayBeActive = false;
+
         try
         {
             var beforeResponse = await AssetRequestCoreAsync(
@@ -141,7 +144,8 @@ internal sealed class AssetTransferClient
             EnsureAssetSuccess(beforeResponse, "asset pre-write status");
             var before = AssetTransferProtocol.ToStatusSnapshot(beforeResponse);
 
-            var transferId = _transferIds.Next();
+            transferId = _transferIds.Next();
+            sessionMayBeActive = true;
             var begin = await AssetRequestCoreAsync(
                 AssetTransferOpcode.Begin,
                 AssetTransferProtocol.AllowDestructive,
@@ -201,6 +205,7 @@ internal sealed class AssetTransferClient
                     transferId),
                 linked.Token);
             EnsureAssetSuccess(commit, "asset commit");
+            sessionMayBeActive = false;
 
             if (commit.TransferId != transferId ||
                 commit.CommittedGeneration == 0 ||
@@ -251,16 +256,62 @@ internal sealed class AssetTransferClient
                 before.CommittedGeneration != after.CommittedGeneration);
         }
         catch (OperationCanceledException exception)
-            when (!cancellationToken.IsCancellationRequested)
         {
-            throw new DeusHostException(
-                HostErrorKind.Timeout,
-                "Asset write timed out",
-                exception);
+            await TryAbortWriteSessionAsync(
+                transferId,
+                sessionMayBeActive);
+
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                throw new DeusHostException(
+                    HostErrorKind.Timeout,
+                    "Asset write timed out",
+                    exception);
+            }
+
+            throw;
+        }
+        catch (DeusHostException)
+        {
+            await TryAbortWriteSessionAsync(
+                transferId,
+                sessionMayBeActive);
+            throw;
         }
         finally
         {
             _channel.Exit();
+        }
+    }
+
+    private async Task TryAbortWriteSessionAsync(
+        ushort transferId,
+        bool sessionMayBeActive)
+    {
+        if (!sessionMayBeActive || transferId == 0)
+        {
+            return;
+        }
+
+        using var cleanup =
+            new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        try
+        {
+            var abort = await AssetRequestCoreAsync(
+                AssetTransferOpcode.Abort,
+                0,
+                AssetTransferProtocol.EncodeAbort(
+                    AssetTransferProtocol.OledUiLayoutObjectType,
+                    transferId),
+                cleanup.Token);
+            EnsureAssetSuccess(abort, "asset abort cleanup");
+        }
+        catch (DeusHostException)
+        {
+        }
+        catch (OperationCanceledException)
+        {
         }
     }
 
