@@ -277,15 +277,33 @@ The 2026-10-03 architecture/code audit promoted ten residual obligations into a 
 
 - [x] `FDC-10` — **CLOSED / PUBLISHED `9c02e27f50349c9a0240ab24d34720580c3f3269`:** repo-wide inventory, stale/current claim reconciliation, open-checkbox classification, documentation inventory, artifact/security hygiene and source-of-truth synchronization accepted; the ten-item program is complete.
 
-All ten foundational-debt checkboxes above are accepted closed. This removes the prerequisite blocker but does not automatically activate a management service/Web/network implementation boundary; promotion still requires a concrete consumer plus dedicated plan/acceptance contract.
+All ten foundational-debt checkboxes above are accepted closed. That removes the FDC-specific blocker, but a subsequent audit promoted the mandatory `RESIDUAL_DEBT_CLOSURE_PROGRAM` below. Therefore no management service/Web/network or other product feature boundary is eligible for promotion yet.
 
-## Host management presentation evolution — future / prerequisites satisfied, not activated
+## Mandatory residual-debt closure before any new product feature
+
+A subsequent repo-wide audit found additional **confirmed current debt** after FDC-10. These items are now mandatory pre-feature obligations under `RESIDUAL_DEBT_CLOSURE_PROGRAM`; no new product feature boundary may begin until all are CLOSED/PUBLISHED.
+
+- [ ] `RDC-01` — Asset transaction/session recovery hardening: bounded post-failure cleanup using the published idempotent `ABORT` contract without masking the primary failure or adding blind retry.
+- [ ] `RDC-02` — Host dead-surface cleanup: remove only re-proven unused Host remnants; retain published compatibility/operator/protocol APIs.
+- [ ] `RDC-03` — Target dead API cleanup: remove re-proven declaration/implementation-only target surface with GNU/map/resource/behavior proof; retain frozen compatibility APIs.
+- [ ] `RDC-04` — repository PowerShell destructive-output safety: fail closed before recursive deletion and avoid divergent copy-pasted path guards.
+- [ ] `RDC-05` — minimal CI baseline for deterministic host/build/static checks; physical bench acceptance remains external.
+- [ ] `RDC-06` — remaining kernel composition-root ownership cleanup: coherent ownership only, no line-count gaming/framework refactor.
+- [ ] `RDC-07` — bootloader readability/maintainability normalization: behavior-preserving security-sensitive source cleanup with equivalence proof.
+- [ ] `RDC-08` — final documentation/source-of-truth debt sweep and repo hygiene reconciliation.
+
+Canonical program: `docs/RESIDUAL_DEBT_CLOSURE_PROGRAM_PLAN.md` + `_ACCEPTANCE_PLAN.md`.
+
+Consumer-driven future capabilities (generic timers/queues, DMA, filesystem, low-power, networking, richer observability, etc.) are not silently promoted by this program merely because they are deferred.
+
+
+## Host management presentation evolution — future / residual-debt prerequisites not yet satisfied
 
 The accepted Host Control foundation already provides one transport-neutral Core with CLI + Avalonia presentation. Forward presentation policy is:
 
 - CLI remains the first-class automation/headless/acceptance surface;
 - Avalonia Desktop remains an optional workstation frontend;
-- a future local host-management service/Web frontend may now be considered because `FDC-01..FDC-10` are closed, but it is not active until a dedicated boundary is explicitly promoted; it must reuse Core/service models rather than duplicate the STM32 protocol;
+- a future local host-management service/Web frontend remains blocked while `RESIDUAL_DEBT_CLOSURE_PROGRAM` is open; after RDC-01..RDC-08 close it may be considered only through a dedicated boundary and must reuse Core/service models rather than duplicate the STM32 protocol;
 - local Web presentation does not require STM32 networking;
 - remote/LAN/Wi-Fi Web exposure belongs to the later network/security sequence and requires an explicit trust/authentication/authorization contract.
 
@@ -293,7 +311,7 @@ Canonical reference: `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
 
 ## Phase 5 - Networking
 
-Future roadmap only. Asset/Configuration, firmware-update safety and `FDC-01..FDC-10` prerequisites are satisfied; networking remains inactive until a concrete consumer/security boundary is explicitly promoted.
+Future roadmap only. Asset/Configuration, firmware-update safety and `FDC-01..FDC-10` are accepted, but `RESIDUAL_DEBT_CLOSURE_PROGRAM` is now the mandatory pre-feature gate. Networking remains blocked until RDC-01..RDC-08 close and a concrete consumer/security boundary is explicitly promoted.
 
 - [ ] ESP-01 / ESP8266 UART transport
 - [ ] Framed STM32 <-> ESP protocol
@@ -325,8 +343,9 @@ Target progression:
 15. Implement bounded versioned Asset/Configuration transfer + atomic A/B persistence — Gate 1 authorized, then Gates 2–7 acceptance.
 16. Recoverable USB firmware-update path + small bootloader — Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; capability mask `0x0000007F` active.
 17. Close the mandatory `FDC-01..FDC-10` foundational-debt program through independently accepted host/target/docs slices.
-18. Only after that closure, add networking/service/security extensions over the same application/service model.
-19. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
+18. Close the mandatory `RDC-01..RDC-08` residual-debt program and final documentation sweep.
+19. Only after both debt-closure programs are complete, add networking/service/security extensions over the same application/service model.
+20. Keep UART as the low-level emergency console and ST-LINK as recovery/GDB access even after USB becomes the primary management transport.
 
 Production Windows integration uses the accepted inbox WinUSB stack without a custom kernel-mode driver or COM-port-first product identity. `USB_MANAGEMENT_DEVICE_FOUNDATION` supplies the firmware device/interface metadata; CDC remains an explicit development/debug/recovery profile, not the primary management surface. `HOST_CONTROL_APPLICATION_FOUNDATION` now consumes that accepted interface.
 

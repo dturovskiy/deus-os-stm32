@@ -5,9 +5,9 @@
 
 This file is a historical execution/checklist ledger. It is **not** the global current-state authority. Current project state and the active next boundary are owned by `docs/CURRENT_STATE.md`.
 
-### Mandatory foundational debt closure program — OPEN 2026-10-03
+### Mandatory foundational debt closure program — CLOSED / HISTORICAL 2026-10-07
 
-This section is the executable ledger for the post-publication architecture/code audit. It is intentionally placed ahead of historical accepted-boundary records. `FDC-01..FDC-10` must all be accepted closed before a new Host Management Service/Web/network feature boundary begins. A checkbox may be marked complete only from dedicated build/test/static/hardware evidence appropriate to that item; “code changed” alone is not closure.
+This section is the historical executable ledger for the 2026-10-03 post-publication architecture/code audit. `FDC-01..FDC-10` are all accepted closed; the later `RESIDUAL_DEBT_CLOSURE_PROGRAM` below now owns the mandatory pre-feature debt gate. A checkbox was marked complete only from dedicated build/test/static/hardware evidence appropriate to that item; “code changed” alone was not closure.
 
 #### Slice A — Host long-lived-session hardening
 
@@ -104,6 +104,26 @@ This section is the executable ledger for the post-publication architecture/code
   - [x] final documentation-only acceptance records inventory, classifications, changed paths and clean publication poststate.
 
 Program exit criterion: **10/10 FDC items accepted closed**. Only then may `HOST_MANAGEMENT_SERVICE_FOUNDATION`/Web or networking/service/security feature implementation be promoted.
+
+### Mandatory residual-debt closure program — ACTIVE 2026-10-07
+
+The FDC program is complete, but a subsequent audit found additional confirmed current debt. These items supersede the old “feature selection may resume” assumption. **No new product feature implementation may be promoted until RDC-01..RDC-08 are accepted closed.**
+
+- [ ] **RDC-01 — Asset transaction/session recovery hardening.**
+- [ ] **RDC-02 — Host dead-surface cleanup.**
+- [ ] **RDC-03 — Target dead API cleanup.**
+- [ ] **RDC-04 — repository PowerShell destructive-output safety.**
+- [ ] **RDC-05 — minimal deterministic CI baseline.**
+- [ ] **RDC-06 — remaining kernel composition-root ownership cleanup.**
+- [ ] **RDC-07 — bootloader readability/maintainability normalization.**
+- [ ] **RDC-08 — final documentation/source-of-truth debt sweep.**
+
+Canonical program governance: `RESIDUAL_DEBT_CLOSURE_PROGRAM_PLAN.md` + `_ACCEPTANCE_PLAN.md`.
+
+Every RDC source/tooling item requires a dedicated scoped plan/acceptance pair before mutation. Generic future capabilities and optimizations without a concrete consumer are not debt and are not promoted by this checklist.
+
+Program exit criterion: **8/8 RDC items accepted closed/published plus final RDC-08 audit with no unclassified current technical/documentation debt.** Only then may a new product feature boundary be promoted.
+
 
 ### Published boundary — application runtime foundation — Gates 0–7 accepted
 

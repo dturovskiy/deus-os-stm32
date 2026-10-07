@@ -105,9 +105,9 @@ Authoritative consolidated hardware evidence is `stm32_os_fdc05_08_consolidated_
 
 ## 4. Current work disposition
 
-There is **no active new product feature boundary**. `FDC-01..FDC-10` are CLOSED/PUBLISHED; FDC-05..08 share publication commit `6aa2df19ab02c14bde38833e738fe825008102e8`, and the final docs-only FDC-10 publication is `9c02e27f50349c9a0240ab24d34720580c3f3269`. Consolidated FDC-05..08 Gate-1..3 evidence SHA-256 is `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` and final hardware Gate-4 evidence SHA-256 is `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`. The foundational-debt blocker is removed, but this does **not** activate Host Management Service/Web/network work; the next product feature boundary still requires explicit promotion and its own frozen plan/acceptance pair.
+There is **no active new product feature boundary**. `FDC-01..FDC-10` are CLOSED/PUBLISHED; FDC-05..08 share publication commit `6aa2df19ab02c14bde38833e738fe825008102e8`, and the final docs-only FDC-10 publication is `9c02e27f50349c9a0240ab24d34720580c3f3269`. Consolidated FDC-05..08 Gate-1..3 evidence SHA-256 is `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` and final hardware Gate-4 evidence SHA-256 is `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`. A new mandatory **RESIDUAL_DEBT_CLOSURE_PROGRAM** is now active on published baseline `d649e133cbe39fa6155520c657136ca99cee61ae`; no new product feature may be promoted until all confirmed residual technical/tooling/maintainability/documentation debt in that program is CLOSED/PUBLISHED.
 
-The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. That ten-item program is now complete: FDC-01..04 and FDC-09 are CLOSED/PUBLISHED at their accepted commits, FDC-05..08 are CLOSED/PUBLISHED together at `6aa2df19ab02c14bde38833e738fe825008102e8`, and FDC-10 is CLOSED/PUBLISHED docs-only at `9c02e27f50349c9a0240ab24d34720580c3f3269`. Future feature selection may resume only through a new explicit boundary; completion of the debt program itself authorizes no product, target, Flash or hardware mutation.
+The 2026-10-03 post-publication architecture/code audit promoted a mandatory **FOUNDATIONAL_DEBT_CLOSURE_PROGRAM** before any new Host Management Service/Web/network feature boundary. That ten-item program is complete: FDC-01..04 and FDC-09 are CLOSED/PUBLISHED at their accepted commits, FDC-05..08 are CLOSED/PUBLISHED together at `6aa2df19ab02c14bde38833e738fe825008102e8`, and FDC-10 is CLOSED/PUBLISHED docs-only at `9c02e27f50349c9a0240ab24d34720580c3f3269`. A subsequent read-only audit plus the accepted Host Asset correlation hardening identified additional concrete residual debt. Those confirmed items are now promoted into `RESIDUAL_DEBT_CLOSURE_PROGRAM`; feature selection remains blocked until its RDC ledger and final documentation sweep are closed.
 
 The mandatory closure ledger uses IDs `FDC-01..FDC-10`:
 
@@ -122,13 +122,15 @@ The mandatory closure ledger uses IDs `FDC-01..FDC-10`:
 9. `FDC-09` — **CLOSED / PUBLISHED `b88a9eee43095665326787cc0345822218c1ba73`** — per-instance latched bounded native cancellation/drain ownership is accepted for WinUSB/libusb; deterministic Transport `24/24` + Core `78/78`, Linux real-platform and Windows WinUSB cancel/disconnect/reopen proofs are accepted;
 10. `FDC-10` — **CLOSED / PUBLISHED `9c02e27f50349c9a0240ab24d34720580c3f3269` (DOCS-ONLY)** — repo-wide stale/open-checkbox/source-of-truth/artifact/security hygiene reconciliation completed the ten-item foundational-debt program without product/target mutation.
 
-The completed closure program was sequenced as: host long-lived-session hardening (`FDC-01..04,09`), target architecture/lifecycle cleanup (`FDC-05..07`), target/update robustness closure (`FDC-08`), then final documentation/source-of-truth reconciliation (`FDC-10`). Those prerequisites are now satisfied; `HOST_MANAGEMENT_SERVICE_FOUNDATION` or any equivalent Web/service boundary remains inactive until it is separately promoted with a concrete consumer and dedicated plan/acceptance contract.
+The completed FDC program was sequenced as: host long-lived-session hardening (`FDC-01..04,09`), target architecture/lifecycle cleanup (`FDC-05..07`), target/update robustness closure (`FDC-08`), then documentation/source-of-truth reconciliation (`FDC-10`). Those FDC prerequisites are satisfied, but they are no longer the complete pre-feature gate: `RESIDUAL_DEBT_CLOSURE_PROGRAM` is now the active mandatory maintenance sequence. `HOST_MANAGEMENT_SERVICE_FOUNDATION` or any equivalent Web/service/network feature remains blocked until RDC-01..RDC-08 are CLOSED/PUBLISHED.
 
 The board runs the exact published FDC-05..08 candidate-v3 bytes (`bb99acf111dfa3a78193b4e5d3376fa077defa1e`, application SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`) with capability `0x0000007F`, matching published commit `6aa2df19ab02c14bde38833e738fe825008102e8`. Networking/service/security work remains unactivated until a separate next boundary is explicitly promoted.
 
 Host-management presentation evolution remains a non-authorizing direction in `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
 
-The host-only maintenance boundary `HOST_ASSET_REQUEST_CORRELATION_HARDENING` is CLOSED/PUBLISHED at `40aab02b4e0c04466453be4c31041f8649c13c1b` on baseline `0713da56a3fe7a6b62f4c548d3248b4ed7fb2e57`. Gate-2 evidence `stm32_os_host_asset_request_correlation_gate2_host_validation_v2_20261007_181012.evidence.zip`, SHA-256 `F574489FE68B35D42DEB8BB0E8EE88FB029B8FAAED5C7F926BB7194C256D3285`, proves Core `80/80`, warning-clean Core Release build, exact candidate/poststate binding, target I/O NONE and Flash mutation NONE. The accepted fix reuses the existing channel-owned single-response abandonment model for timed-out/cancelled Asset requests and changes no target/native-transport/script/wire contract. Asset `ABORT` transaction/session cleanup remains a separate unpromoted maintenance question, not active work. Canonical plan/acceptance: `docs/HOST_ASSET_REQUEST_CORRELATION_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`.
+The host-only maintenance boundary `HOST_ASSET_REQUEST_CORRELATION_HARDENING` is CLOSED/PUBLISHED at `40aab02b4e0c04466453be4c31041f8649c13c1b` on baseline `0713da56a3fe7a6b62f4c548d3248b4ed7fb2e57`. Gate-2 evidence `stm32_os_host_asset_request_correlation_gate2_host_validation_v2_20261007_181012.evidence.zip`, SHA-256 `F574489FE68B35D42DEB8BB0E8EE88FB029B8FAAED5C7F926BB7194C256D3285`, proves Core `80/80`, warning-clean Core Release build, exact candidate/poststate binding, target I/O NONE and Flash mutation NONE. The accepted fix reuses the existing channel-owned single-response abandonment model for timed-out/cancelled Asset requests and changes no target/native-transport/script/wire contract. The separate Asset transaction/session cleanup question is now promoted as mandatory `RDC-01`, not left as an unowned future possibility.
+
+**Active next maintenance boundary:** `RDC-01 / HOST_ASSET_TRANSACTION_RECOVERY_HARDENING`. No RDC-01 product source mutation is authorized until its dedicated plan/acceptance pair freezes exact failure semantics, source scope, best-effort `ABORT` conditions and deterministic proof. RDC-02..RDC-08 remain mandatory queued debt, not optional feature backlog.
 
 ## 5. Current development/acceptance topology
 
@@ -188,7 +190,7 @@ Not-active examples include:
 - UI layout/preset/configurator expansion;
 - networking/remote-management security until that boundary is explicitly promoted.
 
-The ten `FDC-01..FDC-10` audit obligations are **closed/published**, not deferred work. Their completion removes the former prerequisite blocker; any new source mutation still requires a dedicated frozen feature or maintenance slice and acceptance proof.
+The ten `FDC-01..FDC-10` audit obligations are **closed/published**. They no longer own current work ordering. The mandatory residual-debt ledger is now `RDC-01..RDC-08`; each source/tooling item requires its own frozen maintenance plan/acceptance pair, and no new product feature boundary may be promoted until the entire RDC program closes.
 
 The pre-existing firmware-update robustness items are consumed by that program rather than left indefinitely trigger-driven: authenticated `image_length` reset-handler containment, bounded bootloader HSE/PLL startup, explicit non-DATA timeout/restart/adjudication semantics, and bounded stale request-ID lifetime under repeated cancellation/wrap. `FDC-08` additionally covers the newly confirmed normal-runtime HSE/PLL/switch waits, UART TX wait and poll-count-based bootloader-entry reset fallback.
 
@@ -216,7 +218,7 @@ Resolved/current:
 - Host Core update/RPC/Asset responsibilities share one correlation/channel owner rather than duplicate decoders/locks;
 - firmware-update authenticity, target binding, rollback floor, interruption recovery and publication capability are accepted.
 
-Still intentionally unresolved/trigger-driven outside the mandatory closure program:
+Still intentionally deferred **because they are future capabilities or consumer-triggered enhancements, not confirmed current debt**:
 
 - stable physical unit identity;
 - live physical “UART peer connected” semantics;
