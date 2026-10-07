@@ -1,6 +1,6 @@
 # Deus OS — Documentation Consistency Closure Plan
 
-Status: **FDC-10 / GATE 0 CONTRACT FROZEN**
+Status: **FDC-10 / GATES 0–5 ACCEPTED / GATES 6–7 OWNED BY THIS DOCS-ONLY REVISION**
 
 Baseline: `21e45b1dd7b1b5b701b087f44d1b29676ce0e6d9`
 
@@ -51,6 +51,14 @@ Every match must be either current actionable debt, explicitly historical/deferr
 ## Gates
 
 0 this audit contract; 1 repo-wide inventory; 2 exact documentation reconciliation; 3 stale-token/open-checkbox/source-of-truth audit; 4 repository/security/artifact hygiene audit; 5 final current-state/roadmap reconciliation; 6 normal local docs acceptance commit; 7 ordinary non-force publication.
+
+## Accepted Gates 1–5 result
+
+The final inventory contains `90` Markdown files in `docs/`, `30` `*_ACCEPTANCE_PLAN.md` records and `33` non-acceptance `*_PLAN.md`-named files. Same-stem unmatched names are limited to the already-classified historical/deferred set: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`, plus historical `OLED_CONSOLE_ACCEPTANCE_PLAN.md`; there is no orphan active boundary.
+
+Repo-wide classification corrected stale current claims for FDC-05..08 publication, physical bench/published candidate alignment, FDC-06 semantic-state ownership, Host Management prerequisites and the published CDC identity wording. Historical chronology and genuinely deferred consumer-driven items remain intentionally unchanged. Product source contains no `TODO/FIXME/HACK/XXX/TBD` marker. Tracked build/firmware/map/evidence/archive/log/key/certificate-like artifact types are absent; obvious private-key/token/certificate signatures are absent; `.gitignore` and `.gitattributes` remain appropriate.
+
+The exact FDC-05..08 source/docs candidate is already published at `6aa2df19ab02c14bde38833e738fe825008102e8`; FDC-10 performs documentation-only mutation and no target/Flash/hardware operation. Gates 6–7 for FDC-10 are one normal docs acceptance commit plus ordinary non-force publication/fresh-fetch proof.
 
 ## Exit criterion
 

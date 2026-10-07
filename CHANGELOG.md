@@ -1,12 +1,18 @@
 ## 2026-10-07
 
-### FDC-05..08 consolidated target closure — Gates 0–5 accepted / publication pending
+### FDC-10 documentation/source-of-truth closure — final foundational-debt reconciliation
+
+Repo-wide documentation reconciliation closes the ten-item `FDC-01..FDC-10` foundational-debt program. The final inventory is `90` Markdown files in `docs/`, `30` acceptance-plan records and `33` non-acceptance plan-named files; unmatched plan names are limited to the explicitly historical/deferred IMPLEMENTATION/OLED set and there is no orphan active boundary. Stale current claims were corrected for FDC-05..08 publication, physical bench/source alignment, FDC-06 semantic-state ownership, Host Management prerequisites and published CDC identity wording while historical chronology and genuinely deferred consumer-driven roadmap items were preserved.
+
+Repository hygiene is clean: product source has no `TODO/FIXME/HACK/XXX/TBD` markers; tracked firmware/build/map/evidence/archive/log/key/certificate-like artifact classes are absent; obvious credential/private-key signatures are absent; `.gitignore` and `.gitattributes` remain appropriate. FDC-10 changes documentation only and perform no target/Flash/hardware mutation. This docs-only acceptance revision is published by ordinary non-force push/fresh-fetch proof; closing the foundational blocker does not automatically activate Host Management Service/Web/network implementation, which still requires a separately promoted plan/acceptance boundary.
+
+### FDC-05..08 consolidated target closure — Gates 0–7 accepted / published `6aa2df19ab02c14bde38833e738fe825008102e8`
 
 The shared exact candidate tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e` has completed FDC-05 composition-root convergence, FDC-06 semantic system/service state, FDC-07 fail-closed application stop semantics and FDC-08 bounded target/update robustness through Gate 5. Application identity is `51972/53248` bytes, SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`.
 
 Consolidated Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` accepts warning-clean application/bootloader builds, Core `78/78`, Transport `24/24`, resource/stack/static ownership checks, deterministic FDC-06/FDC-07/FDC-08 oracles and exact candidate binding. Final real-hardware evidence `stm32_os_fdc05_08_consolidated_hardware_gate4_v18_20261007_115017.evidence.zip`, SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`, accepts runtime/USB/UART/OLED/scheduler/IWDG equivalence, authenticated v3 firmware update/recovery, non-DATA no-blind-retry adjudication, DATA exact retry policy, composite reset-deadline proof, exact final application/tail/bootloader/metadata/persistence identity and final `CANDIDATE_V3` physical target state. Physical OLED is PASS and no rollback was required.
 
-Gate 5 reconciles the scoped FDC plans/acceptance records, `CURRENT_STATE`, roadmap/checklist, architecture/backlog and host-management blocker wording. FDC-05..08 remain Gates 6–7 pending until one normal local acceptance commit and ordinary non-force publication/fresh-fetch verification. `FDC-10` remains the final documentation consistency closure before any Host Management Service/Web/network implementation may be promoted.
+Gate 5 reconciled the scoped FDC plans/acceptance records, `CURRENT_STATE`, roadmap/checklist, architecture/backlog and host-management blocker wording. Gates 6–7 then completed at `6aa2df19ab02c14bde38833e738fe825008102e8` by ordinary non-force publication with fresh-fetch clean `0/0`. `FDC-10` subsequently performed the final documentation consistency closure; no Host Management Service/Web/network implementation was activated by that closure.
 
 ## 2026-10-04
 

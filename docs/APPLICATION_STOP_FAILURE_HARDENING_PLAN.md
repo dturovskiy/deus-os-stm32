@@ -1,6 +1,6 @@
 # Deus OS — Application Stop-Failure Hardening Plan
 
-Status: **FDC-07 / GATES 0–5 ACCEPTED / GATES 6–7 PENDING**
+Status: **FDC-07 / GATES 0–7 ACCEPTED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`**
 
 Baseline: `21e45b1dd7b1b5b701b087f44d1b29676ce0e6d9`
 
@@ -50,7 +50,7 @@ Add a bounded allocation-free self-test that exercises the same internal stop-tr
 
 ## Gate 5 accepted state
 
-Exact candidate tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e` implements fail-closed stop failure: the failing owner becomes `FAILED`, fault count increments once, `active_id` is preserved, and replacement/home start is forbidden until recovery. Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` includes the deterministic synthetic stop-failure proof and build/static acceptance. Hardware Gate-4 evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` binds the accepted built-in start/idempotence/normal-stop/invalid-start regression and exact final Flash. Gate 5 documentation reconciliation is complete; Gates 6–7 remain commit/publication only.
+Exact candidate tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e` implements fail-closed stop failure: the failing owner becomes `FAILED`, fault count increments once, `active_id` is preserved, and replacement/home start is forbidden until recovery. Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` includes the deterministic synthetic stop-failure proof and build/static acceptance. Hardware Gate-4 evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` binds the accepted built-in start/idempotence/normal-stop/invalid-start regression and exact final Flash. Gate 5 documentation reconciliation is complete; Gates 6–7 are accepted/published at `6aa2df19ab02c14bde38833e738fe825008102e8` with fresh-fetch clean `0/0`.
 
 ## Exit criterion
 

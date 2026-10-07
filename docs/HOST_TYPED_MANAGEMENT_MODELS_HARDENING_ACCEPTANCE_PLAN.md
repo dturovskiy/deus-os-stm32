@@ -98,7 +98,7 @@ At minimum:
 
 A failure does not authorize service/Web implementation, transport changes or target changes.
 
-## Gate 2/3 accepted result — publication pending
+## Historical Gate 2/3 accepted result — pre-publication candidate state
 
 Authoritative evidence: `stm32_os_fdc04_host_validation_dotnet_v1_20261004_191243.evidence.zip`, SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`.
 

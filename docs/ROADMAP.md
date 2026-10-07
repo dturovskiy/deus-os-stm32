@@ -265,27 +265,27 @@ The 2026-10-03 architecture/code audit promoted ten residual obligations into a 
 
 ### Slice B — Target architecture/lifecycle cleanup
 
-- [ ] `FDC-05` — **Gates 0–5 accepted / Gates 6–7 pending** on exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e`: clock/USART1/I2C1/PC13 ownership convergence, build/resource/ABI and hardware equivalence are accepted with no framework/god-context substitution. Publication is the only remaining FDC-05 work.
-- [ ] `FDC-06` — **Gates 0–5 accepted / Gates 6–7 pending**: `system_service_state` is the accepted upstream authority for application/OLED health/USB/network/time semantics; event/no-rerender and physical OLED behavior are accepted on the shared exact candidate. Publication remains.
-- [ ] `FDC-07` — **Gates 0–5 accepted / Gates 6–7 pending**: failed stop preserves unresolved owner/`active_id`, marks `FAILED`, increments one fault and starts no replacement; synthetic failure proof and existing built-in lifecycle hardware regression are accepted. Publication remains.
+- [x] `FDC-05` — **CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`:** clock/USART1/I2C1/PC13 ownership convergence, build/resource/ABI and hardware equivalence accepted with no framework/god-context substitution.
+- [x] `FDC-06` — **CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`:** `system_service_state` is the upstream authority for application/OLED health/USB/network/time semantics; event/no-rerender and physical OLED behavior accepted.
+- [x] `FDC-07` — **CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`:** failed stop preserves unresolved owner/`active_id`, marks `FAILED`, increments one fault and starts no replacement; synthetic + hardware lifecycle proof accepted.
 
 ### Slice C — Target/update robustness closure
 
-- [ ] `FDC-08` — **Gates 0–5 accepted / Gates 6–7 pending**: bounded clock/UART waits, authenticated image-span vectors, wrap-safe update-entry deadline and non-DATA adjudication are accepted. Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788`; final hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` proves authenticated v3 update/recovery and exact final Flash/metadata/persistence ownership. Publication remains.
+- [x] `FDC-08` — **CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`:** bounded clock/UART waits, authenticated image-span vectors, wrap-safe update-entry deadline and non-DATA adjudication accepted. Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788`; hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`.
 
 ### Slice D — Documentation/source-of-truth closure
 
-- [ ] `FDC-10` — **Gate 0 contract frozen** in `DOCUMENTATION_CONSISTENCY_CLOSURE_PLAN.md` + acceptance pair; remove obsolete future-tense/deferred statements contradicted by published USB CDC/persistence/host/update work, reconcile all touched plans/backlogs/current-state/checklists, run a repo-wide stale-token/open-checkbox audit and `git diff --check`, then record exact final documentation state.
+- [x] `FDC-10` — **FINAL DOCUMENTATION CONSISTENCY CLOSURE COMPLETE:** repo-wide inventory, stale/current claim reconciliation, open-checkbox classification, documentation inventory, artifact/security hygiene and source-of-truth synchronization accepted; final docs-only commit/publication closes the ten-item program.
 
-All ten checkboxes above must be accepted closed before the roadmap advances into a new management service/Web/network implementation boundary.
+All ten foundational-debt checkboxes above are accepted closed. This removes the prerequisite blocker but does not automatically activate a management service/Web/network implementation boundary; promotion still requires a concrete consumer plus dedicated plan/acceptance contract.
 
-## Host management presentation evolution — future / blocked on FDC-01..FDC-10
+## Host management presentation evolution — future / prerequisites satisfied, not activated
 
 The accepted Host Control foundation already provides one transport-neutral Core with CLI + Avalonia presentation. Forward presentation policy is:
 
 - CLI remains the first-class automation/headless/acceptance surface;
 - Avalonia Desktop remains an optional workstation frontend;
-- a future local host-management service/Web frontend may be promoted only after `FDC-01..FDC-10` are accepted closed; it must reuse Core/service models rather than duplicate the STM32 protocol;
+- a future local host-management service/Web frontend may now be considered because `FDC-01..FDC-10` are closed, but it is not active until a dedicated boundary is explicitly promoted; it must reuse Core/service models rather than duplicate the STM32 protocol;
 - local Web presentation does not require STM32 networking;
 - remote/LAN/Wi-Fi Web exposure belongs to the later network/security sequence and requires an explicit trust/authentication/authorization contract.
 
@@ -293,7 +293,7 @@ Canonical reference: `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`.
 
 ## Phase 5 - Networking
 
-Future roadmap only; not active until the published Asset/Configuration and firmware-update safety foundations are retained **and** `FDC-01..FDC-10` are accepted closed.
+Future roadmap only. Asset/Configuration, firmware-update safety and `FDC-01..FDC-10` prerequisites are satisfied; networking remains inactive until a concrete consumer/security boundary is explicitly promoted.
 
 - [ ] ESP-01 / ESP8266 UART transport
 - [ ] Framed STM32 <-> ESP protocol

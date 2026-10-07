@@ -275,13 +275,13 @@ This boundary is complete/published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
 - `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`
 
-This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`; Gate-7 publication evidence SHA-256 is `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95`. Post-publication physical deployment/runtime verification is accepted by evidence SHA-256 `77F42EE22978A52FC60AE03D14D10BAC27D38B9FE8E6647D095F646349D75706`; the physical bench now runs the exact published v2 application with runtime capability mask `0x0000007F`.
+This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`; Gate-7 publication evidence SHA-256 is `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95`. Its original published v2 deployment proof remains historical. Subsequent FDC-05..08 hardening is published at `6aa2df19ab02c14bde38833e738fe825008102e8`; the physical bench now runs that exact accepted candidate-v3 application (SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`) with capability mask `0x0000007F`.
 
 ## 4. Current and future boundaries
 
 ### Current product implementation state
 
-No product feature boundary is currently active. `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` is complete/published and its physical deployment/runtime closure is accepted; the board is aligned with the published v2 identity. The completed documentation/repository hygiene and deployment-reconciliation work does not itself promote a new product boundary; `docs/CURRENT_STATE.md` owns the current disposition.
+No product feature boundary is currently active. The last named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; post-publication hardening `FDC-01..09` is published, including shared FDC-05..08 commit `6aa2df19ab02c14bde38833e738fe825008102e8`. FDC-10 completes documentation/source-of-truth reconciliation only. Closure of the foundational-debt program does not itself promote a new feature boundary; `docs/CURRENT_STATE.md` owns the current disposition.
 
 ### Later
 
@@ -322,11 +322,11 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory after FDC-09 publication closure / Slice-A completion:
+Live documentation inventory at FDC-10 final reconciliation:
 
-- Markdown files in `docs/`: `80`;
-- `*_ACCEPTANCE_PLAN.md` records: `25`;
-- non-acceptance `*_PLAN.md`-named files: `28`;
+- Markdown files in `docs/`: `90`;
+- `*_ACCEPTANCE_PLAN.md` records: `30`;
+- non-acceptance `*_PLAN.md`-named files: `33`;
 - unmatched same-stem plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`;
 - the sole unmatched same-stem acceptance name is `OLED_CONSOLE_ACCEPTANCE_PLAN.md`, which is the historical semantic pair for `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`;
 - the remaining unmatched plan names are explicitly historical or deferred, so none is an orphan active boundary;
@@ -338,8 +338,10 @@ Live documentation inventory after FDC-09 publication closure / Slice-A completi
 - `HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-02` pair at `42245d9d71504482fb189d8351ecce7049542145`;
 - `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-03` pair at `0d9adfd8d0ed11478194e2268ede3c57379c8294`;
 - `HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-04` pair at `3fcd93f3e038323bbcc33c136a3ab4ba1f605e5d`;
-- `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-09` pair at `b88a9eee43095665326787cc0345822218c1ba73`; FDC-01..04/FDC-09 are post-publication hardening, not product feature boundaries;
-- latest completed product boundary: `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`, Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` / tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`;
-- no new product feature boundary is currently active; Slice A (`FDC-01..04,09`) is complete; Gate-0 plan/acceptance pairs are frozen for FDC-05, FDC-06, FDC-07, FDC-08 and FDC-10, authorizing only their exact closure boundaries while all service/Web/network feature work remains blocked.
+- `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md` and `_ACCEPTANCE_PLAN.md` form the closed/published `FDC-09` pair at `b88a9eee43095665326787cc0345822218c1ba73`;
+- `KERNEL_COMPOSITION_ROOT_CONVERGENCE`, `SEMANTIC_SYSTEM_SERVICE_STATE`, `APPLICATION_STOP_FAILURE_HARDENING` and `TARGET_UPDATE_ROBUSTNESS_CLOSURE` plan/acceptance pairs are closed/published together at `6aa2df19ab02c14bde38833e738fe825008102e8` as FDC-05..08;
+- `DOCUMENTATION_CONSISTENCY_CLOSURE` is the final FDC-10 docs-only pair and records the repo-wide reconciliation that completes the ten-item closure program;
+- latest named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; later FDC commits are hardening/closure, not a new product-feature boundary;
+- no new product feature boundary is currently active. All `FDC-01..FDC-10` foundational obligations are closed; future service/Web/network work may be considered but remains inactive until separately promoted.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.

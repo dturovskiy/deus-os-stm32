@@ -160,7 +160,7 @@ No physical hardware acceptance is required because wire/target behavior is unch
 
 `FDC-04` is CLOSED only when every service-v1 management state/control acknowledgement that previously escaped as raw `RpcResult` has an accepted typed Core representation or is explicitly excluded, service/Desktop/CLI consume those models without duplicating target-text parsing, existing low-level compatibility APIs remain intact, full regressions/builds pass and the accepted source is published normally.
 
-## 13. Gate-2/3 accepted candidate — publication pending
+## 13. Historical Gate-2/3 accepted candidate — pre-publication state
 
 Gate 2 accepted `stm32_os_fdc04_host_validation_dotnet_v1_20261004_191243.evidence.zip`, SHA-256 `C6201371B0D302B964F8D24B8A413E5CDEC82FF93EF1056C54A8776B8E5171C4`. ZIP CRC is clean and manifest verification is `78/78` exact. Core tests are `78/78` with failed/skipped/errors/not-run all zero; Core, CLI and Desktop Release builds PASS; target I/O and Flash mutation are zero.
 

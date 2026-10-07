@@ -451,7 +451,7 @@ Acceptance now freezes the concrete synchronous-native ownership model: pre-entr
 
 All existing host regression suites and Release builds must remain PASS. These items are closed only by exact accepted evidence and are not satisfied by documentation wording alone.
 
-### FDC-03 Gate-2/3 acceptance addendum — publication pending
+### Historical FDC-03 Gate-2/3 acceptance addendum — pre-publication candidate state
 
 `HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING` has accepted Gates 1–3 on Gate-0 publication baseline `1fe0315916deaf551dc0249f2dffb424abd5e7dc`. The exact candidate adds only `ManagementServiceOperations.cs` and `ManagementServiceOperationTests.cs`; the production source SHA-256 is `299F3344EF1BF79736DEB5A9D5ED6D2E1AA63513683DE6711BBD8FAFCD1CE668` and test SHA-256 is `A7A43385AE9F1BF754BCDD56E2AF17781AAD871584766374C228D49F539259D1`.
 

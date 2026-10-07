@@ -53,34 +53,34 @@ This section is the executable ledger for the post-publication architecture/code
 
 #### Slice B — Target architecture/lifecycle cleanup
 
-- [ ] **FDC-05 — composition-root convergence without framework refactor — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.**
+- [x] **FDC-05 — composition-root convergence without framework refactor — CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`.**
   - [x] Gate-0 audit/plan pair frozen: `KERNEL_COMPOSITION_ROOT_CONVERGENCE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
   - [x] natural RCC/clock, USART1, I2C1 and PC13 owners extracted without framework-only refactor;
   - [x] no universal `kernel_context_t`, service locator, hidden extracted-state `extern`, dependency cycle or line-count-only split;
   - [x] build/resource/stack/public-ABI regression and hardware equivalence PASS;
   - [x] Gate-5 docs/architecture reconciliation records exact candidate `bb99acf111dfa3a78193b4e5d3376fa077defa1e` and v18 hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`;
-  - [ ] Gate 6 local acceptance commit + Gate 7 ordinary publication/fresh-fetch clean `0/0`.
+  - [x] Gate 6/7 accepted at `6aa2df19ab02c14bde38833e738fe825008102e8`; ordinary non-force push + fresh-fetch clean `0/0`.
 
-- [ ] **FDC-06 — semantic system/service state upstream of UI — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.**
+- [x] **FDC-06 — semantic system/service state upstream of UI — CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`.**
   - [x] Gate-0 plan pair frozen: `SEMANTIC_SYSTEM_SERVICE_STATE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
   - [x] one bounded semantic state owner supplies health/USB/network/time to application runtime and OLED presentation;
   - [x] `application_service_snapshot_t` is built from semantic state, not `boot_desktop_ui_snapshot_t` indicators;
   - [x] OLED status rendering consumes the same upstream semantic state;
   - [x] semantic-event/no-rerender behavior and physical OLED regression PASS;
   - [x] build/resource/stack + exact hardware Flash identity PASS;
-  - [ ] Gate 6 local acceptance commit + Gate 7 ordinary publication/fresh-fetch clean `0/0`.
+  - [x] Gate 6/7 accepted at `6aa2df19ab02c14bde38833e738fe825008102e8`; ordinary non-force push + fresh-fetch clean `0/0`.
 
-- [ ] **FDC-07 — fail-closed application stop failure semantics — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.**
+- [x] **FDC-07 — fail-closed application stop failure semantics — CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`.**
   - [x] Gate-0 plan pair frozen: `APPLICATION_STOP_FAILURE_HARDENING_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
   - [x] failed `stop()` produces `FAILED`, preserves unresolved `active_id`, increments fault count once and starts no replacement/home fallback;
   - [x] deterministic synthetic failing-stop proof PASS with no production runtime residue;
   - [x] existing Home/Device Info start, repeated-start idempotence, normal stop/home fallback and invalid-start regression PASS;
   - [x] Gate-5 docs reconciliation complete on exact candidate;
-  - [ ] Gate 6 local acceptance commit + Gate 7 ordinary publication/fresh-fetch clean `0/0`.
+  - [x] Gate 6/7 accepted at `6aa2df19ab02c14bde38833e738fe825008102e8`; ordinary non-force push + fresh-fetch clean `0/0`.
 
 #### Slice C — Target/update robustness closure
 
-- [ ] **FDC-08 — bounded target/update robustness — GATES 0–5 ACCEPTED / GATES 6–7 PENDING.**
+- [x] **FDC-08 — bounded target/update robustness — CLOSED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`.**
   - [x] Gate-0 plan pair frozen: `TARGET_UPDATE_ROBUSTNESS_CLOSURE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
   - [x] reset handler constrained to authenticated `[APP_BASE, APP_BASE + image_length)`;
   - [x] bootloader and runtime HSE/PLL/clock-switch waits are bounded;
@@ -89,19 +89,19 @@ This section is the executable ledger for the post-publication architecture/code
   - [x] INFO/BEGIN/AUTHORIZE/END retain no blind retry; DATA retains exactly one exact timeout retry;
   - [x] Flash/SRAM/stack, bootloader 8-KiB ceiling, persistence ownership, rollback floor and HMAC/digest guarantees remain intact;
   - [x] deterministic Gate-1..3 proof SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` + final hardware Gate-4 evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` PASS;
-  - [ ] Gate 6 local acceptance commit + Gate 7 ordinary publication/fresh-fetch clean `0/0`.
+  - [x] Gate 6/7 accepted at `6aa2df19ab02c14bde38833e738fe825008102e8`; ordinary non-force push + fresh-fetch clean `0/0`.
 
 #### Slice D — Documentation/source-of-truth closure
 
-- [ ] **FDC-10 — documentation consistency — GATE 0 CONTRACT FROZEN.**
+- [x] **FDC-10 — documentation consistency — FINAL CLOSURE COMPLETE / PUBLICATION OWNED BY THIS DOCS-ONLY REVISION.**
   - [x] Gate-0 plan pair frozen: `DOCUMENTATION_CONSISTENCY_CLOSURE_PLAN.md` + `_ACCEPTANCE_PLAN.md`;
-  - [ ] replace obsolete non-historical “USB CDC later” statements with the published CDC state;
-  - [ ] clarify that narrow `OLED_UI_LAYOUT_CONFIG_V1` persistence is published while broader runtime/custom UI persistence remains deferred;
-  - [ ] reconcile `CURRENT_STATE`, `ROADMAP`, deferred backlog and all affected scoped plan addenda with `FDC-01..FDC-10`;
-  - [ ] preserve historical chronology explicitly instead of rewriting past acceptance facts;
-  - [ ] repo-wide stale future-tense / TODO-style / unchecked-checklist audit produces no unclassified fundamental tail;
-  - [ ] `git diff --check` clean and repository artifact/security hygiene rechecked;
-  - [ ] final documentation-only acceptance records exact changed paths and poststate.
+  - [x] obsolete non-historical USB/persistence/update/current-state claims reconciled with published state;
+  - [x] narrow `OLED_UI_LAYOUT_CONFIG_V1` persistence remains distinct from broader deferred/custom UI work;
+  - [x] `CURRENT_STATE`, `ROADMAP`, backlog, documentation inventory, scoped plans/addenda and changelog reconciled with `FDC-01..FDC-10`;
+  - [x] historical chronology preserved; stale matches in historical/scoped records remain explicitly historical rather than rewritten;
+  - [x] repo-wide stale/future/deferred/open-checkbox audit leaves no unclassified fundamental documentation tail;
+  - [x] `git diff --check` clean; tracked build/evidence/archive/log/secret-like artifact scan and credential-signature scan clean;
+  - [x] final documentation-only acceptance records inventory, classifications, changed paths and clean publication poststate.
 
 Program exit criterion: **10/10 FDC items accepted closed**. Only then may `HOST_MANAGEMENT_SERVICE_FOUNDATION`/Web or networking/service/security feature implementation be promoted.
 

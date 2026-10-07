@@ -418,7 +418,7 @@ Those remain separate independently accepted boundaries.
 
 ## 17. Post-publication semantic-state closure — `FDC-06`
 
-The original application/UI model correctly separates semantic application events from scheduler wake bits, but the current implementation later evolved an inversion where `application_service_snapshot_t` is reconstructed from boot/OLED indicator state. The 2026-10-03 audit promotes that residual coupling into mandatory closure before another host/service/network consumer is added.
+The original application/UI model correctly separates semantic application events from scheduler wake bits. A later implementation inversion reconstructed `application_service_snapshot_t` from boot/OLED indicator state; the 2026-10-03 audit promoted that residual coupling into FDC-06. FDC-06 is now closed/published at `6aa2df19ab02c14bde38833e738fe825008102e8`: `system_service_state` is the semantic authority upstream of both application runtime and OLED presentation, so the inversion described here is historical and resolved.
 
 `FDC-06` freezes the intended dependency direction:
 
@@ -434,6 +434,6 @@ application  OLED/status presentation
 runtime
 ```
 
-Closure requires one semantic owner for system-health, USB-configured, network-online and time/uptime state. OLED indicators must render from that owner; application snapshots/events must also consume it. Rendered/UI state must never become authoritative input for host-visible or application-visible service semantics.
+Accepted closure uses one semantic owner for system-health, USB-configured, network-online and time/uptime state. OLED indicators and application snapshots/events consume that owner; rendered/UI state is not authoritative input for host-visible or application-visible service semantics.
 
-This closure must preserve the published OLED geometry, application runtime ABI unless explicitly/versionedly reopened, no-rerender event behavior, scheduler/watchdog ownership and all resource/physical regressions. It must not introduce a generic service locator or presentation framework solely to reverse the dependency.
+The published closure preserved OLED geometry, application runtime ABI, no-rerender event behavior, scheduler/watchdog ownership and resource/physical regressions without a generic service locator or presentation framework.

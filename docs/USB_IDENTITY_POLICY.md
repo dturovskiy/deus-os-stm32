@@ -14,7 +14,7 @@ Product   Deus OS USB Core
 Status    published / historical core profile
 ```
 
-The next CDC ACM console boundary uses a distinct profile:
+The published CDC ACM console boundary uses a distinct profile:
 
 ```text
 Boundary  USB_CDC_ACM_CONSOLE_FOUNDATION

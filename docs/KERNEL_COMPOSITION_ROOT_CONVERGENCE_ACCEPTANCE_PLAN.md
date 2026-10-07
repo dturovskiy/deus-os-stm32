@@ -1,6 +1,6 @@
 # Deus OS — Kernel Composition-Root Convergence Acceptance Plan
 
-Status: **FDC-05 / GATES 0–5 ACCEPTED / GATES 6–7 PENDING**
+Status: **FDC-05 / GATES 0–7 ACCEPTED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`**
 
 Canonical design: `docs/KERNEL_COMPOSITION_ROOT_CONVERGENCE_PLAN.md`
 
@@ -39,7 +39,7 @@ Reconcile canonical docs/evidence, then one normal local acceptance commit and o
 
 ## Accepted Gates 1–5 evidence
 
-Exact accepted candidate tree is `bb99acf111dfa3a78193b4e5d3376fa077defa1e`; application is `51972/53248` bytes, SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`. Consolidated Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` proves warning-clean build/resource/stack/static ownership checks and retained public ABI. Consolidated hardware Gate-4 evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` proves runtime equivalence, UART/I2C/USB/scheduler/IWDG health, exact final Flash and physical OLED PASS. Gate 5 documentation/architecture reconciliation is complete; Gates 6–7 remain the local acceptance commit and ordinary publication.
+Exact accepted candidate tree is `bb99acf111dfa3a78193b4e5d3376fa077defa1e`; application is `51972/53248` bytes, SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`. Consolidated Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788` proves warning-clean build/resource/stack/static ownership checks and retained public ABI. Consolidated hardware Gate-4 evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01` proves runtime equivalence, UART/I2C/USB/scheduler/IWDG health, exact final Flash and physical OLED PASS. Gate 5 documentation/architecture reconciliation is complete; Gates 6–7 are accepted/published at `6aa2df19ab02c14bde38833e738fe825008102e8` by ordinary non-force push with fresh-fetch clean `0/0`.
 
 ## Failure classes
 

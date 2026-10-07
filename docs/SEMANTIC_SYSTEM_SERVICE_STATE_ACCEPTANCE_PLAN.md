@@ -1,6 +1,6 @@
 # Deus OS — Semantic System / Service State Acceptance Plan
 
-Status: **FDC-06 / GATES 0–5 ACCEPTED / GATES 6–7 PENDING**
+Status: **FDC-06 / GATES 0–7 ACCEPTED / PUBLISHED `6aa2df19ab02c14bde38833e738fe825008102e8`**
 
 Canonical design: `docs/SEMANTIC_SYSTEM_SERVICE_STATE_PLAN.md`
 
@@ -14,6 +14,6 @@ Gate 4 requires physical OLED regression because the same upstream state now fee
 
 Gates 5–7 are docs/evidence reconciliation, one normal local acceptance commit and ordinary non-force publication with fresh-fetch clean `0/0` proof.
 
-Accepted Gates 1–5: exact candidate tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e`, application SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`; Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788`; final hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`. The hardware proof accepts semantic event/no-rerender behavior, scheduler/USB health, exact Flash identity and physical OLED PASS. Gate 5 reconciliation is complete; Gates 6–7 remain pending.
+Accepted Gates 1–5: exact candidate tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e`, application SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`; Gate-1..3 evidence SHA-256 `E5A9545F0FEAFB601234E8BE8B2D2D184D1614F7B96BC44C99C88BF26B113788`; final hardware evidence SHA-256 `72DD52218DF50D5DEFFEDB796855666DED92D00D1053488CC3B68C93D89AFC01`. The hardware proof accepts semantic event/no-rerender behavior, scheduler/USB health, exact Flash identity and physical OLED PASS. Gate 5 reconciliation is complete; Gates 6–7 are accepted/published at `6aa2df19ab02c14bde38833e738fe825008102e8` with fresh-fetch clean `0/0`.
 
 Failure classes: `FDC06_SOURCE_SCOPE_DRIFT`, `FDC06_PRESENTATION_AUTHORITY_RETAINED`, `FDC06_SEMANTIC_EVENT_REGRESSION`, `FDC06_RERENDER_REGRESSION`, `FDC06_BUILD_RESOURCE_FAILURE`, `FDC06_OLED_REGRESSION`.
