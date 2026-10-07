@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01 CLOSED / RDC-02 NEXT**
+Status: **ACTIVE — RDC-01..02 CLOSED / RDC-03 NEXT**
 
 Program ID:
 
@@ -43,7 +43,7 @@ Required boundary:
 
 Closure accepted at `699382a58c4c9570cdf36a05693044461e87c58b`. Gate-2 evidence SHA-256 `F63A788E08FEBDD4454A7BF3AD217ABF009B1BD24413EB83F51C7AD6D71E95FA` proves Core `84/84`, warning-clean Release build and zero target/Flash mutation. Host Core now performs one bounded best-effort same-transfer `ABORT` while a volatile session may be active, preserves the primary failure and performs no blind mutation retry.
 
-### RDC-02 — Host dead-surface cleanup
+### RDC-02 — CLOSED / PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d` — Host dead-surface cleanup
 
 Confirmed current dead remnants include:
 
@@ -55,6 +55,8 @@ Before deletion, exact current references/history/contracts must be rechecked. C
 Required boundary:
 
 `HOST_DEAD_SURFACE_CLEANUP`
+
+Closure accepted at `09a432f6c0b73ef2425add5950b6f6d5dee3733d`. Gate-2 evidence SHA-256 `44C5DBFA295087F1F2BFD5A453E63C3855EBC0508EEC5D3BEF283F99D4482B84` proves Transport `24/24`, Core `84/84`, warning-clean Linux transport/Core Release builds and zero target/Flash mutation. Eight unreachable Linux transport remnants were removed without changing profile-aware runtime/bootloader ownership or retained compatibility APIs.
 
 ### RDC-03 — Target dead API cleanup
 

@@ -1,5 +1,13 @@
 ## 2026-10-07
 
+### RDC-02 Host dead-surface cleanup — CLOSED / PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d`
+
+The Linux Host transport profile migration is now cleaned of eight re-proven unreachable internal remnants: five duplicated native constants, the runtime-only `ValidateManagementTopology()` wrapper, unused `libusb_get_device_address` P/Invoke, and the one-argument `LinuxLibUsbTransport.Open(string)` shim. Public runtime profile constants, runtime/bootloader `LinuxUsbProfile` ownership, profile-aware `ValidateTopology(...)`/`Open(..., profile)`, raw `SysInfoAsync()` compatibility and active Asset protocol APIs remain unchanged.
+
+Gate-2 evidence `stm32_os_host_dead_surface_cleanup_gate2_host_validation_v1_20261007_193632.evidence.zip`, SHA-256 `44C5DBFA295087F1F2BFD5A453E63C3855EBC0508EEC5D3BEF283F99D4482B84`, has internal hash index `48/48` exact and proves Linux transport/Core Release builds with zero warnings/errors, Transport `24/24`, Core `84/84`, exact candidate/poststate binding, `TARGET_IO=NONE` and `FLASH_MUTATION=NONE`.
+
+Acceptance commit `09a432f6c0b73ef2425add5950b6f6d5dee3733d` was published by ordinary non-force fast-forward from direct parent `bc562f5030990d4b4e69af35d0ad1a3e4cb301bb`; fresh fetch proved clean `HEAD == origin/main`, ahead/behind `0/0`. RDC-03 Target dead API cleanup is next.
+
 ### RDC-01 Host Asset transaction recovery — CLOSED / PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`
 
 Host Core now closes ambiguous Asset write sessions with one bounded best-effort same-transfer `ABORT` after BEGIN may have activated a volatile session and a subsequent BEGIN/WRITE/COMMIT path fails or is cancelled. Cleanup uses an independent two-second deadline, reuses the accepted channel-owned single-response abandonment model, never masks the primary failure and performs no mutation retry. Successful COMMIT closes the cleanup window, so post-COMMIT STATUS/readback failures do not emit ABORT.

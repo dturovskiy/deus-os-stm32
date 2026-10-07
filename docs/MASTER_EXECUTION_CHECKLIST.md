@@ -110,7 +110,7 @@ Program exit criterion: **10/10 FDC items accepted closed**. Only then may `HOST
 The FDC program is complete, but a subsequent audit found additional confirmed current debt. These items supersede the old “feature selection may resume” assumption. **No new product feature implementation may be promoted until RDC-01..RDC-08 are accepted closed.**
 
 - [x] **RDC-01 — Asset transaction/session recovery hardening — CLOSED/PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`; Core `84/84`, evidence `F63A788E08FEBDD4454A7BF3AD217ABF009B1BD24413EB83F51C7AD6D71E95FA`.**
-- [ ] **RDC-02 — Host dead-surface cleanup.**
+- [x] **RDC-02 — Host dead-surface cleanup — CLOSED/PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d`; Transport `24/24`, Core `84/84`, evidence `44C5DBFA295087F1F2BFD5A453E63C3855EBC0508EEC5D3BEF283F99D4482B84`.**
 - [ ] **RDC-03 — Target dead API cleanup.**
 - [ ] **RDC-04 — repository PowerShell destructive-output safety.**
 - [ ] **RDC-05 — minimal deterministic CI baseline.**

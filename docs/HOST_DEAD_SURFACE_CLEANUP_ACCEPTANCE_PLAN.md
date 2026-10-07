@@ -1,6 +1,6 @@
 # Deus OS — Host Dead-Surface Cleanup Acceptance Plan
 
-Status: **ACTIVE — GATES 0–3 ACCEPTED / GATE 4 COMMIT PENDING**
+Status: **CLOSED / PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d` — GATES 0–5 ACCEPTED**
 
 Canonical design:
 
@@ -84,9 +84,19 @@ RDC-02 removes exactly the eight frozen unreachable internal remnants and change
 
 Exact staged-path review, staged diff check PASS, one normal commit, clean post-commit state.
 
+### Gate-4 result — PASS
+
+Exact staged set contained the five accepted boundary paths only. `git diff --cached --check` PASS. Local acceptance commit `09a432f6c0b73ef2425add5950b6f6d5dee3733d` (`refactor: remove dead host linux transport surface`) is a direct child of baseline `bc562f5030990d4b4e69af35d0ad1a3e4cb301bb`; post-commit worktree/index was clean with ahead/behind `1/0`.
+
 ## Gate 5 — ordinary non-force publication
 
 Fresh direct-parent proof, ordinary fast-forward push and post-push fresh fetch with `HEAD == origin/main == FETCH_HEAD`, clean worktree/index, ahead/behind `0/0`.
+
+### Gate-5 result — PASS / PUBLISHED
+
+Fresh pre-push fetch proved `origin/main == bc562f5030990d4b4e69af35d0ad1a3e4cb301bb`, exactly the parent of acceptance commit `09a432f6c0b73ef2425add5950b6f6d5dee3733d`. Publication used ordinary non-force fast-forward `bc562f5..09a432f  main -> main`. Fresh post-push fetch proved `HEAD == origin/main == 09a432f6c0b73ef2425add5950b6f6d5dee3733d`, clean worktree/index and ahead/behind `0/0`.
+
+`RDC-02 / HOST_DEAD_SURFACE_CLEANUP` is CLOSED/PUBLISHED. No behavior/API contract beyond unreachable internal Linux transport surface changed.
 
 ## Failure classes
 

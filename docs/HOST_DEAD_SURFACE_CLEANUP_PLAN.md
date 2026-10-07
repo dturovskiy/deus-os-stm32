@@ -1,6 +1,6 @@
 # Deus OS — Host Dead-Surface Cleanup Plan
 
-Status: **ACTIVE — GATES 0–3 ACCEPTED / GATE 4 COMMIT PENDING**
+Status: **CLOSED / PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d` — GATES 0–5 ACCEPTED**
 
 Boundary ID:
 

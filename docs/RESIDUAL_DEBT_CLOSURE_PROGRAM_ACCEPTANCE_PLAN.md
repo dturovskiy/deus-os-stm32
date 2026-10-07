@@ -80,7 +80,8 @@ Each RDC item owns its own gates and evidence. This program-level acceptance rec
 Current program progress:
 
 - `RDC-01 / HOST_ASSET_TRANSACTION_RECOVERY_HARDENING` — **CLOSED/PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`**; Core `84/84`, Gate-2 evidence SHA-256 `F63A788E08FEBDD4454A7BF3AD217ABF009B1BD24413EB83F51C7AD6D71E95FA`, target I/O NONE / Flash mutation NONE;
-- `RDC-02 / HOST_DEAD_SURFACE_CLEANUP` — next mandatory maintenance boundary;
-- `RDC-03..RDC-08` — queued mandatory debt.
+- `RDC-02 / HOST_DEAD_SURFACE_CLEANUP` — **CLOSED/PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d`**; Transport `24/24`, Core `84/84`, Gate-2 evidence SHA-256 `44C5DBFA295087F1F2BFD5A453E63C3855EBC0508EEC5D3BEF283F99D4482B84`, target I/O NONE / Flash mutation NONE;
+- `RDC-03 / TARGET_DEAD_API_CLEANUP` — next mandatory maintenance boundary;
+- `RDC-04..RDC-08` — queued mandatory debt.
 
 Program exit requires RDC-01..RDC-08 CLOSED/PUBLISHED plus final RDC-08 audit with no unclassified current debt.
