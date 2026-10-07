@@ -1,6 +1,6 @@
 # Deus OS — Host Asset Request Correlation Hardening Plan
 
-Status: **ACTIVE — GATES 0–3 ACCEPTED / GATE 4 COMMIT PENDING**
+Status: **CLOSED / PUBLISHED `40aab02b4e0c04466453be4c31041f8649c13c1b` — GATES 0–5 ACCEPTED**
 
 Baseline repository commit:
 

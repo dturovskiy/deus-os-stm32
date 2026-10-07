@@ -1,6 +1,6 @@
 # Deus OS — Host Asset Request Correlation Hardening Acceptance Plan
 
-Status: **ACTIVE — GATES 0–3 ACCEPTED / GATE 4 COMMIT PENDING**
+Status: **CLOSED / PUBLISHED `40aab02b4e0c04466453be4c31041f8649c13c1b` — GATES 0–5 ACCEPTED**
 
 Canonical design:
 
@@ -94,9 +94,19 @@ Closure documentation adds only this plan/acceptance record, `docs/CURRENT_STATE
 
 Require exact staged-path review, no unrelated files, staged diff check PASS, one normal local commit and clean post-commit state.
 
+### Gate-4 result — PASS
+
+Local acceptance commit `40aab02b4e0c04466453be4c31041f8649c13c1b` (`fix: harden host asset request correlation`) contains exactly six accepted paths: the two frozen Host Core/test paths plus this plan pair, `docs/CURRENT_STATE.md` and `CHANGELOG.md`. Pre-commit staged path review was exact, `git diff --cached --check` was clean, and the post-commit worktree/index was clean with local ahead/behind `1/0`.
+
 ## Gate 5 — ordinary non-force publication
 
 Require fresh fetch/direct-parent proof before push. After push require fresh fetch with `HEAD == origin/main == FETCH_HEAD`, clean worktree/index and ahead/behind `0/0`.
+
+### Gate-5 result — PASS / PUBLISHED
+
+Fresh pre-push fetch proved `origin/main == 0713da56a3fe7a6b62f4c548d3248b4ed7fb2e57`, exactly the parent of acceptance commit `40aab02b4e0c04466453be4c31041f8649c13c1b`. Publication used an ordinary non-force fast-forward `0713da5..40aab02  main -> main`. Fresh post-push fetch then proved `HEAD == origin/main == 40aab02b4e0c04466453be4c31041f8649c13c1b`, clean worktree/index and ahead/behind `0/0`.
+
+`HOST_ASSET_REQUEST_CORRELATION_HARDENING` is therefore CLOSED/PUBLISHED. This closure does not promote Asset transaction `ABORT` cleanup or any other maintenance item.
 
 ## Failure classes
 

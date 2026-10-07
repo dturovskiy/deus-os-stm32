@@ -1,10 +1,12 @@
 ## 2026-10-07
 
-### Host Asset request-correlation hardening — Gates 0–3 accepted / local commit pending
+### Host Asset request-correlation hardening — CLOSED / PUBLISHED `40aab02b4e0c04466453be4c31041f8649c13c1b`
 
 A narrow Host Core maintenance candidate closes a confirmed single-response correlation gap in `AssetTransferClient`: once an Asset request owns a nonzero request ID, native timeout or cancellation now registers that ID through the existing channel-owned `AbandonSingleResponse()` model before the original failure propagates. No new decoder, stale queue, retry policy, protocol `ABORT`, wire value, native transport or target behavior is introduced.
 
 Gate-2 evidence `stm32_os_host_asset_request_correlation_gate2_host_validation_v2_20261007_181012.evidence.zip`, SHA-256 `F574489FE68B35D42DEB8BB0E8EE88FB029B8FAAED5C7F926BB7194C256D3285`, proves exact five-path candidate binding, .NET 10/Microsoft.Testing.Platform policy scope, isolated locked restore, Core Release build with zero warnings/errors, executed Core `80/80` PASS, temporary-index whitespace validation and unchanged live poststate with `TARGET_IO=NONE` / `FLASH_MUTATION=NONE`. Volatile Asset transaction/session cleanup via `ABORT` remains outside this boundary.
+
+Acceptance commit `40aab02b4e0c04466453be4c31041f8649c13c1b` was published by ordinary non-force fast-forward after fresh direct-parent proof; fresh post-push fetch proved `HEAD == origin/main`, clean worktree/index and ahead/behind `0/0`. The boundary is closed; Asset `ABORT` transaction/session cleanup remains unpromoted.
 
 ### FDC-10 documentation/source-of-truth closure — final foundational-debt reconciliation
 
