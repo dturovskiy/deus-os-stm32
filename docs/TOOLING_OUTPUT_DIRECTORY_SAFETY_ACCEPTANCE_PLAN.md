@@ -1,6 +1,6 @@
 # Deus OS — Tooling Output Directory Safety Acceptance Plan
 
-Status: **ACTIVE — GATES 0–2 ACCEPTED; GATE 3 LOCAL COMMIT PENDING**
+Status: **CLOSED / PUBLISHED — GATES 0–4 ACCEPTED AT `7fda7b8225f05c487f6d5d7154443e8369e74571`**
 
 Canonical design:
 
@@ -101,7 +101,7 @@ Gate 2A: **PASS 27/27**. Evidence `stm32_os_rdc04_gate2a_destructive_safety_matr
 
 Gate 2B: **PASS**. Evidence `stm32_os_rdc04_gate2b_deterministic_equivalence_v1_20261008_001513_509.evidence.zip`, SHA-256 `F3534E3ED6510CA83A6EAE1362CF53E7A0EA5FCA79CCCCCB7B52366C72A49825`. Clean candidate tree `315d1b67194ba128b25afda8b7950eb371e998f4`. Baseline BIN `F0DA0AA44388D181426D9222C955649D573BBAE7BE0A610CDA9439A835C44016`, candidate BIN `2BBE8760A281264AA6F359F60B43FB7C86E6F4C3CE982B24CA8098BC1FAA65E4`; only the 40-byte source-tree provenance field at offset 51784 differs. Normalized BIN equals accepted RDC-03 BIN; exact Flash/SRAM `51972/10968`, global symbols, alloc sections and stack-usage equivalence. Both recovery generators pass synthetic fixture payload equivalence. Marker excluded from generated product bundles and hash lists; Asset generator remains historical-only. No target I/O, Flash mutation, commit or push.
 
-Scope passed; only local commit and publication remain. These statements do not declare either future gate PASS.
+Gate 2C documentation finalization **PASS**, evidence SHA-256 `07489AE13299106DD69DA0004975316A84E1F4ADDC75D27A34D2378F4712AC02`. Gates 3 and 4 are now independently verified and accepted; see their exact results below.
 
 ## Gate 3 — local acceptance commit
 
@@ -114,6 +114,14 @@ Require fresh fetch/direct-parent proof, ordinary fast-forward push, then fresh 
 - `HEAD == origin/main`;
 - clean worktree/index;
 - ahead/behind `0/0`.
+
+### Gate-3 accepted result — 2026-10-08
+
+Normal local commit `7fda7b8225f05c487f6d5d7154443e8369e74571`, direct parent `100801293796a4bee3ebf24152cd57fc3924cf27`, exact ten-path tree `ae7760c58186ed227ce381d68562fac0a117ddd5`, clean local poststate, ahead/behind `1/0`. Evidence SHA-256 `A1BCC379A55F99B912266422BD58BF64D878D446AAE2D8345FAEFD9D379E24CB`.
+
+### Gate-4 accepted result — 2026-10-08
+
+Ordinary non-force `git push origin HEAD:refs/heads/main` from exact direct parent, fresh-fetch `HEAD == origin/main == FETCH_HEAD == 7fda7b8225f05c487f6d5d7154443e8369e74571`, clean worktree/index and ahead/behind `0/0`. Evidence SHA-256 `39A8EF0098CD313A2645316AFF0D5DD50841D080D68F98A0CE90E04D49AAFC1C` (`141/141` exact manifest). Target I/O, Flash mutation and hardware revalidation: **NONE/NOT REQUIRED**. `RDC-04` is CLOSED/PUBLISHED.
 
 ## Failure classes
 

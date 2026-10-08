@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01..03 CLOSED / RDC-04 ACTIVE**
+Status: **ACTIVE — RDC-01..04 CLOSED/PUBLISHED / RDC-05 GATE-0 DESIGN ACTIVE**
 
 Program ID:
 

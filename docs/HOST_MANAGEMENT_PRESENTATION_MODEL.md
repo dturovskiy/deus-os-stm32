@@ -184,7 +184,7 @@ Future host-management work must preserve:
 
 ## 11. Mandatory preconditions from the 2026-10-03 audit
 
-All `FDC-01..FDC-10` obligations are accepted closed, and `RDC-01..RDC-03` are now CLOSED/PUBLISHED. `RESIDUAL_DEBT_CLOSURE_PROGRAM` remains the mandatory pre-feature gate through RDC-04..RDC-08. This model remains non-authorizing and cannot be promoted while those obligations are open; after their closure, promotion still requires a concrete next boundary in `CURRENT_STATE.md` plus its own plan/acceptance pair.
+All `FDC-01..FDC-10` obligations are accepted closed, and `RDC-01..RDC-04` are now CLOSED/PUBLISHED. `RESIDUAL_DEBT_CLOSURE_PROGRAM` remains the mandatory pre-feature gate through RDC-05..RDC-08. This model remains non-authorizing and cannot be promoted while those obligations are open; after their closure, promotion still requires a concrete next boundary in `CURRENT_STATE.md` plus its own plan/acceptance pair.
 
 Service-specific hard requirements are:
 

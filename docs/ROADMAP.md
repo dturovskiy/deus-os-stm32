@@ -286,8 +286,8 @@ A subsequent repo-wide audit found additional **confirmed current debt** after F
 - [x] `RDC-01` — Asset transaction/session recovery hardening — CLOSED/PUBLISHED `699382a58c4c9570cdf36a05693044461e87c58b`; bounded post-failure cleanup uses the published idempotent `ABORT` contract without masking the primary failure or adding blind retry.
 - [x] `RDC-02` — Host dead-surface cleanup — CLOSED/PUBLISHED `09a432f6c0b73ef2425add5950b6f6d5dee3733d`; eight re-proven unreachable Linux transport remnants removed while published compatibility/profile ownership remains intact.
 - [x] `RDC-03` — Target dead API cleanup — CLOSED/PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489`; ten dead target APIs removed, retained compatibility owners preserved, deterministic BIN equivalence and exact-candidate hardware/runtime acceptance PASS.
-- [ ] `RDC-04` — **ACTIVE / GATES 0–2 ACCEPTED** — three caller-controlled output resets centralized in one fail-closed helper; PowerShell 7 safety 27/27 and firmware/recovery equivalence PASS; local acceptance commit and non-force publication pending before RDC-05.
-- [ ] `RDC-05` — minimal CI baseline for deterministic host/build/static checks; physical bench acceptance remains external.
+- [x] `RDC-04` — **CLOSED/PUBLISHED `7fda7b8225f05c487f6d5d7154443e8369e74571`** — one fail-closed output reset for three caller-controlled generators; disposable safety 27/27, deterministic firmware/recovery equivalence, Gate-2C docs, local ten-path commit and normal non-force fresh-fetch publication PASS.
+- [ ] `RDC-05` — **ACTIVE / GATE 0 DESIGN PENDING** — minimal CI baseline for deterministic host/build/static checks; physical bench acceptance remains external. Freeze dedicated plan/acceptance and workflow/source scope before changes.
 - [ ] `RDC-06` — remaining kernel composition-root ownership cleanup: coherent ownership only, no line-count gaming/framework refactor.
 - [ ] `RDC-07` — bootloader readability/maintainability normalization: behavior-preserving security-sensitive source cleanup with equivalence proof.
 - [ ] `RDC-08` — final documentation/source-of-truth debt sweep and repo hygiene reconciliation.

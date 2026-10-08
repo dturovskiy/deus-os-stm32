@@ -1,6 +1,6 @@
 # Deus OS — Tooling Output Directory Safety Plan
 
-Status: **ACTIVE — GATES 0–2 ACCEPTED; GATE 3 LOCAL COMMIT PENDING**
+Status: **CLOSED / PUBLISHED — GATES 0–4 ACCEPTED AT `7fda7b8225f05c487f6d5d7154443e8369e74571`**
 
 Boundary ID:
 
@@ -165,7 +165,10 @@ Hardware is not required when Gate 2 proves no load-image/product payload differ
 - Gate 1 implementation/static review — **PASS**, evidence SHA-256 `F348C1A83311A98AB6E8CCD8F68FC317F692858708BF5021190E61F6D907A7E1`. Exactly four WIP script paths: the new shared `scripts/output_directory_safety.ps1` and three existing callers. All three caller-controlled recursive resets now invoke one owner-specific fail-closed primitive; no target, Host, linker, Flash or Git publication mutation.
 - Gate 2A PowerShell 7 destructive-safety matrix — **PASS 27/27**, evidence SHA-256 `3DD73736F772BD42F5534FB517FCA503F0BD768CE27C2C3A8E119ED40D811C50`. Disposable owned/unowned/generated paths, protected roots, sentinels and reparse/junction rejection validated without target I/O.
 - Gate 2B firmware/recovery deterministic equivalence — **PASS**, evidence SHA-256 `F3534E3ED6510CA83A6EAE1362CF53E7A0EA5FCA79CCCCCB7B52366C72A49825`. Candidate Git tree `315d1b67194ba128b25afda8b7950eb371e998f4`; accepted RDC-03 baseline BIN `F0DA0AA44388D181426D9222C955649D573BBAE7BE0A610CDA9439A835C44016`; candidate BIN `2BBE8760A281264AA6F359F60B43FB7C86E6F4C3CE982B24CA8098BC1FAA65E4`; normalized candidate BIN equals baseline after substituting only the 40-byte provenance field at offset `51784`. Flash/SRAM `51972/10968`, global symbols, load sections and stack usage are unchanged. Synthetic fixtures prove both Bootloader and historical Asset recovery-generator payload equivalence; historical Asset remains non-operational.
-- Gate 3 one local acceptance commit is **PENDING**. Gate 4 ordinary non-force push/fresh-fetch publication is **PENDING**. `RDC-05` is not active yet.
+- Gate 2C docs finalization — **PASS**, evidence SHA-256 `07489AE13299106DD69DA0004975316A84E1F4ADDC75D27A34D2378F4712AC02`.
+- Gate 3 exact ten-path normal local acceptance commit — **PASS** `7fda7b8225f05c487f6d5d7154443e8369e74571`, parent `100801293796a4bee3ebf24152cd57fc3924cf27`, tree `ae7760c58186ed227ce381d68562fac0a117ddd5`; evidence SHA-256 `A1BCC379A55F99B912266422BD58BF64D878D446AAE2D8345FAEFD9D379E24CB`.
+- Gate 4 ordinary non-force publication and fresh-fetch proof — **PASS**; `HEAD == origin/main == FETCH_HEAD`, clean ahead/behind `0/0`; evidence SHA-256 `39A8EF0098CD313A2645316AFF0D5DD50841D080D68F98A0CE90E04D49AAFC1C`.
+- RDC-04 is CLOSED/PUBLISHED. Next mandatory debt boundary: `RDC-05` minimal deterministic CI baseline; Gate-0 design and scoped acceptance plan must precede implementation.
 
 ## 9. Exit criterion
 

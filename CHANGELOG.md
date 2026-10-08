@@ -1,3 +1,13 @@
+## 2026-10-08
+
+### RDC-04 Tooling Output Directory Safety — CLOSED / PUBLISHED `7fda7b8225f05c487f6d5d7154443e8369e74571`
+
+The three caller-controlled recursive OutputDir resets now use one fail-closed `Reset-DeusGeneratedOutputDirectory` helper with canonical-path containment, owner markers, protected-path and reparse-point guards. The Asset-phase generator remains historical-only; bootloader/product source and Flash layout are unchanged.
+
+Gate 1 source integration PASS. Gate 2A disposable PowerShell 7 safety matrix PASS `27/27`. Gate 2B clean candidate `315d1b67194ba128b25afda8b7950eb371e998f4` reproduces Flash/SRAM `51972/10968`, global symbols/alloc sections/stack records and baseline BIN after exactly one 40-byte embedded-provenance substitution; both recovery generators retain payload equivalence. Gate 2C docs-finalization evidence SHA-256 `07489AE13299106DD69DA0004975316A84E1F4ADDC75D27A34D2378F4712AC02`.
+
+Gate 3 accepted ten-path local commit `7fda7b8225f05c487f6d5d7154443e8369e74571`, parent `100801293796a4bee3ebf24152cd57fc3924cf27`, tree `ae7760c58186ed227ce381d68562fac0a117ddd5`, evidence SHA-256 `A1BCC379A55F99B912266422BD58BF64D878D446AAE2D8345FAEFD9D379E24CB`. Gate 4 ordinary non-force GitHub publication and fresh-fetch verified `HEAD == origin/main == FETCH_HEAD`, clean ahead/behind `0/0`, evidence SHA-256 `39A8EF0098CD313A2645316AFF0D5DD50841D080D68F98A0CE90E04D49AAFC1C`. No target I/O or Flash mutation. `RDC-05` minimal deterministic CI is the active design-only next maintenance boundary; implementation requires its scoped plan/acceptance freeze.
+
 ## 2026-10-07
 
 ### RDC-03 Target dead API cleanup — CLOSED / PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489`
