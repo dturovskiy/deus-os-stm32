@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01..04 CLOSED/PUBLISHED / RDC-05 GATE-0 DESIGN ACTIVE**
+Status: **ACTIVE — RDC-01..05 CLOSED/PUBLISHED / RDC-06 GATE-0 AUDIT NEXT**
 
 Program ID:
 
@@ -79,18 +79,11 @@ The historical debt was caller-controlled recursive output-directory deletion in
 
 Gate-1 source/static acceptance, Gate-2A PowerShell 7 safety matrix **27/27**, Gate-2B deterministic firmware/recovery equivalence, Gate-2C documentation and Gate-3 local ten-path commit are accepted. Gate-4 normal non-force fast-forward and fresh fetch proved clean `HEAD == origin/main`, ahead/behind `0/0`, at published implementation commit `7fda7b8225f05c487f6d5d7154443e8369e74571`. Separate docs closure was published at `58d4255d137c7c0b126cf647bba0d635b2a1dafe`. This item is closed; the next mandatory boundary is RDC-05.`
 
-### RDC-05 — Minimal continuous-integration baseline
+### RDC-05 — CLOSED / PUBLISHED `7f75cffdd0c632c5f99310f2c8708d745769aa42` — Minimal continuous-integration baseline
 
-Confirmed process debt:
+The baseline process debt was the absence of tracked deterministic CI. The frozen `REPOSITORY_CI_BASELINE` design/acceptance pair was published docs-only at `49392d003abf26636a8717a9e27c5520bf4c1af4`. The accepted implementation is exactly one `.github/workflows/ci.yml`, with pinned official actions, `ubuntu-24.04`, least-privilege token, locked .NET 10 restore, Release Host build, real MTP Core/Transport tests and repository hygiene, without target or physical bench access.
 
-- the repository currently has no tracked CI workflow;
-- deterministic host/build/static checks therefore rely entirely on manual/operator execution.
-
-Required boundary:
-
-`REPOSITORY_CI_BASELINE`
-
-Minimum scope: deterministic host Core/Transport tests/builds and repository/static hygiene that can run without bench hardware. CI must not pretend to replace Windows/Mac-mini/STM32 physical acceptance.
+Gate-2 Mac-mini Ubuntu proof SHA-256 `9ABE736EA688352C570B3D0443BABC797A8E240B27FE2107CFF40940305BF651` records Core `84/84`, Transport `24/24`, zero skipped and warning-clean Release build. Initial workflow commit `19025ed7d695bf75b43b010ae2e1d0a1ba105d4d` produced hosted run `37821098177` with failure before job creation: unsupported `runner.temp` job-level expression. The exact workflow-only context fix was accepted and non-force published at `7f75cffdd0c632c5f99310f2c8708d745769aa42`, tree `69cdb0a83b6a5454582343c6d20239761087809d`. Authoritative hosted GitHub Actions run `37829541187` (`https://github.com/dturovskiy/deus-os-stm32/actions/runs/37829541187`) on that exact SHA completed **success**, executing Core `84/84` and Transport `24/24`, skips `0`, with locked restore, Release `0 warnings / 0 errors` and static hygiene PASS. The accepted repair-publication evidence SHA-256 is `9C701DACDD13E5CFF96F22CC79B86C1DC29889BB6D21B474D0A21FFBE59D0276`. This closes RDC-05 as Host-only CI; firmware and STM32 hardware acceptance remain separate.
 
 ### RDC-06 — Remaining kernel composition-root ownership cleanup
 
