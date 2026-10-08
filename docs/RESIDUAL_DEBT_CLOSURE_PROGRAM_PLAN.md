@@ -73,20 +73,11 @@ Required boundary:
 
 Closure accepted at `e516fdc1d8818007db40ee12669d28f3f828c489`. Exactly ten dead target APIs were removed. Gate-2 evidence SHA-256 `224F04F33A91DAC295D0716ABF52B1457CC7DDA8C98316D17098243CBB05FE33` plus forensic adjudication prove exact baseline reproduction, candidate Flash/SRAM `51972/10968`, global symbol/layout/stack invariants and zero non-provenance BIN differences. Gate-3 read-only continuation evidence SHA-256 `046E4F1F30A69CDAE00B6B9A37B2C02E16A05F7A4F4EBBA56AB1F48E23341AB9` proves exact candidate application readback, unchanged bootloader/persistence ownership and runtime health; operator physical OLED is PASS.
 
-### RDC-04 — ACTIVE — Repository PowerShell destructive-output safety
+### RDC-04 — CLOSED / PUBLISHED `7fda7b8225f05c487f6d5d7154443e8369e74571` — Repository PowerShell destructive-output safety
 
-Confirmed tooling footgun:
+The historical debt was caller-controlled recursive output-directory deletion in the firmware builder, current bootloader recovery generator and historical-only Asset recovery generator. RDC-04 centralized all three resets through the single fail-closed `Reset-DeusGeneratedOutputDirectory` primitive with protected path, owner marker, reparse-point and sentinel checks; the Asset generator remains historical and not an operational recovery authority.
 
-- repository-owned build/recovery scripts accept caller-controlled `OutputDir`;
-- exactly three tracked scripts currently combine caller-controlled output directories with recursive reset before regeneration: current `build_firmware.ps1`, current `create_bootloader_recovery_bundle.ps1`, and historical-only `create_asset_recovery_bundle.ps1`.
-
-Required boundary:
-
-`TOOLING_OUTPUT_DIRECTORY_SAFETY`
-
-The fix must be fail-closed, avoid three divergent copy-pasted validators, distinguish current versus historical tooling, and prove allowed/forbidden path semantics under PowerShell 7 before destructive action. Any change to `build_firmware.ps1` must respect firmware candidate-identity consequences.
-
-RDC-04 Gate 0 is activated by `docs/TOOLING_OUTPUT_DIRECTORY_SAFETY_PLAN.md` + `_ACCEPTANCE_PLAN.md`. The selected design centralizes validation and recursive reset in one repository-owned primitive; no script mutation is authorized until that plan pair is published.
+Gate-1 source/static acceptance, Gate-2A PowerShell 7 safety matrix **27/27**, Gate-2B deterministic firmware/recovery equivalence, Gate-2C documentation and Gate-3 local ten-path commit are accepted. Gate-4 normal non-force fast-forward and fresh fetch proved clean `HEAD == origin/main`, ahead/behind `0/0`, at published implementation commit `7fda7b8225f05c487f6d5d7154443e8369e74571`. Separate docs closure was published at `58d4255d137c7c0b126cf647bba0d635b2a1dafe`. This item is closed; the next mandatory boundary is RDC-05.`
 
 ### RDC-05 — Minimal continuous-integration baseline
 
