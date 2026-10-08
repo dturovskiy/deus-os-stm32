@@ -23,8 +23,6 @@ jobs:
         working-directory: host
         shell: bash
     env:
-      DOTNET_CLI_HOME: ${{ runner.temp }}/deus-dotnet-home
-      NUGET_PACKAGES: ${{ runner.temp }}/deus-nuget-packages
       DOTNET_NOLOGO: '1'
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
     steps:
@@ -33,6 +31,16 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+
+      - name: Initialize isolated .NET and NuGet directories
+        run: |
+          set -euo pipefail
+          test -n "${RUNNER_TEMP:-}"
+          mkdir -p "$RUNNER_TEMP/deus-dotnet-home" "$RUNNER_TEMP/deus-nuget-packages"
+          {
+            printf 'DOTNET_CLI_HOME=%s\n' "$RUNNER_TEMP/deus-dotnet-home"
+            printf 'NUGET_PACKAGES=%s\n' "$RUNNER_TEMP/deus-nuget-packages"
+          } >> "$GITHUB_ENV"
 
       - name: Setup .NET 10 from global.json
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
