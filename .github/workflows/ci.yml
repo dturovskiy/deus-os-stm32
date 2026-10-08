@@ -1,0 +1,101 @@
+name: Host deterministic CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: host-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host:
+    name: Host Core and Transport
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: host
+        shell: bash
+    env:
+      DOTNET_CLI_HOME: ${{ runner.temp }}/deus-dotnet-home
+      NUGET_PACKAGES: ${{ runner.temp }}/deus-nuget-packages
+      DOTNET_NOLOGO: '1'
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup .NET 10 from global.json
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: host/global.json
+          cache: false
+
+      - name: Verify SDK, MTP selection and environment
+        run: |
+          set -euo pipefail
+          mkdir -p "$DOTNET_CLI_HOME" "$NUGET_PACKAGES"
+          dotnet --info
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('global.json').read_text(encoding='utf-8'))
+          assert p['sdk']['version'] == '10.0.100'
+          assert p['sdk']['rollForward'] == 'latestFeature'
+          assert p['sdk']['allowPrerelease'] is False
+          assert p['test']['runner'] == 'Microsoft.Testing.Platform'
+          print('GLOBAL_JSON_SDK_AND_MTP=PASS')
+          PY
+
+      - name: Non-vacuous patch and tracked-file hygiene
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            base="$(git rev-parse HEAD^1)"
+          elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            base="$PUSH_BEFORE"
+          else
+            echo 'UNAUTHORIZED_CI_EVENT' >&2
+            exit 1
+          fi
+          [[ "$base" =~ ^[0-9a-f]{40}$ && "$base" != "0000000000000000000000000000000000000000" ]] || { echo 'INVALID_PATCH_BASE' >&2; exit 1; }
+          git cat-file -e "${base}^{commit}"
+          changed="$(git diff --name-only "$base" HEAD)"
+          [[ -n "$changed" ]] || { echo 'EMPTY_PATCH_RANGE' >&2; exit 1; }
+          git diff --check "$base" HEAD
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import PurePosixPath
+          paths = subprocess.check_output(['git', '-C', '..', 'ls-files', '-z']).decode('utf-8').split('\0')
+          paths = [p for p in paths if p]
+          assert '.github/workflows/ci.yml' in paths, 'CI_WORKFLOW_NOT_TRACKED'
+          bad = [p for p in paths if re.search(r'(^|/)(build|bin|obj|TestResults|artifacts|coverage)/|\.(?:bin|elf|map|log|zip|7z|pfx|p12|pem|key|nupkg|snupkg)$', p, re.I)]
+          if bad:
+              raise SystemExit('FORBIDDEN_TRACKED_OUTPUT=' + ','.join(bad))
+          print('TRACKED_OUTPUT_HYGIENE=PASS count=' + str(len(paths)))
+          PY
+          echo 'NON_VACUOUS_PATCH_WHITESPACE=PASS'
+
+      - name: Restore locked Host solution
+        run: dotnet restore DeusOs.Control.sln --locked-mode --disable-parallel
+
+      - name: Build Release Host solution
+        run: dotnet build DeusOs.Control.sln --configuration Release --no-restore --warnaserror
+
+      - name: Execute Core MTP tests (minimum 84)
+        run: dotnet test --project tests/DeusOs.Control.Core.Tests/DeusOs.Control.Core.Tests.csproj --configuration Release --no-build --no-ansi --minimum-expected-tests 84
+
+      - name: Execute Transport MTP tests (minimum 24)
+        run: dotnet test --project tests/DeusOs.Control.Transport.Tests/DeusOs.Control.Transport.Tests.csproj --configuration Release --no-build --no-ansi --minimum-expected-tests 24
