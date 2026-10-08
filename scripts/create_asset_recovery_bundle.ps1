@@ -46,10 +46,8 @@ if ($bin.Length -gt 54272) {
     throw "os.bin exceeds Asset Gate-2 Flash ceiling: $($bin.Length)"
 }
 
-if (Test-Path -LiteralPath $OutputDir) {
-    Remove-Item -LiteralPath $OutputDir -Recurse -Force
-}
-New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot 'output_directory_safety.ps1')
+$OutputDir = Reset-DeusGeneratedOutputDirectory -ProjectRoot $ProjectRoot -OutputDir $OutputDir -OwnerId 'DEUS_OS_ASSET_RECOVERY_HISTORICAL_V1'
 
 Copy-Item -LiteralPath $BinPath -Destination (Join-Path $OutputDir "os.bin")
 Copy-Item -LiteralPath $RecoveryScript -Destination (Join-Path $OutputDir "recovery-common.ps1")

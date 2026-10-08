@@ -20,6 +20,12 @@ Do not treat every `.ps1` in this directory as an operator-facing acceptance har
 
 During an active Gate-2-or-later acceptance campaign, do not rewrite candidate-owned build/recovery scripts merely to modernize their console presentation. If their bytes/semantics must change, regenerate and re-accept the candidate/recovery chain as required by the playbook.
 
+## Generated output reset safety — RDC-04
+
+The current firmware builder and Bootloader recovery generator, plus the historical-only Asset recovery generator, use the shared `output_directory_safety.ps1` function `Reset-DeusGeneratedOutputDirectory`. It validates path/owner/reparse-point constraints and performs the reset as one fail-closed operation, using `.deus-generated-output.json` ownership metadata. Existing external output directories require the exact owner marker; a caller may not select repository control/source paths, drive/home/temp roots, a traversed reparse point, or an unowned external directory for recursive removal.
+
+The marker is tooling metadata and is not part of firmware BIN or generated recovery payloads. Output generator callers have three distinct stable owner IDs. The historical Asset script is retained solely for its pre-Bootloader geometry and is **not** current recovery tooling. Gate 1 and Gate 2A/2B were accepted without target I/O; acceptance commit/publication remain separate gates. See `docs/TOOLING_OUTPUT_DIRECTORY_SAFETY_PLAN.md` and `_ACCEPTANCE_PLAN.md` for the exact criteria and evidence.
+
 ## `build_firmware.ps1`
 
 Purpose:

@@ -277,10 +277,8 @@ try {
     Assert-ErasedBytes -Bytes $recovery -Offset ($MetadataAOffset + $MetadataMarkerOffset + 2) -Length ($MetadataPageBytes - $MetadataMarkerOffset - 2) -Label 'metadata A tail'
     Assert-ErasedBytes -Bytes $recovery -Offset $MetadataBOffset -Length $MetadataPageBytes -Label 'metadata B'
 
-    if (Test-Path -LiteralPath $OutputDir) {
-        Remove-Item -LiteralPath $OutputDir -Recurse -Force
-    }
-    New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+    . (Join-Path $PSScriptRoot 'output_directory_safety.ps1')
+    $OutputDir = Reset-DeusGeneratedOutputDirectory -ProjectRoot $ProjectRoot -OutputDir $OutputDir -OwnerId 'DEUS_OS_BOOTLOADER_RECOVERY_V1'
 
     $RecoveryRegionPath = Join-Path $OutputDir 'recovery_region_62pages.bin'
     $BaselineOutPath = Join-Path $OutputDir 'baseline_v1.pkg'

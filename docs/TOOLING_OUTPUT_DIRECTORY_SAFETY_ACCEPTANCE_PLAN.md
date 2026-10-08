@@ -1,6 +1,6 @@
 # Deus OS — Tooling Output Directory Safety Acceptance Plan
 
-Status: **ACTIVE — GATE 0 SCOPE/DESIGN FREEZE**
+Status: **ACTIVE — GATES 0–2 ACCEPTED; GATE 3 LOCAL COMMIT PENDING**
 
 Canonical design:
 
@@ -92,6 +92,16 @@ Because `scripts/build_firmware.ps1` participates in firmware candidate identity
 - target I/O NONE / Flash mutation NONE.
 
 Any non-provenance load-image delta blocks acceptance and requires investigation before commit.
+
+## Gate 1 / Gate 2 accepted evidence — 2026-10-08
+
+Gate 1: **PASS**. Evidence `stm32_os_rdc04_output_directory_safety_gate1_v1_20261007_235438_869.evidence.zip`, SHA-256 `F348C1A83311A98AB6E8CCD8F68FC317F692858708BF5021190E61F6D907A7E1`. Exactly four script WIP paths and clean real Git index; only one shared recursive-delete site remains.
+
+Gate 2A: **PASS 27/27**. Evidence `stm32_os_rdc04_gate2a_destructive_safety_matrix_v1_20261008_000419_357.evidence.zip`, SHA-256 `3DD73736F772BD42F5534FB517FCA503F0BD768CE27C2C3A8E119ED40D811C50`. Owner markers, protected paths, forbidden sentinels, reparse/junction cases, pre/post locks and Git diff check accepted.
+
+Gate 2B: **PASS**. Evidence `stm32_os_rdc04_gate2b_deterministic_equivalence_v1_20261008_001513_509.evidence.zip`, SHA-256 `F3534E3ED6510CA83A6EAE1362CF53E7A0EA5FCA79CCCCCB7B52366C72A49825`. Clean candidate tree `315d1b67194ba128b25afda8b7950eb371e998f4`. Baseline BIN `F0DA0AA44388D181426D9222C955649D573BBAE7BE0A610CDA9439A835C44016`, candidate BIN `2BBE8760A281264AA6F359F60B43FB7C86E6F4C3CE982B24CA8098BC1FAA65E4`; only the 40-byte source-tree provenance field at offset 51784 differs. Normalized BIN equals accepted RDC-03 BIN; exact Flash/SRAM `51972/10968`, global symbols, alloc sections and stack-usage equivalence. Both recovery generators pass synthetic fixture payload equivalence. Marker excluded from generated product bundles and hash lists; Asset generator remains historical-only. No target I/O, Flash mutation, commit or push.
+
+Scope passed; only local commit and publication remain. These statements do not declare either future gate PASS.
 
 ## Gate 3 — local acceptance commit
 

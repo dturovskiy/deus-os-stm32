@@ -1,6 +1,6 @@
 # Deus OS — Tooling Output Directory Safety Plan
 
-Status: **ACTIVE — GATE 0 SCOPE/DESIGN FREEZE**
+Status: **ACTIVE — GATES 0–2 ACCEPTED; GATE 3 LOCAL COMMIT PENDING**
 
 Boundary ID:
 
@@ -159,6 +159,13 @@ Recovery-bundle generators must also reproduce their payload/content identities 
 - Gate 4 — ordinary non-force publication + fresh-fetch clean `0/0`.
 
 Hardware is not required when Gate 2 proves no load-image/product payload difference outside provenance/tooling metadata.
+
+## Accepted implementation / non-hardware proof — 2026-10-08
+
+- Gate 1 implementation/static review — **PASS**, evidence SHA-256 `F348C1A83311A98AB6E8CCD8F68FC317F692858708BF5021190E61F6D907A7E1`. Exactly four WIP script paths: the new shared `scripts/output_directory_safety.ps1` and three existing callers. All three caller-controlled recursive resets now invoke one owner-specific fail-closed primitive; no target, Host, linker, Flash or Git publication mutation.
+- Gate 2A PowerShell 7 destructive-safety matrix — **PASS 27/27**, evidence SHA-256 `3DD73736F772BD42F5534FB517FCA503F0BD768CE27C2C3A8E119ED40D811C50`. Disposable owned/unowned/generated paths, protected roots, sentinels and reparse/junction rejection validated without target I/O.
+- Gate 2B firmware/recovery deterministic equivalence — **PASS**, evidence SHA-256 `F3534E3ED6510CA83A6EAE1362CF53E7A0EA5FCA79CCCCCB7B52366C72A49825`. Candidate Git tree `315d1b67194ba128b25afda8b7950eb371e998f4`; accepted RDC-03 baseline BIN `F0DA0AA44388D181426D9222C955649D573BBAE7BE0A610CDA9439A835C44016`; candidate BIN `2BBE8760A281264AA6F359F60B43FB7C86E6F4C3CE982B24CA8098BC1FAA65E4`; normalized candidate BIN equals baseline after substituting only the 40-byte provenance field at offset `51784`. Flash/SRAM `51972/10968`, global symbols, load sections and stack usage are unchanged. Synthetic fixtures prove both Bootloader and historical Asset recovery-generator payload equivalence; historical Asset remains non-operational.
+- Gate 3 one local acceptance commit is **PENDING**. Gate 4 ordinary non-force push/fresh-fetch publication is **PENDING**. `RDC-05` is not active yet.
 
 ## 9. Exit criterion
 

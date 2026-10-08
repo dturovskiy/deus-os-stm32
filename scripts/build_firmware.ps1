@@ -112,10 +112,8 @@ if ($SourceDiff.Count -ne 0 -or $DiscoveredSources.Count -ne $SourcePaths.Count)
     throw "current firmware C source set differs from versioned build source list"
 }
 
-if (Test-Path -LiteralPath $OutputDir) {
-    Remove-Item -LiteralPath $OutputDir -Recurse -Force
-}
-New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot 'output_directory_safety.ps1')
+$OutputDir = Reset-DeusGeneratedOutputDirectory -ProjectRoot $ProjectRoot -OutputDir $OutputDir -OwnerId 'DEUS_OS_FIRMWARE_BUILD_V1'
 
 $Header = Join-Path $OutputDir "deus_build_identity.h"
 $HeaderText = "#ifndef DEUS_BUILD_IDENTITY_H`r`n#define DEUS_BUILD_IDENTITY_H`r`n#define DEUS_FIRMWARE_SOURCE_TREE_HEX `"$FirmwareSourceTree`"`r`n#endif`r`n"
