@@ -1,6 +1,6 @@
 # Deus OS — Kernel Composition Root Final Cleanup Acceptance Plan
 
-Status: **RDC-06 GATE-0 ACCEPTANCE CONTRACT CANDIDATE — NOT ACCEPTED/PUBLISHED**
+Status: **RDC-06 GATE-0 AMENDMENT A ACCEPTANCE CONTRACT — PUBLICATION REQUIRED BEFORE GATE-1**
 
 Boundary: `KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP`
 Design: `docs/KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP_PLAN.md`
@@ -51,3 +51,23 @@ PASS requires:
 ## Mandatory evidence and stop rules
 
 Every operator-facing package returns exactly one self-contained `.evidence.zip`: `run.log`, `outcome.txt`, raw native command stdout/stderr, SHA-256 manifest and candidate/commit identity. `FINAL_OUTCOME=FAIL` implies a nonzero exit even if evidence was produced. Use independent execution-domain proof before reusing harness primitives. No force-push, secret material, firmware mutation at docs/static gates or invented hardware success. Never downgrade missing test counts or reported timeouts to PASS.
+
+## Gate-0 Amendment A — 2026-10-09 (ACCEPTANCE CONDITIONS FOR PUBLISHED SCOPE)
+
+The published original `schedprod` Gate-0 contract at `5373838906122692bd4a5d804e462ea884c62618` is retained above as historical provenance, but its selected source slice is superseded **only after** this amendment is accepted and published.
+
+**Engineering rejection prerequisite:** Independently verify the Gate-2 v3 evidence SHA-256 `56C8862146DEA8730478B6A14E7F0F1B9B9AF8C349883B81C2DA4FE5F23647DB`, candidate full tree `edf2e81ba72f384467406e997a98181c80d0f72f`, two actual successful isolated builds, original/candidate Flash `51972/52220`, SRAM `10968/10968`, stack `console_execute_request: 184/240` and writer `16`, conservative nested `256 > 184`, and `GATE2=FAIL`. Do not reclassify this as harmless, CI-covered, hardware-accepted or an index/harness error. Confirm exact rollback SHA-256 `D8DD5A9223B815A66424D1F2B3737DBB0456C7CF83FFF43D439BA9033007D16E`, `9E5FAE8EB41FC227FDEC9A6104202A8DEF4CF138B2331FCB70B114FA87E224DA`, `6D95E88AEC72355E2455FDAD120C44A96CB5264973C065CDF6B3D06A9B27DC83`; clean index and no target mutation.
+
+**Amendment prestate:** `HEAD == origin/main == 5373838906122692bd4a5d804e462ea884c62618`; exact baseline tree `8e1dc0fe4fa4da026523e2e2038429cef2bcdd5c`. Exactly two approved WIP documentation paths and no other tracked/untracked/staged changes. `src/kernel/command_service.c` SHA-256 `3658BF2DD386CC74B80FE78E3507F1D8B3F96EEC5A95801D5302CDC2E06FE5EF` and `include/kernel/command_service.h` SHA-256 `821C882324E3513F29C0220A64EFE86356F01C5EED9B772EB95729F452D63F0A` are frozen.
+
+**Scope review:** Confirm `console_write_command_descriptor` and `console_command_help` use only public registry/descriptor/output APIs and no kernel-private state. The amended Gate-1 authorization after publication is exactly `src/kernel.c`, `src/kernel/command_service.c`, `include/kernel/command_service.h`; the failed `schedprod` path set is revoked. Check that the minimal `command_service_execute_help` API introduces no generic dispatcher/framework or command ID change.
+
+**Gate-1 static PASS:** exact three authorized paths only, byte-accurate functional equivalence for zero/one/invalid arguments, missing descriptor/name behavior, command registry ordering, all `HELP_*` output records, text/hex separators and transport `write_failed` semantics. No hidden globals, new state, callbacks or additional source files.
+
+**Gate-2 build/behavior PASS:** independent isolated clean baseline/candidate ARM builds on exact Git-tree identities, actual ELF/MAP/BIN hashes, symbol and `.su` measurements, Flash/SRAM ceilings, no unaccepted stack regression, deterministic representative `help` fixtures including failure branches, and unchanged unrelated `schedprod`. No physical I/O or firmware mutation.
+
+**Gate-3 hardware/runtime:** after full Gate-2 PASS, same candidate firmware identity/readback; bounded Windows ST-LINK/UART and Mac-mini USB tests as needed, `help` output/semantics, scheduler/IWDG/application/USB/OLED liveness, preservation of bootloader/persistence ownership. No automatic repeated power cycles. Physical/OLED outcomes must be explicitly evidenced, never inferred from builds.
+
+**Gate-4/5:** exact acceptance commit, ordinary non-force push and fresh fetch; hosted GitHub CI Core >=84/84 and Transport >=24/24 on the published SHA; reconcile `CURRENT_STATE`, residual-debt ledger, roadmap and checklists before claiming RDC-06 closure. Other composition-root concentration remains a documented open classification until explicitly accepted.
+
+**Gate-0 amendment exit:** locally validate and review exactly these two docs-only WIP files, then one local documentation commit and separate non-force publication with `HEAD == origin/main == FETCH_HEAD`, clean index/worktree, ahead/behind `0/0`. Until then, **do not mutate the new source scope**.

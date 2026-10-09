@@ -1,6 +1,6 @@
 # Deus OS — Kernel Composition Root Final Cleanup Plan
 
-Status: **RDC-06 GATE-0 SOURCE AUDIT / SCOPED DESIGN CANDIDATE — NOT ACCEPTED/PUBLISHED**
+Status: **RDC-06 GATE-0 AMENDMENT A CONTRACT — REVISED SOURCE SCOPE EFFECTIVE ONLY AFTER ACCEPTED NON-FORCE PUBLICATION**
 
 Boundary: `KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP` (RDC-06)
 Published source baseline: `a27e08800b87eaa5574a4fe3aa88da0ec5b004c2`
@@ -59,3 +59,39 @@ No new C file, build-source list change, linker/startup/assembler/protocol/Host/
 ## 5. Gate-0 exit and RDC-07 boundary
 
 The installation of these documents is not itself Gate-0 acceptance. First capture exact docs-only WIP, then one separately accepted docs commit and non-force publication. `CURRENT_STATE.md` remains the active-boundary authority. RDC-07 may not start merely because a code slice compiles; RDC-06 remains open until its accepted source, required hardware evidence and publication are complete. Any remaining broad UI/console concentration must be reclassified honestly at RDC-06 closure or explicitly assigned rather than silently declared resolved.
+
+## 6. Gate-0 Amendment A — 2026-10-09 (PUBLICATION REQUIRED BEFORE SOURCE CHANGES)
+
+### 6.1. Rejected original Gate-1 cut and provenance
+
+The initial Gate-0 plan/acceptance pair was published docs-only at commit `5373838906122692bd4a5d804e462ea884c62618`, tree `8e1dc0fe4fa4da026523e2e2038429cef2bcdd5c`. This historical original contract selected a phased `schedprod` snapshot/presentation extraction to `scheduler_diagnostics.c`. The measured implementation was **not accepted**:
+
+- The last isolated baseline/candidate ARM build evidence is `stm32_os_rdc06_gate2_isolated_arm_build_static_v3_20261009_120329_641.evidence.zip`, SHA-256 `56C8862146DEA8730478B6A14E7F0F1B9B9AF8C349883B81C2DA4FE5F23647DB`; its `FINAL_OUTCOME=FAIL` is specifically `STACK_STATIC_REGRESSION`, not an ARM compilation failure.
+- Exact candidate tree `edf2e81ba72f384467406e997a98181c80d0f72f`; separate baseline and candidate builds both returned `BUILD_OUTCOME=PASS`. Flash `51972 -> 52220` (+248 bytes), SRAM `10968 -> 10968`; the 53,248-byte application Flash ceiling was respected.
+- Compiler `.su`: baseline `console_execute_request=184` bytes; candidate `console_execute_request=240` plus nested `scheduler_diagnostics_write_production=16`, conservative cumulative `256 > 184` (+72). This fails the frozen static non-regression criterion. The actual hardware high-water was **not measured**; no target I/O, flash, commit or push was authorized/performed.
+- The static order of 34 `SCHED_PROD_*` tokens and phased late sampling passed, but neither proves stack safety or complete runtime equivalence.
+- The three-file `schedprod` WIP was rejected under the explicit Gate-1 engineering-rejection rule and reverted to the exact published bytes of `src/kernel.c`, `src/kernel/scheduler_diagnostics.c`, and `include/kernel/scheduler_diagnostics.h`. Clean `HEAD == origin/main == 5373838906122692bd4a5d804e462ea884c62618`, empty staged and unstaged diff verified. This rejection is a superseding engineering decision, not a retroactive change to the accepted initial Gate-0 history.
+
+### 6.2. Replacement ownership decision — help/command registry presentation
+
+The bounded replacement is the existing `help` command implementation presently co-located with composition/production integration in `src/kernel.c`: `console_write_command_descriptor` and `console_command_help`. Both operate only through command registry, descriptor and bounded `command_service_context_t` output contracts. Those registry and output primitives already belong to `src/kernel/command_service.c` and `include/kernel/command_service.h`. There is **no private kernel task, stack, watchdog, IRQ, framebuffer, global state, hidden external binding, allocator or mutable snapshot dependency** in this pair.
+
+After this amendment is independently accepted and published, one coherent implementation slice may:
+
+1. Move the two help/registry presentation functions into existing `src/kernel/command_service.c`, using its public typed registry and output primitives.
+2. Expose one explicit `command_service_execute_help(request, context)` function in `include/kernel/command_service.h`.
+3. Replace the corresponding `help` safe-method branch in `src/kernel.c` with delegation and delete only the now-redundant local help formatter/handler.
+
+**Exact authorized Gate-1 implementation paths:** `src/kernel.c`, `src/kernel/command_service.c`, `include/kernel/command_service.h`. No other source, build script, linker, startup, Host, CI or project file change. The previously selected three-path `schedprod` implementation scope is **superseded** and no longer authorizes source edits. If the help cut is not independently cohesive, abort and re-freeze scope rather than increase coupling.
+
+### 6.3. Behavior, budget and boundary invariants
+
+Preserve exact `help` zero/one/invalid-argument semantics; `HELP_COUNT`, `HELP_METHODS`, `HELP_METHOD`, `CLASS`, `MIN_ARGS`, `MAX_ARGS` records; ordering, separators, `\r\n`, hexadecimal formatting, descriptor registry order and missing-name behavior. Preserve all command method IDs, RPC/USB/UART framing, registry ABI, `write_failed` behavior and no output for null descriptor. This is a move of existing behavior, **not** an extensible help/plugin framework or extra command.
+
+Re-run exact isolated baseline/candidate ARM builds. Enforce Flash <=53,248, SRAM <=11,264, original stack limits and no unmeasured production-stack regression. Compiler `.su` is necessary but does not replace measured runtime high-water. If a specific stack frame increases, classify and prove the entire actual nested call path before acceptance, without arbitrarily raising a threshold. Compare deterministic `help` outputs/branches with actual fixtures and independently review the exact source diff. Gate-3 must bind firmware bytes to target readback and prove the affected `help` responses plus existing console, scheduler/IWDG, USB/UART, application/UI/OLED liveness as required by the scoped acceptance contract; avoid unnecessary USB power cycling.
+
+Remaining `kernel.c` console/OLED coupling is **not** silently declared closed by this smaller cut. Re-audit and classify it explicitly at RDC-06 closure (or amend scope with independently justified evidence), before advancing RDC-07.
+
+### 6.4. Publication lock
+
+This appendix and the paired acceptance amendment are **docs-only draft WIP** until staged exactly as two documentation paths, reviewed and accepted, committed normally and published non-force. The original Gate-0 commit remains unchanged. No new `help` source change or firmware/target action is authorized until the amendment's exact commit is independently proven on `origin/main` with clean `0/0`.
