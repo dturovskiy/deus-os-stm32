@@ -275,7 +275,7 @@ This boundary is complete/published at `a8f92f83c2ba8917ad183b1a099c9e21199c9463
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
 - `FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md`
 
-This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`; Gate-7 publication evidence SHA-256 is `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95`. Its original published v2 deployment proof remains historical. Subsequent FDC-05..08 hardening is published at `6aa2df19ab02c14bde38833e738fe825008102e8`; the physical bench now runs that exact accepted candidate-v3 application (SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`) with capability mask `0x0000007F`.
+This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`, tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`; Gate-7 publication evidence SHA-256 is `B59E3628731AB78143A5E4B4918AFEFA60CC448C4C6065EB190697A4A0480F95`. Its original published v2 deployment proof remains historical. Subsequent FDC-05..08 hardening is published at `6aa2df19ab02c14bde38833e738fe825008102e8`; at its 2026-10-07 acceptance, the physical bench ran that exact accepted candidate-v3 application (SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`) with capability mask `0x0000007F`. **This is historical FDC-05..08 evidence, not the current physical image:** the subsequent RDC-06 signed application revision 5 is documented solely as the current physical state in `docs/CURRENT_STATE.md` (§4), with original acceptance evidence retained.
 
 ## 4. Current and future boundaries
 

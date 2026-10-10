@@ -85,11 +85,11 @@ Gate-5 hardware acceptance covers normal boot, explicit update entry, invalid-ap
 
 The post-Stage-10 host reliability repair is accepted. It handles delayed responses from explicitly timed-out firmware requests without weakening unknown request-ID correlation failures, and maps Windows WinUSB pipe timeout codes `121/1460` to `HostErrorKind.Timeout`. No second firmware-side response-loss mechanism is claimed from the historical INFO/BEGIN/DATA timeout observations.
 
-## 3. Published source and physical bench state
+## 3. Historical FDC-05..08 published source and 2026-10-07 hardware snapshot
 
-The latest published target/source closure is FDC-05..08 at commit `6aa2df19ab02c14bde38833e738fe825008102e8`. The last named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; FDC-05..08 are post-publication architecture/lifecycle/robustness hardening rather than a new feature boundary.
+**Historical snapshot, superseded by RDC-06:** as of the 2026-10-07 FDC-05..08 hardware acceptance, the most recent target/source closure was `6aa2df19ab02c14bde38833e738fe825008102e8`. The last named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; FDC-05..08 were post-publication architecture/lifecycle/robustness hardening. The current accepted source and physical STM32 revision **5**, superseding this historical snapshot, are recorded in §4 below under **Current physical STM32 state (RDC-06 accepted 2026-10-10)**.
 
-The physical bench is aligned with the published FDC-05..08 target state:
+At that 2026-10-07 acceptance, the physical bench was aligned with the FDC-05..08 target state (historical v3 firmware; **not** the current deployed revision 5):
 
 - accepted source tree `bb99acf111dfa3a78193b4e5d3376fa077defa1e`;
 - application `51972/53248` bytes, SHA-256 `0EC605A42511C9E71BE9B0D9BE96B5F0B0EBAFC12E81FFC509A416E5FCE14446`;

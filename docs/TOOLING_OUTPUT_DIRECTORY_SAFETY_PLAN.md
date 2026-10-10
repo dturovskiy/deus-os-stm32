@@ -168,7 +168,7 @@ Hardware is not required when Gate 2 proves no load-image/product payload differ
 - Gate 2C docs finalization — **PASS**, evidence SHA-256 `07489AE13299106DD69DA0004975316A84E1F4ADDC75D27A34D2378F4712AC02`.
 - Gate 3 exact ten-path normal local acceptance commit — **PASS** `7fda7b8225f05c487f6d5d7154443e8369e74571`, parent `100801293796a4bee3ebf24152cd57fc3924cf27`, tree `ae7760c58186ed227ce381d68562fac0a117ddd5`; evidence SHA-256 `A1BCC379A55F99B912266422BD58BF64D878D446AAE2D8345FAEFD9D379E24CB`.
 - Gate 4 ordinary non-force publication and fresh-fetch proof — **PASS**; `HEAD == origin/main == FETCH_HEAD`, clean ahead/behind `0/0`; evidence SHA-256 `39A8EF0098CD313A2645316AFF0D5DD50841D080D68F98A0CE90E04D49AAFC1C`.
-- RDC-04 is CLOSED/PUBLISHED. The then-next `RDC-05` CI boundary subsequently closed/published at `7f75cffdd0c632c5f99310f2c8708d745769aa42` with GitHub-hosted success run `37829541187`. The current next mandatory boundary is `RDC-06`; `docs/CURRENT_STATE.md` owns the active status.
+- RDC-04 is CLOSED/PUBLISHED. The then-next `RDC-05` CI boundary subsequently closed/published at `7f75cffdd0c632c5f99310f2c8708d745769aa42` with GitHub-hosted success run `37829541187`. At that historical publication point, `RDC-06` was the next mandatory boundary; it was subsequently CLOSED/PUBLISHED at `7bc5f27ce3447f0c907d2643e7db67669371210a` with separate bootloader fix `83e57f609bab4bcc8a61ea2222629bf9066e910d` and docs closure `a04006835bdf7194221729a4e15974613156cb30`. Current active-next status is owned only by `docs/CURRENT_STATE.md` (RDC-07 Gate-0 as of 2026-10-10).
 
 ## 9. Exit criterion
 
