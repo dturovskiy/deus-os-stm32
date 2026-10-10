@@ -1,6 +1,6 @@
 # Deus OS — RDC-08 Residual Debt Documentation Closure Acceptance Plan
 
-Status: **GATE-0 ACCEPTED / PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` — GATES 1–8 NOT STARTED**
+Status: **GATE-0 ACCEPTED / PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` — GATE-1 COMPLETE AUDIT / COMMIT AND CI PENDING; GATES 2–8 NOT STARTED**
 
 Canonical design: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md`
 
@@ -39,6 +39,154 @@ Frozen Gate-0 parent: `80ccdf5534ac65a830dcec5cc022e916521d2fb4`.
 **PASS:** every tracked docs Markdown plus root/script reference Markdown is inventoried, with a source-linked classification of current claims, historical gates, open checkboxes, active-next references, future/deferred terms, topology, firmware ownership and plan pairings. Classifications: `CURRENT_CORRECT`, `CURRENT_DEBT`, `HISTORICAL`, `DEFERRED`, `NOT_APPLICABLE`. Exact required Gate-2 docs-only changed-path allowlist frozen.
 
 **FAIL:** unexamined file, active orphan plan, silent promotion of optional features, conflation of WSL worktree with Mac mini USB host, or inferred current device state from old logs alone.
+
+### Gate-1 measured full-source matrix — AUDIT COMPLETE / PUBLICATION PENDING
+
+Frozen classification input: local DEUS-MCP read-only `HEAD == origin/main == FETCH_HEAD == 5a9b8030b7c2d021cd6ba68c0561f6c7b1bf1824`; clean worktree/index, ahead/behind `0/0` before candidate edits. The Git-tracked `ls-files` enumerated **252 paths**, of which **113 Markdown files** (110 in `docs/`, `CHANGELOG.md`, `README.md` and `scripts/README.md`). Every Markdown file was read without truncation; the table below is source/path-linked and exhaustive at this frozen commit.
+
+**Classification method:** Count case-insensitive lexical appearances of `active|next|planned|future|deferred|pending|current|blocked|open|gate-0|gate 0|RDC-08|FDC-10` or `[ ]`; these are broad **lexical candidates**, not independently verified defects. For each row the classification describes the *authority role* of the source and its potentially current gate/status claims. Within `HISTORICAL` sources, superseded future-tense milestone narration stays historical; `CURRENT_CORRECT` sources can legitimately describe historical facts and deferred proposals; `DEFERRED` content cannot authorize an active feature. `CURRENT_DEBT` means a specifically identified present-tense defect, not that all statements in that document are wrong. Routine technical occurrences such as “scheduler remains active” are `NOT_APPLICABLE` to project-gate status.
+
+Measured totals: 113 files, 2214 lexical matches (**broad matching, includes non-status words**), 30 unchecked checkbox lines. Per-source breakdown by authority classification: `HISTORICAL` 79 files/1351 candidates; `CURRENT_CORRECT` 26 files/593 candidates; `CURRENT_DEBT` 4 files/165 candidates; `DEFERRED` 4 files/105 candidates.
+
+| Source (at pinned Git) | Marker hits | Open boxes | Classification |
+|---|---:|---:|---|
+| `CHANGELOG.md` | 241 | 0 | `HISTORICAL` |
+| `README.md` | 8 | 0 | `CURRENT_CORRECT` |
+| `docs/APPLICATION_RUNTIME_FOUNDATION_ACCEPTANCE_PLAN.md` | 17 | 0 | `HISTORICAL` |
+| `docs/APPLICATION_RUNTIME_FOUNDATION_PLAN.md` | 21 | 0 | `HISTORICAL` |
+| `docs/APPLICATION_STOP_FAILURE_HARDENING_ACCEPTANCE_PLAN.md` | 0 | 0 | `HISTORICAL` |
+| `docs/APPLICATION_STOP_FAILURE_HARDENING_PLAN.md` | 6 | 0 | `HISTORICAL` |
+| `docs/ARCHITECTURE.md` | 70 | 0 | `CURRENT_CORRECT` |
+| `docs/ASSET_CONFIGURATION_FAULT_INJECTION_V1.md` | 4 | 0 | `CURRENT_CORRECT` |
+| `docs/ASSET_CONFIGURATION_FLASH_OPERATION_POLICY_V1.md` | 11 | 0 | `CURRENT_CORRECT` |
+| `docs/ASSET_CONFIGURATION_PERSISTENCE_V1.md` | 14 | 0 | `CURRENT_CORRECT` |
+| `docs/ASSET_CONFIGURATION_RESOURCE_BUDGET_V1.md` | 13 | 0 | `CURRENT_CORRECT` |
+| `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md` | 6 | 0 | `CURRENT_CORRECT` |
+| `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_ACCEPTANCE_PLAN.md` | 47 | 0 | `HISTORICAL` |
+| `docs/ASSET_CONFIGURATION_TRANSFER_FOUNDATION_PLAN.md` | 59 | 0 | `HISTORICAL` |
+| `docs/ASSET_CONFIGURATION_TRANSFER_PROTOCOL_V1.md` | 18 | 0 | `CURRENT_CORRECT` |
+| `docs/BINARY_FRAMED_TRANSPORT_ACCEPTANCE_PLAN.md` | 14 | 0 | `HISTORICAL` |
+| `docs/BINARY_FRAMED_TRANSPORT_PLAN.md` | 7 | 0 | `HISTORICAL` |
+| `docs/BINARY_FRAMED_TRANSPORT_PROTOCOL.md` | 10 | 0 | `CURRENT_CORRECT` |
+| `docs/BOOTLOADER_READABILITY_CLEANUP_ACCEPTANCE_PLAN.md` | 19 | 1 | `CURRENT_DEBT` |
+| `docs/BOOTLOADER_READABILITY_CLEANUP_PLAN.md` | 14 | 0 | `CURRENT_DEBT` |
+| `docs/BOOT_DESKTOP_UI_ACCEPTANCE_PLAN.md` | 12 | 0 | `HISTORICAL` |
+| `docs/BOOT_DESKTOP_UI_PLAN.md` | 16 | 0 | `HISTORICAL` |
+| `docs/CURRENT_STATE.md` | 53 | 0 | `CURRENT_DEBT` |
+| `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md` | 41 | 0 | `DEFERRED` |
+| `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` | 23 | 0 | `CURRENT_CORRECT` |
+| `docs/DOCUMENTATION_CONSISTENCY_CLOSURE_ACCEPTANCE_PLAN.md` | 17 | 0 | `HISTORICAL` |
+| `docs/DOCUMENTATION_CONSISTENCY_CLOSURE_PLAN.md` | 27 | 0 | `HISTORICAL` |
+| `docs/DOCUMENTATION_MODEL.md` | 79 | 0 | `CURRENT_DEBT` |
+| `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md` | 27 | 0 | `HISTORICAL` |
+| `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` | 42 | 0 | `HISTORICAL` |
+| `docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md` | 4 | 0 | `CURRENT_CORRECT` |
+| `docs/FLASH_OWNERSHIP_LAYOUT_DECISION.md` | 22 | 0 | `CURRENT_CORRECT` |
+| `docs/FOUNDATION_ARCHITECTURE_GAP_REVIEW.md` | 34 | 0 | `HISTORICAL` |
+| `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` | 57 | 0 | `CURRENT_CORRECT` |
+| `docs/HOST_ASSET_REQUEST_CORRELATION_HARDENING_ACCEPTANCE_PLAN.md` | 3 | 0 | `HISTORICAL` |
+| `docs/HOST_ASSET_REQUEST_CORRELATION_HARDENING_PLAN.md` | 3 | 0 | `HISTORICAL` |
+| `docs/HOST_ASSET_TRANSACTION_RECOVERY_HARDENING_ACCEPTANCE_PLAN.md` | 2 | 0 | `HISTORICAL` |
+| `docs/HOST_ASSET_TRANSACTION_RECOVERY_HARDENING_PLAN.md` | 8 | 0 | `HISTORICAL` |
+| `docs/HOST_CONTROL_APPLICATION_FOUNDATION_ACCEPTANCE_PLAN.md` | 24 | 0 | `HISTORICAL` |
+| `docs/HOST_CONTROL_APPLICATION_FOUNDATION_PLAN.md` | 27 | 0 | `HISTORICAL` |
+| `docs/HOST_DEAD_SURFACE_CLEANUP_ACCEPTANCE_PLAN.md` | 4 | 0 | `HISTORICAL` |
+| `docs/HOST_DEAD_SURFACE_CLEANUP_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md` | 29 | 0 | `DEFERRED` |
+| `docs/HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_ACCEPTANCE_PLAN.md` | 12 | 0 | `HISTORICAL` |
+| `docs/HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING_PLAN.md` | 14 | 0 | `HISTORICAL` |
+| `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_ACCEPTANCE_PLAN.md` | 11 | 0 | `HISTORICAL` |
+| `docs/HOST_RPC_TIMEOUT_RECOVERY_HARDENING_PLAN.md` | 11 | 0 | `HISTORICAL` |
+| `docs/HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_ACCEPTANCE_PLAN.md` | 7 | 0 | `HISTORICAL` |
+| `docs/HOST_SERVICE_OPERATION_ALLOWLIST_HARDENING_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_ACCEPTANCE_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/HOST_SESSION_STATE_EVENT_REENTRANCY_HARDENING_PLAN.md` | 9 | 0 | `HISTORICAL` |
+| `docs/HOST_TYPED_MANAGEMENT_MODELS_HARDENING_ACCEPTANCE_PLAN.md` | 3 | 0 | `HISTORICAL` |
+| `docs/HOST_TYPED_MANAGEMENT_MODELS_HARDENING_PLAN.md` | 8 | 0 | `HISTORICAL` |
+| `docs/IMPLEMENTATION_PLAN.md` | 31 | 0 | `HISTORICAL` |
+| `docs/IWDG_LIVENESS_FOUNDATION_ACCEPTANCE_PLAN.md` | 4 | 0 | `HISTORICAL` |
+| `docs/IWDG_LIVENESS_FOUNDATION_PLAN.md` | 4 | 0 | `HISTORICAL` |
+| `docs/KERNEL_COMPOSITION_ROOT_CONVERGENCE_ACCEPTANCE_PLAN.md` | 2 | 0 | `HISTORICAL` |
+| `docs/KERNEL_COMPOSITION_ROOT_CONVERGENCE_PLAN.md` | 2 | 0 | `HISTORICAL` |
+| `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_ACCEPTANCE_PLAN.md` | 9 | 0 | `HISTORICAL` |
+| `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_DECISION.md` | 5 | 0 | `CURRENT_CORRECT` |
+| `docs/KERNEL_COMPOSITION_ROOT_DECOMPOSITION_PLAN.md` | 4 | 0 | `HISTORICAL` |
+| `docs/KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP_ACCEPTANCE_PLAN.md` | 18 | 0 | `HISTORICAL` |
+| `docs/KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP_PLAN.md` | 23 | 0 | `HISTORICAL` |
+| `docs/MASTER_EXECUTION_CHECKLIST.md` | 121 | 19 | `HISTORICAL` |
+| `docs/NATIVE_USB_DEVICE_CORE_ACCEPTANCE_PLAN.md` | 11 | 0 | `HISTORICAL` |
+| `docs/NATIVE_USB_DEVICE_CORE_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/NORMAL_BOOT_PRODUCTION_TASK_OWNERSHIP_ACCEPTANCE_PLAN.md` | 22 | 0 | `HISTORICAL` |
+| `docs/NORMAL_BOOT_PRODUCTION_TASK_OWNERSHIP_PLAN.md` | 25 | 0 | `HISTORICAL` |
+| `docs/OLED_CONSOLE_ACCEPTANCE_PLAN.md` | 6 | 0 | `HISTORICAL` |
+| `docs/OLED_CONSOLE_API_CONTRACT.md` | 10 | 0 | `CURRENT_CORRECT` |
+| `docs/OLED_CONSOLE_ARCHITECTURE.md` | 11 | 0 | `CURRENT_CORRECT` |
+| `docs/OLED_CONSOLE_IMPLEMENTATION_PLAN.md` | 3 | 0 | `HISTORICAL` |
+| `docs/OLED_DIRTY_REGION_OPTIMIZATION_ACCEPTANCE_PLAN.md` | 5 | 0 | `HISTORICAL` |
+| `docs/OLED_DIRTY_REGION_OPTIMIZATION_PLAN.md` | 11 | 0 | `HISTORICAL` |
+| `docs/OLED_SSD1306_HARDWARE_PROFILE.md` | 3 | 0 | `CURRENT_CORRECT` |
+| `docs/OLED_STATUS_BAR_PLAN.md` | 12 | 0 | `DEFERRED` |
+| `docs/OLED_UI_ACCEPTED_BASELINE.md` | 12 | 0 | `CURRENT_CORRECT` |
+| `docs/OLED_UI_LAYOUT_CONFIG_V1_CONSUMER.md` | 14 | 0 | `CURRENT_CORRECT` |
+| `docs/OLED_UI_LAYOUT_PLAN.md` | 23 | 0 | `DEFERRED` |
+| `docs/OS_APPLICATION_AND_UI_MODEL_ACCEPTANCE_PLAN.md` | 19 | 0 | `HISTORICAL` |
+| `docs/OS_APPLICATION_AND_UI_MODEL_PLAN.md` | 19 | 0 | `HISTORICAL` |
+| `docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md` | 20 | 0 | `HISTORICAL` |
+| `docs/PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_PLAN.md` | 15 | 0 | `HISTORICAL` |
+| `docs/PRODUCTION_HEARTBEAT_TASK_ACCEPTANCE_PLAN.md` | 5 | 0 | `HISTORICAL` |
+| `docs/PRODUCTION_HEARTBEAT_TASK_PLAN.md` | 6 | 0 | `HISTORICAL` |
+| `docs/PROJECT_HANDOFF.md` | 18 | 0 | `HISTORICAL` |
+| `docs/REPOSITORY_CI_BASELINE_ACCEPTANCE_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/REPOSITORY_CI_BASELINE_PLAN.md` | 8 | 0 | `HISTORICAL` |
+| `docs/RESIDUAL_DEBT_CLOSURE_PROGRAM_ACCEPTANCE_PLAN.md` | 37 | 0 | `CURRENT_CORRECT` |
+| `docs/RESIDUAL_DEBT_CLOSURE_PROGRAM_PLAN.md` | 40 | 0 | `CURRENT_CORRECT` |
+| `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md` | 58 | 0 | `CURRENT_CORRECT` |
+| `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` | 74 | 0 | `CURRENT_CORRECT` |
+| `docs/ROADMAP.md` | 52 | 10 | `CURRENT_CORRECT` |
+| `docs/SCHEDULER_FIXED_PRIORITY_ACCEPTANCE_PLAN.md` | 8 | 0 | `HISTORICAL` |
+| `docs/SCHEDULER_FIXED_PRIORITY_PLAN.md` | 17 | 0 | `HISTORICAL` |
+| `docs/SCHEDULER_TIMED_BLOCKING_ACCEPTANCE_PLAN.md` | 6 | 0 | `HISTORICAL` |
+| `docs/SCHEDULER_TIMED_BLOCKING_PLAN.md` | 27 | 0 | `HISTORICAL` |
+| `docs/SEMANTIC_SYSTEM_SERVICE_STATE_ACCEPTANCE_PLAN.md` | 0 | 0 | `HISTORICAL` |
+| `docs/SEMANTIC_SYSTEM_SERVICE_STATE_PLAN.md` | 1 | 0 | `HISTORICAL` |
+| `docs/SHELL_RPC_FOUNDATION_ACCEPTANCE_PLAN.md` | 11 | 0 | `HISTORICAL` |
+| `docs/SHELL_RPC_FOUNDATION_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/TARGET_DEAD_API_CLEANUP_ACCEPTANCE_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/TARGET_DEAD_API_CLEANUP_PLAN.md` | 9 | 0 | `HISTORICAL` |
+| `docs/TARGET_UPDATE_ROBUSTNESS_CLOSURE_ACCEPTANCE_PLAN.md` | 0 | 0 | `HISTORICAL` |
+| `docs/TARGET_UPDATE_ROBUSTNESS_CLOSURE_PLAN.md` | 1 | 0 | `HISTORICAL` |
+| `docs/TOOLING_OUTPUT_DIRECTORY_SAFETY_ACCEPTANCE_PLAN.md` | 5 | 0 | `HISTORICAL` |
+| `docs/TOOLING_OUTPUT_DIRECTORY_SAFETY_PLAN.md` | 15 | 0 | `HISTORICAL` |
+| `docs/USB_CDC_ACM_CONSOLE_ACCEPTANCE_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/USB_CDC_ACM_CONSOLE_PLAN.md` | 7 | 0 | `HISTORICAL` |
+| `docs/USB_IDENTITY_POLICY.md` | 1 | 0 | `CURRENT_CORRECT` |
+| `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_ACCEPTANCE_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `docs/USB_MANAGEMENT_DEVICE_FOUNDATION_PLAN.md` | 10 | 0 | `HISTORICAL` |
+| `scripts/README.md` | 16 | 0 | `CURRENT_CORRECT` |
+
+**Adjudicated exceptions / pinpointed evidence:**
+
+- `CURRENT_DEBT`: `docs/CURRENT_STATE.md:36,90,108–140` duplicates long accepted histories; its line 140 now exceeds 5,900 characters after Gate-0 status advancement. Global-state role is constrained by `docs/DOCUMENTATION_MODEL.md:38–55`. The 37 distinct 40-hex Git IDs, 29 distinct 64-hex hashes and five evidence artifact names present in `CURRENT_STATE.md` all have at least one duplicate elsewhere among tracked Markdown sources; this supports lossless consolidation **only after** a per-fact review and retention of current device revision 5, product identity and precise pointers.
+- `CURRENT_DEBT`: `docs/DOCUMENTATION_MODEL.md:323–348` records the **correct historical** FDC-10 snapshot `90/30/33`; current frozen Gate-1 input has 110 docs Markdown / 40 acceptance / 43 other plans. Add a separate date/commit-scoped RDC-08 inventory, never erase FDC-10 history.
+- `CURRENT_DEBT`: `docs/BOOTLOADER_READABILITY_CLEANUP_PLAN.md:75` and `docs/BOOTLOADER_READABILITY_CLEANUP_ACCEPTANCE_PLAN.md:44` still say RDC-08 Gate-0 is needed. These were once correct at RDC-07 closure but now require an explicit **historical-at-closure** qualifier plus pointer to published Gate-0 `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2`, without reopening RDC-07. The still-unchecked RDC-08 box remains unchecked until the entire RDC item closes.
+- `HISTORICAL`: `docs/ARCHITECTURE.md:965,1033,1069` contains C3.9/C4.0 “planned” subsections **followed by** accepted records and is a chronology of the now-implemented heartbeat/watchdog. No feature or technical defect is implied; leave the accepted sections intact. `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md:155–170` expressly frames FDC closure statements as historical; do not reinterpret its earlier “feature selection” narrative as current RDC authorization.
+- All **30** open boxes are located in `docs/BOOTLOADER_READABILITY_CLEANUP_ACCEPTANCE_PLAN.md` (1 — RDC-08), `docs/MASTER_EXECUTION_CHECKLIST.md` (19 — 1 RDC-08 and 18 deferred UI/RTC/kernel-log work) and `docs/ROADMAP.md` (10 — 1 RDC-08, four deferred generic kernel services and five deferred networking tasks). Every box is classified; no additional active mandatory Gate is hidden.
+- All non-RDC-08 scoped completed plan/acceptance pairs are accepted historical records; matched active plan pairs are the RDC governance pair and RDC-08 pair. Unmatched plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`; lone unmatched acceptance: `OLED_CONSOLE_ACCEPTANCE_PLAN.md`. All five are historical, deferred or an explicitly documented semantic OLED pair, **not** orphan active work.
+- Relative Markdown link-resolution check found **zero unresolved links** among tracked Markdown inputs; referenced uppercase `.md` filenames also resolved to tracked docs/root paths. Host topology remains Windows-backed WSL DEUS-MCP view for Git, Mac-mini Ubuntu for native USB/normal VBUS, Windows for ST-LINK/UART.
+- `README.md`, `scripts/README.md`, stable protocols, Flash decision, deferred Host Management reference, `docs/ARCHITECTURE.md` and `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` show no newly proven present-tense conflict; therefore no blanket edits are authorized. Full source-code behavior, signed firmware bytes and physical STM32 were **not** retested at Gate-1.
+
+**Exact Gate-2 content-edit allowlist (frozen; no wildcard expansion):**
+
+1. `docs/CURRENT_STATE.md` — collapse documented historical duplication while preserving current firmware and source-of-truth pointers.
+2. `docs/DOCUMENTATION_MODEL.md` — add exact new dated inventory and RDC-08 active-plan pairing; retain the historical FDC-10 section.
+3. `docs/BOOTLOADER_READABILITY_CLEANUP_PLAN.md` — label its old “Gate-0 next” disposition historical.
+4. `docs/BOOTLOADER_READABILITY_CLEANUP_ACCEPTANCE_PLAN.md` — label the historical unchecked RDC-08 pointer while preserving RDC-07 PASS.
+5. `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` — record precise Gate-1/Gate-2 scope and eventual status.
+6. `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md` — Gate-2 execution/proof and eventual status.
+
+Only these six paths may receive **Gate-2 content changes**. Chronological `CHANGELOG.md` and current-status mirrors (`ROADMAP`, RDC program/checklist) are reserved for the separately controlled closure/adjudication publication, not an invitation for Gate-2 bulk rewrite. Any newly discovered true current defect outside this allowlist requires an explicit, reviewed Gate-1 scope amendment *before* writing that path.
+
+**Gate-1 read-only result:** all 113 Markdown files inspected; all unchecked boxes and active pairings classified; exact six-file Gate-2 scope frozen. `GATE-1 ACCEPTED/PUBLISHED` is **not** claimed until the actual Git publication/CI proof is recorded. No target, source, workflow, keys or Flash were touched.
 
 ## Gate 2 — scoped documentation reconciliation
 
