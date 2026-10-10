@@ -1,6 +1,6 @@
 # Deus OS — RDC-08 Residual Debt Documentation Closure Acceptance Plan
 
-Status: **GATE-0 PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` / GATE-1 PUBLISHED `c646f3e3ac342cbaef025d115e5be96bd49cf140` — GATE-2 CONTENT CANDIDATE UNDER VALIDATION; GATES 3–8 NOT STARTED**
+Status: **GATES 0–7 ACCEPTED/PUBLISHED — GATE-8 FINAL DOCS RELEASE / CI PREDICATE DETERMINES RDC-08 CLOSED vs OPEN**
 
 Canonical design: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md`
 
@@ -237,6 +237,14 @@ Only these six paths may receive **Gate-2 content changes**. Chronological `CHAN
 **PASS:** only after Gate-7 acceptance, synchronize `CURRENT_STATE`, `ROADMAP`, the RDC program/checklist, this acceptance record and chronology to record the verified conclusion. Review exact docs-only staged paths, `git diff --cached --check`, commit normally and publish through non-force fresh-fetch equality/clean `0/0`; confirm exact-SHA hosted CI success. At this point `RDC-08 CLOSED/PUBLISHED` and the entire RDC program closure are factual; any next product boundary still requires its **own** authorization.
 
 **FAIL:** claim of final closure before publication, source/tooling path change, or CI/poststate failure.
+
+### Gate-7 publication and Gate-8 final-release predicate
+
+**Gate-8 final-release predicate:** the RDC-08 and overarching RDC program are CLOSED/PUBLISHED **if and only if** this final docs-only Gate-8 commit is actually published by an ordinary non-force fast-forward, fresh fetch proves `HEAD == origin/main == FETCH_HEAD` with clean index/worktree and ahead/behind `0/0`, and GitHub-hosted CI on **that exact Gate-8 commit SHA** completes SUCCESS (Release 0 warnings/errors, Core >=84, Transport >=24, failed/skipped 0 and hygiene PASS). If any condition is unsatisfied, the program remains OPEN. The commit cannot truthfully embed its own future SHA or pre-assert the result of its hosted CI; Git/CI are the live evidence for this conditional status.
+
+**Gate-7 verified evidence:** exact 11-Markdown Gate-6 commit `faabfe75bbb3b805548092c9f298ac862c38ef1d` published by ordinary non-force push `c646f3e..faabfe7`, post-push independent `HEAD == origin/main == FETCH_HEAD == faabfe75bbb3b805548092c9f298ac862c38ef1d` clean `0/0`; GitHub Actions [run 38079050326](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079050326) exact-SHA SUCCESS, Release 0 warnings/errors, Core 84/84, Transport 24/24, zero failed/skipped, tracked 252 and non-vacuous hygiene PASS.
+
+**Gate-8 doc-only release candidate:** exact current source-of-truth/program/roadmap/checklist/acceptance/chronology reconciliation, no source/target changes. Final result must be adjudicated only from the future Git publish/fresh-fetch and hosted CI, not preclaimed in this text.
 
 ## Mandatory rejection and evidence discipline
 

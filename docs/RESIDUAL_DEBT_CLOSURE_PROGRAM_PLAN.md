@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01..07 CLOSED/PUBLISHED / RDC-08 GATE-0 `86abbc5` AND GATE-1 `c646f3e` PUBLISHED / GATES 2–5 DOCS CANDIDATE UNDER VALIDATION**
+Status: **RDC-01..07 CLOSED/PUBLISHED / RDC-08 GATES 0–7 PUBLISHED / FINAL PROGRAM EXIT CONDITIONAL ON GATE-8 EXACT-COMMIT CI + CLEAN FRESH FETCH**
 
 Program ID:
 
@@ -109,7 +109,7 @@ This boundary is **CLOSED/PUBLISHED (source commit `7846fa48429d00233116438821ac
 
 ### RDC-08 — Final documentation/source-of-truth debt sweep
 
-Gate-0 read-only audit/design scope was accepted and published docs-only at `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2`; exact-SHA hosted GitHub Actions run `38075603101` passed Core `84/84`, Transport `24/24`, zero failed/skipped and clean Release/hygiene. Canonical design and acceptance: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` and `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md`. **Gate-1 classification was accepted/published at `c646f3e3ac342cbaef025d115e5be96bd49cf140`; Gates 2–5 documentation/hygiene work is under independent candidate review. RDC-08 and the program remain OPEN until Gates 6–8 publish and verify their results.**
+Gate-0 design was published at `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2`; Gate-1 exhaustive 113-Markdown classification at `c646f3e3ac342cbaef025d115e5be96bd49cf140`; Gate-2–5 documentation/content/hygiene and Gate-6/7 exact docs-only candidate publication at `faabfe75bbb3b805548092c9f298ac862c38ef1d` passed hosted [run 38079050326](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079050326) on that exact SHA (Core 84/84, Transport 24/24, 0 failed/skipped, Release clean). Canonical plan/acceptance are `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` and `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md`. **The program reaches CLOSED/PUBLISHED if and only if Gate-8 final docs publication, post-push fresh-fetch clean equality and the Gate-8 commit's own hosted CI all pass. Before that external proof, the program remains OPEN.** All RDC-08 documentation debt identified by accepted audits has been classified and corrected in the released candidate; consumer-driven future work remains deferred.
 
 After RDC-01..07 close, perform one final repo-wide documentation/governance reconciliation:
 
