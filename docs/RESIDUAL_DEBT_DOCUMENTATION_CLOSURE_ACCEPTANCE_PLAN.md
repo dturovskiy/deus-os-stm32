@@ -1,6 +1,6 @@
 # Deus OS — RDC-08 Residual Debt Documentation Closure Acceptance Plan
 
-Status: **GATE-0 ACCEPTED / PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` — GATE-1 COMPLETE AUDIT / COMMIT AND CI PENDING; GATES 2–8 NOT STARTED**
+Status: **GATE-0 PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` / GATE-1 PUBLISHED `c646f3e3ac342cbaef025d115e5be96bd49cf140` — GATE-2 CONTENT CANDIDATE UNDER VALIDATION; GATES 3–8 NOT STARTED**
 
 Canonical design: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md`
 
@@ -186,7 +186,7 @@ Measured totals: 113 files, 2214 lexical matches (**broad matching, includes non
 
 Only these six paths may receive **Gate-2 content changes**. Chronological `CHANGELOG.md` and current-status mirrors (`ROADMAP`, RDC program/checklist) are reserved for the separately controlled closure/adjudication publication, not an invitation for Gate-2 bulk rewrite. Any newly discovered true current defect outside this allowlist requires an explicit, reviewed Gate-1 scope amendment *before* writing that path.
 
-**Gate-1 read-only result:** all 113 Markdown files inspected; all unchecked boxes and active pairings classified; exact six-file Gate-2 scope frozen. `GATE-1 ACCEPTED/PUBLISHED` is **not** claimed until the actual Git publication/CI proof is recorded. No target, source, workflow, keys or Flash were touched.
+**Gate-1 read-only result and ACCEPTED/PUBLISHED proof:** all 113 Markdown files inspected; all unchecked boxes and active pairings classified; exact six-file Gate-2 content allowlist frozen. Gate-1 matrix/local acceptance commit `c646f3e3ac342cbaef025d115e5be96bd49cf140` changed **only this acceptance Markdown path**, with staged whitespace PASS. Ordinary non-force fast-forward `5a9b803..c646f3e main -> main`; independent GitHub ref and fresh-fetch `HEAD == origin/main == FETCH_HEAD == c646f3e3ac342cbaef025d115e5be96bd49cf140`, clean worktree/index, ahead/behind `0/0`. Hosted GitHub Actions [run 38078396770](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38078396770) completed SUCCESS on exact SHA: Release zero warnings/errors, Core `84/84`, Transport `24/24`, failed/skipped `0/0`, tracked hygiene `252` and non-vacuous diff hygiene PASS. No target, source, workflow, keys or Flash were touched. **Gate-1 ACCEPTED/PUBLISHED; Gate-2 is authorized only within the above six-file scope.**
 
 ## Gate 2 — scoped documentation reconciliation
 
@@ -194,11 +194,15 @@ Only these six paths may receive **Gate-2 content changes**. Chronological `CHAN
 
 **FAIL:** losing a unique gate/evidence fact, rewriting accepted history, introducing a second global source of truth, changing a current product contract, or touching executable files.
 
+**Gate-2 exact candidate review — PASS (local documentation candidate, before Gate-6 commit):** six Gate-1-frozen content paths only: `CURRENT_STATE.md`, `DOCUMENTATION_MODEL.md`, the RDC-07 bootloader readability plan/acceptance pair and this RDC-08 plan/acceptance pair. `CURRENT_STATE.md` is reduced from 29,513 to 13,142 characters (55% less), with preserved named product boundary, accepted physical signed application revision 5, source tree, SHA-256, version floor, 72/72 post-CTR USB INFO hardware evidence, CH340 UART and operator `PHYSICAL_OLED=PASS`, current RDC-08 gating and canonical source map. All **30 removed** former 40-hex IDs, **27 removed** former 64-hex SHA-256 values and **five removed** evidence ZIP filename occurrences remain present in **other tracked Markdown records**; there are no uniquely orphaned SHA/evidence identifiers. The FDC-10 historical `90/30/33` snapshot is preserved, with separate exact `110/40/43` Gate-1 inventory at commit `c646f3e3ac342cbaef025d115e5be96bd49cf140`. RDC-07 Gate-0-now-outdated wording was explicitly historicized without reopening any Gate. No executable or target artifact changed.
+
 ## Gate 3 — independent source-of-truth and regression review
 
 **PASS:** independent reread/grep after Gate-2 produces a complete classification of all `[ ]`, `planned`, `next`, `active`, `future`, `deferred` and RDC/FDC status references. Confirm actual relative links and textual filename references, correct plan pairing and explicit supersession of historical claims. Review removed paragraphs against source documents; check no stale requirement reappears.
 
 **FAIL:** any unclassified current contradiction, unreferenced evidence loss, broken active contract reference, stale current gate or false `CLOSED/PUBLISHED` assertion.
+
+**Gate-3 independent cross-document review — PASS (local candidate):** re-read all 113 Markdown sources after candidate edits, no unread/truncated documents and **zero broken relative Markdown links**; validated current physical revision-5 identity, current Gate-2 disposition and one global current-state authority. The unchanged 30 unchecked lines remain classified: three RDC-08 mirror/pointer boxes, 18 deferred UI/RTC/kernel-log boxes, four future generic kernel-service boxes and five future networking boxes. Active RDC governance and RDC-08 pairs match by stem; the same historical/deferred four unmatched plans and one OLED semantic acceptance pair remain classified, not orphaned. C3.9/C4.0 `planned` headings and FDC historical chronology remain explicitly historical; no bulk rewrite or technical contract mutation. Candidate proof does not claim new hardware execution.
 
 ## Gate 4 — Git/artifact/security hygiene
 
@@ -206,11 +210,15 @@ Only these six paths may receive **Gate-2 content changes**. Chronological `CHAN
 
 **FAIL:** forbidden path, private key/credential match not safely adjudicated, tracked binary/evidence artifact, empty/vacuous check or any worktree/index drift.
 
+**Gate-4 hygiene review — PASS (local candidate):** the tracked Git-history path-name inventory spans 252 distinct paths and contains no prohibited build/firmware BIN/ELF/MAP/evidence ZIP/log/standalone key artifact type. Fresh current-tree scan covered 113 Markdown plus 139 other tracked text files; no PEM private-key header, recognizable GitHub/AWS/Slack/Stripe token pattern was found. This is **signature/path coverage only**, not an exhaustive secret-history-content, entropy or third-party credential inspection. `git diff --check` PASS; `.gitignore`, `.gitattributes`, Git policy, firmware, bootloader, Host, tests, script/CI paths and physical target remain unchanged. No hazardous output deletion, USB/VBUS switching, SWD or Flash access occurred.
+
 ## Gate 5 — RDC program closure readiness
 
 **PASS:** RDC-01..07 remain historical CLOSED/PUBLISHED; RDC-08 candidate passes Gate 1–4; no unclassified confirmed current technical/tooling/documentation debt; deferred ideas stay deferred; `CURRENT_STATE`/roadmap/program/checklist/changelog are consistent about the *pending publication* until Gate 8 actually passes. Product features remain unpromoted.
 
 **FAIL:** premature claim that RDC-08 or program is CLOSED before commit/push/CI, or automatic feature activation.
+
+**Gate-5 closure-readiness review — PASS / PROGRAM STILL OPEN:** exact current candidate changed-path set is **11 Markdown paths**: six Gate-1-frozen Gate-2 content paths and five separately identified **Gate-5 status/chronology mirrors** (`CHANGELOG.md`, `docs/ROADMAP.md`, `docs/MASTER_EXECUTION_CHECKLIST.md`, `docs/RESIDUAL_DEBT_CLOSURE_PROGRAM_PLAN.md`, `docs/RESIDUAL_DEBT_CLOSURE_PROGRAM_ACCEPTANCE_PLAN.md`). Status mirrors correct the previously current `Gate-1 NEXT` wording without claiming Gate-7/Gate-8 publication already happened. `RDC-01..07` remain CLOSED/PUBLISHED, `RDC-08` stays OPEN, deferred consumer ideas remain unpromoted and no new feature is chosen. No new confirmed, unclassified current technical/tooling/documentation blocker emerged in this scoped read-only/code-and-document audit. Branch protection/rulesets remain an operator-configurable governance enhancement unless a required policy exists; absent such policy they are **not automatically a firmware defect**. Gate-5 approval authorizes only exact docs-only Gate-6 staging/commit, **not** treating the entire RDC program as complete.
 
 ## Gate 6 — normal docs-only acceptance commit
 

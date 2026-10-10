@@ -150,6 +150,8 @@ New active boundaries must use dedicated canonical plans instead.
 - `CURRENT_STATE.md` — **sole current-state authority**
 - `DOCUMENTATION_MODEL.md` — **documentation-role/precedence governance (this file)**
 
+Active scoped RDC-08 work is governed by `RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` and `RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md`; this is a maintenance contract, **not** a second global current-state authority or a new product feature.
+
 ### B. Stable global contracts
 
 - `ARCHITECTURE.md` — architecture/invariants
@@ -346,3 +348,11 @@ Live documentation inventory at FDC-10 final reconciliation:
 - no new product feature boundary is currently active. All `FDC-01..FDC-10` foundational obligations are closed, but `RESIDUAL_DEBT_CLOSURE_PROGRAM` is now the mandatory current maintenance sequence; future service/Web/network work remains blocked until RDC-01..RDC-08 close and is then separately promoted.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.
+
+### RDC-08 Gate-1 snapshot — 2026-10-10 (frozen input `c646f3e3ac342cbaef025d115e5be96bd49cf140`)
+
+- `git ls-files` at the published Gate-1 inventory commit: **252 tracked files**, **113 Markdown files** in total, of which **110 are in `docs/`** and three are `README.md`, `CHANGELOG.md`, `scripts/README.md`.
+- `docs/` contains **40 `*_ACCEPTANCE_PLAN.md`** and **43 other `*_PLAN.md`** files. Exactly **four plan names** have no same-stem acceptance: `IMPLEMENTATION_PLAN.md` (historical umbrella), `OLED_CONSOLE_IMPLEMENTATION_PLAN.md` (historically paired by meaning with `OLED_CONSOLE_ACCEPTANCE_PLAN.md`), `OLED_STATUS_BAR_PLAN.md` and `OLED_UI_LAYOUT_PLAN.md` (deferred UI proposals). The only unmatched same-stem acceptance filename is `OLED_CONSOLE_ACCEPTANCE_PLAN.md`. **No active orphan plan or acceptance exists.**
+- Active maintenance pair: `RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` / `_ACCEPTANCE_PLAN.md` (RDC-08 Gate-0 published, Gate-1 classification accepted). The residual-debt *program* pair remains active governance; all other completed/published pairs remain scoped historical contracts or expressly deferred proposals.
+- The exhaustive path-linked 113-source classification table and all **30** still-open checkbox entries are recorded in `RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md` (Gate-1). Its findings are **audit evidence at the stated Git commit**, not an instruction to treat counts as timeless live facts.
+- The FDC-10 `90/30/33` figures above are deliberately preserved as valid historical audit provenance rather than overwritten by the new snapshot.

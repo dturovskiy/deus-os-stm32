@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01..07 CLOSED/PUBLISHED / RDC-08 GATE-0 ACCEPTED/PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` / GATE-1 NEXT**
+Status: **ACTIVE — RDC-01..07 CLOSED/PUBLISHED / RDC-08 GATE-0 `86abbc5` AND GATE-1 `c646f3e` PUBLISHED / GATES 2–5 DOCS CANDIDATE UNDER VALIDATION**
 
 Program ID:
 
@@ -109,7 +109,7 @@ This boundary is **CLOSED/PUBLISHED (source commit `7846fa48429d00233116438821ac
 
 ### RDC-08 — Final documentation/source-of-truth debt sweep
 
-Gate-0 read-only audit/design scope was accepted and published docs-only at `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2`; exact-SHA hosted GitHub Actions run `38075603101` passed Core `84/84`, Transport `24/24`, zero failed/skipped and clean Release/hygiene. Canonical design and acceptance: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` and `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md`. **Gate-1 full claim classification is next; RDC-08 and the RDC program are not yet complete.**
+Gate-0 read-only audit/design scope was accepted and published docs-only at `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2`; exact-SHA hosted GitHub Actions run `38075603101` passed Core `84/84`, Transport `24/24`, zero failed/skipped and clean Release/hygiene. Canonical design and acceptance: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` and `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md`. **Gate-1 classification was accepted/published at `c646f3e3ac342cbaef025d115e5be96bd49cf140`; Gates 2–5 documentation/hygiene work is under independent candidate review. RDC-08 and the program remain OPEN until Gates 6–8 publish and verify their results.**
 
 After RDC-01..07 close, perform one final repo-wide documentation/governance reconciliation:
 
