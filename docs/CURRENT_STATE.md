@@ -62,6 +62,8 @@ RDC-07 bootloader readability normalization is CLOSED/PUBLISHED at `7846fa48429d
 
 Host-management presentation remains a non-authorizing future design (`docs/HOST_MANAGEMENT_PRESENTATION_MODEL.md`). **Product-feature selection becomes eligible only upon independently verified RDC-08 Gate-8 closure;** until that proof it remains blocked. Even after program closure, no Host Management Service, Web, networking or other feature is active without its own canonical plan/acceptance and a new explicit promotion. The last published product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`.
 
+**Next explicitly selected maintenance direction: `PUBLIC_REPOSITORY_SANITIZATION` Gate-0 design/publication, followed by Gate-1 public/private exposure classification only after independently accepted Gate-0 CI.** Existing FDC/RDC hygiene checked obvious build/secret artifact classes and documentation drift; it did *not* authorize moving private operator/evidence material, rewriting Git history or changing GitHub visibility. New bounded contracts: `docs/PUBLIC_REPOSITORY_SANITIZATION_PLAN.md` and `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md`. Until their Gate-0 publication proof succeeds this is a **planning candidate**, not accepted sanitization. No source/target/Flash/key or repo-history mutation is authorized.
+
 ## 5. Current development/acceptance topology
 
 Canonical topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.

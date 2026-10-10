@@ -297,6 +297,10 @@ Canonical program: `docs/RESIDUAL_DEBT_CLOSURE_PROGRAM_PLAN.md` + `_ACCEPTANCE_P
 Consumer-driven future capabilities (generic timers/queues, DMA, filesystem, low-power, networking, richer observability, etc.) are not silently promoted by this program merely because they are deferred.
 
 
+## Priority maintenance after RDC-08 — public repository sanitization
+
+- [ ] `PUBLIC_REPOSITORY_SANITIZATION` — **Gate-0 docs-only design candidate, not yet accepted or implemented**. Audit 252 tracked paths, historical Git contents and GitHub publication surfaces; classify `PUBLIC / REDACT / PRIVATE / RETAIN`, preserve private evidence/source-of-truth first, then choose a public migration strategy with explicit approval before any destructive action. Canonical pair: `docs/PUBLIC_REPOSITORY_SANITIZATION_PLAN.md` + `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md`. This is a release/privacy maintenance direction, **not** a reopened RDC debt or automatic activation of Web/network/source features.
+
 ## Host management presentation evolution — future / residual-debt prerequisites not yet satisfied
 
 The accepted Host Control foundation already provides one transport-neutral Core with CLI + Avalonia presentation. Forward presentation policy is:
