@@ -299,7 +299,7 @@ Consumer-driven future capabilities (generic timers/queues, DMA, filesystem, low
 
 ## Priority maintenance after RDC-08 — public repository sanitization
 
-- [ ] `PUBLIC_REPOSITORY_SANITIZATION` — **Gate-0 docs-only design candidate, not yet accepted or implemented**. Audit 252 tracked paths, historical Git contents and GitHub publication surfaces; classify `PUBLIC / REDACT / PRIVATE / RETAIN`, preserve private evidence/source-of-truth first, then choose a public migration strategy with explicit approval before any destructive action. Canonical pair: `docs/PUBLIC_REPOSITORY_SANITIZATION_PLAN.md` + `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md`. This is a release/privacy maintenance direction, **not** a reopened RDC debt or automatic activation of Web/network/source features.
+- [ ] `PUBLIC_REPOSITORY_SANITIZATION` — **Gate-0 design ACCEPTED/PUBLISHED `558306fe618d1ee69240fa11d24437cd38fb8e2b`, exact-SHA hosted CI 38080940176 SUCCESS; Gate-1 read-only classification NEXT, no files sanitized**. Audit 252 tracked paths, historical Git contents and GitHub publication surfaces; classify `PUBLIC / REDACT / PRIVATE / RETAIN`, preserve private evidence/source-of-truth first, then choose a public migration strategy with explicit approval before any destructive action. Canonical pair: `docs/PUBLIC_REPOSITORY_SANITIZATION_PLAN.md` + `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md`. This is a release/privacy maintenance direction, **not** a reopened RDC debt or automatic activation of Web/network/source features.
 
 ## Host management presentation evolution — future / residual-debt prerequisites not yet satisfied
 

@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Sanitization Acceptance Plan
 
-Status: **GATE-0 DOCS-ONLY DESIGN CANDIDATE / PUBLICATION AND EXACT-COMMIT CI PENDING — GATES 1–7 NOT STARTED**
+Status: **GATE-0 ACCEPTED/PUBLISHED `558306fe618d1ee69240fa11d24437cd38fb8e2b` — GATE-1 ANALYSIS NEXT, GATES 2–7 NOT STARTED**
 
 Design owner: `docs/PUBLIC_REPOSITORY_SANITIZATION_PLAN.md`
 
@@ -27,7 +27,7 @@ Read-only source verification at design start:
 5. Normal local docs-only commit, exact staged path set, fresh expected remote parent, ordinary **non-force** push, independently fresh-fetched `HEAD == origin/main == FETCH_HEAD`, clean `0/0`.
 6. Exact GitHub-published SHA hosted CI SUCCESS: locked Release 0 warnings/errors, Core `>=84`, Transport `>=24`, 0 failed/skipped, non-vacuous diff/tracked-output hygiene PASS. GitHub Host CI is not privacy-completeness proof, nor ARM/firmware/hardware test.
 
-**Gate-0 result remains PENDING** until independent publication/CI proof. It authorizes **Gate-1 analysis only**. It does **not** authorize public deletions, archive moves, Git rewrite, GitHub visibility/fork action, security key rotation or target access.
+**Gate-0 result — ACCEPTED/PUBLISHED (2026-10-10):** verified clean baseline `c309428b03615a9afd514e3c7c8886a82a5112e9`, six exact staged Markdown paths (two new sanitation plans and four existing state/index/roadmap/changelog references), `git diff --cached --check` PASS and full nontruncated candidate patch reviewed. Normal docs-only commit `558306fe618d1ee69240fa11d24437cd38fb8e2b`; ordinary non-force push `c309428..558306f main -> main`; independent GitHub ref and fresh-fetch `HEAD == origin/main == FETCH_HEAD == 558306fe618d1ee69240fa11d24437cd38fb8e2b`, clean index/worktree, ahead/behind `0/0`. GitHub Actions [run 38080940176](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38080940176) on the **same exact SHA** completed SUCCESS: locked Release `0 warnings/0 errors`, Core `84/84`, Transport `24/24`, failed/skipped `0/0`, tracked output hygiene `254` PASS and non-vacuous whitespace check PASS. No source/firmware/CI/Flash/key/target/remote-visibility or history modification. **Only Gate-1 analysis is authorized; no public deletions, archive moves, Git rewrite, GitHub visibility/fork action, key rotation or target access are authorized.**
 
 ## 1. Comprehensive exposure/source matrix
 
