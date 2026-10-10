@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01..05 CLOSED/PUBLISHED / RDC-06 GATE-0 AUDIT NEXT**
+Status: **ACTIVE — RDC-01..06 CLOSED/PUBLISHED / RDC-07 GATE-0 AUDIT NEXT**
 
 Program ID:
 
@@ -95,7 +95,7 @@ Required boundary:
 
 `KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP`
 
-Gate 0 must first re-audit current responsibilities and may reduce/reshape scope if some concentration is demonstrated to be intentional composition-root ownership rather than debt.
+Gate 0 was required to re-audit current responsibilities and to reduce/reshape scope if concentration proved intentional rather than debt. **RDC-06 is CLOSED/PUBLISHED**: the original `schedprod` extraction was rejected for a measured stack regression, followed by a separately published Gate-0 Amendment A authorizing the coherent three-file `help`/registry presentation move. Accepted implementation commit `7bc5f27ce3447f0c907d2643e7db67669371210a` has exact approved source tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`, physically deployed as authenticated application firmware revision 5. Its Gate-3 final acceptance binds full Flash readback, USB/RPC/scheduler/IWDG/Windows UART and `PHYSICAL_OLED=PASS` (evidence SHA-256 `F38EFC5697A26E93B7381B3ACE5DEE225CE826053B4C2B68C5F08279EEBF13AD`). The independent USB EPnR CTR race fix, excluded from the three-file cleanup commit, is published at `83e57f609bab4bcc8a61ea2222629bf9066e910d` and hardware-tested with 72/72 INFO responses and a successful signed v5 update. GitHub CI on the final source commit `83e57f6`, run `38011195238`, passed executed Core 84/84 and Transport 24/24, zero skips, Release clean. Existing root platform/interrupt/console transport and UI integration responsibilities remain intentionally root-owned in this accepted scope; further UI/console decomposition requires a separately demonstrated consumer or debt and is not silently authorized. **RDC-07 is next for Gate-0 audit/design; RDC-08 remains queued.**
 
 ### RDC-07 — Bootloader readability / maintainability normalization
 

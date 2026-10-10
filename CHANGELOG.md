@@ -1,3 +1,15 @@
+## 2026-10-10
+
+### RDC-06 kernel composition-root final cleanup — ACCEPTED / PUBLISHED
+
+Gate-0 Amendment A, already published at `3925e1d1e0a30e49c0694f746c5bbd3d7912d81c`, rejected the earlier `schedprod` ownership cut for its measured stack regression and confined the accepted replacement to `help`/command-registry presentation. Exactly three authorized source/header paths changed. Local acceptance commit `7bc5f27ce3447f0c907d2643e7db67669371210a` has Git tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`, matching the exact firmware source candidate. The original `schedprod` regression remains explicitly rejected.
+
+During authenticated hardware Gate-3 acceptance, a reproducible STM32F103 USB EPnR rc_w0 CTR-event loss was found and independently corrected. The single-file bootloader behavior repair was committed separately as `83e57f609bab4bcc8a61ea2222629bf9066e910d`, not mixed into the three-file cleanup scope. Production key-bearing bootloader replacement passed targeted Flash pages 0–7 program/verify and independent full-Flash readback; the post-repair bootloader INFO matrix passed all 72 paced/burst requests with no timeouts. The previously signed application candidate revision 5 was then successfully installed by authenticated USB protocol. Full SWD readback proved the expected 52,012-byte application SHA-256 `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210`, authenticated version floor 5 and unchanged bootloader/persistence ownership.
+
+Post-update USB/RPC/`help`/application/scheduler/IWDG runtime acceptance passed. The separately uploaded Windows CH340 UART log proves `COM3`, `115200 8N1`, `help help` descriptor and 36-command `help` catalog; the operator explicitly confirmed `PHYSICAL_OLED=PASS`. Gate-3 evidence-only final acceptance collation SHA-256 `F38EFC5697A26E93B7381B3ACE5DEE225CE826053B4C2B68C5F08279EEBF13AD`.
+
+Both code commits were published by normal non-force fast-forward. Fresh fetch proved clean `HEAD == origin/main == FETCH_HEAD == 83e57f609bab4bcc8a61ea2222629bf9066e910d`, ahead/behind `0/0`. Exact-commit GitHub Actions [run 38011195238](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38011195238) completed success with warning/error-clean Host Release build, Core `84/84`, Transport `24/24`, failed/skipped `0/0`. No key, application image, raw Flash dump or local evidence bundle entered source control. The separately reconciled documentation records RDC-06 closure and activates RDC-07 Gate-0 audit/design as the next mandatory maintenance boundary; RDC-08 remains queued and new product features stay blocked.
+
 ## 2026-10-08
 
 ### RDC-04 Tooling Output Directory Safety — CLOSED / PUBLISHED `7fda7b8225f05c487f6d5d7154443e8369e74571`

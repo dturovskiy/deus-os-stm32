@@ -1,6 +1,6 @@
 # Deus OS — Kernel Composition Root Final Cleanup Plan
 
-Status: **RDC-06 GATE-0 AMENDMENT A CONTRACT — REVISED SOURCE SCOPE EFFECTIVE ONLY AFTER ACCEPTED NON-FORCE PUBLICATION**
+Status: **RDC-06 CLOSED / PUBLISHED — implementation `7bc5f27ce3447f0c907d2643e7db67669371210a`; historical Gate-0 Amendment A preserved below**
 
 Boundary: `KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP` (RDC-06)
 Published source baseline: `a27e08800b87eaa5574a4fe3aa88da0ec5b004c2`
@@ -94,4 +94,15 @@ Remaining `kernel.c` console/OLED coupling is **not** silently declared closed b
 
 ### 6.4. Publication lock
 
-This appendix and the paired acceptance amendment are **docs-only draft WIP** until staged exactly as two documentation paths, reviewed and accepted, committed normally and published non-force. The original Gate-0 commit remains unchanged. No new `help` source change or firmware/target action is authorized until the amendment's exact commit is independently proven on `origin/main` with clean `0/0`.
+**Historical Gate-0 precondition (subsequently satisfied):** this amendment and its acceptance pair required a separate docs-only normal commit and non-force publication before `help` source mutation. That requirement was satisfied by published commit `3925e1d1e0a30e49c0694f746c5bbd3d7912d81c`. The subsequent exactly scoped implementation was accepted in `7bc5f27ce3447f0c907d2643e7db67669371210a`, and the unrelated bootloader EPnR correction was committed separately at `83e57f609bab4bcc8a61ea2222629bf9066e910d`. Historical original Gate-0 `schedprod` rejection remains valid.
+
+
+## 7. Final RDC-06 disposition — 2026-10-10
+
+RDC-06 is **CLOSED/PUBLISHED** by the exactly scoped three-path `help` ownership change, commit `7bc5f27ce3447f0c907d2643e7db67669371210a`, tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`. The original snapshot-based `schedprod` experiment stays **REJECTED** for a measured static stack regression; it was not silently accepted or revived. The Gate-0 Amendment A contract was published beforehand at `3925e1d1e0a30e49c0694f746c5bbd3d7912d81c`.
+
+The final Gate-3 hardware acceptance (evidence-only collation SHA-256 `F38EFC5697A26E93B7381B3ACE5DEE225CE826053B4C2B68C5F08279EEBF13AD`) binds the actual revision-5 signed USB deployment and whole-Flash readback to the accepted application SHA-256 `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210`, the correct `help` command catalog (36 items), USB/RPC/application/scheduler/IWDG, Windows CH340 UART `COM3` at `115200 8N1`, and explicit operator `PHYSICAL_OLED=PASS`. The single-file USB EPnR CTR event-preservation repair was intentionally **not** staged with the three-file RDC-06 commit; it was independently committed as `83e57f609bab4bcc8a61ea2222629bf9066e910d`, after on-chip targeted Flash verification, 72/72 real INFO USB regression and a successful signed application update.
+
+Normal non-force publication and fresh fetch proved `HEAD == origin/main == FETCH_HEAD == 83e57f609bab4bcc8a61ea2222629bf9066e910d` with clean index/worktree, ahead/behind `0/0`. Hosted GitHub CI run `38011195238` on that exact SHA completed success: Core `84/84`, Transport `24/24`, zero failed/skipped, Release `0 warnings / 0 errors`. No key, raw Flash, application binary, test ZIP or other private operator artifact was committed.
+
+**Remaining ownership classification:** the composition root retains its natural MCU boot/IRQ/exception and production task integration, UART/CDC command dispatch, platform telemetry binding and OLED/UI composition. The bounded `help` presentation move closed the concrete command-registry ownership debt without transferring private runtime state. A hypothetical larger UI/console extraction has no approved current source scope; it remains conditional on new reproducible ownership/consumer evidence, not a hidden incomplete RDC-06 gate. Next canonical maintenance boundary is **RDC-07 Gate-0**, followed by RDC-08. New product features remain blocked.

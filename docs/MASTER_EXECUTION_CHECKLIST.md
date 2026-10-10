@@ -114,7 +114,7 @@ The FDC program is complete, but a subsequent audit found additional confirmed c
 - [x] **RDC-03 — Target dead API cleanup — CLOSED/PUBLISHED `e516fdc1d8818007db40ee12669d28f3f828c489`; Gate-2 deterministic equivalence + exact-candidate Gate-3 hardware/runtime PASS, `PHYSICAL_OLED=PASS`.**
 - [x] **RDC-04 — repository PowerShell destructive-output safety — CLOSED/PUBLISHED `7fda7b8225f05c487f6d5d7154443e8369e74571`; Gate 1 implementation, Gate 2A 27/27, Gate 2B deterministic firmware/recovery, Gate 2C documentation, Gate 3 ten-path local commit and Gate 4 ordinary non-force publication/fresh fetch PASS.**
 - [x] **RDC-05 — minimal deterministic CI baseline — CLOSED/PUBLISHED `7f75cffdd0c632c5f99310f2c8708d745769aa42`; hosted run `37829541187` PASS, .NET Release 0 warnings/errors, Core 84/84, Transport 24/24, no bench I/O.**
-- [ ] **RDC-06 — remaining kernel composition-root ownership cleanup.**
+- [x] **RDC-06 — CLOSED/PUBLISHED `7bc5f27ce3447f0c907d2643e7db67669371210a`** — exact three-file `help` ownership cut; candidate tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`; signed app revision 5/readback, USB/RPC/scheduler/IWDG, Windows CH340 `help`, `PHYSICAL_OLED=PASS`; separate hardware-proven bootloader EPnR fix at `83e57f609bab4bcc8a61ea2222629bf9066e910d`; clean non-force publication/fresh fetch and CI `38011195238` PASS (Core 84/84, Transport 24/24, skips 0).**
 - [ ] **RDC-07 — bootloader readability/maintainability normalization.**
 - [ ] **RDC-08 — final documentation/source-of-truth debt sweep.**
 

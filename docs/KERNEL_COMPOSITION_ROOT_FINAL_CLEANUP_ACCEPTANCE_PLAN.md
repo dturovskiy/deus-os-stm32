@@ -1,6 +1,6 @@
 # Deus OS — Kernel Composition Root Final Cleanup Acceptance Plan
 
-Status: **RDC-06 GATE-0 AMENDMENT A ACCEPTANCE CONTRACT — PUBLICATION REQUIRED BEFORE GATE-1**
+Status: **RDC-06 CLOSED / PUBLISHED — all Gate-0..5 requirements accepted; historical Amendment A contract preserved below**
 
 Boundary: `KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP`
 Design: `docs/KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP_PLAN.md`
@@ -70,4 +70,15 @@ The published original `schedprod` Gate-0 contract at `5373838906122692bd4a5d804
 
 **Gate-4/5:** exact acceptance commit, ordinary non-force push and fresh fetch; hosted GitHub CI Core >=84/84 and Transport >=24/24 on the published SHA; reconcile `CURRENT_STATE`, residual-debt ledger, roadmap and checklists before claiming RDC-06 closure. Other composition-root concentration remains a documented open classification until explicitly accepted.
 
-**Gate-0 amendment exit:** locally validate and review exactly these two docs-only WIP files, then one local documentation commit and separate non-force publication with `HEAD == origin/main == FETCH_HEAD`, clean index/worktree, ahead/behind `0/0`. Until then, **do not mutate the new source scope**.
+**Gate-0 amendment exit (satisfied historically):** the two-doc amendment was accepted/published non-force at `3925e1d1e0a30e49c0694f746c5bbd3d7912d81c` before the exactly scoped `help` implementation. The original `schedprod` attempt remained a rejected engineering cut; no wider diagnostic extraction was accepted.
+
+
+## Final Gate-3, Gate-4 and Gate-5 adjudication — 2026-10-10
+
+- **Gate-0:** amended `help`-scope plan pair accepted and published at `3925e1d1e0a30e49c0694f746c5bbd3d7912d81c`; original `schedprod` static stack regression remains an engineering rejection.
+- **Gate-1/2:** the authorized source change is exactly `include/kernel/command_service.h`, `src/kernel.c`, `src/kernel/command_service.c`. The independently built accepted application candidate source tree is `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`, firmware payload SHA-256 `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210`.
+- **Gate-3:** real device revision `5` authenticated through signed USB update and verified by full HOTPLUG Flash readback, metadata floor `5`, preserved bootloader and persistence, post-update USB runtime/RPC/`help`/scheduler/IWDG. Separately uploaded operator UART log SHA-256 `04F7B7FA207B5A7B547038DFACBB97E82B0B6655EF4F443FF5CE8B8EAC67F406`: CH340 `COM3`, `115200 8N1`, exact `HELP_METHOD=help CLASS=SAFE MIN_ARGS=0x00000000 MAX_ARGS=0x00000001` and all 36 methods. Explicit operator `PHYSICAL_OLED=PASS`. Final evidence-only adjudication SHA-256 `F38EFC5697A26E93B7381B3ACE5DEE225CE826053B4C2B68C5F08279EEBF13AD` contains the original accepted native evidence without exporting keys or raw Flash.
+- **Gate-4:** exactly three source paths in local acceptance commit `7bc5f27ce3447f0c907d2643e7db67669371210a`, whose Git tree equals **exactly** accepted candidate tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`. The separately accepted one-file STM32F103 EPnR rc_w0 race repair is an independent follow-on commit `83e57f609bab4bcc8a61ea2222629bf9066e910d`; it is not claimed as an RDC-06 command-service path.
+- **Gate-5:** two ordinary non-force fast-forward commits to GitHub; fresh fetch confirmed `HEAD == origin/main == FETCH_HEAD == 83e57f609bab4bcc8a61ea2222629bf9066e910d`, clean worktree/index, ahead/behind `0/0`. GitHub Actions [run 38011195238](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38011195238) on that exact SHA completed **success**, Release `0 warnings / 0 errors`, executed Core `84/84`, Transport `24/24`, zero failed/skipped. This docs-only addendum reconciles the canonical source-of-truth records; docs publication is subject to its own clean post-push fetch/CI verification.
+
+**Final scoped result: RDC-06 implementation and physical Gate-3 acceptance PASS; code publication PASS.** The original `schedprod` cut stays rejected. Remaining root integration responsibilities are documented as intentional or consumer-triggered, not silently extracted or promoted. Gate-0 audit for RDC-07 is next; no new product features or unrelated Flash operations are authorized.
