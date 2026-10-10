@@ -495,7 +495,8 @@ static void usb_pma_write16(uint16_t off,uint16_t v){REG16(USB_PMA_BASE+((uint32
 static uint16_t usb_pma_read16(uint16_t off){return REG16(USB_PMA_BASE+((uint32_t)off*2u));}
 static void usb_pma_write(uint16_t off,const uint8_t *src,uint16_t n){uint16_t i;for(i=0u;i<n;i=(uint16_t)(i+2u)){uint16_t w=src[i];if((uint16_t)(i+1u)<n)w|=(uint16_t)((uint16_t)src[i+1u]<<8);usb_pma_write16((uint16_t)(off+i),w);}}
 static void usb_pma_read(uint16_t off,uint8_t *dst,uint16_t n){uint16_t i;for(i=0u;i<n;i=(uint16_t)(i+2u)){uint16_t w=usb_pma_read16((uint16_t)(off+i));dst[i]=(uint8_t)w;if((uint16_t)(i+1u)<n)dst[i+1u]=(uint8_t)(w>>8);}}
-static uint16_t ep_invariant(uint16_t v){return (uint16_t)(v&(USB_EP_CTR_RX|USB_EP_TYPE_MASK|USB_EP_KIND|USB_EP_CTR_TX|USB_EP_EA_MASK));}
+/* STM32F103 EPnR CTR flags are rc_w0: write 1 to preserve pending/new events. */
+static uint16_t ep_invariant(uint16_t v){return (uint16_t)((v&(USB_EP_TYPE_MASK|USB_EP_KIND|USB_EP_EA_MASK))|USB_EP_CTR_RX|USB_EP_CTR_TX);}
 static void ep_set_tx(uint8_t ep,uint16_t st){uint16_t c=USB_EP_REG(ep),w=ep_invariant(c);w|=(uint16_t)((c^st)&USB_EP_STAT_TX_MASK);USB_EP_REG(ep)=w;}
 static void ep_set_rx(uint8_t ep,uint16_t st){uint16_t c=USB_EP_REG(ep),w=ep_invariant(c);w|=(uint16_t)((c^st)&USB_EP_STAT_RX_MASK);USB_EP_REG(ep)=w;}
 static void ep_clear_ctr_rx(uint8_t ep){uint16_t c=USB_EP_REG(ep),w=ep_invariant(c);w&=(uint16_t)~USB_EP_CTR_RX;USB_EP_REG(ep)=w;}
