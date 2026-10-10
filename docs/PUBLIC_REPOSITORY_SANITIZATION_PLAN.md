@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Sanitization Plan
 
-Status: **GATE-0 DESIGN ACCEPTED/PUBLISHED `558306fe618d1ee69240fa11d24437cd38fb8e2b` (EXACT-SHA CI SUCCESS) — GATE-1 INVENTORY NEXT; NO SANITIZATION AUTHORIZED**
+Status: **GATE-0 DESIGN ACCEPTED/PUBLISHED `558306fe618d1ee69240fa11d24437cd38fb8e2b` (EXACT-SHA CI SUCCESS) — GATE-1 IN PROGRESS / GATE-1A PUBLISHED / FINAL ACCEPTANCE OPEN; NO SANITIZATION AUTHORIZED**
 
 Boundary: `PUBLIC_REPOSITORY_SANITIZATION`
 
@@ -152,6 +152,10 @@ A subsequent approved **read-only Gate-1 audit** started on the independently cl
 - `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_DEPENDENCIES.md` — static exact-basename cross-reference coverage over **all 254 baseline tracked file contents**, including 115 Markdown files and 9 PowerShell scripts; reference counts are not build/call-graph proof.
 
 **Gate-1 status: PARTIAL / OPEN.** First-pass file inspection and bounded GitHub coverage do not authorize archive creation, public source/doc deletion, history rewrite or a migration strategy. Before Gate-1 final acceptance, resolve 49 `RETAIN` owners, review 49 `PRIVATE` proposals and exact link/build/recovery dependencies, obtain full historical content/hosting coverage or explicitly adjudicate its limitations, and establish a safe private findings sink where actually sensitive evidence is needed. The frozen baseline counts exclude the new audit files; a future accepted pass must re-snapshot `HEAD`.
+
+## 9. Independent Gate-1A re-audit and interpretation correction
+
+An independent 257-file current-tree recheck, frozen 254-row matrix arithmetic review, historical/GitHub scope revalidation and dependency-citation semantics correction are documented in `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_INDEPENDENT_REAUDIT.md`. In particular, **115/115 Markdown basenames mentioned elsewhere is not proof of 115 active consumers**; 20 baseline Markdown documents were cited only by seven governance/ledger documents under the stated exclusion. The original 254-row baseline remains immutable; **Gate-1B and parent Gate-1 remain OPEN**. This addendum only documents the re-audit and authorizes no source/archive/history action.
 
 ## 9. Next permitted action
 

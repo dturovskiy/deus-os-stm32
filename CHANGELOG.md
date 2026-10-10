@@ -1,5 +1,9 @@
 ## 2026-10-10
 
+### Public Repository Sanitization — independent Gate-1A re-audit
+
+A read-only independent recheck confirmed the frozen 254-row matrix counts and verified the subsequent 257-path current tree, while identifying an interpretive flaw: **115/115 Markdown names cited elsewhere is not 115 functional dependencies**. Excluding seven governance/ledger documents, **20 of the 115 baseline Markdown sources were cited only within that excluded group**. `PUBLIC_REPOSITORY_SANITIZATION_GATE1_INDEPENDENT_REAUDIT.md` records the methodology, signature-scan limits and unresolved full-history/hosting/dependency coverage. Corrected the cited-count interpretation, stale Gate-1 NEXT status labels and checklist nesting in a docs-only reconciliation. **Gate-1 final acceptance remains OPEN**; no public file deletion, private archive creation, Git rewrite, source/target mutation or security clearance is claimed.
+
 ### Public Repository Sanitization — Gate-1A audit snapshot PUBLISHED `536fcac17cf854fb33cf2fcbf693623ff57ecd6a`
 
 The read-only ten-Markdown Gate-1A candidate (including three scoped evidence files) was normally committed and pushed non-force. Fresh fetch proved `HEAD == origin/main == FETCH_HEAD == 536fcac17cf854fb33cf2fcbf693623ff57ecd6a` clean `0/0`. Hosted exact-commit [CI 38084119171](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38084119171) SUCCESS: Release zero warnings/errors, Core 84/84, Transport 24/24, zero failed/skipped, 257 tracked paths hygiene PASS. **This accepts only a bounded current-tree audit snapshot; Gate-1 final acceptance is OPEN with unresolved `RETAIN`, history/cloud proof limitations.** No source/target/data sanitization or repository-history operation.

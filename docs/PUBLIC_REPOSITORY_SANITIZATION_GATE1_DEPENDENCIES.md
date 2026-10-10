@@ -7,9 +7,13 @@ Frozen baseline `6781926af2dcbe02216ddb4f6da0272ffbb72f8f`: all **254/254 tracke
 ## Summary
 
 - Total tracked Markdown documents: **115**; documents with at least one other-file exact-basename reference: **115**; without a found textual reference: **0**. Absence of a citation **does not** authorize deleting a file.
-- Existing internal/acceptance **preservation candidates referenced by other files**: **50/50**. Any `PRIVATE` archive move must restore these links or provide a public-safe summary/pointer, with actual authority retained by the approved private archive.
+- Existing internal/acceptance **candidates with exact-basename textual citations**: **50/50**. This is not proof of 50 active build/product consumers; many citations are historical inventory references. Any later archive move must independently verify required consumers, restore necessary links or publish safe replacements and preserve original provenance.
 - Tool script citations are separately visible below. A script with zero basename citations can still be invoked directly by operators, tests, CI, another build step or a caller outside this repo.
 - `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_MATRIX.md` is the current-file risk/owner disposition authority for this Gate-1 evidence slice; its proposed labels are not automatic implementation orders.
+
+### Independent recheck of what a citation proves
+
+The frozen 115/115 Markdown-basename count is correct as a **textual inventory** but does not establish 115 real functional dependencies. Excluding three later-created Gate-1 reports, a second audit of the 115 frozen Markdown documents found that **20** were cited exclusively by seven named governance/ledger documents: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md`, `docs/DOCUMENTATION_MODEL.md`, `docs/MASTER_EXECUTION_CHECKLIST.md`, `CHANGELOG.md`, `docs/ROADMAP.md`, and the `PUBLIC_REPOSITORY_SANITIZATION` plan/acceptance pair. **95** were cited by at least one other baseline Markdown document. Neither result establishes the presence or absence of non-Markdown consumers, executable dependencies or valid hyperlink targets. This is a **methodology correction**, not permission to delete the 20 documents. See `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_INDEPENDENT_REAUDIT.md`.
 
 ## Internal and acceptance document references
 

@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Sanitization Acceptance Plan
 
-Status: **GATE-0 ACCEPTED/PUBLISHED `558306fe618d1ee69240fa11d24437cd38fb8e2b` — GATE-1 ANALYSIS NEXT, GATES 2–7 NOT STARTED**
+Status: **GATE-0 ACCEPTED/PUBLISHED `558306fe618d1ee69240fa11d24437cd38fb8e2b` — GATE-1 IN PROGRESS, GATE-1A PUBLISHED, GATE-1B OPEN; GATES 2–7 NOT STARTED**
 
 Design owner: `docs/PUBLIC_REPOSITORY_SANITIZATION_PLAN.md`
 
@@ -68,6 +68,10 @@ The first read-only audit is bound to the clean published prestate `6781926af2dc
 The bounded **10-Markdown** publication commit `536fcac17cf854fb33cf2fcbf693623ff57ecd6a` (three new public-safe Gate-1 evidence documents and seven canonical/chronology status owners) was committed normally and pushed **ordinary non-force** from its exact parent `6781926af2dcbe02216ddb4f6da0272ffbb72f8f`. Independent GitHub main ref and local fresh fetch verified `HEAD == origin/main == FETCH_HEAD == 536fcac17cf854fb33cf2fcbf693623ff57ecd6a`, clean index/worktree, ahead/behind `0/0`. Hosted exact-SHA [GitHub Actions run 38084119171](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38084119171) completed SUCCESS: tracked-output hygiene `257` PASS, non-vacuous patch/whitespace PASS, Release `0 warnings / 0 errors`, Core `84/84`, Transport `24/24`, `0 failed / 0 skipped`.
 
 **Result:** the Gate-1A *read-only evidence publication* is ACCEPTED; **Gate-1 final acceptance remains OPEN/NOT PASSED**, 49 `RETAIN` risk/consumer decisions and the historical/private/cloud proof limitations are unchanged. Publication is not deletion, private preservation or authorization to proceed to Gate-2.
+
+### Independent Gate-1A re-audit — corrected interpretation, not full acceptance
+
+`docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_INDEPENDENT_REAUDIT.md` independently checks the frozen 254-row matrix against a later 257-tracked-file snapshot and confirms exact-SHA CI outcomes. It documents one substantive interpretive correction: **115/115 Markdown basename citations do not prove real product/build dependencies**; after excluding seven named governance/ledger documents from baseline Markdown-only references, **20/115** are cited only by those governance sources. It also reconciles stale Gate-1 status labels and checklist nesting. The original Gate-1A published evidence remains a valid bounded snapshot, **Gate-1 parent stays OPEN** and no history, source, firmware, archive or public/private implementation is authorized.
 
 ## 2. Private archive and exact provenance restoration
 
