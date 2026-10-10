@@ -157,6 +157,10 @@ A subsequent approved **read-only Gate-1 audit** started on the independently cl
 
 An independent 257-file current-tree recheck, frozen 254-row matrix arithmetic review, historical/GitHub scope revalidation and dependency-citation semantics correction are documented in `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_INDEPENDENT_REAUDIT.md`. In particular, **115/115 Markdown basenames mentioned elsewhere is not proof of 115 active consumers**; 20 baseline Markdown documents were cited only by seven governance/ledger documents under the stated exclusion. The original 254-row baseline remains immutable; **Gate-1B and parent Gate-1 remain OPEN**. This addendum only documents the re-audit and authorizes no source/archive/history action.
 
-## 9. Next permitted action
+## 10. Gate-1B 98-row consumer/risk evidence — partial, not a release decision
+
+`docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_EVIDENCE.md` records the 258-path HEAD recheck, all 98 frozen `PRIVATE`/`RETAIN` review lanes, independently filtered governance-only basename references (14 PRIVATE, 6 RETAIN), 94/94 local code include targets, 19/19 Host project links, seven PowerShell default-path owners, 143/143 `main` commit patch readings and 10 individually checked historical NUL-bearing/binary-diff candidates. None of these bounded measurements substitutes for named owner approval, all 1,356 historical blob contents, archive restore, inaccessible GitHub caches/clones or Windows/ARM recovery equivalence. **Gate-1B and full Gate-1 remain OPEN; Gate-2 not authorized.**
+
+## 11. Next permitted action
 
 Continue **read-only Gate-1** risk/consumer/functional dependency adjudication and independent full-history/hosting evidence; no physical STM32 actions or new ZIP scripts. **Do not proceed to Gate-2 archive/migration or any substantive sanitization on this partial evidence.**

@@ -1,5 +1,9 @@
 ## 2026-10-10
 
+### Public Repository Sanitization — Gate-1B independent read-only evidence (partial)
+
+Created `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_EVIDENCE.md` on verified prestate `300747134dbcd9e72687192b6e81fa9a72f995d9`, with 98/98 unresolved owner/consumer review rows and self-reference-filtered counts (14 PRIVATE and 6 RETAIN governance-only). Recorded 143/143 complete public-main patch-text readings, ten individually fetched historical binary-diff versions of `CHANGELOG.md`, 94 resolved local source includes, 19 resolved Host project/solution references and seven PowerShell default-path cases. No source, scripts, keys, hardware, current public content or Git history were sanitized. **Gate-1B and parent Gate-1 remain OPEN; Gate-2 not authorized.**
+
 ### Public Repository Sanitization — independent Gate-1A re-audit
 
 A read-only independent recheck confirmed the frozen 254-row matrix counts and verified the subsequent 257-path current tree, while identifying an interpretive flaw: **115/115 Markdown names cited elsewhere is not 115 functional dependencies**. Excluding seven governance/ledger documents, **20 of the 115 baseline Markdown sources were cited only within that excluded group**. `PUBLIC_REPOSITORY_SANITIZATION_GATE1_INDEPENDENT_REAUDIT.md` records the methodology, signature-scan limits and unresolved full-history/hosting/dependency coverage. Corrected the cited-count interpretation, stale Gate-1 NEXT status labels and checklist nesting in a docs-only reconciliation. **Gate-1 final acceptance remains OPEN**; no public file deletion, private archive creation, Git rewrite, source/target mutation or security clearance is claimed.
