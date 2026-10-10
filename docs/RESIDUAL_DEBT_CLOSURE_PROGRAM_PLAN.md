@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01..06 CLOSED/PUBLISHED / RDC-07 GATE-0 AUDIT NEXT**
+Status: **ACTIVE — RDC-01..07 CLOSED/PUBLISHED / RDC-08 GATE-0 AUDIT NEXT**
 
 Program ID:
 
@@ -95,7 +95,7 @@ Required boundary:
 
 `KERNEL_COMPOSITION_ROOT_FINAL_CLEANUP`
 
-Gate 0 was required to re-audit current responsibilities and to reduce/reshape scope if concentration proved intentional rather than debt. **RDC-06 is CLOSED/PUBLISHED**: the original `schedprod` extraction was rejected for a measured stack regression, followed by a separately published Gate-0 Amendment A authorizing the coherent three-file `help`/registry presentation move. Accepted implementation commit `7bc5f27ce3447f0c907d2643e7db67669371210a` has exact approved source tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`, physically deployed as authenticated application firmware revision 5. Its Gate-3 final acceptance binds full Flash readback, USB/RPC/scheduler/IWDG/Windows UART and `PHYSICAL_OLED=PASS` (evidence SHA-256 `F38EFC5697A26E93B7381B3ACE5DEE225CE826053B4C2B68C5F08279EEBF13AD`). The independent USB EPnR CTR race fix, excluded from the three-file cleanup commit, is published at `83e57f609bab4bcc8a61ea2222629bf9066e910d` and hardware-tested with 72/72 INFO responses and a successful signed v5 update. GitHub CI on the final source commit `83e57f6`, run `38011195238`, passed executed Core 84/84 and Transport 24/24, zero skips, Release clean. Existing root platform/interrupt/console transport and UI integration responsibilities remain intentionally root-owned in this accepted scope; further UI/console decomposition requires a separately demonstrated consumer or debt and is not silently authorized. **RDC-07 is next for Gate-0 audit/design; RDC-08 remains queued.**
+Gate 0 was required to re-audit current responsibilities and to reduce/reshape scope if concentration proved intentional rather than debt. **RDC-06 is CLOSED/PUBLISHED**: the original `schedprod` extraction was rejected for a measured stack regression, followed by a separately published Gate-0 Amendment A authorizing the coherent three-file `help`/registry presentation move. Accepted implementation commit `7bc5f27ce3447f0c907d2643e7db67669371210a` has exact approved source tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`, physically deployed as authenticated application firmware revision 5. Its Gate-3 final acceptance binds full Flash readback, USB/RPC/scheduler/IWDG/Windows UART and `PHYSICAL_OLED=PASS` (evidence SHA-256 `F38EFC5697A26E93B7381B3ACE5DEE225CE826053B4C2B68C5F08279EEBF13AD`). The independent USB EPnR CTR race fix, excluded from the three-file cleanup commit, is published at `83e57f609bab4bcc8a61ea2222629bf9066e910d` and hardware-tested with 72/72 INFO responses and a successful signed v5 update. GitHub CI on the final source commit `83e57f6`, run `38011195238`, passed executed Core 84/84 and Transport 24/24, zero skips, Release clean. Existing root platform/interrupt/console transport and UI integration responsibilities remain intentionally root-owned in this accepted scope; further UI/console decomposition requires a separately demonstrated consumer or debt and is not silently authorized. **Historical ordering:** RDC-07 was next at RDC-06 closure. Subsequently, RDC-07 completed Gates 0–5 and code publication at `7846fa48429d00233116438821acc0ea2a0b38be`; RDC-08 is now next for Gate-0 documentation/source-of-truth audit.
 
 ### RDC-07 — Bootloader readability / maintainability normalization
 
@@ -105,7 +105,7 @@ Required boundary:
 
 `BOOTLOADER_READABILITY_CLEANUP`
 
-This is behavior-preserving only. It must not change protocol, trust, Flash ownership, timing policy or recovery behavior. Proof must include exact source review plus build/disassembly/BIN equivalence appropriate to formatting-only work.
+This boundary is **CLOSED/PUBLISHED (source commit `7846fa48429d00233116438821acc0ea2a0b38be`)**. Exactly `bootloader/bootloader.c` was formatted with identical significant C tokens, literals, comments and preprocessor directives. Real Windows ARM GCC 15.3.1 Gate-2 used independent pristine source/output workspaces and one synthetic NON-DEPLOYABLE 32-byte key; both builds produced the same 5,996-byte raw BIN SHA-256 `7EDCD55CED5DDA529EFF173CF1ABB676E7892B1A5824B6EE4695A7BA3EC796BE`, with exact linked symbols, disassembly, stack and resources. External Gate-2 evidence SHA-256 `9208C02ACCC956188E32CBAD68740AC46F0EB5E486C9849C7372B898366EB768` (private operator artifact, never committed). Gate-3 no-flash adjudication PASS; code pushed ordinary non-force, fresh fetch clean 0/0, hosted GitHub Actions run `38067711160` SUCCESS on exact code SHA (Core84/84, Transport24/24, 0 failed/skipped, Release0 warnings/errors). Existing hardware-tested USB/Flash/trust behavior, production key and MCU firmware revision5 remained untouched. No new feature or firmware deployment.
 
 ### RDC-08 — Final documentation/source-of-truth debt sweep
 

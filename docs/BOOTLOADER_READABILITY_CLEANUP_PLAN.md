@@ -1,6 +1,6 @@
 # Deus OS — RDC-07 Bootloader Readability Cleanup Plan
 
-Status: **GATE-0 ACCEPTED/PUBLISHED (`7f5d148` + acceptance record `d824716`); GATE-1 FORMATTING-ONLY AUTHORIZED, NOT EXECUTED**
+Status: **RDC-07 GATES 0–5 ACCEPTED / CODE PUBLISHED `7846fa48429d00233116438821acc0ea2a0b38be`; DOCS RECONCILIATION RECORDED BELOW**
 
 Boundary: `RDC-07 / BOOTLOADER_READABILITY_CLEANUP`
 Paired acceptance: `docs/BOOTLOADER_READABILITY_CLEANUP_ACCEPTANCE_PLAN.md`
@@ -58,3 +58,18 @@ Historical physical revision 5 remains installed. Product feature work continues
 ## 5. Explicit Gate-0 stop criteria
 
 **Historical Gate-0 admission criteria (satisfied at publication):** reject if source/blob/head differed, baseline was dirty, sensitive state changes were unclassified, acceptance omitted byte-identical proof requirements, a private key would be required outside operator control, docs changes included executable artifacts, or Gate-0 publication/fresh fetch/CI failed. Gate-0 is now ACCEPTED/PUBLISHED; Gate-1 work remains restricted to the frozen formatting-only source scope and Gate-2 must independently measure the Windows build environment and isolated outputs.
+
+
+## 6. RDC-07 final disposition — 2026-10-10
+
+**RDC-07 GATES 0–5 ACCEPTED; code CLOSED/PUBLISHED at `7846fa48429d00233116438821acc0ea2a0b38be`**. The Gate-0 frozen documentation pair was accepted at `7f5d14890d4909749f4d61009d3d6ab01fb6bd78`, acceptance record `d824716634e3292c587c438d328d19f5f1867bd6`, and Windows/WSL build-domain amendment `10a930cdb75cfc7ba2ac41dbc746109e55080267`.
+
+Gate-1 changed **only** `bootloader/bootloader.c`, preserving all C significant tokens, preprocessor directives, literals and comments, with no function/reorder/macro/security/protocol/Flash change. Baseline Git blob `39bbbc0ed7bb8dbc307f57364c090e9d256dc503` (37,177 bytes; 716 lines) vs. formatted candidate blob `ed34ad98f6dcf48c5175c3b53a82d8144e653bee` (40,291 bytes; 1,244 lines); >130-column lines reduced 35 to 1.
+
+Gate-2 independent **real Windows ARM GNU 15.3.1** test-only proof, external evidence ZIP SHA-256 `9208C02ACCC956188E32CBAD68740AC46F0EB5E486C9849C7372B898366EB768` (private operator artifact, **not** in Git): ZIP CRC PASS; three SHA256 manifest entries PASS; 38 result/log facts fully concordant. Independent baseline/candidate source trees and fresh nonoverlapping outputs, same random **synthetic nondeployable** key; both actual builds PASS. Complete BIN `5996` bytes and SHA-256 `7EDCD55CED5DDA529EFF173CF1ABB676E7892B1A5824B6EE4695A7BA3EC796BE` **identical byte-for-byte**, significant C tokens 8267/8267 equal, linked symbol addresses and normalized disassembly exactly equal, 32 stack-usage frames equal, Flash `5996`, BSS `660`, dedicated MSP `1024`, conventional SRAM `1684` unchanged and within ceilings.
+
+Gate-3 independent no-flash adjudication PASS: same accepted exact candidate blob and pinned dependencies still present with only authorized one-file WIP, unchanged USB/EPnR CTR, trust/HMAC, metadata/version floor, Flash and boot handoff contracts. Real production key **not** accessed, no physical target USB/SWD/UART I/O or reset. Synthetic-key BIN is **never deployable**; byte-exact synthetic build equivalence is **not** a claim of real production BIN SHA identity. On-board signed application revision 5 and previously hardware-tested production bootloader unchanged.
+
+Gate-4 exact one-file source commit `7846fa48429d00233116438821acc0ea2a0b38be` (parent `10a930cdb75cfc7ba2ac41dbc746109e55080267`; tracked C blob exactly `ed34ad98f6dcf48c5175c3b53a82d8144e653bee`). Gate-5 ordinary non-force push, fresh fetch `HEAD == origin/main == FETCH_HEAD == 7846fa48429d00233116438821acc0ea2a0b38be`, clean ahead/behind `0/0`; GitHub Actions [run 38067711160](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38067711160) success on exact SHA with Core `84/84`, Transport `24/24`, failed/skipped `0/0`, Release warning/error `0/0`. Host CI supplements, but cannot replace, real Windows ARM Gate-2 proof.
+
+**RDC-07 complete. Next mandatory program step is RDC-08 / RESIDUAL_DEBT_DOCUMENTATION_CLOSURE Gate-0 read-only audit. No product feature boundary is authorized yet.**
