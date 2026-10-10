@@ -2,6 +2,12 @@
 
 > Status: **CURRENT-TREE/HISTORY TECHNICAL AUDIT COMPLETED; PRIVACY OWNER ADJUDICATION STILL OPEN.** This is an additive, non-destructive Gate-1 record and is not Gate-1 final acceptance. No hardware action, existing PowerShell change, Git rewrite, repository-visibility change, redaction or archive transfer is authorized.
 
+## Independently accepted publication of this technical evidence slice
+
+The scoped eight-path candidate was published non-force as commit `05c2de1a4f18bc985e72c0c21ccf333d3251238e`. A separate Git fetch confirmed `HEAD == origin/main == FETCH_HEAD == 05c2de1a4f18bc985e72c0c21ccf333d3251238e`, worktree clean, ahead/behind 0/0 and 261 tracked paths. Hosted exact-SHA [GitHub Actions run 38094838541](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38094838541) SUCCESS: non-vacuous patch/whitespace PASS, Release 0 warnings/errors, Host Core 84/84, Transport 24/24, no failed/skipped tests and tracked-output hygiene 261 PASS. The released scanner was run again on that exact commit: 1,375/1,375 reachable blobs read, 30,681,192 bytes, 146 commit objects, 559 trees, zero unreadable/truncated blobs or matched selected credential signatures; 151 blobs had Windows operator/project-path indicators and 21 had Unix home-path indicators. The complete pre-publication 1,367-blob and older 1,356-blob proofs below remain their exact historical SHA-bound snapshots; they are not presented as the newest totals.
+
+**ACCEPTED: publication and technical history evidence only. NOT ACCEPTED: owner privacy decisions, 15 redaction implementations, private archive, legacy public exposure erasure or Gate-1/2 transition.**
+
 ## Baseline identity and evidence rules
 
 - Audited prestate: `95d43fb7e5a6cd5c0d024a97c3e2f0e925c8cb84`; clean `main == origin/main == FETCH_HEAD`, ahead/behind `0/0`; hosted [CI run 38088245292](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38088245292) SUCCESS, Core 84/84, Transport 24/24, Release 0 warnings/errors, tracked-output hygiene 259 PASS.
