@@ -329,6 +329,77 @@ command_service_status_t command_service_write_hex32(
     return COMMAND_SERVICE_STATUS_OK;
 }
 
+static void command_service_write_command_descriptor(
+    command_service_context_t *context,
+    const command_service_descriptor_t *descriptor)
+{
+    if (descriptor == (const command_service_descriptor_t *)0)
+    {
+        return;
+    }
+
+    (void)command_service_write(context, "HELP_METHOD=");
+    (void)command_service_write(context, descriptor->name);
+    (void)command_service_write(context, " CLASS=");
+    (void)command_service_write(context, command_service_class_name(descriptor->command_class));
+    (void)command_service_write(context, " MIN_ARGS=");
+    (void)command_service_write_hex32(context, descriptor->min_args);
+    (void)command_service_write(context, " MAX_ARGS=");
+    (void)command_service_write_hex32(context, descriptor->max_args);
+    (void)command_service_write(context, "\r\n");
+}
+
+command_service_status_t command_service_execute_help(
+    const command_service_request_t *request,
+    command_service_context_t *context)
+{
+    if (request->argc == 0u)
+    {
+        const uint32_t count = command_service_registry_count();
+
+        (void)command_service_write(context, "HELP_COUNT=");
+        (void)command_service_write_hex32(context, count);
+        (void)command_service_write(context, "\r\nHELP_METHODS=");
+
+        for (uint32_t index = 0u; index < count; ++index)
+        {
+            const command_service_descriptor_t *descriptor =
+                command_service_registry_at(index);
+
+            if (descriptor == (const command_service_descriptor_t *)0)
+            {
+                return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
+            }
+
+            if (index != 0u)
+            {
+                (void)command_service_write(context, " ");
+            }
+
+            (void)command_service_write(context, descriptor->name);
+        }
+
+        (void)command_service_write(context, "\r\n");
+        return COMMAND_SERVICE_STATUS_OK;
+    }
+
+    if (request->argc == 1u)
+    {
+        const command_service_descriptor_t *descriptor =
+            command_service_find(request->argv[0]);
+
+        if (descriptor == (const command_service_descriptor_t *)0)
+        {
+            return COMMAND_SERVICE_STATUS_NOT_FOUND;
+        }
+
+        command_service_write_command_descriptor(context, descriptor);
+        return COMMAND_SERVICE_STATUS_OK;
+    }
+
+    return COMMAND_SERVICE_STATUS_BAD_ARGS;
+}
+
 command_service_status_t command_service_execute(
     const command_service_request_t *request,
     command_service_context_t *context,

@@ -1890,76 +1890,6 @@ static void console_usb_cdc_stats(command_service_context_t *context)
     console_write(context, "\r\n");
 }
 
-static void console_write_command_descriptor(
-    command_service_context_t *context,
-    const command_service_descriptor_t *descriptor)
-{
-    if (descriptor == (const command_service_descriptor_t *)0)
-    {
-        return;
-    }
-
-    console_write(context, "HELP_METHOD=");
-    console_write(context, descriptor->name);
-    console_write(context, " CLASS=");
-    console_write(context, command_service_class_name(descriptor->command_class));
-    console_write(context, " MIN_ARGS=");
-    console_write_hex32(context, descriptor->min_args);
-    console_write(context, " MAX_ARGS=");
-    console_write_hex32(context, descriptor->max_args);
-    console_write(context, "\r\n");
-}
-
-static command_service_status_t console_command_help(
-    const command_service_request_t *request,
-    command_service_context_t *context)
-{
-    if (request->argc == 0u)
-    {
-        const uint32_t count = command_service_registry_count();
-
-        console_write(context, "HELP_COUNT=");
-        console_write_hex32(context, count);
-        console_write(context, "\r\nHELP_METHODS=");
-
-        for (uint32_t index = 0u; index < count; ++index)
-        {
-            const command_service_descriptor_t *descriptor =
-                command_service_registry_at(index);
-
-            if (descriptor == (const command_service_descriptor_t *)0)
-            {
-                return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;
-            }
-
-            if (index != 0u)
-            {
-                console_write(context, " ");
-            }
-
-            console_write(context, descriptor->name);
-        }
-
-        console_write(context, "\r\n");
-        return COMMAND_SERVICE_STATUS_OK;
-    }
-
-    if (request->argc == 1u)
-    {
-        const command_service_descriptor_t *descriptor =
-            command_service_find(request->argv[0]);
-
-        if (descriptor == (const command_service_descriptor_t *)0)
-        {
-            return COMMAND_SERVICE_STATUS_NOT_FOUND;
-        }
-
-        console_write_command_descriptor(context, descriptor);
-        return COMMAND_SERVICE_STATUS_OK;
-    }
-
-    return COMMAND_SERVICE_STATUS_BAD_ARGS;
-}
 
 static command_service_status_t console_execute_application_method(
     const command_service_request_t *request,
@@ -2351,7 +2281,7 @@ static command_service_status_t console_execute_safe_method(
             break;
 
         case COMMAND_SERVICE_METHOD_HELP:
-            return console_command_help(request, context);
+            return command_service_execute_help(request, context);
 
         default:
             return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;

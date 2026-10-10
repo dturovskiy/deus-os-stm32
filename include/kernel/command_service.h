@@ -156,6 +156,10 @@ command_service_status_t command_service_write_line(
 command_service_status_t command_service_write_hex32(
     command_service_context_t *context,
     uint32_t value);
+command_service_status_t command_service_execute_help(
+    const command_service_request_t *request,
+    command_service_context_t *context);
+
 command_service_status_t command_service_execute(
     const command_service_request_t *request,
     command_service_context_t *context,
