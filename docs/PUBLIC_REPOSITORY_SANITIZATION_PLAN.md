@@ -161,6 +161,10 @@ An independent 257-file current-tree recheck, frozen 254-row matrix arithmetic r
 
 `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_EVIDENCE.md` records the 258-path HEAD recheck, all 98 frozen `PRIVATE`/`RETAIN` review lanes, independently filtered governance-only basename references (14 PRIVATE, 6 RETAIN), 94/94 local code include targets, 19/19 Host project links, seven PowerShell default-path owners, 143/143 `main` commit patch readings and 10 individually checked historical NUL-bearing/binary-diff candidates. None of these bounded measurements substitutes for named owner approval, all 1,356 historical blob contents, archive restore, inaccessible GitHub caches/clones or Windows/ARM recovery equivalence. **Gate-1B and full Gate-1 remain OPEN; Gate-2 not authorized.**
 
-## 11. Next permitted action
+## 11. Gate-1B full reachable Git history and current-tree delta (non-authorizing)
+
+The bounded read-only scanner `scripts/public_repository_history_audit.py` completed every reachable `main` Git blob at `95d43fb7e5a6cd5c0d024a97c3e2f0e925c8cb84`: **1,367/1,367 blobs, 30,317,374 bytes, 0 object read failures or truncations; zero recognized key/token signatures**, with historical operator path-pattern occurrences still present. `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_RECONCILIATION.md` reconciles the 254 historical matrix with all five later published audit reports and the two proposed new evidence/tooling paths (predicted next tree: 261). This technically completes the reachable-main blob-read backlog but does **not** accept unknown secret formats, GitHub caches/forks/mirrors, 98 owner decisions, 15 approved redaction specifications, archival authority or executable recovery parity. **Gate-1B and Gate-1 remain OPEN, Gate-2 not authorized.**
+
+## 12. Next permitted action
 
 Continue **read-only Gate-1** risk/consumer/functional dependency adjudication and independent full-history/hosting evidence; no physical STM32 actions or new ZIP scripts. **Do not proceed to Gate-2 archive/migration or any substantive sanitization on this partial evidence.**
