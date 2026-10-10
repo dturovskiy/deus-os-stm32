@@ -53,6 +53,16 @@ These findings are **risk/disclosure candidates**, not automatic `PRIVATE` or `R
 
 Required evidence surfaces: Git current tree (binary and text); all reachable Git histories and relevant orphan/ref reachability where verifiable; current GitHub workflows/artifacts/logs/caches/releases, issue/PR/attachment/discussion metadata, forks/mirrors and external indexes where visible. For uninspectable surfaces mark `NOT_CHECKED` with risk owner. Maintain false-positive adjudication.
 
+### Gate-1 preliminary inventory and host-surface evidence — NOT FULL ACCEPTANCE
+
+The first read-only audit is bound to the clean published prestate `6781926af2dcbe02216ddb4f6da0272ffbb72f8f`, preserved as three distinct public-safe documents:
+
+- `PUBLIC_REPOSITORY_SANITIZATION_GATE1_MATRIX.md`: **254/254 current tracked contents** read with Git blob anchors; tentative categories `PUBLIC=141`, `REDACT=15`, `PRIVATE=49`, `RETAIN=49`.
+- `PUBLIC_REPOSITORY_SANITIZATION_GATE1_SURFACE_AUDIT.md`: **140 main history commits; 143 with local stash reachable**, 254 distinct historic path names; history changes to workstation/SSH patterns demonstrable but full old-blob secret scanning not proven. GitHub: one public main branch, no tags/releases/PRs/issues, metadata forks=0, **22 Actions runs**; no currently stored Actions artifacts in 22 examined run-artifact collections; 21 reachable job logs scanned heuristically with no recognized key/token patterns or current bench-path signature, one failed historic run log unavailable. Caches and external mirrors `NOT_CHECKED`.
+- `PUBLIC_REPOSITORY_SANITIZATION_GATE1_DEPENDENCIES.md`: 254-file exact-text reference graph, including cited plans/evidence history and PowerShell tool entry points; not yet build/ABI/call-graph validation.
+
+**Gate-1-A content-inventory evidence: PASS (bounded 254/254 read). Gate-1 final acceptance: OPEN/NOT PASSED**. Exact risk/consumer sign-off is incomplete, 49 `RETAIN` categories unresolved and no full historical/blob, cache/mirror or private preservation proof exists. The presence of completed read-only checks does not satisfy the final Gate-1 consumer/dependency and exposure predicates. **Gate-2 is not authorized** from this evidence.
+
 ## 2. Private archive and exact provenance restoration
 
 **PASS:** agreed private archive location, access restrictions, encrypted transport/storage when necessary, explicit ownership; verifiable manifest of accepted legacy documents, original Git commits/trees, firmware source and protocol identities, accepted Gate hashes, signed-recovery constraints and preservation hashes. Independently restore sampled archive content and validate permission denial to an unauthorized public principal. Private backups must be excluded from current and future public remotes.

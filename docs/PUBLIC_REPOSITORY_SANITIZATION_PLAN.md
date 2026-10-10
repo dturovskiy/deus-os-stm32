@@ -143,6 +143,16 @@ The independently published Gate-0 design `558306fe618d1ee69240fa11d24437cd38fb8
 
 Exact addendum mutation allowlist: `docs/MASTER_EXECUTION_CHECKLIST.md` (completed FDC/RDC historical status and bounded Gate-0/Gate-1..7 ledger), this plan (scope justification) and `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md` (independent proof). All other paths prohibited. Require reviewed staged three-file diff, `git diff --cached --check`, normal local commit, ordinary non-force push from fresh expected parent, clean `HEAD == origin/main == FETCH_HEAD` and `0/0`, exact-commit hosted Release/Core/Transport/hygiene PASS. **No source mutation, file sanitization, archive relocation or migration approval.**
 
-## 8. Status / required next action
+## 8. Gate-1 read-only execution slices and evidence boundaries
 
-After accepted/published Gate-0, **Gate-1 has not started and no file has been classified for deletion**. The next substantive action after Gate-0 acceptance is the **complete content/exposure/consumer matrix** and strategy comparison; no physical STM32 interaction and no ZIP scripting required.
+A subsequent approved **read-only Gate-1 audit** started on the independently clean, published parent `6781926af2dcbe02216ddb4f6da0272ffbb72f8f`. This audit is documented in three **new public-safe, scoped and non-authorizing evidence files**:
+
+- `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_MATRIX.md` — all **254/254** baseline tracked file contents read completely, path+Git-blob-anchored triage **PUBLIC 141 / REDACT 15 / PRIVATE 49 / RETAIN 49**;
+- `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_SURFACE_AUDIT.md` — **140 main / 143 --all** local reachable commits (including three local stash-reachable commits not shown as public), historical-path signature-change counts, GitHub refs, 22 Actions runs and 0 current stored artifacts, 21 accessible job logs, plus exact `NOT_CHECKED` historical/cloud boundaries;
+- `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1_DEPENDENCIES.md` — static exact-basename cross-reference coverage over **all 254 baseline tracked file contents**, including 115 Markdown files and 9 PowerShell scripts; reference counts are not build/call-graph proof.
+
+**Gate-1 status: PARTIAL / OPEN.** First-pass file inspection and bounded GitHub coverage do not authorize archive creation, public source/doc deletion, history rewrite or a migration strategy. Before Gate-1 final acceptance, resolve 49 `RETAIN` owners, review 49 `PRIVATE` proposals and exact link/build/recovery dependencies, obtain full historical content/hosting coverage or explicitly adjudicate its limitations, and establish a safe private findings sink where actually sensitive evidence is needed. The frozen baseline counts exclude the new audit files; a future accepted pass must re-snapshot `HEAD`.
+
+## 9. Next permitted action
+
+Continue **read-only Gate-1** risk/consumer/functional dependency adjudication and independent full-history/hosting evidence; no physical STM32 actions or new ZIP scripts. **Do not proceed to Gate-2 archive/migration or any substantive sanitization on this partial evidence.**
