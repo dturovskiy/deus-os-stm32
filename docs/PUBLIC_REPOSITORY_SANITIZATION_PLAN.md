@@ -117,6 +117,12 @@ No other path mutation permitted at Gate 0. In particular **do not edit/delete/m
 
 **STOP** for missing private preservation proof, missing owner approval on irreversible operations, unclassified secret suspicion, unexplained WIP path, broken protocol/build consumer, undisclosed history limitations, uncertain GitHub-surface coverage or target-device/key access. Proof coverage must be declared, not inferred from the public-tree scan.
 
-## 7. Status / required next action
+## 7. Post-Gate-0 canonical execution-ledger alignment (administrative addendum)
+
+The independently published Gate-0 design `558306fe618d1ee69240fa11d24437cd38fb8e2b` and status acceptance `58fdf3036f1e2039be99fae8dc08b259746c0c5c` originally changed only the six frozen Gate-0 paths. A subsequent check confirmed that the historical `docs/MASTER_EXECUTION_CHECKLIST.md` lacked the new sanitization boundary, and still carried a historical RDC-program `ACTIVE` heading plus a conditional RDC-08 Gate-8 result despite externally verified closure at `c309428b03615a9afd514e3c7c8886a82a5112e9`. **This is a new, separately scoped docs-only canonical-ledger correction; it does not retroactively alter Gate-0 scope or declare Gate-1 started.**
+
+Exact addendum mutation allowlist: `docs/MASTER_EXECUTION_CHECKLIST.md` (completed FDC/RDC historical status and bounded Gate-0/Gate-1..7 ledger), this plan (scope justification) and `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md` (independent proof). All other paths prohibited. Require reviewed staged three-file diff, `git diff --cached --check`, normal local commit, ordinary non-force push from fresh expected parent, clean `HEAD == origin/main == FETCH_HEAD` and `0/0`, exact-commit hosted Release/Core/Transport/hygiene PASS. **No source mutation, file sanitization, archive relocation or migration approval.**
+
+## 8. Status / required next action
 
 At this design candidate stage, **Gate-1 has not started and no file has been classified for deletion**. The next substantive action after Gate-0 acceptance is the **complete content/exposure/consumer matrix** and strategy comparison; no physical STM32 interaction and no ZIP scripting required.
