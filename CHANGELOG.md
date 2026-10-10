@@ -1,5 +1,9 @@
 ## 2026-10-10
 
+### Public Repository Sanitization — Gate-1A audit snapshot PUBLISHED `536fcac17cf854fb33cf2fcbf693623ff57ecd6a`
+
+The read-only ten-Markdown Gate-1A candidate (including three scoped evidence files) was normally committed and pushed non-force. Fresh fetch proved `HEAD == origin/main == FETCH_HEAD == 536fcac17cf854fb33cf2fcbf693623ff57ecd6a` clean `0/0`. Hosted exact-commit [CI 38084119171](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38084119171) SUCCESS: Release zero warnings/errors, Core 84/84, Transport 24/24, zero failed/skipped, 257 tracked paths hygiene PASS. **This accepts only a bounded current-tree audit snapshot; Gate-1 final acceptance is OPEN with unresolved `RETAIN`, history/cloud proof limitations.** No source/target/data sanitization or repository-history operation.
+
 ### Public Repository Sanitization — Gate-1 read-only current-tree, GitHub/history and dependency first pass
 
 From clean published baseline `6781926af2dcbe02216ddb4f6da0272ffbb72f8f`, all **254 current tracked file contents** were read completely, anchored to Git blob IDs and categorized provisionally as `141 PUBLIC / 15 REDACT / 49 PRIVATE / 49 RETAIN`. Separate scoped reports capture bounded **140-main-commit** history/ref review, **22 Actions runs** (0 stored artifacts across 22 queries, 21 readable job logs), and **254-file textual cross-reference** dependencies. Prior current-file path redaction does not erase historical Git blobs. No confirmed production key leakage follows from these bounded checks. Full history blob/secret scanning, certain GitHub/cloud/clone surfaces and the 49 unresolved `RETAIN` consumers block final Gate-1 acceptance. These are three new safe audit artifacts plus narrow status references only; **no files sanitized and no Git-history, source, firmware, test harness, recovery key or physical device mutation**.

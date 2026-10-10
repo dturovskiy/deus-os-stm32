@@ -63,6 +63,12 @@ The first read-only audit is bound to the clean published prestate `6781926af2dc
 
 **Gate-1-A content-inventory evidence: PASS (bounded 254/254 read). Gate-1 final acceptance: OPEN/NOT PASSED**. Exact risk/consumer sign-off is incomplete, 49 `RETAIN` categories unresolved and no full historical/blob, cache/mirror or private preservation proof exists. The presence of completed read-only checks does not satisfy the final Gate-1 consumer/dependency and exposure predicates. **Gate-2 is not authorized** from this evidence.
 
+### Gate-1A read-only audit snapshot publication — externally VERIFIED
+
+The bounded **10-Markdown** publication commit `536fcac17cf854fb33cf2fcbf693623ff57ecd6a` (three new public-safe Gate-1 evidence documents and seven canonical/chronology status owners) was committed normally and pushed **ordinary non-force** from its exact parent `6781926af2dcbe02216ddb4f6da0272ffbb72f8f`. Independent GitHub main ref and local fresh fetch verified `HEAD == origin/main == FETCH_HEAD == 536fcac17cf854fb33cf2fcbf693623ff57ecd6a`, clean index/worktree, ahead/behind `0/0`. Hosted exact-SHA [GitHub Actions run 38084119171](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38084119171) completed SUCCESS: tracked-output hygiene `257` PASS, non-vacuous patch/whitespace PASS, Release `0 warnings / 0 errors`, Core `84/84`, Transport `24/24`, `0 failed / 0 skipped`.
+
+**Result:** the Gate-1A *read-only evidence publication* is ACCEPTED; **Gate-1 final acceptance remains OPEN/NOT PASSED**, 49 `RETAIN` risk/consumer decisions and the historical/private/cloud proof limitations are unchanged. Publication is not deletion, private preservation or authorization to proceed to Gate-2.
+
 ## 2. Private archive and exact provenance restoration
 
 **PASS:** agreed private archive location, access restrictions, encrypted transport/storage when necessary, explicit ownership; verifiable manifest of accepted legacy documents, original Git commits/trees, firmware source and protocol identities, accepted Gate hashes, signed-recovery constraints and preservation hashes. Independently restore sampled archive content and validate permission denial to an unauthorized public principal. Private backups must be excluded from current and future public remotes.
