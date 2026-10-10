@@ -14,7 +14,7 @@ Source-of-truth: `docs/CURRENT_STATE.md`
 - [x] Correct `ep_invariant()` STM32F103 CTR rc_w0 source repair present. Previous real fixed-bootloader INFO 72/72 and signed application revision5/full Flash readback are historical hardware PASS, **not new Gate-0 device testing**.
 - [x] Contract excludes real key, protocol/state/Flash layout changes, production firmware re-sign/reflash, and USB resets. Gate-0 target I/O=NONE.
 - [x] Gate-2 requires independent same-synthetic-key baseline/candidate build with exact raw BIN byte equality and unchanged resource/stack conditions; no ARM comparison run or result is claimed at Gate-0.
-- [ ] Gate-0 exact docs-only commit, non-force publication, fresh-fetch clean 0/0 and hosted CI: to be adjudicated separately by real Git/GitHub evidence.
+- [x] Gate-0 exact docs-only **two-path commit** `7f5d14890d4909749f4d61009d3d6ab01fb6bd78` (parent `4214b375ba4b1bb4d508cca236971bd81aa848e8`), `git diff --cached --check` PASS. Normal non-force push `4214b37..7f5d148 main->main`, fresh fetch `HEAD == origin/main == FETCH_HEAD == 7f5d14890d4909749f4d61009d3d6ab01fb6bd78`, clean 0/0. Hosted [GitHub Actions run 38062645242](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38062645242) on the exact SHA COMPLETED/SUCCESS: Core 84/84, Transport 24/24, failed 0, skipped 0, Release warnings 0/errors 0. **Gate-0 ACCEPTED/PUBLISHED; Gate-1 formatting-only authorized, not yet executed.**
 
 ## 2. Required acceptance by future gate
 
