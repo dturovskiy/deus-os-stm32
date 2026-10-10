@@ -290,7 +290,7 @@ A subsequent repo-wide audit found additional **confirmed current debt** after F
 - [x] `RDC-05` — **CLOSED/PUBLISHED `7f75cffdd0c632c5f99310f2c8708d745769aa42`** — one pinned GitHub Actions Ubuntu workflow, locked .NET 10 restore, warning-clean Release build, hosted Core 84/84 and Transport 24/24 (run `37829541187`), non-force publication, no physical bench ownership.
 - [x] `RDC-06` — **CLOSED/PUBLISHED `7bc5f27ce3447f0c907d2643e7db67669371210a`** — exact three-path `help` ownership relocation, candidate Git tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`, physical signed firmware revision 5 accepted with Windows UART/physical OLED, separate USB EPnR CTR hardware fix committed at `83e57f609bab4bcc8a61ea2222629bf9066e910d`; non-force push/fresh fetch and hosted CI run `38011195238` (Core 84/84, Transport 24/24, no skips) PASS.
 - [x] `RDC-07` — **CLOSED/PUBLISHED `7846fa48429d00233116438821acc0ea2a0b38be`**: formatting-only `bootloader.c` with unchanged 8267 significant tokens and byte-exact 5996-byte synthetic-key ARM BIN (`7EDCD55CED5DDA529EFF173CF1ABB676E7892B1A5824B6EE4695A7BA3EC796BE`); symbols/disassembly/stack/resource PASS, no real key/Flash/target changes, non-force fetch and hosted CI `38067711160` Core84/84 Transport24/24 PASS.
-- [ ] `RDC-08` — final documentation/source-of-truth debt sweep and repo hygiene reconciliation.
+- [ ] `RDC-08` — final documentation/source-of-truth debt sweep and repo hygiene reconciliation; Gate-0 design **ACCEPTED/PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2`**, Gate-1 classification next, program still OPEN.
 
 Canonical program: `docs/RESIDUAL_DEBT_CLOSURE_PROGRAM_PLAN.md` + `_ACCEPTANCE_PLAN.md`.
 

@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **ACTIVE — RDC-01..07 CLOSED/PUBLISHED / RDC-08 GATE-0 AUDIT NEXT**
+Status: **ACTIVE — RDC-01..07 CLOSED/PUBLISHED / RDC-08 GATE-0 ACCEPTED/PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` / GATE-1 NEXT**
 
 Program ID:
 
@@ -108,6 +108,8 @@ Required boundary:
 This boundary is **CLOSED/PUBLISHED (source commit `7846fa48429d00233116438821acc0ea2a0b38be`)**. Exactly `bootloader/bootloader.c` was formatted with identical significant C tokens, literals, comments and preprocessor directives. Real Windows ARM GCC 15.3.1 Gate-2 used independent pristine source/output workspaces and one synthetic NON-DEPLOYABLE 32-byte key; both builds produced the same 5,996-byte raw BIN SHA-256 `7EDCD55CED5DDA529EFF173CF1ABB676E7892B1A5824B6EE4695A7BA3EC796BE`, with exact linked symbols, disassembly, stack and resources. External Gate-2 evidence SHA-256 `9208C02ACCC956188E32CBAD68740AC46F0EB5E486C9849C7372B898366EB768` (private operator artifact, never committed). Gate-3 no-flash adjudication PASS; code pushed ordinary non-force, fresh fetch clean 0/0, hosted GitHub Actions run `38067711160` SUCCESS on exact code SHA (Core84/84, Transport24/24, 0 failed/skipped, Release0 warnings/errors). Existing hardware-tested USB/Flash/trust behavior, production key and MCU firmware revision5 remained untouched. No new feature or firmware deployment.
 
 ### RDC-08 — Final documentation/source-of-truth debt sweep
+
+Gate-0 read-only audit/design scope was accepted and published docs-only at `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2`; exact-SHA hosted GitHub Actions run `38075603101` passed Core `84/84`, Transport `24/24`, zero failed/skipped and clean Release/hygiene. Canonical design and acceptance: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md` and `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_ACCEPTANCE_PLAN.md`. **Gate-1 full claim classification is next; RDC-08 and the RDC program are not yet complete.**
 
 After RDC-01..07 close, perform one final repo-wide documentation/governance reconciliation:
 

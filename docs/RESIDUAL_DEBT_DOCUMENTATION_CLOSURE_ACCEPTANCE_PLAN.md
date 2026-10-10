@@ -1,6 +1,6 @@
 # Deus OS — RDC-08 Residual Debt Documentation Closure Acceptance Plan
 
-Status: **GATE-0 PRESTATE AUDIT RECORDED — DESIGN VALIDATION / PUBLICATION PENDING; GATES 1–8 NOT STARTED**
+Status: **GATE-0 ACCEPTED / PUBLISHED `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` — GATES 1–8 NOT STARTED**
 
 Canonical design: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md`
 
@@ -32,7 +32,7 @@ Frozen Gate-0 parent: `80ccdf5534ac65a830dcec5cc022e916521d2fb4`.
 - `git diff --check` and staged whitespace check at pristine parent: PASS; current tracked artifact filenames and all-history path-name search: no prohibited firmware/build/ZIP/log/key class. Current-text obvious private-key/token signatures: none. This is **not** exhaustive secret-history scanning, program verification or device testing.
 - Baseline board evidence remains historical: authenticated application revision 5 and the previously accepted bootloader; no target SWD, UART, native USB, Flash, reset, signing-key or hardware I/O was performed.
 
-**Gate-0 result:** `PENDING` until the exact two-document staging/commit/publication and exact-SHA hosted CI proofs above are independently verified. No other Gate is authorized by an unaccepted draft.
+**Gate-0 result — ACCEPTED / PUBLISHED (2026-10-10):** the frozen parent was `80ccdf5534ac65a830dcec5cc022e916521d2fb4`; exact staged and committed path set was the two new `RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_*` Markdown files, `A/A` only, `git diff --cached --check` PASS. Normal local commit `86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2` changed exactly two paths. Ordinary non-force push `80ccdf5..86abbc5 main -> main`; independent GitHub ref and post-push fresh-fetch `HEAD == origin/main == FETCH_HEAD == 86abbc59fd0f26d3a5ec5f279b3e0c35d16f62c2`, clean worktree/index and ahead/behind `0/0`. Hosted GitHub Actions [run 38075603101](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38075603101) on this exact SHA completed **success**: locked Host Release build `0 warnings/0 errors`, Core `84/84`, Transport `24/24`, failed/skipped `0/0`, `TRACKED_OUTPUT_HYGIENE=PASS count=252`, non-vacuous diff hygiene PASS. No STM32, USB, SWD, Flash or signing-key I/O occurred. The present separate docs-only status reconciliation records facts **after** they were proven; Gate-1 classification is next. RDC-08 itself remains OPEN.
 
 ## Gate 1 — exhaustive source/document claims matrix
 
