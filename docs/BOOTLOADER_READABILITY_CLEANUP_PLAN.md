@@ -1,6 +1,6 @@
 # Deus OS — RDC-07 Bootloader Readability Cleanup Plan
 
-Status: **GATE-0 READ-ONLY AUDIT / SCOPE FROZEN; SOURCE EDITS REQUIRE SEPARATE PUBLISHED GATE-0 ACCEPTANCE**
+Status: **GATE-0 ACCEPTED/PUBLISHED (`7f5d148` + acceptance record `d824716`); GATE-1 FORMATTING-ONLY AUTHORIZED, NOT EXECUTED**
 
 Boundary: `RDC-07 / BOOTLOADER_READABILITY_CLEANUP`
 Paired acceptance: `docs/BOOTLOADER_READABILITY_CLEANUP_ACCEPTANCE_PLAN.md`
@@ -36,7 +36,9 @@ Resource ceilings: Flash <=8192 B, `.data+.bss` <=1024 B, reserved bootloader MS
 
 ## 3. Deterministic evidence, never device-key disclosure
 
-Use exact unchanged pinned GNU ARM toolchain (15.3.1), `-Os`, existing build script/linker/startup and two **independent isolated** build trees for baseline vs candidate. Build both with the **same 32-byte explicitly synthetic test-only key** in protected disposable workspaces, never real signing material. Build inputs, compiler version, key-test identity (not key bytes), tool flags, baseline/candidate Git blobs, output paths, exit codes and section/symbol/stack measurements must be bound in evidence.
+**Execution domains:** DEUS MCP Git/file tools execute in **Windows-local WSL**, using the canonical Windows-backed repository through `/home/deus/projects/deus-os-stm32/OS` (the WSL view of `D:\Projects\STM32\OS`). This is **not** the remote Ubuntu/Mac-mini USB host. The accepted ARM GNU build and PowerShell execution domain is **Windows**, per `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`. WSL source inspection is not proof of a Windows compiler installation. Gate-2 must independently preflight the actual Windows `arm-none-eabi-gcc.exe`, `objcopy`, `size`, `nm`, their resolved paths, compiler **15.3.1** identity and frozen options before building; missing/mismatched tools are **environment FAIL / STOP**, not firmware failure.
+
+Use that exact unchanged pinned GNU ARM toolchain (15.3.1), `-Os`, existing build script/linker/startup and **two independently materialized, pristine source trees and non-overlapping, newly created and initially empty output directories** for baseline vs candidate. `scripts/build_bootloader.ps1` creates its output directory but **does not empty or validate pre-existing artifacts**; therefore Gate-2 must fail closed if either designated output directory or an output artifact exists before the run, and must not reuse `build/bootloader`, stale `.o`, `.su`, `.elf`, `.bin`, `.map`, or cached intermediates. Keep temporary source/build/output workspaces outside tracked repository paths and use the same **32-byte explicitly synthetic test-only key** in both independent builds, never real signing material. The two invocations must use identical compiler executable/version, startup/linker blobs, flags and test key, with different clean workspace/output paths. Record input identities, preflight/version evidence, key-test identity (not key bytes), baseline/candidate Git blobs, output paths, exit codes and section/symbol/stack measurements; never put binaries or keys in Git or public evidence.
 
 Enforce **byte-for-byte equality of complete bootloader BIN**, not merely size or hashes of source. Hash equality and bytewise comparison must both PASS; compare loadable sections, symbol addresses and normalized disassembly as corroboration. Compiler/preprocessor significant-token identity is an independent fail-closed check. Do not claim full ELF/MAP SHA equality if reproducible build paths differ; interpret ELF/MAP via normalized loadable code/symbol structures. Distinguish synthetic-key BIN from previously installed production-key firmware; the synthetic output is permanently **NON-DEPLOYABLE**. The published private device key, Flash backup and real-key BIN/ELF/MAP are not to be exported, committed or logged.
 
@@ -55,4 +57,4 @@ Historical physical revision 5 remains installed. Product feature work continues
 
 ## 5. Explicit Gate-0 stop criteria
 
-No Gate-1 authorization if the source/blob/head differs, baseline already dirty, undocumented sensitive state changes are found, acceptance lacks byte-identical proof, any real signing key would be required outside private operator control, docs changes include executable artifacts, or Gate-0 publication/fresh fetch/CI is not PASS.
+**Historical Gate-0 admission criteria (satisfied at publication):** reject if source/blob/head differed, baseline was dirty, sensitive state changes were unclassified, acceptance omitted byte-identical proof requirements, a private key would be required outside operator control, docs changes included executable artifacts, or Gate-0 publication/fresh fetch/CI failed. Gate-0 is now ACCEPTED/PUBLISHED; Gate-1 work remains restricted to the frozen formatting-only source scope and Gate-2 must independently measure the Windows build environment and isolated outputs.

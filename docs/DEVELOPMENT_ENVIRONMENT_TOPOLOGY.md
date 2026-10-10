@@ -107,6 +107,8 @@ A current Windows harness MUST NOT assume that the STM32 USB device, WinUSB inte
 
 The canonical repository is the Windows tree `D:\Projects\STM32\OS`.
 
+**DEUS MCP runs in WSL on the Windows development machine, not on the Mac mini.** Its project root `/home/deus/projects` and repository path `/home/deus/projects/deus-os-stm32/OS` are local WSL views of the Windows-backed working tree. A DEUS MCP file/Git operation is therefore **local WSL repository access**, not remote Mac-mini USB execution, and it does not by itself prove Windows PowerShell/ARM toolchain availability. Windows remains the accepted GNU Arm build/SWD/UART execution domain; native USB remains on Ubuntu/Mac mini.
+
 Within the Windows/WSL environment, these two paths have been proven to refer to the same Windows-backed repository object:
 
 - `/mnt/d/Projects/STM32/OS`;
