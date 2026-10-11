@@ -1,5 +1,7 @@
 # Deus OS — Development / Acceptance Environment Topology
 
+> **Public-safe operational view:** Local operator paths, login identities and SSH aliases are placeholders. Substitute values only from separately authorized private operational configuration. This document does not authorize hardware actions; public protocol, ownership and pin-map invariants remain unchanged.
+
 Status: **CANONICAL OPERATIONAL ENVIRONMENT / HARDWARE-OWNERSHIP REFERENCE**
 
 Last audited: 2026-10-07
@@ -32,7 +34,7 @@ Exact ownership:
 - **STM32 UART/CH340 is physically connected to Windows.**
 - **STM32 ST-LINK/SWD is physically connected to Windows.**
 - Windows is the primary orchestration/build/debug host.
-- Windows reaches the Ubuntu USB host through OpenSSH, using `deus@macmini` / SSH alias `macmini`.
+- Windows reaches the Ubuntu USB host through OpenSSH, using `<SSH_USER>@<USB_HOST>` / SSH alias `<USB_HOST_ALIAS>`.
 
 This split-host topology is the default assumption for every new hardware acceptance package until this document is explicitly updated.
 
@@ -40,11 +42,11 @@ This split-host topology is the default assumption for every new hardware accept
 
 Canonical repository:
 
-`D:\Projects\STM32\OS`
+`<WINDOWS_OPERATOR_PATH>`
 
 Tools root:
 
-`D:\Projects\STM32\Tools`
+`<WINDOWS_OPERATOR_PATH>`
 
 Operator artifact directory:
 
@@ -81,13 +83,13 @@ COM numbers are enumeration facts, not permanent identities. A harness that need
 
 SSH endpoint:
 
-- canonical operator form: `deus@macmini`;
-- accepted alias form: `macmini`.
+- canonical operator form: `<SSH_USER>@<USB_HOST>`;
+- accepted alias form: `<USB_HOST_ALIAS>`.
 
 The Ubuntu host owns the target's native USB connection. Historical accepted environment evidence records:
 
-- host name `macmini`;
-- user `deus`;
+- host name `<USB_HOST_ALIAS>`;
+- user `<SSH_USER>`;
 - Ubuntu `26.04.1 LTS`, x86_64;
 - Linux .NET SDK `10.0.112`;
 - libusb `1.0.29`;
@@ -99,24 +101,24 @@ The target composite USB device is `1209:000C` / `Deus OS Device`:
 - management IF2 is accessed by the Linux libusb adapter;
 - the target USB cable also supplies normal target VBUS/power in this bench topology.
 
-The firmware-update bootloader enumerates separately as private-test `1209:000D` / `Deus OS Bootloader`. Enumeration alone does not guarantee unprivileged libusb open authority: accepted hardware evidence has observed the current `/dev/bus/usb/BBB/DDD` node as `root:root` mode `664`, causing `LIBUSB_ERROR_ACCESS (-3)` for user `deus`. When a bootloader transaction requires permission repair, the accepted bench fixture is bounded to the exact currently enumerated ephemeral node: one operator-visible interactive privilege step may change that node to owner `deus`, mode `600`; no password is captured, no persistent udev rule is created, and the actual bootloader protocol must then execute unprivileged as `deus`. Bus/device tokens from `lsusb` are already zero-padded decimal strings and must be used as strings when constructing `/dev/bus/usb/$bus/$dev` (for example device `099`), not numerically reinterpreted.
+The firmware-update bootloader enumerates separately as private-test `1209:000D` / `Deus OS Bootloader`. Enumeration alone does not guarantee unprivileged libusb open authority: accepted hardware evidence has observed the current `/dev/bus/usb/BBB/DDD` node as `root:root` mode `664`, causing `LIBUSB_ERROR_ACCESS (-3)` for user `<SSH_USER>`. When a bootloader transaction requires permission repair, the accepted bench fixture is bounded to the exact currently enumerated ephemeral node: one operator-visible interactive privilege step may change that node to owner `deus`, mode `600`; no password is captured, no persistent udev rule is created, and the actual bootloader protocol must then execute unprivileged as `deus`. Bus/device tokens from `lsusb` are already zero-padded decimal strings and must be used as strings when constructing `/dev/bus/usb/$bus/$dev` (for example device `099`), not numerically reinterpreted.
 
 A current Windows harness MUST NOT assume that the STM32 USB device, WinUSB interface or CDC COM port is locally enumerable on Windows. Windows WinUSB remains an accepted product transport for a Windows-attached target, but it is **not the physical owner of target USB in the current bench wiring**.
 
 ## 4. Repository views are not the Mac mini
 
-The canonical repository is the Windows tree `D:\Projects\STM32\OS`.
+The canonical repository is the Windows tree `<WINDOWS_OPERATOR_PATH>`.
 
-**DEUS MCP runs in WSL on the Windows development machine, not on the Mac mini.** Its project root `/home/deus/projects` and repository path `/home/deus/projects/deus-os-stm32/OS` are local WSL views of the Windows-backed working tree. A DEUS MCP file/Git operation is therefore **local WSL repository access**, not remote Mac-mini USB execution, and it does not by itself prove Windows PowerShell/ARM toolchain availability. Windows remains the accepted GNU Arm build/SWD/UART execution domain; native USB remains on Ubuntu/Mac mini.
+**DEUS MCP runs in WSL on the Windows development machine, not on the Mac mini.** Its project root `<WSL_OPERATOR_PATH>` and repository path `<WSL_OPERATOR_PATH>` are local WSL views of the Windows-backed working tree. A DEUS MCP file/Git operation is therefore **local WSL repository access**, not remote Mac-mini USB execution, and it does not by itself prove Windows PowerShell/ARM toolchain availability. Windows remains the accepted GNU Arm build/SWD/UART execution domain; native USB remains on Ubuntu/Mac mini.
 
 Within the Windows/WSL environment, these two paths have been proven to refer to the same Windows-backed repository object:
 
 - `/mnt/d/Projects/STM32/OS`;
-- `/home/deus/projects/deus-os-stm32/OS`.
+- `<WSL_OPERATOR_PATH>`.
 
-That WSL bind/view relationship is local to the Windows development environment. It MUST NOT be confused with the remote Ubuntu host reached as `deus@macmini`.
+That WSL bind/view relationship is local to the Windows development environment. It MUST NOT be confused with the remote Ubuntu host reached as `<SSH_USER>@<USB_HOST>`.
 
-The Mac mini does not need a persistent clone at `/home/deus/projects/deus-os-stm32/OS`. A historical harness that assumed such a remote repository failed correctly. Cross-host acceptance should normally materialize the exact required candidate/payload on Windows, transfer it to a unique remote `/tmp` directory by SCP, verify its hash remotely, execute there, return evidence, and remove the temporary remote directory.
+The Mac mini does not need a persistent clone at `<WSL_OPERATOR_PATH>`. A historical harness that assumed such a remote repository failed correctly. Cross-host acceptance should normally materialize the exact required candidate/payload on Windows, transfer it to a unique remote `/tmp` directory by SCP, verify its hash remotely, execute there, return evidence, and remove the temporary remote directory.
 
 ## 5. Power and signal ownership
 
@@ -168,7 +170,7 @@ Consequences for harnesses and product boundaries:
 | Linux libusb management IF2 runtime | Ubuntu on Mac mini |
 | Linux CDC presence/retention | Ubuntu on Mac mini |
 | Physical USB disconnect/reconnect / USB-powered retention | Mac-mini USB connection, with remote observation |
-| Cross-host coordination | Windows PowerShell -> SSH/SCP -> `deus@macmini` |
+| Cross-host coordination | Windows PowerShell -> SSH/SCP -> `<SSH_USER>@<USB_HOST>` |
 | Human OLED visual confirmation | physical target/operator |
 
 A composed hardware gate may legitimately span both hosts. It must not collapse these domains into one generic "host".
@@ -194,9 +196,9 @@ Recommended evidence tokens include:
 
 ```text
 ORCHESTRATOR_DOMAIN=WINDOWS
-CANONICAL_REPOSITORY=D:\Projects\STM32\OS
+CANONICAL_REPOSITORY=<WINDOWS_OPERATOR_PATH>
 USB_EXECUTION_DOMAIN=MACMINI_UBUNTU
-USB_SSH_TARGET=deus@macmini
+USB_SSH_TARGET=<SSH_USER>@<USB_HOST>
 UART_EXECUTION_DOMAIN=WINDOWS
 STLINK_EXECUTION_DOMAIN=WINDOWS
 ```
@@ -256,7 +258,7 @@ Do not:
 - search Windows for the current target USB device and treat absence as product failure;
 - use local Windows WinUSB when the target cable is physically attached to the Mac mini;
 - assume the Mac mini contains the canonical repository;
-- confuse WSL `/home/deus/projects/...` with the remote Mac-mini filesystem;
+- confuse WSL `<WSL_OPERATOR_PATH>` with the remote Mac-mini filesystem;
 - run CubeProgrammer on the Mac mini in the current topology;
 - run CH340/UART acceptance on the Mac mini in the current topology;
 - use ST-LINK 3.3 V or UART-adapter VCC as an accidental second target supply;

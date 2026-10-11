@@ -52,7 +52,7 @@ The CLI is the **canonical first-class management surface** for automation, diag
 Reasons:
 
 - it works without a graphical desktop;
-- it is appropriate for Ubuntu Server/macmini-style execution hosts;
+- it is appropriate for Ubuntu Server/headless Linux-style execution hosts;
 - it is scriptable and suitable for reproducible acceptance;
 - it exposes the portable Core contract without adding desktop presentation state;
 - it remains usable as a recovery/operator interface even if richer UI surfaces fail.

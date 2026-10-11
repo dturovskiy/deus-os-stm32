@@ -30,7 +30,7 @@ Initial implementation is **exactly one tracked workflow**: `.github/workflows/c
 
 ## 3. Explicit exclusions
 
-No firmware build/toolchain provisioning, flashing, STM32CubeProgrammer, physical OLED, ST-LINK, CH340/UART, USB management, Linux `libusb` device access, macmini SSH/SCP, remote secrets, signed firmware packages, key-bearing bootloader or physical reset/reconnect. These remain governed by their own acceptance plans and operating topology. A CI-green Host build is **not** a statement of firmware equivalence or physical USB acceptance.
+No firmware build/toolchain provisioning, flashing, STM32CubeProgrammer, physical OLED, ST-LINK, CH340/UART, USB management, Linux `libusb` device access, cross-host SSH/SCP, remote secrets, signed firmware packages, key-bearing bootloader or physical reset/reconnect. These remain governed by their own acceptance plans and operating topology. A CI-green Host build is **not** a statement of firmware equivalence or physical USB acceptance.
 
 Do not silently alter `host/global.json`, package lock files, SDK policy, compiler warnings, test projects, `.gitignore`, accepted firmware/recovery scripts, or repository governance to accommodate an immature workflow. Investigate CI environment/test semantics first; any unavoidable scope expansion needs an explicitly re-frozen design.
 

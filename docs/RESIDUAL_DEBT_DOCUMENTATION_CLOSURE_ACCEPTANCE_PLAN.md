@@ -24,7 +24,7 @@ Frozen Gate-0 parent: `80ccdf5534ac65a830dcec5cc022e916521d2fb4`.
 
 **Observed pre-mutation audit (read-only; not Gate-0 publication PASS)**
 
-- WSL-DEUS repo view `/home/deus/projects/deus-os-stm32/OS`, canonical Windows `D:\Projects\STM32\OS`; `main == origin/main == 80ccdf5`, clean `0/0`.
+- WSL-DEUS repo view `<WSL_OPERATOR_PATH>`, canonical Windows `<WINDOWS_OPERATOR_PATH>`; `main == origin/main == 80ccdf5`, clean `0/0`.
 - 250 tracked files. `docs/`: 108 Markdown, 39 matching `*_ACCEPTANCE_PLAN.md` names and 42 other `*_PLAN.md` names. All 108 docs and the 136 tracked non-Markdown source/tool/config surfaces were fully read through DEUS-MCP.
 - 30 initially unchecked Markdown items: `BOOTLOADER_READABILITY_CLEANUP_ACCEPTANCE_PLAN.md` one; `MASTER_EXECUTION_CHECKLIST.md` 19; `ROADMAP.md` ten. RDC-08 remains next; generic UI/kernel/networking candidates remain deferred.
 - Relative Markdown `.md` links: no unresolved paths found in the audited syntax subset. Historical unmatched plan-name exceptions explicitly described in `DOCUMENTATION_MODEL.md`.

@@ -46,7 +46,7 @@ Required parameters:
 
 Default toolchain root:
 
-`D:\Projects\STM32\Tools\arm-gnu-toolchain-15.3.rel1-mingw-w64-x86_64-arm-none-eabi`
+`<WINDOWS_OPERATOR_PATH>`
 
 Representative direct build from PowerShell 7:
 
@@ -168,6 +168,6 @@ This script is an older standalone collector and does not embody every newer gen
 For the current bench:
 
 - Windows: repository, build, ST-LINK/SWD, CubeProgrammer, CH340/UART, final evidence ZIP;
-- Ubuntu on Mac mini via `deus@macmini`: target native USB/power, Linux libusb management IF2 and Linux CDC observation.
+- Ubuntu on Mac mini via `<SSH_USER>@<USB_HOST>`: target native USB/power, Linux libusb management IF2 and Linux CDC observation.
 
 No new script may assume that all physical interfaces are local to Windows. See `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.

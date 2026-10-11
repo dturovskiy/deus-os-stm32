@@ -1,6 +1,6 @@
 # Deus OS — Gate-1B File Disposition Policy and Owner Decision Register
 
-> **Status: PROPOSED PUBLICATION POLICY / FILE-BY-FILE TECHNICAL REVIEW PUBLISHED at `760a1177f1d7e304421d2f1b6e70dfd0d02e5f80` with exact-SHA [CI 38137514271](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38137514271) SUCCESS; OWNER APPROVAL NOT RECORDED.** This policy does not authorize moving, deleting, rewriting, redacting or reflashing any file. It is an additive technical decision proposal, not a second historical baseline or a signed Gate-1 PASS.
+> **Status: PROPOSED PUBLICATION POLICY / FILE-BY-FILE TECHNICAL REVIEW PUBLISHED at `760a1177f1d7e304421d2f1b6e70dfd0d02e5f80` with exact-SHA [CI 38137514271](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38137514271) SUCCESS; OWNER APPROVAL NOT RECORDED.** The original decision register did not itself authorize implementation. Subsequently, an explicit **documentation-only execution** direction supported a separately backed-up operator-literal cleanup recorded in `docs/PUBLIC_REPOSITORY_SANITIZATION_DOCS_ONLY_ACCEPTANCE.md`. That bounded action does **not** sign off on all 113 disposition rows, approve program-script changes, or authorize deletion, Git-history rewriting, migration, archive of code or hardware work. The frozen matrix and Gate-1 final acceptance remain unchanged.
 
 ## Authority and immutable inputs
 

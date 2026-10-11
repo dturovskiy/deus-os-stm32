@@ -1,5 +1,7 @@
 # STM32 OS — Project Handoff
 
+> **Public-safe operational view:** Local operator paths, login identities and SSH aliases are placeholders. Substitute values only from separately authorized private operational configuration. This document does not authorize hardware actions; public protocol, ownership and pin-map invariants remain unchanged.
+
 Status: **OPERATOR / ENVIRONMENT REFERENCE — CURRENT PROJECT STATE IS OWNED BY `docs/CURRENT_STATE.md`**
 
 This file exists to help a new operator or chat resume work without rediscovering the hardware, tools and working conventions.
@@ -24,11 +26,11 @@ Historical execution detail lives in `docs/MASTER_EXECUTION_CHECKLIST.md` and `C
 
 Windows repository:
 
-`D:\Projects\STM32\OS`
+`<WINDOWS_OPERATOR_PATH>`
 
 Tools:
 
-`D:\Projects\STM32\Tools`
+`<WINDOWS_OPERATOR_PATH>`
 
 User-run artifact download directory:
 
@@ -64,7 +66,7 @@ UART diagnostics:
 
 USB / display:
 
-- **current bench USB owner is the Ubuntu host on the Mac mini**, reached from Windows through `deus@macmini` / SSH alias `macmini`;
+- **current bench USB owner is the Ubuntu host on the Mac mini**, reached from Windows through `<SSH_USER>@<USB_HOST>` / SSH alias `<USB_HOST_ALIAS>`;
 - current target USB management is therefore exercised through Linux libusb on the Mac mini; CDC IF0/1 remains on Linux `cdc_acm`;
 - Windows WinUSB remains an accepted product transport when the target is physically attached to Windows, but it is not the current cable owner;
 - Windows owns ST-LINK/SWD and CH340/UART in the current bench;
@@ -89,7 +91,7 @@ Host:
 
 Linux USB/runtime host on the current Mac-mini bench:
 
-- SSH endpoint `deus@macmini` / alias `macmini`;
+- SSH endpoint `<SSH_USER>@<USB_HOST>` / alias `<USB_HOST_ALIAS>`;
 - Ubuntu 26.04.1 LTS;
 - x86_64;
 - .NET SDK 10.0.112 in the accepted environment baseline;
@@ -106,7 +108,7 @@ Exact current accepted product identities and versions are in `docs/CURRENT_STAT
 - Inspect the authoritative self-contained evidence ZIP before classifying hardware/runtime acceptance; `run.log` is inside it. Do not emit a loose duplicate log by default; create one only when the operator explicitly requests compatibility output.
 - Do not treat terminal PASS text alone as acceptance proof.
 - Build acceptance harnesses **primitive-first**: independently prove PowerShell process control, SSH/SCP, Git archive portability, .NET/MTP test invocation and any hardware-access primitive on the real execution domain before composing one collector.
-- Never collapse the current split-host bench into one generic host: USB/libusb lives on `deus@macmini`; ST-LINK/CubeProgrammer and CH340/UART live on Windows. A Windows-driven reset/Flash step that needs runtime proof must verify USB recovery remotely on the Mac mini.
+- Never collapse the current split-host bench into one generic host: USB/libusb lives on `<SSH_USER>@<USB_HOST>`; ST-LINK/CubeProgrammer and CH340/UART live on Windows. A Windows-driven reset/Flash step that needs runtime proof must verify USB recovery remotely on the Mac mini.
 - Do **not** respond to harness failures with a `v1 -> v2 -> v3 -> ...` patch train. Freeze the composed collector, isolate/prove the failed primitive, then regenerate the collector from proven primitives. See `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` section 5.
 - Keep firmware/host source mutation separate from docs/evidence repair.
 - Do not amend accepted commits to repair harness/evidence mistakes.

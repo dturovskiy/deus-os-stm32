@@ -32,7 +32,7 @@ PASS requires all of the following, on the exact published baseline:
 - `DeusOs.Control.Core.Tests`: **at least 84 executed tests**, failures/errors/skips/not-run zero.
 - `DeusOs.Control.Transport.Tests`: **at least 24 executed tests**, failures/errors/skips/not-run zero.
 - Each test summary is from an actually executed runner with exit code zero; discovery or static source count alone is invalid. Unexpected MTP/VSTest selection, missing results, nonzero exit, timeouts and unsupported native dependencies cause a classified stop, never an automatic test-count downgrade.
-- Static/git hygiene succeeds; no STM32 target, USB cable, UART, ST-LINK, macmini SSH or firmware-Flash operations are run.
+- Static/git hygiene succeeds; no STM32 target, USB cable, UART, ST-LINK, cross-host SSH or firmware-Flash operations are run.
 - On local primitive or later hosted GitHub runtime failure distinguish CI/HARNESS, dependency/network/runner, and actual host test/product failure; preserve raw logs and retry only after classifying the primary failure.
 
 ## Gate 3 — local workflow acceptance commit

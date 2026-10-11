@@ -303,6 +303,8 @@ Consumer-driven future capabilities (generic timers/queues, DMA, filesystem, low
 
 Gate-1B candidate policy: `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_OWNER_DECISIONS.md` enumerates all 113 original PRIVATE/RETAIN/REDACT routes, recommending 90 public-keep paths and 23 archive-first in-place edits/reviews, with all nine README-referenced paths retained. This is decision preparation only; human privacy, private archive and historical exposure approvals remain prerequisites to Gate-1 completion and any later migration.
 
+Docs-only execution slice: a protected original-document archive and 13 public Markdown operator-value replacements are described in `docs/PUBLIC_REPOSITORY_SANITIZATION_DOCS_ONLY_ACCEPTANCE.md`. This intentionally does not authorize or change seven executable Windows build/recovery scripts, historical Git objects, target firmware or hardware; final repository sanitization and historical-risk approval remain OPEN.
+
 ## Host management presentation evolution — future / residual-debt prerequisites not yet satisfied
 
 The accepted Host Control foundation already provides one transport-neutral Core with CLI + Avalonia presentation. Forward presentation policy is:

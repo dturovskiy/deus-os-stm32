@@ -1,5 +1,7 @@
 # STM32 OS — Harness, Evidence, Failure Classification & Recovery Playbook
 
+> **Public-safe operational view:** Local operator paths, login identities and SSH aliases are placeholders. Substitute values only from separately authorized private operational configuration. This document does not authorize hardware actions; public protocol, ownership and pin-map invariants remain unchanged.
+
 Status: project engineering rulebook
 Scope: Windows-orchestrated build/evidence scripts, Windows-owned UART and STM32CubeProgrammer/ST-LINK hardware access, SSH/SCP coordination with the Ubuntu/Mac-mini USB execution domain, Linux libusb runtime acceptance, Git evidence gates.
 
@@ -133,14 +135,14 @@ Therefore:
 
 The canonical operational topology is `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`. Current stable facts include:
 
-- canonical repository `D:\Projects\STM32\OS` on Windows;
+- canonical repository `<WINDOWS_OPERATOR_PATH>` on Windows;
 - PowerShell 7 orchestrates operator-run packages;
 - Arm GNU Toolchain 15.3.Rel1;
 - STM32CubeProgrammer 2.23;
 - CH340 / USART1 `115200 8N1` on Windows; historical COM number `COM3` is an enumeration fact, not a permanent identity;
 - ST-LINK V2J48S7 on Windows, accepted SWD speed `950 kHz`, read-only fallback ladder `950/480/240/125 kHz`;
 - target native USB is physically attached to Ubuntu on the Mac mini and is exercised there through libusb/`cdc_acm`;
-- Windows reaches that USB execution domain via `deus@macmini` / SSH alias `macmini`;
+- Windows reaches that USB execution domain via `<SSH_USER>@<USB_HOST>` / SSH alias `<USB_HOST_ALIAS>`;
 - the target USB cable is also the normal target power/VBUS source in the current bench.
 
 Do not ask the operator to repeat stable facts already recorded. Do not infer that a physical interface is absent merely because it is not visible on the wrong host.
@@ -171,7 +173,7 @@ A primitive proof is an **executed proof**, not an inferred one. It must use a r
 
 Before composing any hardware gate, map each operation to the host that physically owns its interface. For the current bench, the binding in `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` is authoritative:
 
-- target USB / Linux libusb / Linux CDC observation -> Ubuntu on Mac mini via `deus@macmini`;
+- target USB / Linux libusb / Linux CDC observation -> Ubuntu on Mac mini via `<SSH_USER>@<USB_HOST>`;
 - ST-LINK / SWD / STM32CubeProgrammer -> Windows;
 - CH340 / UART -> Windows;
 - canonical repository, candidate construction and final evidence ZIP -> Windows.
@@ -180,7 +182,7 @@ A current-bench harness MUST NOT probe local Windows WinUSB/CDC and classify abs
 
 During pre-publication Asset Gates 1–5, system capability bit 5 remains intentionally OFF. The production CLI therefore uses `AssetAccessPolicy.PublishedOnly` and must reject normal `config` operations until publication. Acceptance harnesses that intentionally exercise the management carrier before publication must use the same transport-neutral Core with `AssetAccessPolicy.PrepublicationAcceptance` in an acceptance-only helper/runner. Do not patch the production CLI to bypass this policy and do not classify its expected pre-publication rejection as a product failure. Failure class for using the wrong access policy in an acceptance harness: `HARNESS-ASSET-ACCESS-POLICY-01`.
 
-The WSL path `/home/deus/projects/deus-os-stm32/OS` is a Windows-side bind/view of `D:\Projects\STM32\OS`; it is not proof that the remote Mac mini has the same path or repository. Unless a remote repository is explicitly re-proven, cross-host harnesses materialize the exact required candidate/payload on Windows, copy it to a unique remote `/tmp` directory by bounded SCP, verify hashes remotely, execute there, copy raw evidence back, and clean the remote temporary directory. The final authoritative evidence ZIP is assembled on Windows.
+The WSL path `<WSL_OPERATOR_PATH>` is a Windows-side bind/view of `<WINDOWS_OPERATOR_PATH>`; it is not proof that the remote Mac mini has the same path or repository. Unless a remote repository is explicitly re-proven, cross-host harnesses materialize the exact required candidate/payload on Windows, copy it to a unique remote `/tmp` directory by bounded SCP, verify hashes remotely, execute there, copy raw evidence back, and clean the remote temporary directory. The final authoritative evidence ZIP is assembled on Windows.
 
 Only after all required primitives pass independently may they be composed into one acceptance collector.
 
@@ -670,7 +672,7 @@ Use a self-contained ZIP runner when the task materially requires the operator's
 
 - firmware build/toolchain execution unavailable through the connected repo tool;
 - STM32CubeProgrammer / SWD / UART hardware acceptance on Windows;
-- current-bench target USB/libusb/CDC acceptance through bounded SSH/SCP execution on `deus@macmini`;
+- current-bench target USB/libusb/CDC acceptance through bounded SSH/SCP execution on `<SSH_USER>@<USB_HOST>`;
 - Windows-specific WinUSB/Desktop acceptance when the target is actually attached to Windows;
 - evidence collection that must occur on the operator machine;
 - a required operation that the connected repository tool cannot execute.

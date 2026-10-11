@@ -14,6 +14,8 @@ For documentation roles and precedence:
 
 - `docs/DOCUMENTATION_MODEL.md`
 
+Public operational documents now use placeholders for workstation paths, SSH credentials and aliases; the accepted docs-only evidence and its limitations are recorded in `docs/PUBLIC_REPOSITORY_SANITIZATION_DOCS_ONLY_ACCEPTANCE.md`. Do not treat those placeholders as physical-hardware commands or assume the entire Git history has been sanitized.
+
 For stable architecture/invariants:
 
 - `docs/ARCHITECTURE.md`

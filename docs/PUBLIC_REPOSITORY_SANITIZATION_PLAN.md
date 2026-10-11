@@ -169,6 +169,10 @@ The bounded read-only scanner `scripts/public_repository_history_audit.py` compl
 
 `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_OWNER_DECISIONS.md` records a reviewed **113/113 file-by-file proposed policy** for original PRIVATE 49 + RETAIN 49 + REDACT 15 at clean published parent `a2894380c7937424eed1b97e2de19ee018cb96cc`. Preserve all 261 existing public paths: 90 scoped documents would remain publicly unchanged, while 23 scoped paths need approved archive-first in-place editorial/operator cleanup or portable-toolchain/recovery script treatment. Specifically: PRIVATE 43 keep / 6 rewrite, RETAIN 47 keep / 2 rewrite, REDACT 0 unchanged / 15 review or rewrite. Every original frozen 254-row disposition and 98-row prior evidence ledger remains intact. The new file is the one additional proposed PUBLIC audit document (next tracked tree 262), **not** a sign-off or authorized Gate-4 modification. Final approval of owner publication policy, residual history risk, private archive ownership and seven PowerShell compatibility tests is still required.
 
-## 13. Next permitted action
+## 13. Docs-only safe public view (candidate evidence)
+
+Actual archive-first documentary substitutions were prepared from clean public `f728e49486d7ff0dba4bb1e45d9b064d6e6c6d7d` only after a separate owner-private archive contained 19 Git-byte-matched Markdown originals. Thirteen original public Markdown paths were revised in place to hide selected operator-local paths and SSH identities, with all nine README-dependent target filenames still present. Full bounded evidence: `docs/PUBLIC_REPOSITORY_SANITIZATION_DOCS_ONLY_ACCEPTANCE.md`. This deliberately **does not** mutate seven executable PowerShell files, does not erase historic GitHub objects, and does not itself close Gate-1 or open a general Gate-2/Gate-4 migration.
+
+## 14. Next permitted action
 
 Continue **read-only Gate-1** risk/consumer/functional dependency adjudication and independent full-history/hosting evidence; no physical STM32 actions or new ZIP scripts. **Do not proceed to Gate-2 archive/migration or any substantive sanitization on this partial evidence.**
