@@ -19,7 +19,7 @@ if ([string]::IsNullOrWhiteSpace($ProgrammerCli)) {
 }
 
 if (-not (Test-Path -LiteralPath $ProgrammerCli -PathType Leaf)) {
-    throw "STM32CubeProgrammer CLI not found: $ProgrammerCli"
+    throw "STM32CubeProgrammer CLI executable not found. Configure -ProgrammerCli, DEUS_STM32_PROGRAMMER_CLI or one PATH candidate."
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"

@@ -26,6 +26,9 @@ for name, source in data.items():
     ensure(not re.search(r"(?i)\b[A-Z]:\\(?:Users|Projects|Tools)\\", source), f"operator-specific absolute path: {name}")
     ensure(source.strip().startswith("param("), f"unexpected script header: {name}")
     ensure(source.count("Set-StrictMode") >= 1, f"strict-mode missing: {name}")
+    for row in source.splitlines():
+        if row.lstrip().startswith("throw ") and re.search(r"\$(?:ProgrammerCli|[Tt]ool)\b", row):
+            ensure("GetFileName(" in row, f"operator path exposed in failure text: {name}")
 
 for name in build:
     source = data[name]

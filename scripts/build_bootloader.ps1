@@ -28,7 +28,7 @@ $Nm = Join-Path $ToolchainRoot 'bin\arm-none-eabi-nm.exe'
 
 foreach ($tool in @($Gcc,$Objcopy,$Size,$Nm)) {
     if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) {
-        throw ('Required tool missing: ' + $tool)
+        throw ('Required tool missing: ' + [System.IO.Path]::GetFileName($tool))
     }
 }
 

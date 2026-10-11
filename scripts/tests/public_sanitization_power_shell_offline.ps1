@@ -41,6 +41,11 @@ foreach ($name in $seven) {
     $body=[IO.File]::ReadAllText((Join-Path $scripts $name))
     Parse-Source $body $name
     Must (-not ($body -match '(?i)\b[A-Z]:\\(?:Users|Projects|Tools)\\')) "OLD_DEFAULT_$name"
+    foreach ($row in ($body -split '\r?\n')) {
+        if ($row.TrimStart().StartsWith('throw ') -and $row.Contains('$ProgrammerCli')) {
+            throw ('OFFLINE_TEST_FAIL=PROGRAMMER_PATH_IN_ERROR_' + $name)
+        }
+    }
 }
 $wrappers=0
 foreach ($name in @('create_asset_recovery_bundle.ps1','create_bootloader_recovery_bundle.ps1')) {
