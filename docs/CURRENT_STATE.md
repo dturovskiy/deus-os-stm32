@@ -77,11 +77,11 @@ Canonical topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.
 Current bench facts:
 
 - canonical repository/build host: Windows, `<WINDOWS_OPERATOR_PATH>`;
-- target native USB + normal VBUS/power owner: Ubuntu on Mac mini;
+- target native USB + normal VBUS/power owner: Linux USB host (Ubuntu);
 - Windows owns ST-LINK/SWD and CH340/UART;
 - accepted SWD speed: 950 kHz; read-only fallback ladder `950/480/240/125`;
 - ST-LINK 3.3 V and UART-adapter VCC are disconnected;
-- physical target power cycle is native-USB VBUS removal/restore on the Mac-mini connection;
+- physical target power cycle is native-USB VBUS removal/restore on the Linux USB host connection;
 - OLED: SSD1306-class 128x32 at `0x3C`.
 
 A topology change must be reflected in the topology contract before topology-dependent hardware acceptance.

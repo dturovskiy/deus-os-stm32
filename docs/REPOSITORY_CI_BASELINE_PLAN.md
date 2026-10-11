@@ -10,7 +10,7 @@ Acceptance owner: `docs/REPOSITORY_CI_BASELINE_ACCEPTANCE_PLAN.md`
 
 ## 1. Problem, authority and constraints
 
-At the RDC-05 Gate-0 baseline the repository had no tracked `.github/` workflow, so deterministic Host Core/Transport builds and tests depended on manual acceptance runs. RDC-05 adds a small, reproducible **repository CI gate**, not a product feature or a replacement for the accepted Windows/Mac-mini/STM32 hardware evidence. `RESIDUAL_DEBT_CLOSURE_PROGRAM` owns sequencing; `CURRENT_STATE` alone owns activation.
+At the RDC-05 Gate-0 baseline the repository had no tracked `.github/` workflow, so deterministic Host Core/Transport builds and tests depended on manual acceptance runs. RDC-05 adds a small, reproducible **repository CI gate**, not a product feature or a replacement for the accepted Windows/Linux USB host/STM32 hardware evidence. `RESIDUAL_DEBT_CLOSURE_PROGRAM` owns sequencing; `CURRENT_STATE` alone owns activation.
 
 Gate 0 was docs-only and did **not** authorize `.github` workflow mutation until this design/acceptance pair was independently checked, accepted and published. No changes to firmware sources, linker, bootloader, protocol, Host production/test code, or physical target are required by the design.
 
@@ -50,7 +50,7 @@ CI is accepted only when a fresh hosted run proves both Host test suites execute
 
 - Gate-0 docs-only publication: `49392d003abf26636a8717a9e27c5520bf4c1af4`.
 - Gate-1 candidate: one workflow `.github/workflows/ci.yml`; no firmware, Host source or target mutation.
-- Gate-2 Mac-mini Ubuntu evidence SHA-256: `9ABE736EA688352C570B3D0443BABC797A8E240B27FE2107CFF40940305BF651`; locked restore, warning-clean Release, Core `84/84`, Transport `24/24`, skipped `0`.
+- Gate-2 Linux USB host Ubuntu evidence SHA-256: `9ABE736EA688352C570B3D0443BABC797A8E240B27FE2107CFF40940305BF651`; locked restore, warning-clean Release, Core `84/84`, Transport `24/24`, skipped `0`.
 - Initial Gate-3/4 workflow commit `19025ed7d695bf75b43b010ae2e1d0a1ba105d4d`: published non-force; hosted run `37821098177` failed before job creation because `runner.temp` was used at invalid job-level context.
 - Scoped CI-only repair commit `7f75cffdd0c632c5f99310f2c8708d745769aa42`, tree `69cdb0a83b6a5454582343c6d20239761087809d`, was published non-force; accepted publication evidence SHA-256 `9C701DACDD13E5CFF96F22CC79B86C1DC29889BB6D21B474D0A21FFBE59D0276`.
 - GitHub-hosted authoritative [run `37829541187`](https://github.com/dturovskiy/deus-os-stm32/actions/runs/37829541187) is `completed/success` with `head_sha=7f75cffdd0c632c5f99310f2c8708d745769aa42`: Ubuntu 24.04, .NET SDK `10.0.401`, locked restore PASS, Release build `0 warnings / 0 errors`, MTP Core `84/84`, Transport `24/24`, zero skipped, non-vacuous patch/tracked-file hygiene PASS.

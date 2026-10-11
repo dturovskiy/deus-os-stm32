@@ -3,7 +3,7 @@
 > **Public-safe operational view:** Local operator paths, login identities and SSH aliases are placeholders. Substitute values only from separately authorized private operational configuration. This document does not authorize hardware actions; public protocol, ownership and pin-map invariants remain unchanged.
 
 Status: project engineering rulebook
-Scope: Windows-orchestrated build/evidence scripts, Windows-owned UART and STM32CubeProgrammer/ST-LINK hardware access, SSH/SCP coordination with the Ubuntu/Mac-mini USB execution domain, Linux libusb runtime acceptance, Git evidence gates.
+Scope: Windows-orchestrated build/evidence scripts, Windows-owned UART and STM32CubeProgrammer/ST-LINK hardware access, SSH/SCP coordination with the Ubuntu/Linux USB execution domain, Linux libusb runtime acceptance, Git evidence gates.
 
 ## 1. Purpose
 
@@ -53,7 +53,7 @@ The product/harness cannot run because the host or probe state is wrong.
 
 Examples:
 
-- COM3 missing.
+- <UART_COM_PORT> missing.
 - CH340 not `OK`.
 - STM32CubeProgrammer GUI owns ST-LINK and CLI returns `DEV_CONNECT_ERR`.
 - Wrong ST-LINK identity or firmware.
@@ -123,7 +123,7 @@ Every generated operator-run package MUST pass an offline assertion replay befor
 
 ## 4. Collector rule for unavailable host/hardware facts
 
-ChatGPT cannot directly execute the operator's installed Windows GNU toolchain, STM32CubeProgrammer/ST-LINK/CH340 hardware or the physical USB connection owned by the remote Ubuntu/Mac-mini host.
+ChatGPT cannot directly execute the operator's installed Windows GNU toolchain, STM32CubeProgrammer/ST-LINK/CH340 hardware or the physical USB connection owned by the remote Linux USB host (Ubuntu).
 
 Therefore:
 
@@ -139,9 +139,9 @@ The canonical operational topology is `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`
 - PowerShell 7 orchestrates operator-run packages;
 - Arm GNU Toolchain 15.3.Rel1;
 - STM32CubeProgrammer 2.23;
-- CH340 / USART1 `115200 8N1` on Windows; historical COM number `COM3` is an enumeration fact, not a permanent identity;
+- CH340 / USART1 `115200 8N1` on Windows; historical COM number `<UART_COM_PORT>` is an enumeration fact, not a permanent identity;
 - ST-LINK V2J48S7 on Windows, accepted SWD speed `950 kHz`, read-only fallback ladder `950/480/240/125 kHz`;
-- target native USB is physically attached to Ubuntu on the Mac mini and is exercised there through libusb/`cdc_acm`;
+- target native USB is physically attached to Linux USB host (Ubuntu) and is exercised there through libusb/`cdc_acm`;
 - Windows reaches that USB execution domain via `<SSH_USER>@<USB_HOST>` / SSH alias `<USB_HOST_ALIAS>`;
 - the target USB cable is also the normal target power/VBUS source in the current bench.
 
@@ -173,16 +173,16 @@ A primitive proof is an **executed proof**, not an inferred one. It must use a r
 
 Before composing any hardware gate, map each operation to the host that physically owns its interface. For the current bench, the binding in `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` is authoritative:
 
-- target USB / Linux libusb / Linux CDC observation -> Ubuntu on Mac mini via `<SSH_USER>@<USB_HOST>`;
+- target USB / Linux libusb / Linux CDC observation -> Linux USB host (Ubuntu) via `<SSH_USER>@<USB_HOST>`;
 - ST-LINK / SWD / STM32CubeProgrammer -> Windows;
 - CH340 / UART -> Windows;
 - canonical repository, candidate construction and final evidence ZIP -> Windows.
 
-A current-bench harness MUST NOT probe local Windows WinUSB/CDC and classify absence as target/environment failure when the USB cable is attached to the Mac mini. Likewise it must not try to run CubeProgrammer or CH340 acceptance on the Mac mini. A Windows-driven Flash/reset step that requires runtime proof must subsequently prove USB recovery/HELLO/RPC on the Mac-mini USB domain. Failure class: `HARNESS-EXECUTION-DOMAIN-OWNERSHIP-01`.
+A current-bench harness MUST NOT probe local Windows WinUSB/CDC and classify absence as target/environment failure when the USB cable is attached to the Linux USB host. Likewise it must not try to run CubeProgrammer or CH340 acceptance on the Linux USB host. A Windows-driven Flash/reset step that requires runtime proof must subsequently prove USB recovery/HELLO/RPC on the Linux USB domain. Failure class: `HARNESS-EXECUTION-DOMAIN-OWNERSHIP-01`.
 
 During pre-publication Asset Gates 1–5, system capability bit 5 remains intentionally OFF. The production CLI therefore uses `AssetAccessPolicy.PublishedOnly` and must reject normal `config` operations until publication. Acceptance harnesses that intentionally exercise the management carrier before publication must use the same transport-neutral Core with `AssetAccessPolicy.PrepublicationAcceptance` in an acceptance-only helper/runner. Do not patch the production CLI to bypass this policy and do not classify its expected pre-publication rejection as a product failure. Failure class for using the wrong access policy in an acceptance harness: `HARNESS-ASSET-ACCESS-POLICY-01`.
 
-The WSL path `<WSL_OPERATOR_PATH>` is a Windows-side bind/view of `<WINDOWS_OPERATOR_PATH>`; it is not proof that the remote Mac mini has the same path or repository. Unless a remote repository is explicitly re-proven, cross-host harnesses materialize the exact required candidate/payload on Windows, copy it to a unique remote `/tmp` directory by bounded SCP, verify hashes remotely, execute there, copy raw evidence back, and clean the remote temporary directory. The final authoritative evidence ZIP is assembled on Windows.
+The WSL path `<WSL_OPERATOR_PATH>` is a Windows-side bind/view of `<WINDOWS_OPERATOR_PATH>`; it is not proof that the remote Linux USB host has the same path or repository. Unless a remote repository is explicitly re-proven, cross-host harnesses materialize the exact required candidate/payload on Windows, copy it to a unique remote `/tmp` directory by bounded SCP, verify hashes remotely, execute there, copy raw evidence back, and clean the remote temporary directory. The final authoritative evidence ZIP is assembled on Windows.
 
 Only after all required primitives pass independently may they be composed into one acceptance collector.
 
@@ -599,7 +599,7 @@ Linked stack oracles must treat compiler-generated IPA clone symbols as a distin
 | HARNESS-DOTNET-MTP-RUNNER-01 | Core/Transport test process exits before executing tests with `VSTest target is no longer supported` while `[Fact]` discovery counts still match | .NET 10 was invoked outside the `host/` policy scope, so `host/global.json` did not select Microsoft.Testing.Platform v2 | set CWD to candidate `host/` (or run the accepted direct MTP test app), capture/verify `dotnet --info` sees `global.json`, and require an executed passing test summary rather than source test-count discovery |
 | HARNESS-DOTNET-RESTORE-STATE-01 | host build stops with `NETSDK1004` because `obj/project.assets.json` is absent | harness invoked `dotnet build --no-restore` without establishing restore state in the same bounded run | run bounded `dotnet restore --locked-mode` first with candidate `host/` CWD/global.json in scope, capture stdout/stderr, then build with `--no-restore`; classify an actual restore dependency/feed failure separately |
 | HARNESS-TERMINAL-STRUCTURE-01 | operator sees an uncategorized wall of output or a raw exception instead of a timestamped colored result | harness omitted required section/category/timestamp/final-result presentation or used `throw` after evidence finalization | timestamp all harness summary lines, use `[OK]/[WARN]/[ERROR]`, print final PASS green or FAIL red with classification/phase/error/evidence path, and terminate normally once trustworthy evidence is finalized |
-| HARNESS-EXECUTION-DOMAIN-OWNERSHIP-01 | target USB appears "missing" on Windows, or a harness tries CubeProgrammer/UART on the Mac mini | composed gate ignored the physical split-host topology and executed a hardware primitive on a host that does not own that interface | bind every hardware step to `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`; current USB/libusb/CDC is Mac-mini Ubuntu, ST-LINK/UART is Windows; coordinate by bounded SSH/SCP and retain host labels in evidence |
+| HARNESS-EXECUTION-DOMAIN-OWNERSHIP-01 | target USB appears "missing" on Windows, or a harness tries CubeProgrammer/UART on the Linux USB host | composed gate ignored the physical split-host topology and executed a hardware primitive on a host that does not own that interface | bind every hardware step to `DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`; current USB/libusb/CDC is Linux USB host Ubuntu, ST-LINK/UART is Windows; coordinate by bounded SSH/SCP and retain host labels in evidence |
 | HARNESS-ASSET-ACCESS-POLICY-01 | pre-publication Asset runtime proof is rejected even though management HELLO advertises the carrier | harness used production `PublishedOnly` policy while system capability bit 5 is intentionally OFF | keep production CLI fail-closed; use Core `PrepublicationAcceptance` only inside the bounded acceptance helper/runner through Gate 5 |
 | HARNESS-POWERSHELL-ARGUMENT-CARDINALITY-01 | a native command receives a split/duplicated computed argument; e.g. `git hash-object` emits the same blob twice | unparenthesized string concatenation was embedded in a multi-item PowerShell array literal | parenthesize/precompute each computed argument, persist the exact argument vector, and validate expected output cardinality before semantic comparison |
 | HARNESS-EVIDENCE-RECORD-CARDINALITY-01 | `outcome.txt` or another structured evidence file collapses multiple key/value records onto one physical line | computed expressions inside a PowerShell array literal were not individually grouped | parenthesize each computed record and validate one key/value per physical line before packaging |
@@ -668,7 +668,7 @@ Direct repo mutation still requires:
 
 ### Operator-run package
 
-Use a self-contained ZIP runner when the task materially requires the operator's Windows environment, the remote Mac-mini USB execution domain, or the physical target, for example:
+Use a self-contained ZIP runner when the task materially requires the operator's Windows environment, the remote Linux USB execution domain, or the physical target, for example:
 
 - firmware build/toolchain execution unavailable through the connected repo tool;
 - STM32CubeProgrammer / SWD / UART hardware acceptance on Windows;

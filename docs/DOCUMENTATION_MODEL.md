@@ -101,7 +101,7 @@ Owns the current operational development/acceptance topology:
 
 - canonical repository host/path;
 - physical owner host for target USB, UART and ST-LINK/SWD;
-- Windows -> Mac-mini SSH/SCP coordination boundary;
+- Windows -> Linux USB host SSH/SCP coordination boundary;
 - target power/VBUS ownership relevant to physical power-cycle acceptance;
 - execution-domain mapping rules for multi-host harnesses.
 

@@ -59,18 +59,18 @@ Debug/recovery:
 
 UART diagnostics:
 
-- CH340 on Windows `COM3`
+- CH340 on Windows `<UART_COM_PORT>`
 - USART1
 - 115200 8N1
 - UART remains emergency/text diagnostics
 
 USB / display:
 
-- **current bench USB owner is the Ubuntu host on the Mac mini**, reached from Windows through `<SSH_USER>@<USB_HOST>` / SSH alias `<USB_HOST_ALIAS>`;
-- current target USB management is therefore exercised through Linux libusb on the Mac mini; CDC IF0/1 remains on Linux `cdc_acm`;
+- **current bench USB owner is the Ubuntu host on the Linux USB host**, reached from Windows through `<SSH_USER>@<USB_HOST>` / SSH alias `<USB_HOST_ALIAS>`;
+- current target USB management is therefore exercised through Linux libusb on the Linux USB host; CDC IF0/1 remains on Linux `cdc_acm`;
 - Windows WinUSB remains an accepted product transport when the target is physically attached to Windows, but it is not the current cable owner;
 - Windows owns ST-LINK/SWD and CH340/UART in the current bench;
-- the target USB cable is also the normal target power source, so the required physical power-cycle/reconnect action occurs on the Mac-mini USB connection;
+- the target USB cable is also the normal target power source, so the required physical power-cycle/reconnect action occurs on the Linux USB connection;
 - accepted OLED is SSD1306-class native `128x32` at I2C address `0x3C`;
 - exact operational topology and cross-host harness rules are canonical in `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.
 
@@ -89,7 +89,7 @@ Host:
 - Linux libusb
 - Avalonia desktop
 
-Linux USB/runtime host on the current Mac-mini bench:
+Linux USB/runtime host on the current split-host bench:
 
 - SSH endpoint `<SSH_USER>@<USB_HOST>` / alias `<USB_HOST_ALIAS>`;
 - Ubuntu 26.04.1 LTS;
@@ -97,7 +97,7 @@ Linux USB/runtime host on the current Mac-mini bench:
 - .NET SDK 10.0.112 in the accepted environment baseline;
 - libusb 1.0.29;
 - usbutils 019;
-- no persistent canonical repository on the Mac mini is assumed; exact payloads are transferred to bounded remote temporary directories when required.
+- no persistent canonical repository on the Linux USB host is assumed; exact payloads are transferred to bounded remote temporary directories when required.
 
 Exact current accepted product identities and versions are in `docs/CURRENT_STATE.md`.
 
@@ -108,7 +108,7 @@ Exact current accepted product identities and versions are in `docs/CURRENT_STAT
 - Inspect the authoritative self-contained evidence ZIP before classifying hardware/runtime acceptance; `run.log` is inside it. Do not emit a loose duplicate log by default; create one only when the operator explicitly requests compatibility output.
 - Do not treat terminal PASS text alone as acceptance proof.
 - Build acceptance harnesses **primitive-first**: independently prove PowerShell process control, SSH/SCP, Git archive portability, .NET/MTP test invocation and any hardware-access primitive on the real execution domain before composing one collector.
-- Never collapse the current split-host bench into one generic host: USB/libusb lives on `<SSH_USER>@<USB_HOST>`; ST-LINK/CubeProgrammer and CH340/UART live on Windows. A Windows-driven reset/Flash step that needs runtime proof must verify USB recovery remotely on the Mac mini.
+- Never collapse the current split-host bench into one generic host: USB/libusb lives on `<SSH_USER>@<USB_HOST>`; ST-LINK/CubeProgrammer and CH340/UART live on Windows. A Windows-driven reset/Flash step that needs runtime proof must verify USB recovery remotely on the Linux USB host.
 - Do **not** respond to harness failures with a `v1 -> v2 -> v3 -> ...` patch train. Freeze the composed collector, isolate/prove the failed primitive, then regenerate the collector from proven primitives. See `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` section 5.
 - Keep firmware/host source mutation separate from docs/evidence repair.
 - Do not amend accepted commits to repair harness/evidence mistakes.

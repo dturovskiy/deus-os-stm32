@@ -14,7 +14,7 @@ Frozen Gate-0 parent: `80ccdf5534ac65a830dcec5cc022e916521d2fb4`.
 
 **Required PASS evidence**
 
-1. Local DEUS-MCP repository resolves to the Windows-backed OS worktree, not Mac-mini USB host. Baseline `HEAD == origin/main == 80ccdf5534ac65a830dcec5cc022e916521d2fb4`, clean index/worktree and ahead/behind `0/0`, recorded *before* mutation.
+1. Local DEUS-MCP repository resolves to the Windows-backed OS worktree, not Linux USB host. Baseline `HEAD == origin/main == 80ccdf5534ac65a830dcec5cc022e916521d2fb4`, clean index/worktree and ahead/behind `0/0`, recorded *before* mutation.
 2. Verify RDC-01..07 CLOSED/PUBLISHED from Git plus canonical contracts, with RDC-08 the sole mandatory remaining RDC item, no current product-feature boundary.
 3. Read complete `docs/*.md` inventory and inspect tracked firmware/Host/bootloader/scripts/linker/CI surfaces; classify observed current-state duplication, inventory history, open checkboxes, stale-versus-historical assertions, path/artifact/secret-search limitations.
 4. Gate-0 worktree candidate adds exactly two named docs; NO existing document, product, script, CI, Git policy or target state is altered. At acceptance, staged-name-status must equal `A` for the two named files and nothing else.
@@ -38,7 +38,7 @@ Frozen Gate-0 parent: `80ccdf5534ac65a830dcec5cc022e916521d2fb4`.
 
 **PASS:** every tracked docs Markdown plus root/script reference Markdown is inventoried, with a source-linked classification of current claims, historical gates, open checkboxes, active-next references, future/deferred terms, topology, firmware ownership and plan pairings. Classifications: `CURRENT_CORRECT`, `CURRENT_DEBT`, `HISTORICAL`, `DEFERRED`, `NOT_APPLICABLE`. Exact required Gate-2 docs-only changed-path allowlist frozen.
 
-**FAIL:** unexamined file, active orphan plan, silent promotion of optional features, conflation of WSL worktree with Mac mini USB host, or inferred current device state from old logs alone.
+**FAIL:** unexamined file, active orphan plan, silent promotion of optional features, conflation of WSL worktree with Linux USB host, or inferred current device state from old logs alone.
 
 ### Gate-1 measured full-source matrix — AUDIT COMPLETE / PUBLICATION PENDING
 
@@ -172,7 +172,7 @@ Measured totals: 113 files, 2214 lexical matches (**broad matching, includes non
 - `HISTORICAL`: `docs/ARCHITECTURE.md:965,1033,1069` contains C3.9/C4.0 “planned” subsections **followed by** accepted records and is a chronology of the now-implemented heartbeat/watchdog. No feature or technical defect is implied; leave the accepted sections intact. `docs/DEFERRED_OPTIMIZATION_ROBUSTNESS_BACKLOG.md:155–170` expressly frames FDC closure statements as historical; do not reinterpret its earlier “feature selection” narrative as current RDC authorization.
 - All **30** open boxes are located in `docs/BOOTLOADER_READABILITY_CLEANUP_ACCEPTANCE_PLAN.md` (1 — RDC-08), `docs/MASTER_EXECUTION_CHECKLIST.md` (19 — 1 RDC-08 and 18 deferred UI/RTC/kernel-log work) and `docs/ROADMAP.md` (10 — 1 RDC-08, four deferred generic kernel services and five deferred networking tasks). Every box is classified; no additional active mandatory Gate is hidden.
 - All non-RDC-08 scoped completed plan/acceptance pairs are accepted historical records; matched active plan pairs are the RDC governance pair and RDC-08 pair. Unmatched plan names: `IMPLEMENTATION_PLAN.md`, `OLED_CONSOLE_IMPLEMENTATION_PLAN.md`, `OLED_STATUS_BAR_PLAN.md`, `OLED_UI_LAYOUT_PLAN.md`; lone unmatched acceptance: `OLED_CONSOLE_ACCEPTANCE_PLAN.md`. All five are historical, deferred or an explicitly documented semantic OLED pair, **not** orphan active work.
-- Relative Markdown link-resolution check found **zero unresolved links** among tracked Markdown inputs; referenced uppercase `.md` filenames also resolved to tracked docs/root paths. Host topology remains Windows-backed WSL DEUS-MCP view for Git, Mac-mini Ubuntu for native USB/normal VBUS, Windows for ST-LINK/UART.
+- Relative Markdown link-resolution check found **zero unresolved links** among tracked Markdown inputs; referenced uppercase `.md` filenames also resolved to tracked docs/root paths. Host topology remains Windows-backed WSL DEUS-MCP view for Git, Linux USB host Ubuntu for native USB/normal VBUS, Windows for ST-LINK/UART.
 - `README.md`, `scripts/README.md`, stable protocols, Flash decision, deferred Host Management reference, `docs/ARCHITECTURE.md` and `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md` show no newly proven present-tense conflict; therefore no blanket edits are authorized. Full source-code behavior, signed firmware bytes and physical STM32 were **not** retested at Gate-1.
 
 **Exact Gate-2 content-edit allowlist (frozen; no wildcard expansion):**

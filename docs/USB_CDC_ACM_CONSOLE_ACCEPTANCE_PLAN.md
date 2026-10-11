@@ -112,7 +112,7 @@ ST-LINK GND/SWDIO/SWCLK may remain connected for recovery where electrically saf
 Required hardware proof:
 
 1. flash/verify exact Gate 2 candidate only and final readback exact;
-2. UART COM3 remains usable as independent emergency/control channel;
+2. UART <UART_COM_PORT> remains usable as independent emergency/control channel;
 3. Windows enumerates exact `VID_1209&PID_000B` / product `Deus OS CDC Console`;
 4. Windows binds Microsoft `usbser.sys` automatically, with no custom INF;
 5. device reaches configuration `1` and exposes a dynamic Windows COM port;

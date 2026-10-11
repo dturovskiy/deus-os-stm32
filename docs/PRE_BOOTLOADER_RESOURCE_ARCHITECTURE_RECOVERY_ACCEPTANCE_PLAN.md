@@ -147,7 +147,7 @@ Run the exact production candidate and retain:
 - boot/startup;
 - scheduler/task/IWDG liveness;
 - UART emergency/text diagnostics;
-- primary management IF2 and production host policy through the canonical management carrier (WinUSB when Windows owns target USB, Linux libusb on the current Mac-mini-owned USB topology); CDC remains secondary diagnostic/compatibility transport and is not an independent Gate-4 blocker when CDC implementation/descriptor/ring ownership is unchanged;
+- primary management IF2 and production host policy through the canonical management carrier (WinUSB when Windows owns target USB, Linux libusb on the current Linux USB host-owned USB topology); CDC remains secondary diagnostic/compatibility transport and is not an independent Gate-4 blocker when CDC implementation/descriptor/ring ownership is unchanged;
 - binary framing/RPC;
 - Asset STATUS/read/write/readback and persistence continuity as applicable without
   unnecessary wear. The current accepted physical prestate is canonical CLEAN from the

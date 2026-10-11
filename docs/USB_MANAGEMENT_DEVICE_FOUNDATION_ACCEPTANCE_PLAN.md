@@ -162,7 +162,7 @@ Gate 2 current result: **PASS**. After the Gate 3 Windows Code 28 investigation 
 
 Use the exact Gate 2 BIN only.
 
-Before target access, preflight every host resource required later in Gate 3: STM32CubeProgrammer/ST-LINK availability, target USB presence under normal microUSB power, WinUSB host bridge integrity, and a non-target UART serial adapter (historically COM3 / CH340) enumerated on the host with adapter VCC disconnected. Missing UART host enumeration is an environment failure and must stop the run before SWD/reconnect/IWDG work.
+Before target access, preflight every host resource required later in Gate 3: STM32CubeProgrammer/ST-LINK availability, target USB presence under normal microUSB power, WinUSB host bridge integrity, and a non-target UART serial adapter (historically <UART_COM_PORT> / CH340) enumerated on the host with adapter VCC disconnected. Missing UART host enumeration is an environment failure and must stop the run before SWD/reconnect/IWDG work.
 
 If current Flash readback already equals the exact target candidate, flashing may be skipped. Otherwise flash once and verify.
 

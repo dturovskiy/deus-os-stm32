@@ -49,7 +49,7 @@ This section is the historical executable ledger for the 2026-10-03 post-publica
   - [x] user cancellation and session disposal cannot leave an unbounded native operation that outlives ownership;
   - [x] two simultaneous independent sessions remain isolated;
   - [x] cancellation followed by reopen/recovery produces a clean decoder/channel/session;
-  - [x] platform transport tests and real Windows/Linux smoke acceptance accepted: Transport `24/24`, Core `78/78`, Linux cancel-drain/dispose/reopen `2021/3/15 ms`, Windows cancel-drain `2017 ms`, physical disconnect `TransportDisconnected` in `7 ms`, canonical Mac-mini bench ownership restored.
+  - [x] platform transport tests and real Windows/Linux smoke acceptance accepted: Transport `24/24`, Core `78/78`, Linux cancel-drain/dispose/reopen `2021/3/15 ms`, Windows cancel-drain `2017 ms`, physical disconnect `TransportDisconnected` in `7 ms`, canonical Linux USB host bench ownership restored.
 
 #### Slice B — Target architecture/lifecycle cleanup
 

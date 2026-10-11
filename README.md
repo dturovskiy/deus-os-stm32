@@ -43,7 +43,7 @@ README is an entry point only. It is **not** an authoritative current-state, acc
 - debug/recovery: SWD / ST-LINK V2
 - emergency diagnostics: USART1
 - primary product management: native USB management IF2 over WinUSB (Windows) or libusb (Linux)
-- current bench USB owner: Ubuntu on Mac mini via Linux libusb; Windows owns ST-LINK and UART
+- current bench USB owner: Linux USB host (Ubuntu) via libusb; Windows owns ST-LINK and UART
 - secondary USB diagnostics: CDC ACM
 - local display: SSD1306-class 128x32 OLED
 

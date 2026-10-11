@@ -26,7 +26,7 @@ Gate 0 is therefore complete. Gate 1 is now authorized only for the behavior-pre
 
 ### Current acceptance disposition after Gate 5
 
-The implementation subsequently completed Gates 1–4 and the complete Gate-5 hardware matrix. Gate 5 now has accepted proof for normal boot, explicit update entry, invalid-application recovery, malformed header, wrong target, bad digest, bad authenticator, rollback/version rejection, deterministic reset interruption, physical Mac-mini USB/VBUS power interruption, full retry from zero, exact application/metadata/bootloader/persistence ownership, deterministic handoff/VTOR, and the applicable Linux/libusb hardware path.
+The implementation subsequently completed Gates 1–4 and the complete Gate-5 hardware matrix. Gate 5 now has accepted proof for normal boot, explicit update entry, invalid-application recovery, malformed header, wrong target, bad digest, bad authenticator, rollback/version rejection, deterministic reset interruption, physical Linux USB-host USB/VBUS power interruption, full retry from zero, exact application/metadata/bootloader/persistence ownership, deterministic handoff/VTOR, and the applicable Linux/libusb hardware path.
 
 The final hardware state was returned to the accepted repair-candidate whole-Flash SHA-256 `5033A8FDE3F1962E0AA63F8343E6761730628ECE12AA0BCD3AE12CB2001283CA`. Stage-10 formal continuation SHA-256 is `E6EB019B021AB95DB16CA3B95E1C3F7C2C7F44D862ABF2711F6B42089F35D560`.
 
@@ -119,7 +119,7 @@ preserve and re-prove before destructive hardware acceptance:
 
 | Function | STM32F103 pin(s) | Current bench owner / connection | Bootloader rule |
 | --- | --- | --- | --- |
-| Native USB FS | PA11 `USB_DM`, PA12 `USB_DP` | USB data + normal VBUS/power are physically attached to Ubuntu on the Mac mini | runtime and bootloader may own USB only through the accepted USB device contract; do not repurpose PA11/PA12 |
+| Native USB FS | PA11 `USB_DM`, PA12 `USB_DP` | USB data + normal VBUS/power are physically attached to Linux USB host (Ubuntu) | runtime and bootloader may own USB only through the accepted USB device contract; do not repurpose PA11/PA12 |
 | Emergency UART / CH340 | PA9 `USART1_TX`, PA10 `USART1_RX` | CH340 on Windows, 115200 8N1; adapter VCC disconnected while USB powers target | update transport must not silently move to UART; PA9/PA10 remain diagnostics |
 | OLED / I2C1 | PB6 `I2C1_SCL`, PB7 `I2C1_SDA` | SSD1306-class 128x32 display | bootloader does not own OLED/I2C and must not reconfigure PB6/PB7 |
 | Heartbeat LED | PC13 | on-board active-low LED | bootloader does not rely on PC13 for update correctness |
@@ -127,10 +127,10 @@ preserve and re-prove before destructive hardware acceptance:
 
 Power discipline is part of the map, not an operator convention:
 
-- normal target power comes from the Mac-mini USB VBUS connection;
+- normal target power comes from the Linux USB VBUS connection;
 - ST-LINK supplies SWD signals/ground only in the normal bench topology, not a competing 3.3 V rail;
 - CH340 supplies TX/RX/ground only; adapter VCC remains disconnected;
-- a physical target power cycle therefore belongs to the Mac-mini USB domain;
+- a physical target power cycle therefore belongs to the Linux USB domain;
 - a Windows-driven SWD reset is not by itself a complete USB recovery proof.
 
 Gate 3 is non-target and must not probe or mutate these interfaces. Gate 5 must record the

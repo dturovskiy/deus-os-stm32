@@ -414,7 +414,7 @@ The v1 update path is intentionally narrow:
 - normal handoff validates vectors and transfers to application VTOR `0x08002000`;
 - bootloader does not own OLED/I2C or persistence pages 62/63.
 
-Gate-5 hardware acceptance covers normal boot, explicit update entry, invalid-app recovery, malformed header, wrong target, bad digest, bad authenticator, rollback rejection, deterministic reset interruption, physical Mac-mini VBUS interruption, complete retry, exact application bytes, exact bootloader/persistence preservation, metadata commit ordering, runtime VTOR and Linux/libusb target transport.
+Gate-5 hardware acceptance covers normal boot, explicit update entry, invalid-app recovery, malformed header, wrong target, bad digest, bad authenticator, rollback rejection, deterministic reset interruption, physical Linux USB-host VBUS interruption, complete retry, exact application bytes, exact bootloader/persistence preservation, metadata commit ordering, runtime VTOR and Linux/libusb target transport.
 
 A post-Stage-10 host reliability audit keeps one shared `DeviceProtocolChannel` as correlation authority. Firmware-update timeout handling marks only the abandoned request ID stale; one delayed response with that explicit stale ID is discarded centrally, while an unknown mismatched request ID remains fatal. Windows WinUSB pipe timeout errors 121/1460 map to `HostErrorKind.Timeout`; Open/setup error ownership is unchanged. No second firmware-side response-loss mechanism is claimed from historical timeout observations.
 

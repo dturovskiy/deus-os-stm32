@@ -60,7 +60,7 @@ Gate-0 Amendment A, already published at `3925e1d1e0a30e49c0694f746c5bbd3d7912d8
 
 During authenticated hardware Gate-3 acceptance, a reproducible STM32F103 USB EPnR rc_w0 CTR-event loss was found and independently corrected. The single-file bootloader behavior repair was committed separately as `83e57f609bab4bcc8a61ea2222629bf9066e910d`, not mixed into the three-file cleanup scope. Production key-bearing bootloader replacement passed targeted Flash pages 0–7 program/verify and independent full-Flash readback; the post-repair bootloader INFO matrix passed all 72 paced/burst requests with no timeouts. The previously signed application candidate revision 5 was then successfully installed by authenticated USB protocol. Full SWD readback proved the expected 52,012-byte application SHA-256 `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210`, authenticated version floor 5 and unchanged bootloader/persistence ownership.
 
-Post-update USB/RPC/`help`/application/scheduler/IWDG runtime acceptance passed. The separately uploaded Windows CH340 UART log proves `COM3`, `115200 8N1`, `help help` descriptor and 36-command `help` catalog; the operator explicitly confirmed `PHYSICAL_OLED=PASS`. Gate-3 evidence-only final acceptance collation SHA-256 `F38EFC5697A26E93B7381B3ACE5DEE225CE826053B4C2B68C5F08279EEBF13AD`.
+Post-update USB/RPC/`help`/application/scheduler/IWDG runtime acceptance passed. The separately uploaded Windows CH340 UART log proves `<UART_COM_PORT>`, `115200 8N1`, `help help` descriptor and 36-command `help` catalog; the operator explicitly confirmed `PHYSICAL_OLED=PASS`. Gate-3 evidence-only final acceptance collation SHA-256 `F38EFC5697A26E93B7381B3ACE5DEE225CE826053B4C2B68C5F08279EEBF13AD`.
 
 Both code commits were published by normal non-force fast-forward. Fresh fetch proved clean `HEAD == origin/main == FETCH_HEAD == 83e57f609bab4bcc8a61ea2222629bf9066e910d`, ahead/behind `0/0`. Exact-commit GitHub Actions [run 38011195238](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38011195238) completed success with warning/error-clean Host Release build, Core `84/84`, Transport `24/24`, failed/skipped `0/0`. No key, application image, raw Flash dump or local evidence bundle entered source control. The separately reconciled documentation records RDC-06 closure and activates RDC-07 Gate-0 audit/design as the next mandatory maintenance boundary; RDC-08 remains queued and new product features stay blocked.
 
@@ -144,7 +144,7 @@ The V5 Windows physical proof remains accepted despite the separately classified
 
 The exact four-path `HOST_NATIVE_TRANSPORT_LIFETIME_HARDENING` candidate has completed deterministic and real-platform acceptance. Gate-2 evidence `stm32_os_fdc09_gate2_host_validation_dotnet_v2_20261004_215723.evidence.zip`, SHA-256 `1B4090EEED139BA7B5E7BEB11C530B0CF4B1EEB44706ADCA079430FAD686FFCE`, proves Transport `24/24`, Core `78/78`, Windows/Linux/Core Release builds, exact source/poststate locks and zero target/Flash mutation.
 
-Linux Gate-4 evidence `stm32_os_fdc09_gate4_linux_real_platform_dotnet_v1_20261004_222724.evidence.zip`, SHA-256 `F084F76AEA3ED28E4BE4E697FCDF323360ED190810EEE4E3F944AD56930E2900`, proves IF2-only libusb ownership, bounded cancel-drain `2021 ms`, dispose `3 ms`, same-locator reopen `15 ms`, fresh negotiation/ping and unchanged CDC `cdc_acm` ownership `2 -> 2`. Windows Gate-3 evidence `stm32_os_fdc09_gate3_windows_real_platform_dotnet_v5_20261004_225617.evidence.zip`, SHA-256 `B392F3AEA191E0649CBBF2FFEBCE8AA2CA580BE79D25AF4B36FE58FD699728C5`, proves WinUSB cancel-drain `2017 ms`, dispose `3 ms`, physical removal classification `TransportDisconnected` in `7 ms`, same-locator replug/reopen, fresh negotiation/ping and restoration of canonical Mac-mini USB ownership in `634 ms`; Flash mutation remains NONE.
+Linux Gate-4 evidence `stm32_os_fdc09_gate4_linux_real_platform_dotnet_v1_20261004_222724.evidence.zip`, SHA-256 `F084F76AEA3ED28E4BE4E697FCDF323360ED190810EEE4E3F944AD56930E2900`, proves IF2-only libusb ownership, bounded cancel-drain `2021 ms`, dispose `3 ms`, same-locator reopen `15 ms`, fresh negotiation/ping and unchanged CDC `cdc_acm` ownership `2 -> 2`. Windows Gate-3 evidence `stm32_os_fdc09_gate3_windows_real_platform_dotnet_v5_20261004_225617.evidence.zip`, SHA-256 `B392F3AEA191E0649CBBF2FFEBCE8AA2CA580BE79D25AF4B36FE58FD699728C5`, proves WinUSB cancel-drain `2017 ms`, dispose `3 ms`, physical removal classification `TransportDisconnected` in `7 ms`, same-locator replug/reopen, fresh negotiation/ping and restoration of canonical Linux USB ownership in `634 ms`; Flash mutation remains NONE.
 
 A post-run audit also recorded `HARNESS-TERMINAL-STRUCTURE-01`: recent .NET validators omitted the canonical green/red/yellow final RESULT rendering and used reserved `PASS`/`FAIL` words in intermediate summary text. The physical/product evidence is complete and is not rerun for presentation-only styling. Future harness package generation must lint and reject missing final color structure or reserved-word discipline before operator handoff.
 
@@ -276,7 +276,7 @@ Gate-6 validation evidence SHA-256 `104A93DDCED3F6B86B41E6476DF5D47CE6FD532216DC
 
 ### Firmware Update / Bootloader Foundation — Gate-5 hardware matrix complete
 
-Gate-5 Stages 6–10 are accepted through exact technical evidence plus operator OLED continuations. The campaign covers bad digest, bad authenticator, rollback/version rejection, deterministic reset interruption, physical Mac-mini native-USB/VBUS interruption, recovery and full retry from offset zero, exact successful application bytes, metadata commit ordering, unchanged bootloader pages, byte-identical persistence and deterministic runtime handoff/VTOR.
+Gate-5 Stages 6–10 are accepted through exact technical evidence plus operator OLED continuations. The campaign covers bad digest, bad authenticator, rollback/version rejection, deterministic reset interruption, physical Linux USB host native-USB/VBUS interruption, recovery and full retry from offset zero, exact successful application bytes, metadata commit ordering, unchanged bootloader pages, byte-identical persistence and deterministic runtime handoff/VTOR.
 
 Key final evidence:
 
@@ -386,7 +386,7 @@ whole Flash remained exact at `A9F279C2DEB70937A4A3BED1B0A2919D50374B8BCE4B1C159
 before, during bootloader idle, and after the return to runtime.
 
 Linux permission handling was constrained to one operator-visible privileged metadata change on
-the ephemeral `1209:000D` `/dev/bus/usb/...` node; the firmware protocol itself ran as user `deus`
+the ephemeral `1209:000D` `/dev/bus/usb/...` node; the firmware protocol itself ran under a non-root Linux account
 and no persistent udev/configuration change was made. Explicit `mode=HOTPLUG -rst` restored runtime;
 `VTOR=0x08002000`, `VECTACTIVE=0`, kernel ticks advanced `4771 -> 6492`, runtime `1209:000C`
 returned and bootloader `1209:000D` disappeared. Operator physical reconfirmation is now

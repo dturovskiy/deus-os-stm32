@@ -26,7 +26,7 @@ This boundary must preserve validated identities, physical deployment evidence a
 
 ## 2. Gate-0 read-only baseline / inspected surfaces
 
-The DEUS-MCP Windows-backed WSL repository view is `<WSL_OPERATOR_PATH>`, mapped to canonical Windows `<WINDOWS_OPERATOR_PATH>`. It is **not** the Ubuntu Mac-mini USB host and does not itself prove Windows ARM toolchain or physical STM32 access.
+The DEUS-MCP Windows-backed WSL repository view is `<WSL_OPERATOR_PATH>`, mapped to canonical Windows `<WINDOWS_OPERATOR_PATH>`. It is **not** the Ubuntu Linux USB host and does not itself prove Windows ARM toolchain or physical STM32 access.
 
 Measured at `80ccdf5534ac65a830dcec5cc022e916521d2fb4`:
 

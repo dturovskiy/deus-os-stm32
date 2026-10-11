@@ -5,7 +5,7 @@ This directory contains versioned build, board-inspection and candidate-recovery
 Canonical operational references:
 
 - current project/gate state: `docs/CURRENT_STATE.md`;
-- current Windows / Mac-mini / USB / UART / ST-LINK ownership: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`;
+- current Windows / Linux USB host / USB / UART / ST-LINK ownership: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`;
 - harness/evidence construction rules: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`;
 - Asset recovery contract: `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`;
 - published Firmware Update / Bootloader design/acceptance: `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`.
@@ -131,7 +131,7 @@ Current physical execution domain:
 
 - **Windows**, because ST-LINK/SWD and STM32CubeProgrammer are physically attached there.
 
-The target's normal USB/power is currently attached to the Ubuntu Mac-mini host. A complete acceptance recovery proof therefore cannot stop at Windows SWD readback/reset: any required post-reset USB HELLO/RPC/runtime proof belongs to the Mac-mini USB execution domain and must be coordinated by the outer acceptance harness through SSH/SCP.
+The target's normal USB/power is currently attached to the Linux USB host (Ubuntu). A complete acceptance recovery proof therefore cannot stop at Windows SWD readback/reset: any required post-reset USB HELLO/RPC/runtime proof belongs to the Linux USB execution domain and must be coordinated by the outer acceptance harness through SSH/SCP.
 
 This recovery utility predates some of the current generic operator-facing harness presentation/process requirements and is candidate-bound. Do not use it as the template for a new acceptance collector. The outer collector owns bounded process execution, cross-host coordination, evidence packaging and final presentation.
 
@@ -168,6 +168,6 @@ This script is an older standalone collector and does not embody every newer gen
 For the current bench:
 
 - Windows: repository, build, ST-LINK/SWD, CubeProgrammer, CH340/UART, final evidence ZIP;
-- Ubuntu on Mac mini via `<SSH_USER>@<USB_HOST>`: target native USB/power, Linux libusb management IF2 and Linux CDC observation.
+- Linux USB host (Ubuntu) via `<SSH_USER>@<USB_HOST>`: target native USB/power, Linux libusb management IF2 and Linux CDC observation.
 
 No new script may assume that all physical interfaces are local to Windows. See `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.

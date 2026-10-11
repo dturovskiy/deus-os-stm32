@@ -54,7 +54,7 @@ Fetch and verify the direct parent, ordinary non-force push, fresh fetch proving
 
 - Gate-0 plan/acceptance publication `49392d003abf26636a8717a9e27c5520bf4c1af4` — accepted.
 - Gate-1 one-workflow installation — accepted.
-- Gate-2 Mac-mini Ubuntu controlled SSH evidence SHA-256 `9ABE736EA688352C570B3D0443BABC797A8E240B27FE2107CFF40940305BF651`: real locked restore and Release build, Core `84/84`, Transport `24/24`, failed/skipped `0`; no STM32 access — accepted.
+- Gate-2 Linux USB-host (Ubuntu) controlled SSH evidence SHA-256 `9ABE736EA688352C570B3D0443BABC797A8E240B27FE2107CFF40940305BF651`: real locked restore and Release build, Core `84/84`, Transport `24/24`, failed/skipped `0`; no STM32 access — accepted.
 - Initial Gate-3/4 workflow publication `19025ed7d695bf75b43b010ae2e1d0a1ba105d4d`: source/remote publication accepted but hosted run `37821098177` failed before job creation (invalid `runner.temp` expression at job-level env), so it did not satisfy hosted acceptance.
 - Exact workflow-only context repair at `7f75cffdd0c632c5f99310f2c8708d745769aa42`, source tree `69cdb0a83b6a5454582343c6d20239761087809d`; accepted non-force publication evidence SHA-256 `9C701DACDD13E5CFF96F22CC79B86C1DC29889BB6D21B474D0A21FFBE59D0276`.
 - Hosted run `37829541187` (`https://github.com/dturovskiy/deus-os-stm32/actions/runs/37829541187`) on the exact accepted SHA is `completed/success`, including the real **Core 84/84** and **Transport 24/24** MTP summaries, skipped `0`, warning/error-clean Release, and repository/static checks. `setup-dotnet` selected SDK `10.0.401` in accordance with the existing `host/global.json` roll-forward policy.
