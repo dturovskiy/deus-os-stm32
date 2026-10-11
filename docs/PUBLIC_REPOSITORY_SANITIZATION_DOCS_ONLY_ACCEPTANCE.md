@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Documentation-Only Sanitization Evidence
 
-> **STATUS: DOCS-ONLY CANDIDATE, POST-COMMIT PUBLICATION/CI NOT YET VERIFIED.** This is scoped technical evidence subordinate to `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md`, not a replacement for the sole project-state source `docs/CURRENT_STATE.md`. No statement in this file authorizes code edits, Git history rewrites or hardware work.
+> **STATUS: SCOPED DOCS-ONLY SANITIZATION PUBLISHED/TECHNICALLY ACCEPTED at `c55c90c4b40605adc2e3da26a7314467c618c512`, hosted exact-SHA [CI 38140063373](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38140063373) SUCCESS; full Gate-1 sanitization NOT ACCEPTED.** This is scoped technical evidence subordinate to `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md`, not a replacement for the sole project-state source `docs/CURRENT_STATE.md`. No statement in this file authorizes code edits, Git history rewrites or hardware work.
 
 ## Frozen publication basis
 
@@ -45,6 +45,14 @@ Six older baseline REDACT documentation rows did not require an actual operator 
 - All changed existing files are Markdown. **No `.ps1`, `.py`, `.c`, `.h`, `.s`, `.cs`, `.csproj`, build source or CI config changed.** Current published main still retains every historic public commit and all previously public filenames, with no force, delete or rename.
 - The seven legacy PowerShell files with workstation-specific tool/programmer defaults are **intentionally unchanged**. Altering these executable defaults requires a distinct owner-approved code/recovery equivalence lane; this documentation-only request does not authorize it.
 - External clones/mirrors, GitHub caches and public prior-commit blobs can retain original workstation/operator values. No future-only public document change can make those copies disappear.
+
+## Published exact-SHA verification
+
+- The 21-path **Markdown-only** package was committed and published by ordinary non-force push at `c55c90c4b40605adc2e3da26a7314467c618c512`; independent fresh fetch confirmed `HEAD == origin/main == FETCH_HEAD`, clean ahead/behind `0/0`; **263 tracked paths**. No executable source, PowerShell, CI, ROM/Flash image or target-related path changed.
+- Hosted exact-SHA [CI 38140063373](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38140063373) **SUCCESS**; independently read job log confirmed Core **84/84**, Transport **24/24**, Release **0 warnings/0 errors**, zero test failures/skips, output hygiene **263 PASS**.
+- Independently reran the published read-only Git history scanner on exactly `c55c90c4b40605adc2e3da26a7314467c618c512`: **1,414/1,414** reachable blobs, **32,384,087 bytes**, zero unreadable/truncated, zero selected recognized credential-format matches. Historical Windows path indicators still present in **154** blob versions and Unix home path indicators in **21** blob versions; these are not erased by this future-only redaction.
+- Private documentation archive stayed separate, `PRIVATE`, clean and synchronized at `3f68e4fd3a704854bc19b327ea818b2a1b6bc00a`. The archive contains **19 original Markdown blob identities** and no firmware/code.
+- This is **accepted proof of documentary publication and scoped operator-literal redaction only**, not security clearance for all past public history, caches, seven unchanged PowerShell executable defaults, or Gate-1 / Gate-2 full acceptance.
 
 ## Gate decision
 

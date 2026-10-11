@@ -303,7 +303,7 @@ Consumer-driven future capabilities (generic timers/queues, DMA, filesystem, low
 
 Gate-1B candidate policy: `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_OWNER_DECISIONS.md` enumerates all 113 original PRIVATE/RETAIN/REDACT routes, recommending 90 public-keep paths and 23 archive-first in-place edits/reviews, with all nine README-referenced paths retained. This is decision preparation only; human privacy, private archive and historical exposure approvals remain prerequisites to Gate-1 completion and any later migration.
 
-Docs-only execution slice: a protected original-document archive and 13 public Markdown operator-value replacements are described in `docs/PUBLIC_REPOSITORY_SANITIZATION_DOCS_ONLY_ACCEPTANCE.md`. This intentionally does not authorize or change seven executable Windows build/recovery scripts, historical Git objects, target firmware or hardware; final repository sanitization and historical-risk approval remain OPEN.
+Docs-only execution slice PUBLISHED/TECHNICALLY ACCEPTED at `c55c90c4b40605adc2e3da26a7314467c618c512` (exact-SHA [CI 38140063373](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38140063373) SUCCESS; 263 tracked paths): a protected original-document archive and 13 public Markdown operator-value replacements are described in `docs/PUBLIC_REPOSITORY_SANITIZATION_DOCS_ONLY_ACCEPTANCE.md`. This intentionally does not authorize or change seven executable Windows build/recovery scripts, historical Git objects, target firmware or hardware; final repository sanitization and historical-risk approval remain OPEN.
 
 ## Host management presentation evolution — future / residual-debt prerequisites not yet satisfied
 
