@@ -1,5 +1,9 @@
 ## 2026-10-11
 
+### Gate-1B full-history and external-surface evidence refresh — policy decision NOT YET SIGNED
+
+Read-only, exact-HEAD Git-history scanner on `8682bb4fba6e42ded9a7cd5fd4f16c432d3f8b5e` successfully inspected 1,520/1,520 reachable blobs (36,708,469 bytes) with zero matched recognized credential signatures; historical operator environment path patterns still occur in 157 Windows- and 21 Unix-home-bearing blobs. Current public GitHub reports one main branch, zero forks/releases and five sampled Actions runs with zero stored artifacts, but deleted/expired external copies remain NOT_CHECKED. The 113-row owner decision register was reverified complete (90 proposed keep, 23 proposed review/edit, all `POLICY_PENDING`) and received only a **non-authorizing forward-only-strategy recommendation**. The authenticated PRIVATE remote clone was previously accepted; credential-free read denial is still unproven. Gate-1/1B OPEN, Gate-2 BLOCKED. No source, history, visibility, firmware, target or private archive mutation.
+
 ### Verified RDC-08 closure predicate and DEUS runner handoff rule
 
 A final, no-hardware source-of-truth review reconfirmed the historical RDC-08 Gate-8 non-force commit `c309428b03615a9afd514e3c7c8886a82a5112e9` and exact-SHA [CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS. Current-state and roadmap prose now explicitly identify RDC-08 as CLOSED/PUBLISHED instead of leaving an already-fulfilled completion predicate framed as an ongoing blocker. The handoff now states the existing standardized DEUS runner v2 bundle/one-evidence-ZIP execution rule. Architecture/Host presentation and deferred-policy references were reconciled with the already-closed RDC program. No new code, hardware, repository visibility or active sanitization-gate disposition is changed.
