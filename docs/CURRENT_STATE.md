@@ -74,6 +74,8 @@ Host-management presentation remains a non-authorizing future design (`docs/HOST
 
 **Gate-1B technical next-boundary preflight (non-authorizing):** `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_SCRIPT_PORTABILITY_AUDIT.md` fingerprints the seven PowerShell workstation-bound default-path consumers, identifies two additional executable dependencies, and independently reconfirms **29/29 selected private documentary originals** against public pre-edit commits. The static audit does **not** prove portable Windows execution, recovery-bundle hash equivalence, independent remote archive restore or external-history privacy; all owner and history/visibility decisions remain OPEN. No source code/PowerShell/CI/STM32 changes or Gate-2 promotion are authorized by this scoped evidence.
 
+**Gate-1B seven-script portability candidate (NOT accepted yet):** a separately requested implementation slice has preserved all seven original PowerShell defaults in private commit `4cf131f1ca15a2c686b6153cbf5cf6399a96a799` (29 Markdown + seven script originals) and prepared a portable tool resolver with isolated Windows PowerShell offline tests. Its exact CI, Windows parser/mock and source/firmware/recovery equivalence proof must be checked before declaring scoped PASS. No physical STM32, production keys or Git-history operations are authorized. Gate-1B/1 remain OPEN; Gate-2 BLOCKED. Detail: `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_SCRIPT_PORTABILITY_AUDIT.md`.
+
 ## 5. Current development/acceptance topology
 
 Canonical topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.

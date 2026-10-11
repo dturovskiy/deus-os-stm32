@@ -1,5 +1,9 @@
 ## 2026-10-11
 
+### Gate-1B — archival-first PowerShell portability implementation candidate
+
+Following the separate operator continuation of the seven-script scope, preserved all seven exact pre-refactor PowerShell originals in the PRIVATE archive at `4cf131f1ca15a2c686b6153cbf5cf6399a96a799`, in addition to the prior 29 Markdown originals. Prepared explicit-parameter, environment and unique PATH-based tool resolution in the seven public tool scripts, corrected emitted preserve/clean recovery-wrapper defaults, and reduced log exposure to programmer executable basename. Added a standalone Windows PowerShell syntax/mock resolver workflow; it never accesses physical Flash, USB, SWD, firmware keys or real programmer binaries. CI and recovery/build equivalence acceptance remain pending at candidate authoring time, and original Git history/owner Gate-1B decisions remain open.
+
 ### Public sanitization Gate-1B — read-only script portability and private-source preflight
 
 Recorded a bounded source-fingerprinted audit of seven workstation-dependent PowerShell scripts, plus two additional tracked supporting scripts, without changing any executable bytes. All 29 preserved Markdown originals were re-compared in full against their exact public pre-edit Git commits: 29/29 identical; current public Git tree has 263 tracked paths and no tracked generated `.NET obj/bin` output. `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_SCRIPT_PORTABILITY_AUDIT.md` owns the scoped details and unresolved Windows portability, private fresh-clone/permission, historic Git/external replica and owner-approval blockers. This audit is not authorization for script edits, force-push, Gate-2 or STM32 action.

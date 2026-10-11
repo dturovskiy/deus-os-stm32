@@ -2,7 +2,7 @@ param(
     [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
     [string]$OutputDir = (Join-Path (Split-Path -Parent $PSScriptRoot) 'build\bootloader'),
     [Parameter(Mandatory=$true)][string]$UpdateKeyFile,
-    [string]$ToolchainRoot = 'D:\Projects\STM32\Tools\arm-gnu-toolchain-15.3.rel1-mingw-w64-x86_64-arm-none-eabi'
+    [string]$ToolchainRoot = $env:DEUS_ARM_TOOLCHAIN_ROOT
 )
 
 Set-StrictMode -Version 3.0
@@ -12,6 +12,14 @@ $FlashCeiling = 8192
 $DataBssCeiling = 1024
 $MspBytes = 1024
 $ConventionalSramCeiling = 2048
+
+if ([string]::IsNullOrWhiteSpace($ToolchainRoot)) {
+    $ToolchainCandidates = @(Get-Command -Name 'arm-none-eabi-gcc.exe' -CommandType Application -All -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique)
+    if ($ToolchainCandidates.Count -ne 1) {
+        throw ('ARM GNU toolchain not uniquely configured. Set -ToolchainRoot or DEUS_ARM_TOOLCHAIN_ROOT, or put exactly one arm-none-eabi-gcc.exe on PATH. Candidates=' + $ToolchainCandidates.Count)
+    }
+    $ToolchainRoot = Split-Path -Parent (Split-Path -Parent $ToolchainCandidates[0])
+}
 
 $Gcc = Join-Path $ToolchainRoot 'bin\arm-none-eabi-gcc.exe'
 $Objcopy = Join-Path $ToolchainRoot 'bin\arm-none-eabi-objcopy.exe'

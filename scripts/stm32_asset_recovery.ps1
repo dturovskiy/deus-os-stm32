@@ -4,7 +4,7 @@ param(
     [string]$Mode,
     [Parameter(Mandatory=$true)]
     [string]$BundleDir,
-    [string]$ProgrammerCli = "D:\Projects\STM32\Tools\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe",
+    [string]$ProgrammerCli = $env:DEUS_STM32_PROGRAMMER_CLI,
     [ValidateRange(125,950)]
     [int]$SwdKHz = 950
 )
@@ -16,6 +16,14 @@ $FlashBytes = 65536
 $ApplicationBytes = 55296
 $PersistenceOffset = 0xF800
 $PersistenceBytes = 2048
+
+if ([string]::IsNullOrWhiteSpace($ProgrammerCli)) {
+    $ProgrammerCandidates = @(Get-Command -Name 'STM32_Programmer_CLI.exe' -CommandType Application -All -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique)
+    if ($ProgrammerCandidates.Count -ne 1) {
+        throw ('STM32CubeProgrammer CLI not uniquely configured. Set -ProgrammerCli or DEUS_STM32_PROGRAMMER_CLI, or put exactly one STM32_Programmer_CLI.exe on PATH. Candidates=' + $ProgrammerCandidates.Count)
+    }
+    $ProgrammerCli = $ProgrammerCandidates[0]
+}
 
 if (-not (Test-Path -LiteralPath $ProgrammerCli -PathType Leaf)) {
     throw "STM32CubeProgrammer CLI not found: $ProgrammerCli"
@@ -253,7 +261,7 @@ function Get-ExplicitPages {
 Add-Log "STM32 OS ASSET/CONFIGURATION ST-LINK RECOVERY V1"
 Add-Log ("TIMESTAMP=" + (Get-Date -Format o))
 Add-Log ("MODE=" + $Mode)
-Add-Log ("PROGRAMMER_CLI=" + $ProgrammerCli)
+Add-Log ("PROGRAMMER_CLI=" + [System.IO.Path]::GetFileName($ProgrammerCli))
 Add-Log ("SWD_KHZ=" + $SwdKHz)
 Add-Log "MASS_ERASE=FORBIDDEN READ_UNPROTECT=FORBIDDEN OPTION_BYTE_MUTATION=FORBIDDEN"
 

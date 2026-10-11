@@ -1,0 +1,36 @@
+name: PowerShell tool-path portability offline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**/*.ps1'
+      - 'scripts/public_sanitization_ps_offline_preflight.py'
+      - '.github/workflows/powershell-portability.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**/*.ps1'
+      - 'scripts/public_sanitization_ps_offline_preflight.py'
+      - '.github/workflows/powershell-portability.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-offline:
+    name: Windows PowerShell parser and mocked resolver
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: PowerShell 7 parse, wrapper and resolver proof (offline)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSVersionTable.PSVersion.ToString()
+          & ./scripts/tests/public_sanitization_power_shell_offline.ps1

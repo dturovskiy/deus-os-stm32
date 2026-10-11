@@ -171,3 +171,15 @@ For the current bench:
 - Linux USB host (Ubuntu) via `<SSH_USER>@<USB_HOST>`: target native USB/power, Linux libusb management IF2 and Linux CDC observation.
 
 No new script may assume that all physical interfaces are local to Windows. See `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.
+
+## Portable tool-path selection (Gate-1B candidate, 2026-10-11)
+
+The seven PowerShell build/recovery tools no longer embed an operator-specific installation directory. On the Windows execution host, configure a real installed tool explicitly before running an accepted build or recovery workflow:
+
+- ARM GNU Toolchain: pass `-ToolchainRoot '<installed-arm-toolchain-root>'` to either build script, or set the process environment variable `DEUS_ARM_TOOLCHAIN_ROOT` to that directory. If neither is supplied, the tool resolver requires **exactly one** `arm-none-eabi-gcc.exe` on `PATH` and derives its toolchain root from `bin`; it checks all four required executables before building.
+- STM32CubeProgrammer: pass `-ProgrammerCli '<installed-STM32_Programmer_CLI.exe>'` to the recovery/preflight wrapper, or set `DEUS_STM32_PROGRAMMER_CLI` to the installed CLI's absolute path. If neither is supplied, exactly one `STM32_Programmer_CLI.exe` must be discoverable on `PATH`. Missing/ambiguous discovery fails closed, never guesses.
+- An explicitly specified parameter takes precedence over the process environment, even if the supplied value is invalid (the command then fails rather than falling back). Paths containing spaces are handled as single PowerShell arguments. The generated preserve/clean recovery wrappers forward the selected `-ProgrammerCli` without embedding a particular machine's installation path.
+- `VALIDATE_ONLY` remains the available **non-flashing** mode for a complete bootloader recovery bundle. `PRESERVE_PERSISTENCE` and `CLEAN_STATE` still touch real Flash and require separate explicit hardware authority. A portable resolver does not change that prohibition.
+- The source-only `scripts/tests/public_sanitization_power_shell_offline.ps1` test exercises PowerShell parsing, generated-wrapper parsing and mocked path discovery using disposable dummy files. It **never executes ARM/CubeProgrammer binaries, reads keys, or touches the board**. Static Linux/WSL checks and ordinary Host CI do not replace Windows PowerShell offline acceptance or actual firmware/recovery binary-equivalence evidence.
+
+Legacy bundles already created against accepted SHA-256 manifests remain immutable historical evidence. Newly generated wrapper bytes and their manifest hashes must be reaccepted against an exact new candidate rather than falsely claimed byte-identical to older bundle files.

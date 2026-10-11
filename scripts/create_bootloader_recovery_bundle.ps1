@@ -301,7 +301,7 @@ $ErrorActionPreference = 'Stop'
     $PreserveWrapper = @'
 param(
     [Parameter(Mandatory=$true)][string]$EvidenceDir,
-    [string]$ProgrammerCli = 'D:\Projects\STM32\Tools\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe',
+    [string]$ProgrammerCli = $env:DEUS_STM32_PROGRAMMER_CLI,
     [int]$SwdKHz = 950
 )
 Set-StrictMode -Version 3.0
@@ -311,7 +311,7 @@ $ErrorActionPreference = 'Stop'
     $CleanWrapper = @'
 param(
     [Parameter(Mandatory=$true)][string]$EvidenceDir,
-    [string]$ProgrammerCli = 'D:\Projects\STM32\Tools\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe',
+    [string]$ProgrammerCli = $env:DEUS_STM32_PROGRAMMER_CLI,
     [int]$SwdKHz = 950
 )
 Set-StrictMode -Version 3.0

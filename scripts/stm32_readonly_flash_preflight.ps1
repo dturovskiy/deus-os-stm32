@@ -1,5 +1,5 @@
 param(
-    [string]$ProgrammerCli = "D:\Projects\STM32\Tools\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe"
+    [string]$ProgrammerCli = $env:DEUS_STM32_PROGRAMMER_CLI
 )
 
 Set-StrictMode -Version Latest
@@ -8,6 +8,14 @@ $ErrorActionPreference = "Stop"
 $downloads = Join-Path $env:USERPROFILE "Downloads"
 if (-not (Test-Path -LiteralPath $downloads -PathType Container)) {
     throw "Downloads directory not found: $downloads"
+}
+
+if ([string]::IsNullOrWhiteSpace($ProgrammerCli)) {
+    $ProgrammerCandidates = @(Get-Command -Name 'STM32_Programmer_CLI.exe' -CommandType Application -All -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -Unique)
+    if ($ProgrammerCandidates.Count -ne 1) {
+        throw ('STM32CubeProgrammer CLI not uniquely configured. Set -ProgrammerCli or DEUS_STM32_PROGRAMMER_CLI, or put exactly one STM32_Programmer_CLI.exe on PATH. Candidates=' + $ProgrammerCandidates.Count)
+    }
+    $ProgrammerCli = $ProgrammerCandidates[0]
 }
 
 if (-not (Test-Path -LiteralPath $ProgrammerCli -PathType Leaf)) {
@@ -88,7 +96,7 @@ function Invoke-ReadOnlyCubeCommand {
 
 Add-Log "STM32 OS READ-ONLY MCU / FLASH PREFLIGHT"
 Add-Log "TIMESTAMP=$(Get-Date -Format o)"
-Add-Log "PROGRAMMER_CLI=$ProgrammerCli"
+Add-Log ("PROGRAMMER_CLI=" + [System.IO.Path]::GetFileName($ProgrammerCli))
 Add-Log "SAFETY=NO_ERASE_NO_DOWNLOAD_NO_WRITE_NO_OPTION_BYTE_PROGRAM_NO_READ_UNPROTECT"
 Add-Log "NOTE=SWD attachment may affect live CPU execution state, but this script does not request nonvolatile mutation."
 
