@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Sanitization Plan
 
-Status: **GATE-0 DESIGN ACCEPTED/PUBLISHED `558306fe618d1ee69240fa11d24437cd38fb8e2b` (EXACT-SHA CI SUCCESS) — GATE-1 IN PROGRESS / GATE-1A PUBLISHED / FINAL ACCEPTANCE OPEN; NO SANITIZATION AUTHORIZED**
+Status: **GATE-0 ACCEPTED / GATE-1A PUBLISHED; scoped archive-first docs/PowerShell portability and offline/private-remote restore evidence ACCEPTED; substantive Gate-1/1B owner/hosting policy OPEN, Gate-2 BLOCKED. No public removals, history/visibility transformation or hardware operations authorized.**
 
 Boundary: `PUBLIC_REPOSITORY_SANITIZATION`
 
@@ -175,4 +175,4 @@ Actual archive-first documentary substitutions were prepared from clean public `
 
 ## 14. Next permitted action
 
-Continue **read-only Gate-1** risk/consumer/functional dependency adjudication and independent full-history/hosting evidence; no physical STM32 actions or new ZIP scripts. **Do not proceed to Gate-2 archive/migration or any substantive sanitization on this partial evidence.**
+Continue **Gate-1** owner approval and missing history/hosting/anonymous-access disclosure adjudication against the latest accepted candidate. The separately authorized, archive-first docs and seven-script edits and subsequent non-hardware DEUS Runner evidence are already published (see `docs/CURRENT_STATE.md` and the Gate-1B portability audit); they do **not** authorize a further substantive public release-view modification. Do not advance Gate-2, delete/migrate public material, rewrite Git history, alter repository visibility or touch STM32/production keys without their own explicit gate approvals. Request another operator ZIP only for a concrete new proof unavailable through DEUS MCP.

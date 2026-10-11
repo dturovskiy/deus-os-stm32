@@ -36,7 +36,11 @@ Two other tracked PowerShell dependencies, `scripts/create_firmware_update_packa
 5. Preserve the `Reset-DeusGeneratedOutputDirectory` anti-clobber owner/marker policy, transport/persistence and Flash geometry, exact tool versions, readback assertions, the accepted SWD fallback `950/480/240/125 kHz`, and no mass erase/read-unprotect/option-byte modification.
 6. First run isolated mock/offline negative/positive tests with **no physical STM32 access**. A separately approved Windows/target Gate must authorize real ARM build/recovery, ST-LINK/Flash/reset/USB/UART activity; ordinary Host CI Core `84/84` + Transport `24/24` does not prove these PowerShell contracts.
 
-## Outstanding approvals / Gate interpretation
+## Historical pre-implementation approvals / Gate interpretation (frozen at initial audit)
+
+The following bullets record the **original pre-implementation state**, not live assertions that archived PowerShell source, Windows offline acceptance or an authenticated PRIVATE GitHub remote restore are still missing. Later sections of this file own the completed sub-proofs; owner-policy approval, anonymous denial, historical replicas and full Gate-1B/1 acceptance remain OPEN.
+
+### Original approval gaps at this historical checkpoint
 
 - **OPEN** — owner's per-category public/private publication disposition for the 49 PRIVATE + 49 RETAIN original rows and the 15 REDACT items. A docs-only cleanup directive does not approve script byte modifications or historic/visibility operations.
 - **OPEN** — independently verifiable private restore and anonymous denial, plus exhaustive accessible external GitHub/clone/cache/artifact surface review (enumerate unavailable surfaces as NOT_CHECKED).

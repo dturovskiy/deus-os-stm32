@@ -1,5 +1,9 @@
 ## 2026-10-11
 
+### Gate-1 documentation current-status reconciliation (no new product acceptance)
+
+A read-only audit of 124 Markdown documents checked 1,638 `.md` references (one private archive external reference, no missing in-repository target) and inventoried 40 unchecked boxes: 12 active public-sanitization Gate-1/1B/2–7 policy/acceptance items and 28 deliberately deferred UI/ESP/future items. Live public/private Git and exact-SHA hosted Host CI were separately verified. The current-plan header, roadmap, owner-register historical status and initial PowerShell-audit wording were reconciled with the already-accepted docs/PowerShell edits, synthetic bootloader recovery `VALIDATE_ONLY`, and authenticated private GitHub restore. No new source/build/firmware/target/privacy gate is declared passed. Gate-1/1B remain OPEN, Gate-2 BLOCKED, and unrelated future product features still require independently frozen scope/acceptance.
+
 ### DEUS Runner 1.2.0 — operator Windows synthetic bootloader recovery and authenticated remote archive proof
 
 Operator evidence ZIP SHA-256 `5DA72297853B7925D26164268E2992FC53A6EE49532B6615E570029966AC0B22` independently passed ZIP CRC and 179/179 SHA-256 manifest checks. Public prestate remained `cfb176afd0ac333011746ddd74962c1e32dd7446`; prior Windows synthetic ARM build hashes were rechecked without a rebuild, and current-source synthetic bootloader recovery generation plus `VALIDATE_ONLY` passed 10/10 hashes. An independently authenticated *remote PRIVATE GitHub* Windows clone succeeded at `fd5a3c09f206fd52e5197c8562f2e62b72b071e1`, with original 29 Markdown + 7 PowerShell Git blob SHA matching 36/36. This newly closes the private remote *authenticated-restore* sub-proof, NOT anonymous denial, historical exposure, owner disposition policy, accepted historical recovery-bundle parity, real production image equivalence, Gate-1B/1, or Gate-2. No repo, Flash, USB, SWD, signing-key, visibility or Git-history mutation.
