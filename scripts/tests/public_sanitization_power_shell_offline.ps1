@@ -104,3 +104,49 @@ try {
 Write-Host 'PS_PARSE=PASS scripts=7 generated_wrappers=4'
 Write-Host 'PS_RESOLVER=PASS explicit=2 unique=2 ambiguous=2 missing=2'
 Write-Host 'HARDWARE_ACCESS=NONE'
+
+
+# Generate a historical Asset recovery package from deliberately nondeployable bytes.
+# Generated restore wrappers are parsed but never invoked; no physical IO or key access.
+$fixture = Join-Path ([IO.Path]::GetTempPath()) ('deus_asset_fixture_' + [guid]::NewGuid().ToString('N'))
+try {
+    $inputDir = Join-Path $fixture 'build\firmware'
+    $outDir = Join-Path $fixture 'build\recovery'
+    $fixtureScripts = Join-Path $fixture 'scripts'
+    foreach ($dir in @($inputDir,$fixtureScripts)) { [void](New-Item -ItemType Directory -Path $dir -Force) }
+    foreach ($name in @('build_firmware.ps1','stm32_asset_recovery.ps1')) {
+        Copy-Item -LiteralPath (Join-Path $scripts $name) -Destination (Join-Path $fixtureScripts $name)
+    }
+    [IO.File]::WriteAllBytes((Join-Path $inputDir 'os.bin'),[byte[]]@(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
+    & (Join-Path $scripts 'create_asset_recovery_bundle.ps1') -ProjectRoot $fixture -BuildOutputDir $inputDir -BaseHead ('1'*40) -CandidateTree ('2'*40) -FirmwareSourceTree ('3'*40) -OutputDir $outDir -ToolchainVersion 'synthetic-not-deployable' -CubeProgrammerVersion 'synthetic-not-installed' | Out-Null
+    $manifest = Get-Content -LiteralPath (Join-Path $outDir 'manifest.json') -Raw | ConvertFrom-Json
+    Must ($manifest.boundary -eq 'ASSET_CONFIGURATION_TRANSFER_FOUNDATION') 'ASSET_MANIFEST_BOUNDARY'
+    Must ($manifest.contract -eq 'ASSET_CONFIGURATION_STLINK_RECOVERY_V1') 'ASSET_MANIFEST_CONTRACT'
+    Must ($manifest.expected_flash_bytes -eq 65536) 'ASSET_MANIFEST_FLASH'
+    Must ($manifest.application_region_length -eq 55296) 'ASSET_MANIFEST_APP_REGION'
+    $region = [IO.File]::ReadAllBytes((Join-Path $outDir 'application_region_54k.bin'))
+    Must ($region.Length -eq 55296) 'ASSET_REGION_LENGTH'
+    Must ($region[0] -eq 0 -and $region[16] -eq 255 -and $region[55295] -eq 255) 'ASSET_REGION_PADDING'
+    $lines = @(Get-Content -LiteralPath (Join-Path $outDir 'hashes.sha256'))
+    Must ($lines.Count -eq 7) 'ASSET_HASH_ENTRY_COUNT'
+    $expected = @('manifest.json','os.bin','application_region_54k.bin','recovery-common.ps1','restore-preserve-persistence.ps1','restore-clean-state.ps1','README.txt')
+    $names = @()
+    foreach ($row in $lines) {
+        Must ($row -match '^([0-9A-F]{64})  ([^\\/:*?"<>|]+)$') 'ASSET_HASH_RECORD_FORMAT'
+        $expectedSha = $Matches[1]
+        $file = $Matches[2]
+        $actualSha = (Get-FileHash -LiteralPath (Join-Path $outDir $file) -Algorithm SHA256).Hash.ToUpperInvariant()
+        Must ($actualSha -ceq $expectedSha) ('ASSET_HASH_MISMATCH_' + $file)
+        $names += $file
+    }
+    Must (@(Compare-Object -ReferenceObject $expected -DifferenceObject $names).Count -eq 0) 'ASSET_FILE_SET'
+    foreach ($kind in @('preserve-persistence','clean-state')) {
+        $generated = [IO.File]::ReadAllText((Join-Path $outDir ('restore-' + $kind + '.ps1')))
+        Parse-Source $generated ('GENERATED_ASSET_' + $kind)
+        Must $generated.Contains('$env:DEUS_STM32_PROGRAMMER_CLI') ('GENERATED_ASSET_ENV_' + $kind)
+        Must $generated.Contains('-ProgrammerCli $ProgrammerCli') ('GENERATED_ASSET_FORWARD_' + $kind)
+    }
+    Write-Host 'SYNTHETIC_ASSET_RECOVERY_BUNDLE=PASS files=7 hashes=7 region=55296'
+} finally {
+    if (Test-Path -LiteralPath $fixture) { Remove-Item -LiteralPath $fixture -Recurse -Force }
+}
