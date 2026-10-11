@@ -23,7 +23,7 @@ def ensure(condition: bool, why: str) -> None:
         raise AssertionError(why)
 
 for name, source in data.items():
-    ensure(r"D:\Projects\STM32\Tools" not in source, f"hardcoded tool root: {name}")
+    ensure(not re.search(r"(?i)\b[A-Z]:\\(?:Users|Projects|Tools)\\", source), f"operator-specific absolute path: {name}")
     ensure(source.strip().startswith("param("), f"unexpected script header: {name}")
     ensure(source.count("Set-StrictMode") >= 1, f"strict-mode missing: {name}")
 
@@ -57,9 +57,6 @@ ensure("VALIDATE_ONLY" in boot and "PRESERVE_PERSISTENCE" in boot and "CLEAN_STA
        "bootloader mode set changed")
 ensure("0xF800" in boot and "0xF400" in boot and "65536" in boot,
        "bootloader/persistence geometry changed")
-for name in SOURCE:
-    ensure(not re.search(r"['\"][A-Za-z]:\\Projects\\STM32\\Tools", data[name]),
-           f"Windows operator fallback: {name}")
 
 wf = (ROOT / ".github/workflows/powershell-portability.yml").read_text(encoding="utf-8")
 ensure("runs-on: windows-2022" in wf and "shell: pwsh" in wf, "Windows runtime test absent")

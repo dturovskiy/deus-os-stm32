@@ -172,7 +172,7 @@ For the current bench:
 
 No new script may assume that all physical interfaces are local to Windows. See `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.
 
-## Portable tool-path selection (Gate-1B candidate, 2026-10-11)
+## Portable tool-path selection (Gate-1B scoped Windows offline PASS, 2026-10-11)
 
 The seven PowerShell build/recovery tools no longer embed an operator-specific installation directory. On the Windows execution host, configure a real installed tool explicitly before running an accepted build or recovery workflow:
 
