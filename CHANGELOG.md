@@ -1,3 +1,9 @@
+## 2026-10-11
+
+### Public Repository Sanitization — 113-file owner disposition proposal (not authorization)
+
+Drafted `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_OWNER_DECISIONS.md` against published clean parent `a2894380c7937424eed1b97e2de19ee018cb96cc` after fully reading 261 current tracked files. Per-file proposals distinguish original PRIVATE 49 (43 keep / 6 rewrite), RETAIN 49 (47 keep / 2 rewrite), and REDACT 15 (15 editorial/portable-script review). All nine README-referenced paths stay navigable; 23 archive-first change candidates are explicitly scoped, including seven executable PowerShell scripts. This is a public-safe decision record with `POLICY_PENDING` per file. No original document was removed, no firmware/recovery behavior altered, and no archive, history rewrite or physical STM32 action performed. Gate-1B privacy owner approval and Gate-1 final acceptance remain OPEN.
+
 ## 2026-10-10
 
 ### Public Repository Sanitization — full reachable-main blob audit and current-tree reconciliation (non-authorizing)

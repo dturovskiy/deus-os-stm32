@@ -165,6 +165,10 @@ An independent 257-file current-tree recheck, frozen 254-row matrix arithmetic r
 
 The bounded read-only scanner `scripts/public_repository_history_audit.py` completed every reachable `main` Git blob at `95d43fb7e5a6cd5c0d024a97c3e2f0e925c8cb84`: **1,367/1,367 blobs, 30,317,374 bytes, 0 object read failures or truncations; zero recognized key/token signatures**, with historical operator path-pattern occurrences still present. `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_RECONCILIATION.md` reconciles the 254 historical matrix with all five later published audit reports and the two proposed new evidence/tooling paths (predicted next tree: 261). This technically completes the reachable-main blob-read backlog but does **not** accept unknown secret formats, GitHub caches/forks/mirrors, 98 owner decisions, 15 approved redaction specifications, archival authority or executable recovery parity. **Gate-1B and Gate-1 remain OPEN, Gate-2 not authorized.**
 
-## 12. Next permitted action
+## 12. Gate-1B 113-file substantive disposition register — candidate approval boundary
+
+`docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_OWNER_DECISIONS.md` records a reviewed **113/113 file-by-file proposed policy** for original PRIVATE 49 + RETAIN 49 + REDACT 15 at clean published parent `a2894380c7937424eed1b97e2de19ee018cb96cc`. Preserve all 261 existing public paths: 90 scoped documents would remain publicly unchanged, while 23 scoped paths need approved archive-first in-place editorial/operator cleanup or portable-toolchain/recovery script treatment. Specifically: PRIVATE 43 keep / 6 rewrite, RETAIN 47 keep / 2 rewrite, REDACT 0 unchanged / 15 review or rewrite. Every original frozen 254-row disposition and 98-row prior evidence ledger remains intact. The new file is the one additional proposed PUBLIC audit document (next tracked tree 262), **not** a sign-off or authorized Gate-4 modification. Final approval of owner publication policy, residual history risk, private archive ownership and seven PowerShell compatibility tests is still required.
+
+## 13. Next permitted action
 
 Continue **read-only Gate-1** risk/consumer/functional dependency adjudication and independent full-history/hosting evidence; no physical STM32 actions or new ZIP scripts. **Do not proceed to Gate-2 archive/migration or any substantive sanitization on this partial evidence.**
