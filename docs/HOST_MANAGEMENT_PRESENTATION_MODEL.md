@@ -184,7 +184,7 @@ Future host-management work must preserve:
 
 ## 11. Mandatory preconditions from the 2026-10-03 audit
 
-All `FDC-01..FDC-10` obligations are accepted closed, and `RDC-01..RDC-07` are now CLOSED/PUBLISHED. `RESIDUAL_DEBT_CLOSURE_PROGRAM` remains the mandatory pre-feature gate until RDC-08 closes. This model remains non-authorizing and cannot be promoted while those obligations are open; after their closure, promotion still requires a concrete next boundary in `CURRENT_STATE.md` plus its own plan/acceptance pair.
+All `FDC-01..FDC-10` and `RDC-01..RDC-08` obligations are **CLOSED/PUBLISHED**, including independently verified RDC-08 Gate-8 at `c309428b03615a9afd514e3c7c8886a82a5112e9` ([hosted CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS). The historical RDC pre-feature prerequisite is therefore satisfied; **this design model remains non-authorizing**. Promoting Host Management Service/Web still requires a concrete new boundary recorded in `CURRENT_STATE.md`, its own plan/acceptance pair, and an explicit promotion/security review. It is not currently active.
 
 Service-specific hard requirements are:
 

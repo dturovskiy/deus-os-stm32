@@ -1,5 +1,9 @@
 ## 2026-10-11
 
+### Verified RDC-08 closure predicate and DEUS runner handoff rule
+
+A final, no-hardware source-of-truth review reconfirmed the historical RDC-08 Gate-8 non-force commit `c309428b03615a9afd514e3c7c8886a82a5112e9` and exact-SHA [CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS. Current-state and roadmap prose now explicitly identify RDC-08 as CLOSED/PUBLISHED instead of leaving an already-fulfilled completion predicate framed as an ongoing blocker. The handoff now states the existing standardized DEUS runner v2 bundle/one-evidence-ZIP execution rule. Architecture/Host presentation and deferred-policy references were reconciled with the already-closed RDC program. No new code, hardware, repository visibility or active sanitization-gate disposition is changed.
+
 ### Gate-1 documentation current-status reconciliation (no new product acceptance)
 
 A read-only audit of 124 Markdown documents checked 1,638 `.md` references (one private archive external reference, no missing in-repository target) and inventoried 40 unchecked boxes: 13 active public-sanitization policy/acceptance checkboxes (eight master checklist, four Gate-1B reconciliation, one roadmap) and 27 deliberately deferred UI/ESP/future items. Live public/private Git and exact-SHA hosted Host CI were separately verified. The current-plan header, roadmap, owner-register historical status and initial PowerShell-audit wording were reconciled with the already-accepted docs/PowerShell edits, synthetic bootloader recovery `VALIDATE_ONLY`, and authenticated private GitHub restore. No new source/build/firmware/target/privacy gate is declared passed. Gate-1/1B remain OPEN, Gate-2 BLOCKED, and unrelated future product features still require independently frozen scope/acceptance.

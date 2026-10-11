@@ -345,7 +345,7 @@ Live documentation inventory at FDC-10 final reconciliation:
 - `DOCUMENTATION_CONSISTENCY_CLOSURE` is the final FDC-10 docs-only pair, published at `9c02e27f50349c9a0240ab24d34720580c3f3269`, and records the repo-wide reconciliation that completed the ten-item closure program;
 - `RESIDUAL_DEBT_CLOSURE_PROGRAM_PLAN.md` and `_ACCEPTANCE_PLAN.md` own historical post-FDC debt-first governance; their final RDC-08 Gate-8 release predicate determines when the mandatory program becomes CLOSED/PUBLISHED and product-feature **selection** becomes eligible;
 - latest named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; later FDC commits are hardening/closure, not a new product-feature boundary;
-- no new product feature boundary is currently active. `FDC-01..FDC-10` are accepted. `RDC-01..RDC-07` are CLOSED/PUBLISHED; `RDC-08` and the entire program close only on externally verified Gate-8 publication/fresh-fetch/exact-SHA hosted CI. Future service/Web/network work requires a distinct explicit boundary even after closure.
+- no new product feature boundary is currently active. `FDC-01..FDC-10` and `RDC-01..RDC-08` are CLOSED/PUBLISHED; the conditional RDC-08 Gate-8 predicate was actually fulfilled at `c309428b03615a9afd514e3c7c8886a82a5112e9` ([hosted CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS, verified fresh-fetch clean 0/0). Future service/Web/network work still requires a distinct explicit boundary, plan/acceptance and promotion.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.
 

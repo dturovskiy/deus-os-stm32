@@ -286,7 +286,7 @@ FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION
 network/security/remote management
 ```
 
-That sequence is complete through `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; the subsequent `FDC-01..FDC-10` prerequisite program is also closed/published. A later audit promoted `RESIDUAL_DEBT_CLOSURE_PROGRAM` as the current mandatory pre-feature gate. Current forward ordering is owned by `docs/ROADMAP.md`; new service/Web/network implementation remains blocked until RDC-01..RDC-08 close and a concrete boundary is separately promoted. Host-only packaging, CLI distribution and local-only Web presentation remain orthogonal to this Flash map unless they introduce target Flash mutation or remote trust exposure.
+That sequence is complete through `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; the subsequent `FDC-01..FDC-10` and `RDC-01..RDC-08` prerequisite programs are also **CLOSED/PUBLISHED** (RDC-08 exact Gate-8 commit `c309428b03615a9afd514e3c7c8886a82a5112e9`, [CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS). Current forward ordering is owned by `docs/ROADMAP.md`; new service/Web/network implementation is **not active** and requires a separately promoted scope/acceptance and applicable security contract, not another RDC-08 closure. Host-only packaging, CLI distribution and local-only Web presentation remain orthogonal to this Flash map unless they introduce target Flash mutation or remote trust exposure.
 
 ## 12. Change rule
 
