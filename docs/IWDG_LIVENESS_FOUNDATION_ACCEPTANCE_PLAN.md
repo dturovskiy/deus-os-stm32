@@ -132,7 +132,7 @@ After all non-destructive regressions pass:
 7. require `health` reports:
    `WDOG_ACTIVE=0x00000001` and `IWDG_RESET=0x00000001`.
 
-The harness must tolerate COM3 closing/reopening around the hardware reset.
+The harness must tolerate the discovered CH340 UART COM port closing/reopening around the hardware reset.
 
 ### Post-reset retained proof
 
