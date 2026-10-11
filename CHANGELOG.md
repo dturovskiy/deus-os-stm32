@@ -1,5 +1,9 @@
 ## 2026-10-11
 
+### Gate-1B owner selects forward-only public sanitation with accepted historical path visibility
+
+On 2026-10-11 the operator explicitly approved strategy A and `ACCEPT_RESIDUAL_HISTORY` for the currently identified old local workstation/tool path exposure, without changing existing public Git history or historical commit SHA. The current-main read-only evidence checked 1,520/1,520 blobs, found zero matches across eight recognizable credential signature classes, but still identified 157 Windows-path-bearing and 21 Unix-home-path-bearing historical blobs. This scope-limited risk approval does **not** certify the absence of unknown secrets or third-party replicas, close the 113 `POLICY_PENDING` individual file dispositions, prove unauthenticated denial for the private repo, authorize historic Git rewrite, or close Gate-1B/1. Gate-2 remains BLOCKED, with no firmware, target, source, visibility or private archive changes.
+
 ### Gate-1B full-history and external-surface evidence refresh — policy decision NOT YET SIGNED
 
 Read-only, exact-HEAD Git-history scanner on `8682bb4fba6e42ded9a7cd5fd4f16c432d3f8b5e` successfully inspected 1,520/1,520 reachable blobs (36,708,469 bytes) with zero matched recognized credential signatures; historical operator environment path patterns still occur in 157 Windows- and 21 Unix-home-bearing blobs. Current public GitHub reports one main branch, zero forks/releases and five sampled Actions runs with zero stored artifacts, but deleted/expired external copies remain NOT_CHECKED. The 113-row owner decision register was reverified complete (90 proposed keep, 23 proposed review/edit, all `POLICY_PENDING`) and received only a **non-authorizing forward-only-strategy recommendation**. The authenticated PRIVATE remote clone was previously accepted; credential-free read denial is still unproven. Gate-1/1B OPEN, Gate-2 BLOCKED. No source, history, visibility, firmware, target or private archive mutation.
