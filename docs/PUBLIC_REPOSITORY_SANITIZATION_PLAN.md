@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Sanitization Plan
 
-Status: **GATE-0 ACCEPTED / GATE-1A PUBLISHED; Gate-1B grouped owner 113/113 file dispositions, scoped private-original retention and historical path-risk policy APPROVED 2026-10-11; archive-first docs/PowerShell and operator-observed anonymous access-denial technical sublanes ACCEPTED. Gate-1 FINAL OPEN for separately scoped external-hosting and complete preservation acceptance; Gate-2 BLOCKED. No new removals, history/visibility transformation or hardware operations authorized.**
+Status: **GATE-0 ACCEPTED / GATE-1A PUBLISHED; Gate-1B grouped owner 113/113 file dispositions, scoped private-original retention and historical path-risk policy APPROVED 2026-10-11; archive-first docs/PowerShell and operator-observed anonymous access-denial technical sublanes ACCEPTED. Gate-1 EXIT ACCEPTED/PUBLISHED WITH RECORDED LIMITS `53642b0c529925005f3b09a4882b8c8c115bbe54` (CI 38175961331 SUCCESS), unknown external surfaces retained as NOT_CHECKED; Gate-2 NOT ACTIVATED and full engineering preservation still required. No new removals, history/visibility transformation or hardware operations authorized.**
 
 Boundary: `PUBLIC_REPOSITORY_SANITIZATION`
 
