@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Sanitization Acceptance Plan
 
-Status: **GATE-0 ACCEPTED/PUBLISHED `558306fe618d1ee69240fa11d24437cd38fb8e2b`; Gate-1/1B final approval OPEN, Gate-2–7 full acceptance NOT STARTED/BLOCKED. Separate docs/PowerShell portability, synthetic recovery and authenticated PRIVATE remote restore sub-proofs are accepted but do not advance the global gates.**
+Status: **Gate-0 ACCEPTED/PUBLISHED; Gate-1 EXIT ACCEPTED/PUBLISHED `53642b0c529925005f3b09a4882b8c8c115bbe54` with recorded limits; Gate-2 source-history and evidence-metadata preservation sublanes published privately 2026-10-12, full Gate-2 OPEN for original evidence bytes and production recovery custody; Gate-3–7 NOT OPENED.** Earlier gate results and OPEN/BLOCKED statements in the chronological sections below describe their original checkpoints, not current overriding authority.
 
 Design owner: `docs/PUBLIC_REPOSITORY_SANITIZATION_PLAN.md`
 
@@ -132,6 +132,14 @@ Exact pre-audit public source state `dbb87c58b59f8f24f5b21a8861a990c97ed956d2` i
 **PASS:** agreed private archive location, access restrictions, encrypted transport/storage when necessary, explicit ownership; verifiable manifest of accepted legacy documents, original Git commits/trees, firmware source and protocol identities, accepted Gate hashes, signed-recovery constraints and preservation hashes. Independently restore sampled archive content and validate permission denial to an unauthorized public principal. Private backups must be excluded from current and future public remotes.
 
 **FAIL:** deletion/rewrite first; archive merely on a public branch or publicly accessible artifact; unverifiable manifests; accidental production-key copy; unusable links from build/acceptance after move.
+
+### Gate-2 private preservation checkpoint — independently verified sublanes (2026-10-12)
+
+**`SOURCE_HISTORY_PRIVATE_ARCHIVE=PASS` (bounded to frozen public `main`).** At public commit `8292bae1ff991630b1f92502b67c77b6e894b6da`, the access-controlled private archive contains a complete Git bundle of 172 reachable `main` commits and the 268-file HEAD tree. Bundle SHA-256 `775785e0ce24cba2fda096015cb9509a169c651802b2faee89c2ff48f845d4ef`. Independent `git bundle verify`, `git clone --no-local`, exact source commit/tree/index identity, `git fsck`, 36/36 selected-original historical blob comparisons, authenticated private remote publication and fresh-fetch readback were proved. This does not claim unreachable Git objects, third-party mirrors, expired CI artifacts or production signing material preservation.
+
+**`EVIDENCE_METADATA=PASS`; `ORIGINAL_EVIDENCE_ZIP_RESTORE=OPEN`.** The private registry deterministically regenerates 58 historical `.evidence.zip` references from the archived public Git content and matches its stored JSON, including nine document-derived high-priority hashes. None of those 58 archive-original byte streams is independently available within the limited Windows inventory; original ZIP readback is **not** substituted by a documented hash or by newly generated acceptance runs. Two separate older Gate-1B ZIPs were verified in that Windows search, 206/206 internal hashes. The privately published checkpoint is commit `64efce861f4e2a94a4b6f70ab677d5b9d5f00352`; internal audit path `evidence_registry/GATE2_PRESERVATION_CHECKPOINT_2026-10-12.md`. No original ZIP blobs or sensitive hardware artifacts were imported into the private Git archive.
+
+**`RECOVERY_MATERIAL_CUSTODY=NOT_CHECKED`; `GATE2=OPEN`.** An owner-controlled separate encrypted/non-Git custody + independent restricted restore/access-control proof is still needed for production recovery materials; do not expose keys, signed recovery binaries or Flash images. The final mandatory original-evidence subset must be adjudicated against accepted gates before concluding coverage. Gate-3..7 may not be declared started or accepted merely from these private publications. Prior Gate-1 result remains `PASS_WITH_RECORDED_LIMITS`; there was no public source/CI/firmware/hardware mutation or history rewrite.
 
 ## 3. Release topology decision and explicit authority
 

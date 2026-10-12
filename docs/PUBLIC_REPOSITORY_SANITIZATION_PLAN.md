@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Sanitization Plan
 
-Status: **GATE-0 ACCEPTED / GATE-1A PUBLISHED; Gate-1B grouped owner 113/113 file dispositions, scoped private-original retention and historical path-risk policy APPROVED 2026-10-11; archive-first docs/PowerShell and operator-observed anonymous access-denial technical sublanes ACCEPTED. Gate-1 EXIT ACCEPTED/PUBLISHED WITH RECORDED LIMITS `53642b0c529925005f3b09a4882b8c8c115bbe54` (CI 38175961331 SUCCESS), unknown external surfaces retained as NOT_CHECKED; Gate-2 NOT ACTIVATED and full engineering preservation still required. No new removals, history/visibility transformation or hardware operations authorized.**
+Status: **GATE-0 ACCEPTED / GATE-1A PUBLISHED; Gate-1B grouped owner 113/113 file dispositions, scoped private-original retention and historical path-risk policy APPROVED 2026-10-11; archive-first docs/PowerShell and operator-observed anonymous access-denial technical sublanes ACCEPTED. Gate-1 EXIT ACCEPTED/PUBLISHED WITH RECORDED LIMITS `53642b0c529925005f3b09a4882b8c8c115bbe54` (CI 38175961331 SUCCESS), unknown external surfaces retained as NOT_CHECKED; Gate-2 partial source-history and evidence-metadata archival sublanes PRIVATELY PUBLISHED 2026-10-12; full preservation remains OPEN for original evidence and restricted recovery custody. No new removals, history/visibility transformation or hardware operations authorized.**
 
 Boundary: `PUBLIC_REPOSITORY_SANITIZATION`
 
@@ -121,6 +121,14 @@ Do not assume all 40 acceptance plans should be private; some accepted protocol,
 - **Gate 7 — final current-state/source-of-truth adjudication:** update canonical public/private indexes and histories without leaking private evidence; verify current Git identity, independent provenance mapping and successful publication. Only then mark PUBLIC_REPOSITORY_SANITIZATION CLOSED/PUBLISHED.
 
 A rejected or incomplete risk finding blocks the relevant gate, **not** retroactively closed FDC/RDC gates.
+
+### Gate-2 preservation execution checkpoint — 2026-10-12 (scoped, not full acceptance)
+
+- The existing GitHub-`PRIVATE` documentation archive now contains a verified source-history Git bundle of the frozen public `main` at `8292bae1ff991630b1f92502b67c77b6e894b6da`, a SHA-256 manifest, scripts for independent restore, and the 36 historically anchored source originals. Reachable history: **172 commits**; HEAD: **268 tracked paths**. Bundle SHA-256: `775785e0ce24cba2fda096015cb9509a169c651802b2faee89c2ff48f845d4ef`. Independent local restore, hash verification, `git fsck` and private-hosted readback were successful.
+- A private metadata-only provenance register enumerates **58 historic evidence ZIP filename references**, including **nine provisional critical-priority/document-hash anchors**. These are documentation references, **not 58 required recoverable ZIPs**; no original historical evidence ZIP bytes were imported into the archive. A bounded Windows operator search verified two Gate-1B ZIP files (206 internal hashes), none matching those 58 referenced filenames in the searched domain; material outside that domain is `NOT_CHECKED`.
+- The private canonical checkpoint and evidence-registry authority are in the existing PRIVATE archive at commit `64efce861f4e2a94a4b6f70ab677d5b9d5f00352`, under `evidence_registry/GATE2_PRESERVATION_CHECKPOINT_2026-10-12.md` and `evidence_registry/gate2_evidence_registry.v1.json`. Detailed operator/file/sensitive provenance stays private; `docs/CURRENT_STATE.md` remains the sole global project-state authority.
+- **Remaining Gate-2 blockers:** original accepted recovery/ABI/hardware evidence ZIP bytes and precise final preservation minimum are not independently restored; owner-controlled production signing/recovery/Flash custody and restricted recovery attestation are `NOT_CHECKED`. No production key or Flash backup is approved for either public or private docs Git. `GATE2=OPEN`; Gate-3–7 are not automatically advanced.
+- These are **post-Gate-1, non-destructive preservation sublanes**. They do not reopen Gate-0 or reclassify already accepted product gates, do not grant historic Git rewrite/removal authority, and do not authorize STM32 target operations.
 
 ## 6. Gate-0 frozen changed-path boundary and hard stops
 
