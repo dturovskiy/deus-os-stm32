@@ -167,6 +167,10 @@ The owner explicitly closed **additional custody/escrow work** for this sanitiza
 
 **FAIL:** mass deleting `docs/`, license loss, one global current-state authority erased without replacement, acceptance evidence irretrievably lost, new exposure created by logs/patches or speculative source/hardware changes.
 
+### Gate-4 published two-path forward-only hygiene — 2026-10-14
+
+After the accepted owner-limited Gate-2 exception and Gate-3 forward-only strategy freeze, the implementation touched exactly `.gitignore` and `.github/workflows/ci.yml`: prevent automatic staging of `*.dpapi` and `*.pkg`, reject either when force-tracked, exercise synthetic forbidden/allowed paths and `git check-ignore` in hosted CI. Local static replica of fixtures passed; actual committed two-path diff and staged whitespace check were clean. Normal non-force commit `85704c521d247235585304ca264826582b821fdd` was published to the original public repository; exact-SHA GitHub Actions Host deterministic CI run `38627081404` concluded **SUCCESS** with its pinned Host Core/Transport/Release and hygiene gates. This is a **Gate-4 implementation acceptance**, not the Gate-5 independent fresh-clone/privacy/restore review and not whole-program closure.
+
 ## 5. Independent post-change review
 
 **PASS:** public fresh-clone tests of README/build/license/links/CI, exact test count and warning-free Release, source/product ABI parity and deterministic ARM proof when relevant, independent scanning of current public view **and relevant history/hosting surfaces**, private archive restore check and explicit residual exposure disclosures. No claim that links to already-forked material disappeared.

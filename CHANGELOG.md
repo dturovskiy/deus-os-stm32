@@ -4,6 +4,10 @@
 
 The owner ended additional escrow/custody proof work and directed continuation of the existing maintenance plan. Current-source Git restoration and local encrypted escrow creation/reopen have accepted bounded evidence; independent off-host restore remains **NOT_VERIFIED**, explicitly deferred as owner-accepted risk rather than misreported as PASS. Gate-2 is **OWNER_CLOSED_WITH_RECORDED_LIMITS for non-destructive public hygiene only**. Existing forward-only `ACCEPT_RESIDUAL_HISTORY` choice becomes Gate-3 option C (preserve all Git history/refs, no force, no new public remote), with next two implementation paths `.gitignore` and `.github/workflows/ci.yml`. Full scoped rationale: `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE2_3_FORWARD_ONLY_OWNER_DECISION.md`. No production code or target/key action in this owner decision.
 
+### Forward-only Gate-4 artifact-hygiene implementation accepted
+
+The scoped implementation changed only `.gitignore` and `.github/workflows/ci.yml` to ignore and CI-reject accidentally included `*.dpapi` and `*.pkg` files, including negative/positive synthetic CI controls. Ordinary non-force publication `85704c521d247235585304ca264826582b821fdd` passed exact-SHA hosted run `38627081404` SUCCESS. The separate owner exception and release-view strategy decision was published as `7340c5dfb4cad8e0ae0381bc076f7ad68eee3cdb`, CI `38626707694` SUCCESS. Gate-5 independent verification and Gate-6/7 final closure remain open; no firmware, Host, target or Git history modification.
+
 ## 2026-10-11
 
 ### Final Gate-1 exit publication and exact-SHA hosted acceptance
