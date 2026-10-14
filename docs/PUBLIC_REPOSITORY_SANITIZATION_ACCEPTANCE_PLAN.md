@@ -151,6 +151,10 @@ At the owner decision point a freshly fetched, clean public `main == origin/main
 
 **Gate-2 remains OPEN** for the current-source preservation/restore and protected-trust custody/approval requirements. Neither a source snapshot alone, nor 58 historical SHA strings, nor a newly executed test constitutes Gate-2 PASS. Gate-3–7 remain NOT AUTHORIZED. No target, Flash, production key, recovery image, history rewrite or public deletion is authorized by this scope clarification.
 
+### Gate-2 owner-approved limited continuation — 2026-10-14
+
+The owner explicitly closed **additional custody/escrow work** for this sanitization programme, accepting the residual **unverified off-host backup and second-context restore** as deferred risk rather than technical success. Independently proven source/history restoration and V10 local escrow creation/reopen retain their exact original accepted scope. For **prospective-only, non-destructive public repository hygiene**, the owner exception is recorded as `GATE2=OWNER_CLOSED_WITH_RECORDED_LIMITS`; `GATE2_TECHNICAL_FULL_PASS=NO`. Gate-3's comparative option C (same existing public repo/history; ordinary non-force changes) is the already accepted forward-only decision. This exception neither certifies complete recoverability nor authorizes new/released security trust, private material publication, history rewrite, hardware actions, or secret handling. Scoped record and exact candidate paths: `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE2_3_FORWARD_ONLY_OWNER_DECISION.md`.
+
 ## 3. Release topology decision and explicit authority
 
 **PASS:** compare (A) new sanitized public repo, (B) approved existing-history rewrite, (C) prospective-only cleanup. Discuss Git SHA/tag identity breaks, forks/cached copies/search crawlers, licenses/attribution, CI/artifact/issue migration, developer clone instructions, in-flight refs, residual irreversibility. Freeze actual source/doc allowlist and human owner approval; obtain **explicit separate authorization** before any force/non-fast-forward/visibility/new-remote operation. Unapproved strategy is BLOCKED, not silently selected.

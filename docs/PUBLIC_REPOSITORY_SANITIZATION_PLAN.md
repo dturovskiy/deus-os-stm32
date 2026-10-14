@@ -138,6 +138,10 @@ Gate-2 current-state minimum is instead: independently restorable **current** so
 
 **Status:** `HISTORIC_ZIP_SEARCH=STOP_OWNER_DIRECTIVE`; `HISTORIC_ZIP_BYTES_PRESERVED=NOT_PROVEN`; `GATE2_CURRENT_STATE_RESTORE_AND_TRUST_CUSTODY=OPEN`; Gate-3–7 not authorized. This scope change does not rewrite frozen Gate-1 history or waive safe handling of credentials and previously accepted protocol invariants.
 
+### Gate-2 owner stop / Gate-3 forward-only strategy decision — 2026-10-14
+
+The owner discontinued further key/escrow custody testing after the successful scoped local encrypted escrow proof and explicitly directed continuation of the existing maintenance plan. The independent off-host custody/restore predicate remains `NOT_VERIFIED` and is **accepted as deferred risk**, never relabelled `PASS`. For the **non-destructive public-release hygiene lane only**, Gate-2 has owner-exception disposition `OWNER_CLOSED_WITH_RECORDED_LIMITS`. This authorizes no private material publication or any production-security acceptance. The owner-selected strategy is the plan's **option C, prospective-only current public repo**, also called previously approved **strategy A (forward-only)** in the owner-disposition document. Exact Gate-4 hygiene candidates: `.gitignore` and `.github/workflows/ci.yml` for `*.dpapi`/`*.pkg` deny protection and deterministic synthetic negative fixtures. No rewrite, force push, new public remote, visibility change or source/hardware/secret manipulation. Full comparison and risk record: `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE2_3_FORWARD_ONLY_OWNER_DECISION.md`.
+
 ## 6. Gate-0 frozen changed-path boundary and hard stops
 
 Allowed in Gate-0 only:
