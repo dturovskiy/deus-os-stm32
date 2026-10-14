@@ -177,6 +177,10 @@ After the accepted owner-limited Gate-2 exception and Gate-3 forward-only strate
 
 **FAIL:** vacuous scan; skipped/unknown tests described as passing; fresh-clone build fails because necessary file was privatized; undeclared historical exposure; unverified private archive.
 
+### Gate-5 independent acceptance — 2026-10-14
+
+Gate-5 on exact already published public candidate `2aae249890a5570fcb4a1dd341ba82c4250dc56e` is **`PASS_WITH_RECORDED_LIMITS`**: local-source isolated public/private Git clone + `git fsck`, 269 tracked path hygiene, 7/7 explicit relative Markdown targets, exact eight allowlisted docs/workflow changes, 1,574/1,574 public reachable blobs checked for eight selected credential patterns with zero matches, 36/36 private source originals and immutable history snapshot independently restored. Hosted exact-SHA run `38627451883` was successful, with Core 84/84, Transport 24/24, Release 0 warnings/errors and CI negative fixtures PASS. Limits: no anonymous remote fresh clone and no claim against external caches, deleted artifacts or unknown secret formats. The public-safe candidate acceptance is `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE5_INDEPENDENT_ACCEPTANCE.md`; separate private verifier and detailed evidence remain access-restricted. Next Gate-6 non-force publication; this is **not** premature whole-program closure.
+
 ## 6. Controlled publication
 
 **PASS:** normal staged diff/`git diff --cached --check`/non-force commit and fresh-fetch exact-SHA CI for the non-destructive strategy. Any approved exceptional history strategy requires its **own** signed-off, separately audited workflow and documented nonrecoverable consequences. Confirm public GitHub project content and private preservation each independently after action.

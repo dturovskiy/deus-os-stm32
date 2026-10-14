@@ -8,6 +8,10 @@ The owner ended additional escrow/custody proof work and directed continuation o
 
 The scoped implementation changed only `.gitignore` and `.github/workflows/ci.yml` to ignore and CI-reject accidentally included `*.dpapi` and `*.pkg` files, including negative/positive synthetic CI controls. Ordinary non-force publication `85704c521d247235585304ca264826582b821fdd` passed exact-SHA hosted run `38627081404` SUCCESS. The separate owner exception and release-view strategy decision was published as `7340c5dfb4cad8e0ae0381bc076f7ad68eee3cdb`, CI `38626707694` SUCCESS. Gate-5 independent verification and Gate-6/7 final closure remain open; no firmware, Host, target or Git history modification.
 
+### Sanitization Gate-5 release-view independently validated
+
+The published hygiene and docs snapshot `2aae249890a5570fcb4a1dd341ba82c4250dc56e` independently passed fresh **local-source** `git clone --no-local` public/private object restore, `git fsck`, 269 tracked filename hygiene, 7/7 explicit Markdown local links, eight-path product-source-preserving diff, and exact GitHub CI `38627451883` (Core 84/84, Transport 24/24, zero failed/skipped, Release zero warnings/errors). Public-main history 1,574/1,574 blobs and private source-original restoration 36/36 PASS; historical path exposure and external caches remain recognized limits. Gate-5 verdict `PASS_WITH_RECORDED_LIMITS`, not an anonymous hosted fresh-clone claim. Gate-6/7 still require separate publication/final reconciliation. Scope: `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE5_INDEPENDENT_ACCEPTANCE.md`.
+
 ## 2026-10-11
 
 ### Final Gate-1 exit publication and exact-SHA hosted acceptance
