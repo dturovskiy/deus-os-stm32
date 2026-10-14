@@ -89,7 +89,15 @@ jobs:
           paths = subprocess.check_output(['git', '-C', '..', 'ls-files', '-z']).decode('utf-8').split('\0')
           paths = [p for p in paths if p]
           assert '.github/workflows/ci.yml' in paths, 'CI_WORKFLOW_NOT_TRACKED'
-          bad = [p for p in paths if re.search(r'(^|/)(build|bin|obj|TestResults|artifacts|coverage)/|\.(?:bin|elf|map|log|zip|7z|pfx|p12|pem|key|nupkg|snupkg)$', p, re.I)]
+          forbidden = re.compile(r'(^|/)(build|bin|obj|TestResults|artifacts|coverage)/|\.(?:bin|elf|map|log|zip|7z|pfx|p12|pem|key|dpapi|pkg|nupkg|snupkg)$', re.I)
+          forbidden_fixtures = ('scratch/device.dpapi', 'scratch/update.pkg', 'build/example.elf', 'host/example/bin/test.dll')
+          allowed_fixtures = ('.github/workflows/ci.yml', 'docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md', 'scripts/create_firmware_update_package.ps1')
+          assert all(forbidden.search(p) for p in forbidden_fixtures), 'FORBIDDEN_OUTPUT_NEGATIVE_TEST_FAILED'
+          assert all(not forbidden.search(p) for p in allowed_fixtures), 'FORBIDDEN_OUTPUT_FALSE_POSITIVE'
+          for suffix in ('.dpapi', '.pkg'):
+              subprocess.run(['git', '-C', '..', 'check-ignore', '--quiet', '--no-index', 'untracked-secret-fixture' + suffix], check=True)
+          print('FORBIDDEN_OUTPUT_NEGATIVE_FIXTURES=PASS')
+          bad = [p for p in paths if forbidden.search(p)]
           if bad:
               raise SystemExit('FORBIDDEN_TRACKED_OUTPUT=' + ','.join(bad))
           print('TRACKED_OUTPUT_HYGIENE=PASS count=' + str(len(paths)))

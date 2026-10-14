@@ -38,6 +38,8 @@ host/**/coverage/
 *.key
 *.pfx
 *.p12
+*.dpapi
+*.pkg
 id_rsa
 id_ed25519
 id_ecdsa
