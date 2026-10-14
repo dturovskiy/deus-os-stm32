@@ -12,6 +12,10 @@ The scoped implementation changed only `.gitignore` and `.github/workflows/ci.ym
 
 The published hygiene and docs snapshot `2aae249890a5570fcb4a1dd341ba82c4250dc56e` independently passed fresh **local-source** `git clone --no-local` public/private object restore, `git fsck`, 269 tracked filename hygiene, 7/7 explicit Markdown local links, eight-path product-source-preserving diff, and exact GitHub CI `38627451883` (Core 84/84, Transport 24/24, zero failed/skipped, Release zero warnings/errors). Public-main history 1,574/1,574 blobs and private source-original restoration 36/36 PASS; historical path exposure and external caches remain recognized limits. Gate-5 verdict `PASS_WITH_RECORDED_LIMITS`, not an anonymous hosted fresh-clone claim. Gate-6/7 still require separate publication/final reconciliation. Scope: `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE5_INDEPENDENT_ACCEPTANCE.md`.
 
+### Sanitization Gate-6 and Gate-7 final documentation reconciliation
+
+Gate-5 public acceptance was published by ordinary non-force commit `1772d37d3a706d0d2f64a4e09f5810cee46ef76e`, verified clean after fresh fetch; exact-SHA [CI 38629097010](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38629097010) SUCCESS (Core 84/84, Transport 24/24, 0 failed/skipped, Release 0 warnings/errors and hygiene 270). Restricted private Gate-5 verifier and acceptance records were published at `7ca5efa606a2c3fe39a4593dd7c71407aa08db8c`. Final Gate-7 docs reconcile the `CURRENT_STATE` authority, roadmap, execution checklist, scope plan, acceptance and final report; they remove stale historical-ZIP next-step instructions, record the owner-exception limits accurately and preserve existing source/ABI/history. **The final programme closure remains subject to exact-SHA CI verification of this final docs-only commit**; no new product feature starts automatically.
+
 ## 2026-10-11
 
 ### Final Gate-1 exit publication and exact-SHA hosted acceptance

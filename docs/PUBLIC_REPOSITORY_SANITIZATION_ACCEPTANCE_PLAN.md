@@ -187,6 +187,10 @@ Gate-5 on exact already published public candidate `2aae249890a5570fcb4a1dd341ba
 
 **FAIL:** hidden force, remote divergence, missing GitHub authority or exact-sha CI, or contaminated public snapshot.
 
+### Gate-6 controlled publication — independently accepted 2026-10-14
+
+Public Gate-5 acceptance report and canonical status pointers were published by ordinary non-force docs-only commit `1772d37d3a706d0d2f64a4e09f5810cee46ef76e`; fresh fetched public `HEAD == origin/main` was clean `0/0`. Exact-SHA hosted GitHub Actions [38629097010](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38629097010) **SUCCESS**, with Core **84/84**, Transport **24/24**, 0 failed/skipped, Release 0 warnings/errors and **270** tracked output hygiene PASS. The independent verifier and metadata-only detailed evidence were preserved in the access-controlled PRIVATE archive at `7ca5efa606a2c3fe39a4593dd7c71407aa08db8c` and fresh-fetch/clean upstream verified. The public and private repository visibilities remain PUBLIC and PRIVATE respectively. **Gate-6 publication is accepted; final Gate-7 closure follows independent final-commit CI validation.**
+
 ## 7. Final sanitized release acceptance
 
 **PASS:** every `RETAIN` resolved or documented as an approved stop, final public/private inventories/pointers and manifest are reconciled, external disclosure and unavoidable history/fork residuals disclosed, source-of-truth ownership and build/recovery invariants preserved, publication committed and accepted. Mark sanitization CLOSED only after actual hosted/public/archival evidence.
