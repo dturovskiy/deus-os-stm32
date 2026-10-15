@@ -184,7 +184,7 @@ Future host-management work must preserve:
 
 ## 11. Mandatory preconditions from the 2026-10-03 audit
 
-All `FDC-01..FDC-10` and `RDC-01..RDC-08` obligations are **CLOSED/PUBLISHED**, including independently verified RDC-08 Gate-8 at `c309428b03615a9afd514e3c7c8886a82a5112e9` ([hosted CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS). The historical RDC pre-feature prerequisite is therefore satisfied; **this design model remains non-authorizing**. Promoting Host Management Service/Web still requires a concrete new boundary recorded in `CURRENT_STATE.md`, its own plan/acceptance pair, and an explicit promotion/security review. It is not currently active.
+**Historical readiness conditions (now fulfilled):** all FDC-01..10 and RDC-01..08 obligations are completed/published under their accepted evidence, including RDC-08 at `c309428b03615a9afd514e3c7c8886a82a5112e9` ([CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS). This **presentation model is a non-authorizing design reference**. The Host-management **product direction** has subsequently been selected, but the speculative `DeusOs.Control.Service` EXE and in-process `HostManagementRuntime` implementations were abandoned at architecture review C (see `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md`). **No Web/HTTP host is running or authorized.** Its concrete client, process and security boundary still require explicit plan/acceptance, actual new tests and exact-SHA publication; the phrase 'not active' in earlier checkpoints described their historical date rather than today's selected direction.
 
 Service-specific hard requirements are:
 

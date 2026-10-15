@@ -1,5 +1,9 @@
 ## 2026-10-15
 
+### Architecture re-review C — NO-GO for unconsumed HostManagementRuntime
+
+Independent source review of `DesktopController.cs:7-77`, `DeusDeviceSession.cs:45-175`, `ManagementServiceOperations.cs:102-173` and CLI discovery/selection confirmed the proposed new in-process `HostManagementRuntime` would repeat existing session/discovery/read-only functionality **without an actual user-facing consumer**. Previous EXE and two-file runtime designs were docs-only and never implemented. The new scope decision is **`NO_GO_UNCONSUMED_RUNTIME_WRAPPER`**, not a completed Host feature and not a code rollback. The Host Management Service/UI product direction remains selected; the next permissible feature is **consumer-first**: a concrete Desktop enhancement or a security-reviewed local Web host using existing Core. No Web/HTTP/socket is authorized by this review. Source evidence, SOLID/DRY/YAGNI analysis, lifecycle/recovery/selection-race limitations, and acceptance in `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md` and `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_ACCEPTANCE_PLAN.md`; synchronized `CURRENT_STATE`, `ROADMAP`, `DOCUMENTATION_MODEL`, presentation model and master checklist. This is a docs-only decision candidate until exact-SHA hosted CI publication; no Host/MCU source, resource or security status is altered.
+
 ### Correction B — published
 
 Gate-0 architecture correction `18e5037a9a3adf04f1bcb7cd88785ea4365e2b6c` passed exact-SHA [CI 38739187311](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38739187311): Core 84/84, Transport 24/24, Release 0 warnings/errors. It supersedes the future EXE/lockfile plan with two Core/Core.Tests files. Gate-1 source is not yet implemented; no MCU or network changes.
