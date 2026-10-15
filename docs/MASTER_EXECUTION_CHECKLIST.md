@@ -5,7 +5,13 @@
 
 This file is a historical execution/checklist ledger. It is **not** the global current-state authority. Current project state and the active next boundary are owned by `docs/CURRENT_STATE.md`.
 
-### Host Management Foundation — consumer-first architecture review C (2026-10-15)
+### Active selected feature — Desktop Published Asset Inspector (2026-10-15)
+
+- [ ] **Gate 0 — new concrete Desktop read-only consumer scope not yet published:** pair `docs/DESKTOP_PUBLISHED_ASSET_INSPECTOR_PLAN.md` + `_ACCEPTANCE_PLAN.md`; exact six docs changes, direct-parent non-force commit, fetched clean `0/0`, exact-SHA hosted CI Core >=84 / Transport >=24 and Release zero warnings/errors before source edits.
+- [ ] **Gate 1/2 — real Desktop UI + synthetic tests NOT IMPLEMENTED:** after Gate-0 PASS exactly `DesktopController.cs`, `MainWindow.cs`, `ManagementServiceOperationTests.cs`; manually triggered published asset STATUS/validated layout, capability guard and stale-state handling; new tests actually executed, no unsupported write/control, no extra projects/packages, build/test real proof.
+- [ ] **Gate 3 — published feature acceptance NOT VERIFIED:** exact source diff and post-publication Git/CI, physical Desktop UI not claimed without operator check. No MCU/firmware action.
+
+### Host Management Foundation — consumer-first architecture review C (historical NO-GO remains)
 
 - [x] **Historical Gate-0 Correction B — published documentation design (not product implementation):** `18e5037a9a3adf04f1bcb7cd88785ea4365e2b6c`, exact-SHA CI `38739187311` SUCCESS. This prior two-file Core wrapper proposal was validly published, but further independent source review found no actual consuming CLI/Desktop/Web component. **Architecture review C supersedes its future implementation scope**, not the historical Git/CI PASS.
 
