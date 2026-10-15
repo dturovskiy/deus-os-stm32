@@ -1,6 +1,6 @@
 # Deus OS — Public Repository Sanitization Acceptance Plan
 
-Status: **Gate-0 ACCEPTED/PUBLISHED; Gate-1 EXIT ACCEPTED/PUBLISHED `53642b0c529925005f3b09a4882b8c8c115bbe54` with recorded limits; Gate-2 source-history and evidence-metadata preservation sublanes published privately 2026-10-12, full Gate-2 OPEN for current-state archive/restore and protected production recovery/trust custody; deleted historical ZIP payload recovery superseded by owner scope decision 2026-10-14; Gate-3–7 NOT OPENED.** Earlier gate results and OPEN/BLOCKED statements in the chronological sections below describe their original checkpoints, not current overriding authority.
+Status: **CLOSED/PUBLISHED_WITH_RECORDED_LIMITS — final Gate-7 public commit `9819f3188d08a9aff03d3284f15be4d0dd6d9139`, [hosted CI 38629887654](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38629887654) SUCCESS.** Gate-2 remains a deliberately bounded owner policy exception, **not** a full technical recovery/custody PASS. Gate-3 forward-only strategy and Gates 4–7 were actually published. Historical OPEN/BLOCKED/NOT_OPENED and checkbox statements below remain frozen evidence of their original checkpoints; they do not re-open this completed non-destructive programme. Final scope: `docs/PUBLIC_REPOSITORY_SANITIZATION_FINAL_ACCEPTANCE.md`.
 
 Design owner: `docs/PUBLIC_REPOSITORY_SANITIZATION_PLAN.md`
 

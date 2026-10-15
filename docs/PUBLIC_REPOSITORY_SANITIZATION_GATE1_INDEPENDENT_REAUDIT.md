@@ -1,6 +1,6 @@
 # Deus OS — Gate-1 Independent Re-Audit and Corrections
 
-Status: **INDEPENDENT READ-ONLY RECHECK PUBLISHED AT `300747134dbcd9e72687192b6e81fa9a72f995d9` (EXACT-SHA HOST CI SUCCESS) — GATE-1 FINAL ACCEPTANCE OPEN**
+Status: **HISTORICAL INDEPENDENT GATE-1 RECHECK** published at `300747134dbcd9e72687192b6e81fa9a72f995d9` (exact-SHA CI SUCCESS). Gate-1 final acceptance was OPEN **at that revision** and was subsequently completed with limits. Programme closeout is recorded at `docs/PUBLIC_REPOSITORY_SANITIZATION_FINAL_ACCEPTANCE.md`; do not reinterpret this frozen result as a present-day active blocker.
 
 Re-audited published parent: `6e8e4dfd538023443f0550b5feac1746c8475ada`; current GitHub `main` and local `HEAD == origin/main` were independently verified clean `0/0` before this review. Historical Gate-1A candidate remains `6781926af2dcbe02216ddb4f6da0272ffbb72f8f`; accepted audit publication `536fcac17cf854fb33cf2fcbf693623ff57ecd6a` and independent exact-SHA CI run `38084119171`; accepted status-record publication `6e8e4dfd538023443f0550b5feac1746c8475ada` and exact-SHA CI run `38084322175`.
 

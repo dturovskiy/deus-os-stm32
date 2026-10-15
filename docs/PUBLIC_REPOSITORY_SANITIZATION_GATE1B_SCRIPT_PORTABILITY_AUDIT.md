@@ -1,6 +1,6 @@
 # Deus OS — Gate-1B Script Portability and Hosting Preflight
 
-Status: **SEVEN-SCRIPT SOURCES ARCHIVED AND WINDOWS OFFLINE / SYNTHETIC HISTORICAL ASSET PROOF PUBLISHED/TECHNICALLY ACCEPTED; FULL WINDOWS ARM/BOOTLOADER/HARDWARE PARITY, OWNER SIGN-OFF AND GATE-1/1B/2 REMAIN OPEN.**
+Status: **HISTORICAL GATE-1B SCRIPT/PORTABILITY TECHNICAL SNAPSHOT.** Seven original scripts were archived; Windows offline/synthetic-Asset proof was accepted at this checkpoint. The owner sign-off and Gate-1/2 OPEN statements below describe **the former 2026-10-11 state**, superseded by later approved owner dispositions and the narrowly closed forward-only sanitization programme (`docs/PUBLIC_REPOSITORY_SANITIZATION_FINAL_ACCEPTANCE.md`). This document does **not** claim full production ARM/bootloader/hardware parity.
 
 Boundary: `PUBLIC_REPOSITORY_SANITIZATION`. This is a subordinate, non-authorizing evidence record. Global state remains `docs/CURRENT_STATE.md`; file-by-file owner proposal remains `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_OWNER_DECISIONS.md`; acceptance criteria remain `docs/PUBLIC_REPOSITORY_SANITIZATION_ACCEPTANCE_PLAN.md`.
 

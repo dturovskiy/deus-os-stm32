@@ -1,6 +1,6 @@
 # Public Repository Sanitization — owner stop decision and forward-only release view
 
-Status: **OWNER POLICY / NON-DESTRUCTIVE CONTINUATION DECISION (2026-10-14)**. This document is scoped to the active PUBLIC_REPOSITORY_SANITIZATION programme; `docs/CURRENT_STATE.md` remains the sole global status authority.
+Status: **OWNER POLICY / NON-DESTRUCTIVE CONTINUATION DECISION (2026-10-14)**. This document records the programme's **2026-10-14 owner-decision checkpoint**; the programme subsequently closed under the same bounded forward-only policy. Final result: `docs/PUBLIC_REPOSITORY_SANITIZATION_FINAL_ACCEPTANCE.md`. `docs/CURRENT_STATE.md` remains the sole global status authority.
 
 ## Gate-2 factual disposition and owner exception
 

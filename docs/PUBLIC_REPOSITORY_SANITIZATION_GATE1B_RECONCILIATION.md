@@ -1,6 +1,6 @@
 # Deus OS — Gate-1B Reconciliation and Full-History Proof
 
-> Status: **CURRENT-TREE/HISTORY TECHNICAL AUDIT COMPLETED; PRIVACY OWNER ADJUDICATION STILL OPEN.** This is an additive, non-destructive Gate-1 record and is not Gate-1 final acceptance. No hardware action, existing PowerShell change, Git rewrite, repository-visibility change, redaction or archive transfer is authorized.
+> **FROZEN HISTORICAL GATE-1B CHECKPOINT:** The technical audit had completed and privacy owner adjudication was still OPEN **at this source revision**. The four unchecked decisions below were later resolved or superseded through owner dispositions and the forward-only closeout. They are retained **unchecked for historical provenance**, not active tasks. See `docs/PUBLIC_REPOSITORY_SANITIZATION_GATE1B_OWNER_DECISIONS.md` and `docs/PUBLIC_REPOSITORY_SANITIZATION_FINAL_ACCEPTANCE.md`. This old technical record did not itself authorize hardware action, script changes, history rewrite, repository-visibility change, redaction or archive transfer.
 
 ## Independently accepted publication of this technical evidence slice
 
@@ -75,7 +75,7 @@ The 259-path audited prestate is reconciled without rewriting the 254-row histor
 - **NOT READY:** Gate-1 final acceptance, Gate-2 archive mutation, Gate-3 migration, Gate-4 redaction, release-view deletion, Git force push/history rewrite or physical STM32 operations. Original 98 paths have no signed decision, a private sink has not been accepted/restore-tested, and external replicas/history exposure are not certified erased.
 - **No automatic promotion:** acceptance of this new read-only evidence and a successful hosted Host CI run only proves the bounded evidence publication, not full confidentiality clearance, ARM build equivalence or future authorized migration.
 
-## Acceptance checklist for the next actual decision boundary
+## Historical Gate-1B approval checklist (frozen at this checkpoint; NOT current tasks)
 
 - [x] 259-path prestate and 254+5 arithmetic independently reconciled; the two new paths classified by explicit delta.
 - [x] 1,367/1,367 reachable `main` blobs read byte-accurately; secret-format match counts and historical workstation-reference indicators explicitly recorded.
