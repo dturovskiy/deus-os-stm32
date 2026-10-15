@@ -1,6 +1,6 @@
 # Deus OS — Host Management Service Foundation Acceptance Plan
 
-**Active result of architecture re-review C (2026-10-15): `WRAPPER_NO_GO / CONSUMER_REQUIRED`.** Publication acceptance of this **docs-only correction** requires exact-SHA hosted CI and fresh-fetch poststate; until that external predicate passes this is a **candidate decision, not published closure evidence**. The Host-management product goal remains open for a separately scoped *real consumer*. Source implementation of `HostManagementRuntime` is **NOT AUTHORIZED** by this revision.
+**Active result of architecture re-review C (2026-10-15): `WRAPPER_NO_GO / CONSUMER_REQUIRED`.** The architecture-C no-go was **accepted/published** in `87639102c938146c4f68d4cb2b52df18ab591374`, actual exact-SHA GitHub Actions `38744214870` SUCCESS and clean fresh-fetch `0/0`. This proves a docs-only architecture decision, not a Host service runtime. The subsequently selected Desktop Inspector has its own actual source/test CI (`4729341`, run `38748957900`) but its connected physical UI remains unverified. The Host-management product goal remains open for a separately scoped *real consumer*. Source implementation of `HostManagementRuntime` is **NOT AUTHORIZED** by this revision.
 
 Canon: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md`. Global state: `docs/CURRENT_STATE.md`.
 

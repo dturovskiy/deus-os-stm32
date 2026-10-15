@@ -4,7 +4,7 @@
 
 ## Need and reuse
 
-Current Avalonia Desktop shows system identity, health and applications but **does not show published asset status or OLED console layout**. CLI already has `config-status` / `config-read`; Core `ManagementServiceOperations.AssetStatusAsync` and `ReadOledUiLayoutAsync` already enforce `AssetAccessPolicy.PublishedOnly`. This is a concrete UI consumer and does **not** justify a new `HostManagementRuntime`, service executable, duplicate USB client, transport, parser or RPC contract.
+**Pre-implementation baseline:** Avalonia Desktop showed system identity, health and applications but did not show published asset status or OLED layout. The new inspector was subsequently implemented and hosted-CI accepted at `4729341e732ffd61e7fe2b0e48973f2c98726a5d` (87 Core / 24 Transport PASS). Only actual connected Desktop/UI acceptance remains unverified. CLI already has `config-status` / `config-read`; Core `ManagementServiceOperations.AssetStatusAsync` and `ReadOledUiLayoutAsync` already enforce `AssetAccessPolicy.PublishedOnly`. This is a concrete UI consumer and does **not** justify a new `HostManagementRuntime`, service executable, duplicate USB client, transport, parser or RPC contract.
 
 **Historical Gate 0** froze scope before implementation; actual docs-only commit `457be3d` passed its own exact-SHA CI. The later three-file Desktop code commit `4729341` passed a separate source build/test CI. Physical on-device Desktop acceptance remains NOT_VERIFIED. Freeze exactly six documentation paths: this plan, paired acceptance, `CURRENT_STATE.md`, `ROADMAP.md`, `MASTER_EXECUTION_CHECKLIST.md`, `CHANGELOG.md`. Publish non-force with exact-SHA Host CI PASS before changing source.
 
@@ -28,6 +28,8 @@ No `.csproj`, `packages.lock.json`, `host/DeusOs.Control.sln`, CI workflow, Core
 - Accessibility/observability: text values legible in ScrollViewer, button labels explicit, disabled state visible; no new network endpoints.
 
 ## Sequence and acceptance evidence (historical gates; physical UI remains open)
+
+**Gate 3b: mandatory physical-interface ownership (2026-10-15 correction).** Windows runs the repo/ST-LINK/UART; STM32 native USB/VBUS and the libusb IF2 management interface belong to the Ubuntu Mac mini in the canonical bench. The Windows screenshot shows the new panel but `No management device found` there is an expected host mismatch, **not evidence of a broken firmware, USB descriptor or WinUSB driver**. First validate the accepted Windows→Ubuntu SSH execution primitive; on Ubuntu use bounded read-only native USB/libusb evidence (optionally the existing `deus-cp devices`, `config status`, `config read`, PublishedOnly). **That cannot substitute for Avalonia visual acceptance.** Preflight whether Ubuntu actually has a graphical desktop; if headless, classify `ENVIRONMENT_BLOCKED_HEADLESS_GUI` and keep `PHYSICAL_DESKTOP_UI=NOT_VERIFIED`. No forced Windows driver changes, cabling/power cycles, firmware flash, arbitrary USB bridge or unauthorized Web endpoint. No Linux USB/CLI/GUI measurement was executed as part of this plan correction. See `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`, `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` and paired acceptance.
 
 **Gate 0:** approved docs-only scope, staged diff/whitespace, direct-parent non-force push, fresh fetch clean 0/0 and exact-SHA hosted Core >=84, Transport >=24, zero failed/skipped, Release zero warnings/errors.
 

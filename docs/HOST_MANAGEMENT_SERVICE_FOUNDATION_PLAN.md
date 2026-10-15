@@ -1,6 +1,6 @@
 # Deus OS — Host Management Service Foundation Plan
 
-**Current decision (architecture re-review C, 2026-10-15): `NO_GO_UNCONSUMED_RUNTIME_WRAPPER`.** Do **not** implement `HostManagementRuntime` merely to satisfy the former Gate-1 two-file plan. This is a reviewed **planning decision**, not a tested or released new product feature. Publication/acceptance of this revision requires the normal direct-parent, non-force, exact-SHA CI predicate in the paired acceptance plan.
+**Current decision (architecture re-review C, 2026-10-15): `NO_GO_UNCONSUMED_RUNTIME_WRAPPER`.** Do **not** implement `HostManagementRuntime` merely to satisfy the former Gate-1 two-file plan. This is a reviewed **planning decision**, not a tested or released new product feature. This architecture-C no-go decision **was actually accepted/published** in `87639102c938146c4f68d4cb2b52df18ab591374` with exact GitHub Actions `38744214870` SUCCESS. The later concrete Desktop inspector is independently implemented/published (`4729341`, exact CI `38748957900`); neither event authorizes the rejected wrapper or a Web service.
 
 Boundary: `HOST_MANAGEMENT_SERVICE_FOUNDATION`; global current state: `docs/CURRENT_STATE.md`; evidence and gates: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_ACCEPTANCE_PLAN.md`. The selected **product goal**—usable local Host management with a future browser presentation—remains valid. There is **no active Stage-A implementation authorization** until a *concrete consumer* demonstrates missing behavior, with its own implementation boundary.
 
