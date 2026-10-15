@@ -1,5 +1,9 @@
 ## 2026-10-15
 
+### Host Management Stage-A architecture correction B — acceptance candidate
+
+Independent Core-vs-plan review rejected the earlier proposed background EXE and nine-path project/lockfile addition: no defined client IPC, poor Web reuse, unproven hard shutdown deadlines, and USB locator mistaken for stable board identity. New plan makes Stage A a single in-process `HostManagementRuntime` in existing `DeusOs.Control.Core` with new tests in existing Core.Tests: **two source/test files only**, no new project, lockfile, service, HTTP/IPC, CI changes, MCU memory usage or target operations. It delegates to existing session and five typed read-only management operations. Native-hung shutdown and same-board cryptographic identity remain **NOT GUARANTEED**; read-only API narrowing is not a machine-wide security barrier. Original Gate-0 and lockfile Amendment A publication facts stay historically PASS; their future EXE design is **superseded, not implemented**. Correction B requires its own docs-only non-force publication and exact-SHA CI before Gate 1 implementation.
+
 ### Host Management Service Gate-0 + Amendment A both published
 
 The narrow Gate-0 Amendment A was published in normal non-force commit `0f95c2e5036652251976a0f7d6d5f62ea419116d`, verified clean after fresh fetch 0/0; [exact-SHA GitHub Actions 38733800122](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38733800122) SUCCESS (Core 84/84, Transport 24/24, zero failed/skipped, Release zero warnings/errors, tracked hygiene 273). The first Host-only nine-path source/test scope is now eligible for Gate 1. No implementation, local-dotnet build, firmware change or target validation has been accepted merely from documentation.
