@@ -8,6 +8,7 @@ internal sealed class DesktopController : IAsyncDisposable
 {
     private readonly IDeviceDiscovery _discovery;
     private readonly DeusDeviceSession _session;
+    private readonly ManagementServiceOperations _management;
 
     public DesktopController()
     {
@@ -19,6 +20,7 @@ internal sealed class DesktopController : IAsyncDisposable
                     "Deus OS CP supports Windows and Linux");
 
         _session = new DeusDeviceSession(_discovery);
+        _management = new ManagementServiceOperations(_session);
     }
 
     public ConnectionState State => _session.State;
@@ -55,6 +57,14 @@ internal sealed class DesktopController : IAsyncDisposable
         _session.ExecuteAsync(
             (client, token) => client.ApplicationsAsync(token),
             cancellationToken);
+
+    public Task<AssetStatusSnapshot> AssetStatusAsync(
+        CancellationToken cancellationToken) =>
+        _management.AssetStatusAsync(cancellationToken);
+
+    public Task<AssetReadResult?> ReadOledUiLayoutAsync(
+        CancellationToken cancellationToken) =>
+        _management.ReadOledUiLayoutAsync(cancellationToken);
 
     public Task<ApplicationStartResult> StartApplicationAsync(
         ushort applicationId,

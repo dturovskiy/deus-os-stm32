@@ -13,15 +13,19 @@ public sealed class MainWindow : Window
     private readonly TextBlock _status = new();
     private readonly TextBlock _identity = new();
     private readonly TextBlock _health = new();
+    private readonly TextBlock _assetStatus = new();
+    private readonly TextBlock _oledLayout = new();
     private readonly ListBox _applications = new();
     private readonly Button _refreshButton;
     private readonly Button _connectButton;
     private readonly Button _healthButton;
+    private readonly Button _assetRefreshButton;
     private readonly Button _startButton;
     private readonly Button _stopButton;
     private readonly CancellationTokenSource _livenessCancellation = new();
     private Task? _livenessTask;
     private bool _recoveryRefreshPending;
+    private bool _assetRefreshInFlight;
     private IReadOnlyList<DeviceCandidate> _deviceCandidates =
         Array.Empty<DeviceCandidate>();
 
@@ -36,12 +40,14 @@ public sealed class MainWindow : Window
         _refreshButton = new Button { Content = "Refresh devices" };
         _connectButton = new Button { Content = "Connect" };
         _healthButton = new Button { Content = "Refresh health" };
+        _assetRefreshButton = new Button { Content = "Refresh published asset" };
         _startButton = new Button { Content = "Start selected" };
         _stopButton = new Button { Content = "Stop active" };
 
         _refreshButton.Click += async (_, _) => await RefreshDevicesAsync();
         _connectButton.Click += async (_, _) => await ConnectAsync();
         _healthButton.Click += async (_, _) => await RefreshHealthAsync();
+        _assetRefreshButton.Click += async (_, _) => await RefreshPublishedAssetAsync();
         _startButton.Click += async (_, _) => await StartSelectedAsync();
         _stopButton.Click += async (_, _) => await StopAsync();
 
@@ -104,6 +110,10 @@ public sealed class MainWindow : Window
         root.Children.Add(_identity);
         root.Children.Add(_healthButton);
         root.Children.Add(_health);
+        root.Children.Add(new TextBlock { Text = "Published OLED asset (read only)" });
+        root.Children.Add(_assetRefreshButton);
+        root.Children.Add(_assetStatus);
+        root.Children.Add(_oledLayout);
         root.Children.Add(new TextBlock { Text = "Applications" });
         root.Children.Add(_applications);
         root.Children.Add(appButtons);
@@ -216,6 +226,7 @@ public sealed class MainWindow : Window
             async () =>
             {
                 UpdateReadyControls(false);
+                ClearLiveState(clearIdentity: true);
                 _status.Text = "NEGOTIATING";
 
                 var negotiation = await _controller.ConnectAsync(
@@ -229,6 +240,86 @@ public sealed class MainWindow : Window
                 _status.Text = "READY";
                 UpdateReadyControls(true);
             });
+    }
+
+    private async Task RefreshPublishedAssetAsync()
+    {
+        var negotiation = _controller.LastNegotiation;
+        if (_assetRefreshInFlight ||
+            negotiation is null ||
+            _controller.State != ConnectionState.Ready ||
+            _recoveryRefreshPending ||
+            !HasCapability(SystemCapability.AssetConfigurationTransfer))
+        {
+            return;
+        }
+
+        _assetRefreshInFlight = true;
+        _assetStatus.Text = "Reading published asset...";
+        _oledLayout.Text = string.Empty;
+        UpdateReadyControls(true);
+        try
+        {
+            await RunUiOperationAsync(async () =>
+            {
+                try
+                {
+                    var status = await _controller.AssetStatusAsync(
+                        CancellationToken.None);
+                    AssetReadResult? read = null;
+                    if (status.HasCommittedRecord)
+                    {
+                        read = await _controller.ReadOledUiLayoutAsync(
+                            CancellationToken.None);
+                    }
+
+                    if (_controller.State != ConnectionState.Ready ||
+                        !ReferenceEquals(_controller.LastNegotiation, negotiation) ||
+                        _recoveryRefreshPending)
+                    {
+                        return;
+                    }
+
+                    _assetStatus.Text = status.HasCommittedRecord
+                        ? $"Committed generation {status.CommittedGeneration} | " +
+                          $"length {status.CommittedPayloadLength} | " +
+                          $"CRC32 0x{status.CommittedPayloadCrc32:X8}"
+                        : "No committed asset | compiled-default fallback";
+
+                    if (read is null)
+                    {
+                        _oledLayout.Text = status.HasCommittedRecord
+                            ? "Published layout changed during read; refresh again"
+                            : "OLED uses compiled-default layout";
+                        return;
+                    }
+
+                    var layout = OledUiLayoutConfigV1.Deserialize(read.Payload);
+                    _oledLayout.Text =
+                        $"OLED console: X={layout.ConsoleX}, Y={layout.ConsoleY}, " +
+                        $"width={layout.ConsoleWidth}, height={layout.ConsoleHeight}";
+                }
+                catch
+                {
+                    if (_controller.State == ConnectionState.Ready &&
+                        ReferenceEquals(_controller.LastNegotiation, negotiation) &&
+                        !_recoveryRefreshPending)
+                    {
+                        _assetStatus.Text = "Published asset refresh failed (see status)";
+                        _oledLayout.Text = string.Empty;
+                    }
+
+                    throw;
+                }
+            });
+        }
+        finally
+        {
+            _assetRefreshInFlight = false;
+            UpdateReadyControls(
+                _controller.State == ConnectionState.Ready &&
+                !_recoveryRefreshPending);
+        }
     }
 
     private async Task RefreshHealthAsync()
@@ -312,6 +403,11 @@ public sealed class MainWindow : Window
         {
             _health.Text = string.Empty;
         }
+
+        _assetStatus.Text = HasCapability(SystemCapability.AssetConfigurationTransfer)
+            ? "Select Refresh published asset to read current status"
+            : "Published asset inspection unavailable on this device";
+        _oledLayout.Text = string.Empty;
     }
 
     private async Task RefreshApplicationsUntilReadyAsync()
@@ -367,6 +463,8 @@ public sealed class MainWindow : Window
         }
 
         _health.Text = string.Empty;
+        _assetStatus.Text = string.Empty;
+        _oledLayout.Text = string.Empty;
         _applications.ItemsSource = null;
     }
 
@@ -480,6 +578,9 @@ public sealed class MainWindow : Window
             (capabilities & SystemCapability.ApplicationControl) != 0;
 
         _healthButton.IsEnabled = ready && health;
+        _assetRefreshButton.IsEnabled = ready &&
+            !_assetRefreshInFlight &&
+            (capabilities & SystemCapability.AssetConfigurationTransfer) != 0;
         _applications.IsEnabled = ready && applications;
         _startButton.IsEnabled =
             ready && applications && applicationControl;

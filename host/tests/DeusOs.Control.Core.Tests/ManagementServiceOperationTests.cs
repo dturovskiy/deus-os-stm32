@@ -314,6 +314,153 @@ public sealed class ManagementServiceOperationTests
         }
     }
 
+    [Fact]
+    public async Task PublishedAssetStatusReturnsCommittedMetadataWithoutWrite()
+    {
+        var transport = new ScriptedTransport();
+        EnqueuePublishedAssetNegotiation(transport);
+        transport.EnqueueResponse(CreateAssetStatusResponse(3, 7, 8, 0x11223344u));
+
+        var discovery = new ScriptedDiscovery(transport);
+        await using var session = new DeusDeviceSession(discovery);
+        var operations = new ManagementServiceOperations(session);
+        await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+
+        var status = await operations.AssetStatusAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.True(status.HasCommittedRecord);
+        Assert.Equal((uint)7, status.CommittedGeneration);
+        Assert.Equal((ushort)8, status.CommittedPayloadLength);
+        Assert.Equal(0x11223344u, status.CommittedPayloadCrc32);
+        Assert.Equal(3, transport.Writes.Count);
+        AssertAssetRequest(transport.Writes[2], AssetTransferOpcode.Status);
+    }
+
+    [Fact]
+    public async Task PublishedAssetReadReturnsNullForCompiledDefaultFallback()
+    {
+        var transport = new ScriptedTransport();
+        EnqueuePublishedAssetNegotiation(transport);
+        transport.EnqueueResponse(CreateAssetStatusResponse(3, 0, 0, 0));
+
+        var discovery = new ScriptedDiscovery(transport);
+        await using var session = new DeusDeviceSession(discovery);
+        var operations = new ManagementServiceOperations(session);
+        await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+
+        var result = await operations.ReadOledUiLayoutAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.Null(result);
+        Assert.Equal(3, transport.Writes.Count);
+        AssertAssetRequest(transport.Writes[2], AssetTransferOpcode.Status);
+    }
+
+    [Fact]
+    public async Task PublishedOledLayoutReadUsesOnlyStatusAndReadChunk()
+    {
+        var layout = OledUiLayoutConfigV1.Default.Serialize();
+        var crc = Crc32IsoHdlc.Compute(layout);
+        var transport = new ScriptedTransport();
+        EnqueuePublishedAssetNegotiation(transport);
+        transport.EnqueueResponse(CreateAssetStatusResponse(3, 7, 8, crc));
+        transport.EnqueueResponse(CreateAssetReadChunkResponse(4, 7, layout));
+
+        var discovery = new ScriptedDiscovery(transport);
+        await using var session = new DeusDeviceSession(discovery);
+        var operations = new ManagementServiceOperations(session);
+        await session.ConnectAsync(
+            discovery.Candidate,
+            TestContext.Current.CancellationToken);
+
+        var read = await operations.ReadOledUiLayoutAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(read);
+        Assert.Equal((uint)7, read.Generation);
+        Assert.Equal(crc, read.PayloadCrc32);
+        Assert.Equal(OledUiLayoutConfigV1.Default,
+            OledUiLayoutConfigV1.Deserialize(read.Payload));
+        Assert.Equal(4, transport.Writes.Count);
+        AssertAssetRequest(transport.Writes[2], AssetTransferOpcode.Status);
+        AssertAssetRequest(transport.Writes[3], AssetTransferOpcode.ReadChunk);
+    }
+
+    private static void EnqueuePublishedAssetNegotiation(
+        ScriptedTransport transport)
+    {
+        EnqueueNegotiation(
+            transport,
+            SystemCapability.SystemHealth |
+            SystemCapability.ApplicationRuntime |
+            SystemCapability.ApplicationControl |
+            SystemCapability.Diagnostics |
+            SystemCapability.LocalUi |
+            SystemCapability.AssetConfigurationTransfer,
+            helloCapabilities: 0x7F);
+    }
+
+    private static byte[] CreateAssetStatusResponse(
+        ushort requestId,
+        uint generation,
+        ushort length,
+        uint crc)
+    {
+        var payload = new byte[26];
+        payload[0] = AssetTransferProtocol.Version;
+        payload[1] = (byte)AssetTransferOpcode.Status;
+        payload[2] = (byte)AssetTransferStatus.Ok;
+        payload[3] = (byte)AssetTransferSessionState.None;
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(4, 2),
+            AssetTransferProtocol.OledUiLayoutObjectType);
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(8, 4), generation);
+        payload[16] = 8;
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(18, 2), length);
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(22, 4), crc);
+        return BinaryFrameCodec.Encode(
+            FrameType.AssetTransferResponse, 0, requestId, payload);
+    }
+
+    private static byte[] CreateAssetReadChunkResponse(
+        ushort requestId,
+        uint generation,
+        byte[] layout)
+    {
+        var payload = new byte[18 + layout.Length];
+        payload[0] = AssetTransferProtocol.Version;
+        payload[1] = (byte)AssetTransferOpcode.ReadChunk;
+        payload[2] = (byte)AssetTransferStatus.Ok;
+        payload[3] = (byte)AssetTransferSessionState.None;
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(4, 2),
+            AssetTransferProtocol.OledUiLayoutObjectType);
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(8, 4), generation);
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(12, 2), checked((ushort)layout.Length));
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(14, 2), checked((ushort)layout.Length));
+        payload[16] = checked((byte)layout.Length);
+        layout.CopyTo(payload, 18);
+        return BinaryFrameCodec.Encode(
+            FrameType.AssetTransferResponse, 0, requestId, payload);
+    }
+
+    private static void AssertAssetRequest(byte[] wire, AssetTransferOpcode opcode)
+    {
+        Assert.Equal((byte)FrameType.AssetTransferRequest, wire[3]);
+        Assert.Equal((byte)0, wire[4]);
+        Assert.Equal(AssetTransferProtocol.Version,
+            wire[ProtocolConstants.FixedPrefixBytes]);
+        Assert.Equal((byte)opcode,
+            wire[ProtocolConstants.FixedPrefixBytes + 1]);
+    }
+
     private static async Task<(
         DeusDeviceSession Session,
         ManagementServiceOperations Operations,
