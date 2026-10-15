@@ -1,8 +1,8 @@
 # Deus OS — Desktop Published Asset Inspector Acceptance Plan
 
-**Candidate Gate 0, 2026-10-15.** New product boundary `DESKTOP_PUBLISHED_ASSET_INSPECTOR`. Parent plan: `docs/DESKTOP_PUBLISHED_ASSET_INSPECTOR_PLAN.md`. Canonical current status: `docs/CURRENT_STATE.md`. It does not reopen or implement rejected `HostManagementRuntime` or a Web/HTTP service.
+**Gates 0–2 SOURCE/CI ACCEPTED; physical UI NOT VERIFIED (2026-10-15).** Gate-0 docs-only `457be3dc4ff2e642138bd62178d91420ee552570`, hosted CI `38746868482` SUCCESS. Gate-1/2 code-only commit `4729341e732ffd61e7fe2b0e48973f2c98726a5d`, exact-SHA hosted [CI `38748957900`](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38748957900) SUCCESS: Core **87/87** (3 new tests), Transport **24/24**, failed/skipped **0**, Desktop Release compilation and 0 warnings/errors, tracked output hygiene 275 PASS. Local dotnet runner returned `CONTROL_PLANE_OUTCOME_AMBIGUOUS` without compiler output; this is not a local test PASS. GitHub CI provides the verified compiler/test proof. **Actual UI observation on a connected device is still NOT VERIFIED.** New product boundary `DESKTOP_PUBLISHED_ASSET_INSPECTOR`. Parent plan: `docs/DESKTOP_PUBLISHED_ASSET_INSPECTOR_PLAN.md`. Canonical current status: `docs/CURRENT_STATE.md`. It does not reopen or implement rejected `HostManagementRuntime` or a Web/HTTP service.
 
-## Gate-0 contract
+## Gate-0 contract (fulfilled at 457be3d, CI 38746868482)
 
 - Confirm fetched public/private Git clean 0/0 and exact public baseline `87639102c938146c4f68d4cb2b52df18ab591374` (public Host CI `38744214870` SUCCESS; Core 84/84, Transport 24/24, Release 0 warnings/errors).
 - **Exactly six** docs-only paths: plan, this acceptance, `CURRENT_STATE.md`, `ROADMAP.md`, `MASTER_EXECUTION_CHECKLIST.md`, `CHANGELOG.md`. No compiler/target actions, secrets, source or CI mutation.
@@ -11,7 +11,7 @@
 - Non-vacuous staged whitespace check, direct parent, ordinary non-force Git publication, fresh `HEAD==origin/main` clean 0/0 and hosted CI **on exact new Gate-0 SHA** with Core >=84, Transport >=24, zero failed/skipped, Release 0 warnings/errors and tracked-output hygiene.
 - If Gate-0 publication/CI fails, **no source changes** authorized. A green CI of the prior SHA cannot close this Gate.
 
-## Future Gate-1/2 real code / test acceptance
+## Gate-1/2 real code/test acceptance (fulfilled at 4729341, CI 38748957900)
 
 Freeze exactly `host/src/DeusOs.Control.Desktop/DesktopController.cs`, `host/src/DeusOs.Control.Desktop/MainWindow.cs`, `host/tests/DeusOs.Control.Core.Tests/ManagementServiceOperationTests.cs`. All additions must be necessary; any discovered extra project, script, lockfile, Core or transport dependency requires fresh scoped approval before editing.
 

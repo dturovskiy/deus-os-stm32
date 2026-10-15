@@ -1,14 +1,14 @@
 # Deus OS — Desktop Published Asset Inspector Plan
 
-**Boundary:** `DESKTOP_PUBLISHED_ASSET_INSPECTOR` — candidate Gate 0, 2026-10-15. Global state authority: `docs/CURRENT_STATE.md`; acceptance: `docs/DESKTOP_PUBLISHED_ASSET_INSPECTOR_ACCEPTANCE_PLAN.md`.
+**Boundary:** `DESKTOP_PUBLISHED_ASSET_INSPECTOR` — Gate 0 design PUBLISHED `457be3dc4ff2e642138bd62178d91420ee552570` (CI `38746868482` SUCCESS); Gate 1/2 implementation PUBLISHED `4729341e732ffd61e7fe2b0e48973f2c98726a5d` (CI `38748957900` SUCCESS, Core 87/87, Transport 24/24, Desktop Release zero warnings/errors). **Physical Desktop/UI and on-device behavior NOT VERIFIED**; this is source/CI acceptance only, not full end-to-end acceptance. Global state authority: `docs/CURRENT_STATE.md`; acceptance: `docs/DESKTOP_PUBLISHED_ASSET_INSPECTOR_ACCEPTANCE_PLAN.md`.
 
 ## Need and reuse
 
 Current Avalonia Desktop shows system identity, health and applications but **does not show published asset status or OLED console layout**. CLI already has `config-status` / `config-read`; Core `ManagementServiceOperations.AssetStatusAsync` and `ReadOledUiLayoutAsync` already enforce `AssetAccessPolicy.PublishedOnly`. This is a concrete UI consumer and does **not** justify a new `HostManagementRuntime`, service executable, duplicate USB client, transport, parser or RPC contract.
 
-**Gate 0** is scope/acceptance freeze, not an implemented feature. Freeze exactly six documentation paths: this plan, paired acceptance, `CURRENT_STATE.md`, `ROADMAP.md`, `MASTER_EXECUTION_CHECKLIST.md`, `CHANGELOG.md`. Publish non-force with exact-SHA Host CI PASS before changing source.
+**Historical Gate 0** froze scope before implementation; actual docs-only commit `457be3d` passed its own exact-SHA CI. The later three-file Desktop code commit `4729341` passed a separate source build/test CI. Physical on-device Desktop acceptance remains NOT_VERIFIED. Freeze exactly six documentation paths: this plan, paired acceptance, `CURRENT_STATE.md`, `ROADMAP.md`, `MASTER_EXECUTION_CHECKLIST.md`, `CHANGELOG.md`. Publish non-force with exact-SHA Host CI PASS before changing source.
 
-## Frozen first implementation (Gate 1)
+## Frozen implementation — Gate 1 source accepted/published
 
 Only **three** existing tracked source/test files may change:
 
@@ -27,7 +27,7 @@ No `.csproj`, `packages.lock.json`, `host/DeusOs.Control.sln`, CI workflow, Core
 - USB locator is not authenticated board identity; `DisposeAsync` has no guaranteed hard deadline when native transport hangs. Do not claim either is solved.
 - Accessibility/observability: text values legible in ScrollViewer, button labels explicit, disabled state visible; no new network endpoints.
 
-## Sequence and acceptance
+## Sequence and acceptance evidence (historical gates; physical UI remains open)
 
 **Gate 0:** approved docs-only scope, staged diff/whitespace, direct-parent non-force push, fresh fetch clean 0/0 and exact-SHA hosted Core >=84, Transport >=24, zero failed/skipped, Release zero warnings/errors.
 
