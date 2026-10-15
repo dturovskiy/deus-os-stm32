@@ -1,5 +1,9 @@
 ## 2026-10-15
 
+### Host Management Service original Gate-0 design PASS and locked-restore Amendment A
+
+The original six-doc `HOST_MANAGEMENT_SERVICE_FOUNDATION` Gate-0 design was published by normal non-force commit `bfb30d5f23389b54f0c114959640dc2d5a6291f9`, clean fetched `0/0`; exact-SHA GitHub Actions `38732869436` SUCCESS (Core 84/84, Transport 24/24, Release 0 warnings/errors, tracked output hygiene 273). Read-only Gate-1 preflight identified two previously omitted project-local `packages.lock.json` files necessary for `--locked-mode` build/test. Gate-0 Amendment A freezes the revised nine-path source set, with no change to Host trust, runtime, target, firmware or operation exposure. **No code is permitted until the amendment's own docs publication and exact-SHA hosted CI pass.**
+
 ### New product selection — Host Management Service Foundation / Gate-0 design
 
 The owner selected the next host-only product boundary after completed FDC/RDC and forward-only sanitization. New paired design/acceptance documents `HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` freeze a headless managed session/runtime over existing Core and Windows/Linux transport, with **five named typed ReadOnly process operations, zero Control/Destructive routes, no HTTP listener, no network, no new firmware/bootloader/secret/target action**. Gate-0 is a docs-only acceptance/publication with exact-SHA hosted CI required before any Stage-A implementation. Web/loopback API requires a separate reviewed auth/trust boundary. The accepted 52-KiB firmware region and 11,264-byte static-SRAM build acceptance ceiling remain unchanged; current ARM resources are not freshly measured by this design. No product or hardware claims are made by this entry.

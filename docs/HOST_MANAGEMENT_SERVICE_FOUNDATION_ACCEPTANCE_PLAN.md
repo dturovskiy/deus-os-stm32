@@ -1,6 +1,6 @@
 # Deus OS — Host Management Service Foundation Acceptance Plan
 
-Status: **GATE-0 DESIGN PENDING PUBLICATION; NO HOST SOURCE/DEVICE MUTATION AUTHORIZED**.
+Status: **ORIGINAL GATE-0 PASS/PUBLISHED (`bfb30d5f23389b54f0c114959640dc2d5a6291f9`, CI `38732869436` SUCCESS); LOCKFILE SCOPE AMENDMENT A AWAITS ITS OWN EXACT-SHA PUBLICATION.** No Stage-A source edits authorized until this amendment passes.
 
 Product boundary: `HOST_MANAGEMENT_SERVICE_FOUNDATION`.
 Design owner: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md`.
@@ -22,9 +22,15 @@ Pre-Gate-0 public base: `13889b4f2c509c9b83a1945f9b899add5d0164d2`; its actual G
 
 Gate 0 must classify final result `DESIGN_GATE0_ACCEPTED_PUBLISHED` or `GATE0_OPEN` with the exact GitHub CI run and accepted SHA. It is **not** a real service test.
 
-## Gate 1 — exact Stage-A source review (future; blocked until Gate 0 PASS)
+## Gate-0 original evidence / mandatory Amendment A — 2026-10-15
 
-Review the Stage-A seven-path source/test/solution/CI set from the plan; reject unapproved Core/CLI/Desktop/firmware/source drift and any listening endpoint. Verify one process/session owner over `DeusDeviceSession`, five typed read-only operations using `ManagementServiceOperations`, default disconnected state, no raw RPC selectors/flags, no three Control routes at process boundary. Require actual test fixture injection without physical device.
+The exact six-path docs design Gate-0 source was published by ordinary non-force commit `bfb30d5f23389b54f0c114959640dc2d5a6291f9`; fresh fetch confirmed clean public main ahead/behind 0/0. Hosted Actions [run 38732869436](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38732869436) tied to this exact SHA is **SUCCESS**: Core **84/84**, Transport **24/24**, failed/skipped zero, Release 0 warnings/errors, hygiene **273**. `ORIGINAL_DESIGN_GATE0=PASS_PUBLISHED`.
+
+The original frozen Gate-1 path list omitted two necessary `packages.lock.json` files for the newly introduced Service executable and Service.Tests project under global locked restore. This is a genuine scope omission **not** a reason to bypass `--locked-mode`. The narrow Amendment A is docs-only: add exactly those two project-local lockfiles to the future Gate-1 path allowlist (nine total); no changes to runtime behavior, operation allowlist, target, CI semantics or network exposure. Amendment A is **PENDING** until its own ordinary non-force docs commit, fresh fetch clean 0/0 and exact-SHA hosted CI pass. If not accepted, Gate-1 code remains BLOCKED.
+
+## Gate 1 — exact Stage-A source review (future; blocked until amended Gate 0 PASS)
+
+Review the Stage-A **nine-path** source/test/solution/CI + **two mandatory project lockfiles** set frozen by Gate-0 Amendment A in the plan; reject unapproved Core/CLI/Desktop/firmware/source drift and any listening endpoint. Verify one process/session owner over `DeusDeviceSession`, five typed read-only operations using `ManagementServiceOperations`, default disconnected state, no raw RPC selectors/flags, no three Control routes at process boundary. Require actual test fixture injection without physical device.
 
 If the initial runtime needs a dependency/new source file or a platform-specific service registration, freeze and publish a **Gate-0 amendment** before editing. No hidden coupling or packaging under the same implementation commit.
 
