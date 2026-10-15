@@ -1,6 +1,6 @@
 # Deus OS — Host Management Service Foundation Plan
 
-Status: **GATE-0 ORIGINAL DESIGN ACCEPTED/PUBLISHED `bfb30d5f23389b54f0c114959640dc2d5a6291f9` (CI `38732869436` SUCCESS); LOCKFILE SOURCE-SCOPE AMENDMENT A PENDING ITS OWN PUBLICATION.** The Stage-A implementation remains blocked until this amended scope is separately accepted; no Host/target code has changed.
+Status: **GATE-0 DESIGN AND LOCKFILE AMENDMENT A BOTH ACCEPTED/PUBLISHED.** Original design `bfb30d5f23389b54f0c114959640dc2d5a6291f9`, CI `38732869436` SUCCESS. Amendments `0f95c2e5036652251976a0f7d6d5f62ea419116d`, CI `38733800122` SUCCESS (84 Core / 24 Transport, zero failed/skipped, warning-free Release, hygiene 273). **Gate-1 source implementation is now permitted within the nine-path frozen scope, but is NOT YET IMPLEMENTED OR TESTED.**
 
 Boundary ID: `HOST_MANAGEMENT_SERVICE_FOUNDATION`.
 
@@ -54,7 +54,7 @@ For this host-only boundary, `STM32_FIRMWARE_CHANGED=NO`, `TARGET_MEMORY_DELTA=0
 
 The original six-path documentation-only Gate 0 was published as commit `bfb30d5f23389b54f0c114959640dc2d5a6291f9` from direct parent `13889b4f2c509c9b83a1945f9b899add5d0164d2`, verified after fetch clean `0/0`. Exact-SHA [hosted CI `38732869436`](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38732869436) **SUCCESS**: Core `84/84`, Transport `24/24`, zero failed/skipped, Release 0 warnings/errors and hygiene 273/273.
 
-A narrow static Gate-1 preflight identified that adding new .NET test and executable projects to the existing locked-restore solution necessarily creates **two new tracked lockfiles**. The original seven-path Gate-1 scope did not include them, so it is **not** permissible to create them in an unreviewed Gate-1 patch. Amendment A adds the two `packages.lock.json` paths to the frozen future source scope (nine total) and no other feature behavior. Amendment A is docs-only and **requires its own non-force commit/fresh-fetch/exact-SHA CI** before Gate 1 code starts; it does not reduce either locked-restore or zero-warning requirements.
+A narrow static Gate-1 preflight identified that adding new .NET test and executable projects to the existing locked-restore solution necessarily creates **two new tracked lockfiles**. The original seven-path Gate-1 scope did not include them, so it is **not** permissible to create them in an unreviewed Gate-1 patch. Amendment A adds the two `packages.lock.json` paths to the frozen future source scope (nine total) and no other feature behavior. Amendment A was published as direct-child docs-only commit `0f95c2e5036652251976a0f7d6d5f62ea419116d`; fresh-fetched clean `0/0`; exact-SHA [hosted CI 38733800122](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38733800122) **SUCCESS** (Core 84/84, Transport 24/24, 0 failed/skipped, Release 0 warnings/errors, hygiene 273). The locked-restore/zero-warning rules remain mandatory and Gate-1 code remains **NOT STARTED**.
 
 ## 6. Mandatory stop / rollback conditions
 

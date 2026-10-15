@@ -1,6 +1,6 @@
 # Deus OS — Host Management Service Foundation Acceptance Plan
 
-Status: **ORIGINAL GATE-0 PASS/PUBLISHED (`bfb30d5f23389b54f0c114959640dc2d5a6291f9`, CI `38732869436` SUCCESS); LOCKFILE SCOPE AMENDMENT A AWAITS ITS OWN EXACT-SHA PUBLICATION.** No Stage-A source edits authorized until this amendment passes.
+Status: **GATE-0 ORIGINAL DESIGN AND LOCKFILE AMENDMENT A PASS/PUBLISHED** — original SHA `bfb30d5f23389b54f0c114959640dc2d5a6291f9`, hosted CI `38732869436` SUCCESS; Amendment A SHA `0f95c2e5036652251976a0f7d6d5f62ea419116d`, hosted CI `38733800122` SUCCESS. **Stage-A Gate 1 source/test validation pending; no source/target changes authorized beyond the frozen nine-path set.**
 
 Product boundary: `HOST_MANAGEMENT_SERVICE_FOUNDATION`.
 Design owner: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md`.
@@ -26,7 +26,7 @@ Gate 0 must classify final result `DESIGN_GATE0_ACCEPTED_PUBLISHED` or `GATE0_OP
 
 The exact six-path docs design Gate-0 source was published by ordinary non-force commit `bfb30d5f23389b54f0c114959640dc2d5a6291f9`; fresh fetch confirmed clean public main ahead/behind 0/0. Hosted Actions [run 38732869436](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38732869436) tied to this exact SHA is **SUCCESS**: Core **84/84**, Transport **24/24**, failed/skipped zero, Release 0 warnings/errors, hygiene **273**. `ORIGINAL_DESIGN_GATE0=PASS_PUBLISHED`.
 
-The original frozen Gate-1 path list omitted two necessary `packages.lock.json` files for the newly introduced Service executable and Service.Tests project under global locked restore. This is a genuine scope omission **not** a reason to bypass `--locked-mode`. The narrow Amendment A is docs-only: add exactly those two project-local lockfiles to the future Gate-1 path allowlist (nine total); no changes to runtime behavior, operation allowlist, target, CI semantics or network exposure. Amendment A is **PENDING** until its own ordinary non-force docs commit, fresh fetch clean 0/0 and exact-SHA hosted CI pass. If not accepted, Gate-1 code remains BLOCKED.
+The original frozen Gate-1 path list omitted two necessary `packages.lock.json` files for the newly introduced Service executable and Service.Tests project under global locked restore. This is a genuine scope omission **not** a reason to bypass `--locked-mode`. The narrow Amendment A is docs-only: add exactly those two project-local lockfiles to the future Gate-1 path allowlist (nine total); no changes to runtime behavior, operation allowlist, target, CI semantics or network exposure. Amendment A **PASSED** after ordinary non-force publication at `0f95c2e5036652251976a0f7d6d5f62ea419116d` and fresh-fetch clean `0/0`. Its actual [GitHub Actions 38733800122](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38733800122) is **SUCCESS** on the exact SHA: Core 84/84, Transport 24/24, zero failed/skipped, Release warning/error zero and hygiene 273. Gate-1 source may begin under the amended scope, but no actual Stage-A build/test or real runtime outcome has been accepted.
 
 ## Gate 1 — exact Stage-A source review (future; blocked until amended Gate 0 PASS)
 

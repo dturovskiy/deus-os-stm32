@@ -1,5 +1,9 @@
 ## 2026-10-15
 
+### Host Management Service Gate-0 + Amendment A both published
+
+The narrow Gate-0 Amendment A was published in normal non-force commit `0f95c2e5036652251976a0f7d6d5f62ea419116d`, verified clean after fresh fetch 0/0; [exact-SHA GitHub Actions 38733800122](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38733800122) SUCCESS (Core 84/84, Transport 24/24, zero failed/skipped, Release zero warnings/errors, tracked hygiene 273). The first Host-only nine-path source/test scope is now eligible for Gate 1. No implementation, local-dotnet build, firmware change or target validation has been accepted merely from documentation.
+
 ### Host Management Service original Gate-0 design PASS and locked-restore Amendment A
 
 The original six-doc `HOST_MANAGEMENT_SERVICE_FOUNDATION` Gate-0 design was published by normal non-force commit `bfb30d5f23389b54f0c114959640dc2d5a6291f9`, clean fetched `0/0`; exact-SHA GitHub Actions `38732869436` SUCCESS (Core 84/84, Transport 24/24, Release 0 warnings/errors, tracked output hygiene 273). Read-only Gate-1 preflight identified two previously omitted project-local `packages.lock.json` files necessary for `--locked-mode` build/test. Gate-0 Amendment A freezes the revised nine-path source set, with no change to Host trust, runtime, target, firmware or operation exposure. **No code is permitted until the amendment's own docs publication and exact-SHA hosted CI pass.**
