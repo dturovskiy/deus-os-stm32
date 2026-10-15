@@ -1,5 +1,10 @@
 ## 2026-10-15
 
+### New product selection — Host Management Service Foundation / Gate-0 design
+
+The owner selected the next host-only product boundary after completed FDC/RDC and forward-only sanitization. New paired design/acceptance documents `HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md` and `_ACCEPTANCE_PLAN.md` freeze a headless managed session/runtime over existing Core and Windows/Linux transport, with **five named typed ReadOnly process operations, zero Control/Destructive routes, no HTTP listener, no network, no new firmware/bootloader/secret/target action**. Gate-0 is a docs-only acceptance/publication with exact-SHA hosted CI required before any Stage-A implementation. Web/loopback API requires a separate reviewed auth/trust boundary. The accepted 52-KiB firmware region and 11,264-byte static-SRAM build acceptance ceiling remain unchanged; current ARM resources are not freshly measured by this design. No product or hardware claims are made by this entry.
+
+
 ### Independent post-closure repository and documentation drift audit
 
 Freshly fetched public/private Git remain clean and synchronized. The final public `9819f3188d08a9aff03d3284f15be4d0dd6d9139` Gate-7 [hosted CI 38629887654](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38629887654) is SUCCESS: Core 84/84, Transport 24/24, Release 0 warnings/errors, tracked hygiene 271. Fresh source/history scan reads **1,586/1,586 blobs** (40,888,581 bytes), zero selected eight-class credential signatures. Preserved 36/36 private originals and source bundle 175-commit restore PASS; 128 Markdown documents yielded 1,438 referenced repo paths, none missing; 31 open checkboxes comprise 27 deferred and four frozen historical Gate-1B approval entries, not active acceptance gates. The audit found and narrowly corrected stale **live Status headers**, RDC-active prose and unqualified historical NEXT/checklist statements, while retaining original proofs. No executable/firmware/hardware/secret changes. The correction publication itself requires exact-SHA hosted CI.

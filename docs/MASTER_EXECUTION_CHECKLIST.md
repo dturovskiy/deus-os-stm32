@@ -5,6 +5,12 @@
 
 This file is a historical execution/checklist ledger. It is **not** the global current-state authority. Current project state and the active next boundary are owned by `docs/CURRENT_STATE.md`.
 
+### Selected next product boundary — Host Management Service Foundation (2026-10-15)
+
+- [ ] **Gate 0 — design-only / publication + exact-SHA CI ACCEPTANCE PENDING:** owner chose a host-only headless service Stage A, existing session/Core/allowlist, five ReadOnly process-facing operations, zero Control/Destructive exposed, **no HTTP listener/Web/network**, zero STM32/Flash/bootloader/key interaction. Plan: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md`; acceptance: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_ACCEPTANCE_PLAN.md`. Freeze exactly six Gate-0 docs paths; ordinary non-force commit, fresh fetched clean `HEAD == origin/main`, exact-SHA hosted CI Core >=84 and Transport >=24, no failures/skips. **Do not mark this checkbox [x] from a prepublication draft or a CI run on another SHA.**
+- [ ] **Gate 1+ — Stage-A implementation not authorized until Gate-0 PASS:** future strict Host-only source/test scope, synthetic session/typed allowlist tests, bounded disposal/recovery; separate real device acceptance if needed. Web/HTTP and network promotion remain distinct.
+- [ ] **Later MCU resource checkpoint (not prerequisite to this Host-only Gate 0):** before any future target-resident feature, fresh exact-source ARM build with ELF/MAP/BIN/.su and stack budget; historical 51,972/53,248 Flash and 10,968/11,264 static-SRAM measurements are **not** live-current measurements. No toolchain/device/firmware action in this Gate 0.
+
 ### Mandatory foundational debt closure program — CLOSED / HISTORICAL 2026-10-07
 
 This section is the historical executable ledger for the 2026-10-03 post-publication architecture/code audit. `FDC-01..FDC-10` are all accepted closed; the later `RESIDUAL_DEBT_CLOSURE_PROGRAM` below now owns the mandatory pre-feature debt gate. A checkbox was marked complete only from dedicated build/test/static/hardware evidence appropriate to that item; “code changed” alone was not closure.

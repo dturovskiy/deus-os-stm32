@@ -309,13 +309,17 @@ Docs-only execution slice PUBLISHED/TECHNICALLY ACCEPTED at `c55c90c4b40605adc2e
 
 **Final maintenance disposition — 2026-10-14:** The formerly active Gate-2 historical ZIP discovery and custody-check workflow is superseded by the owner's accepted recorded-limits policy, not silently passed as a technical test. Gate-5 independently checked the exact public release-view candidate (269 tracked, 1574 reachable blobs, 36/36 private originals, Host Core 84/84 and Transport 24/24). Gate-6 acceptance was published normally at `1772d37d3a706d0d2f64a4e09f5810cee46ef76e` with exact-SHA hosted CI run `38629097010` SUCCESS. Gate-7 documents final closure under explicit current-state authority. **No more historical ZIP searches or custody-escrow work is pending in this maintenance programme.** Older Gate-1B/2 OPEN statements above are retained as historical snapshots only, not current tasks. Additional product work requires separate promotion/acceptance.
 
-## Host management presentation evolution — future / separate feature-promotion gate required
+## Newly selected product candidate — Host Management Service Foundation (Gate 0 docs only)
+
+**2026-10-15 owner selection:** `HOST_MANAGEMENT_SERVICE_FOUNDATION` is the next product direction, initially a bounded headless process/runtime consuming the accepted `DeusDeviceSession`, `ManagementServiceOperations` and existing Windows/Linux transports. **Gate-0 design/publication is in progress, not implementation acceptance.** The plan pair `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md` and `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_ACCEPTANCE_PLAN.md` freezes Stage-A at only five typed ReadOnly operations; no automatic USB device open, no new target RPC, no firmware/bootloader/Flash changes, no HTTP/socket listener. First prove a separate docs-only non-force publication plus exact-SHA Hosted CI; then separately validate synthetic source/test and real session gates. A local HTTP/Web frontend, its authorization/Origin/Host/security policy, and ESP/network remote management remain **future separately authorized boundaries**. For the first Host-only stage, ARM resource delta is zero by changed-path proof; before a later target-resident feature, run an exact-candidate ARM ELF/BIN/MAP/.su measurement. Completed FDC/RDC and prospective-only sanitization do not reopen.
+
+## Host management presentation evolution — historical design, Web/network future
 
 The accepted Host Control foundation already provides one transport-neutral Core with CLI + Avalonia presentation. Forward presentation policy is:
 
 - CLI remains the first-class automation/headless/acceptance surface;
 - Avalonia Desktop remains an optional workstation frontend;
-- the `RESIDUAL_DEBT_CLOSURE_PROGRAM` is now CLOSED/PUBLISHED; a future local host-management service/Web frontend is **eligible for consideration**, but is not active or automatically authorized: it requires a distinct feature boundary and must reuse accepted Core/service models rather than duplicate the STM32 protocol;
+- the `RESIDUAL_DEBT_CLOSURE_PROGRAM` is CLOSED/PUBLISHED; the **Host Management Service Stage-A Gate-0 design has now been explicitly selected above**, but implementation remains gated by separate Gate-0 publication/CI. Local Web/frontend remains a future independently authorized boundary; it must reuse Core/service models rather than duplicate STM32 protocol;
 - local Web presentation does not require STM32 networking;
 - remote/LAN/Wi-Fi Web exposure belongs to the later network/security sequence and requires an explicit trust/authentication/authorization contract.
 
