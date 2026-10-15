@@ -1,5 +1,9 @@
 ## 2026-10-15
 
+### Correction B — published
+
+Gate-0 architecture correction `18e5037a9a3adf04f1bcb7cd88785ea4365e2b6c` passed exact-SHA [CI 38739187311](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38739187311): Core 84/84, Transport 24/24, Release 0 warnings/errors. It supersedes the future EXE/lockfile plan with two Core/Core.Tests files. Gate-1 source is not yet implemented; no MCU or network changes.
+
 ### Host Management Stage-A architecture correction B — acceptance candidate
 
 Independent Core-vs-plan review rejected the earlier proposed background EXE and nine-path project/lockfile addition: no defined client IPC, poor Web reuse, unproven hard shutdown deadlines, and USB locator mistaken for stable board identity. New plan makes Stage A a single in-process `HostManagementRuntime` in existing `DeusOs.Control.Core` with new tests in existing Core.Tests: **two source/test files only**, no new project, lockfile, service, HTTP/IPC, CI changes, MCU memory usage or target operations. It delegates to existing session and five typed read-only management operations. Native-hung shutdown and same-board cryptographic identity remain **NOT GUARANTEED**; read-only API narrowing is not a machine-wide security barrier. Original Gate-0 and lockfile Amendment A publication facts stay historically PASS; their future EXE design is **superseded, not implemented**. Correction B requires its own docs-only non-force publication and exact-SHA CI before Gate 1 implementation.

@@ -1,6 +1,6 @@
 # Deus OS — Host Management Service Foundation Plan
 
-Status: **ARCHITECTURE CORRECTION B / GATE-0 SCOPE REPLACEMENT — PENDING NON-FORCE PUBLICATION + EXACT-SHA HOSTED CI.** The previous Gate-0 docs `bfb30d5f23389b54f0c114959640dc2d5a6291f9` (CI `38732869436`) and locked-restore Amendment A `0f95c2e5036652251976a0f7d6d5f62ea419116d` (CI `38733800122`) were indeed published/accepted as historical decisions. They are **not** proofs that their nine-path executable-service architecture was sound. Correction B replaces that *future* architecture; **no Gate-1 source has been created or accepted**.
+Status: **ARCHITECTURE CORRECTION B / GATE-0 SCOPE REPLACEMENT — PUBLISHED AND VERIFIED: 18e5037a9a3adf04f1bcb7cd88785ea4365e2b6c, CI 38739187311 SUCCESS.** The previous Gate-0 docs `bfb30d5f23389b54f0c114959640dc2d5a6291f9` (CI `38732869436`) and locked-restore Amendment A `0f95c2e5036652251976a0f7d6d5f62ea419116d` (CI `38733800122`) were indeed published/accepted as historical decisions. They are **not** proofs that their nine-path executable-service architecture was sound. Correction B replaces that *future* architecture; **no Gate-1 source has been created or accepted**.
 
 Product boundary: `HOST_MANAGEMENT_SERVICE_FOUNDATION`. Global authority: `docs/CURRENT_STATE.md`. Gate evidence: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_ACCEPTANCE_PLAN.md`.
 

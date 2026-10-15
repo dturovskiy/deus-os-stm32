@@ -1,6 +1,6 @@
 # Deus OS — Host Management Service Foundation Acceptance Plan
 
-Status: **CORRECTION B — ARCHITECTURE/SCOPE ACCEPTANCE PENDING DIRECT-PARENT NON-FORCE PUBLICATION + EXACT-SHA CI.** Gate-1 implementation is **NOT STARTED**. The original six-doc Gate-0 design `bfb30d5f23389b54f0c114959640dc2d5a6291f9` / CI `38732869436`, Amendment A `0f95c2e5036652251976a0f7d6d5f62ea419116d` / CI `38733800122` and documentation-state commit `a3e2237b2c92378050f80413506a209dedb28951` / CI `38734412365` are genuine previously published PASS events, but none validates the revised Stage-A architecture or a built Service.
+Status: **CORRECTION B — ARCHITECTURE/SCOPE ACCEPTED/PUBLISHED 18e5037a9a3adf04f1bcb7cd88785ea4365e2b6c; exact-SHA CI 38739187311 SUCCESS.** Gate-1 implementation is **NOT STARTED**. The original six-doc Gate-0 design `bfb30d5f23389b54f0c114959640dc2d5a6291f9` / CI `38732869436`, Amendment A `0f95c2e5036652251976a0f7d6d5f62ea419116d` / CI `38733800122` and documentation-state commit `a3e2237b2c92378050f80413506a209dedb28951` / CI `38734412365` are genuine previously published PASS events, but none validates the revised Stage-A architecture or a built Service.
 
 Canonical scope: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md`. Global status: `docs/CURRENT_STATE.md`.
 
