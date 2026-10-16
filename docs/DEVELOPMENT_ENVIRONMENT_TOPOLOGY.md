@@ -4,7 +4,7 @@
 
 Status: **CANONICAL OPERATIONAL ENVIRONMENT / HARDWARE-OWNERSHIP REFERENCE**
 
-Last audited: 2026-10-07
+Last canonical-layout audit: 2026-10-07. Last separately accepted temporary USB attachment: Windows on 2026-10-16 (Desktop Inspector read-only Gate 3b).
 
 This document owns the current development, hardware-attachment and acceptance-execution topology. It does **not** define product acceptance state, active gate status or firmware architecture; those remain owned by `docs/CURRENT_STATE.md`, the active boundary plan/acceptance pair and `docs/ARCHITECTURE.md`.
 
@@ -12,7 +12,9 @@ The purpose of this file is to prevent acceptance harnesses from executing a cor
 
 ## 1. Canonical physical topology
 
-The current bench is split across two execution hosts:
+**Important distinction — designed/default bench versus physically observed connection:** The **canonical expected/default wiring** remains native STM32 USB/VBUS on Ubuntu Mac mini, with UART/CH340 and ST-LINK/SWD on Windows. However, the **last positively observed native-USB attachment** was temporary **Windows WinUSB** during the operator-attested Desktop Gate 3b run on 2026-10-16. **Physical return of the USB cable to Ubuntu is NOT_VERIFIED**. Thus the canonical diagram below is not evidence that Ubuntu owns the cable *right now*. Before any new hardware acceptance, verify current USB ownership on the intended host using bounded read-only discovery; do not assume the cable moved back, invoke the other host's USB API blindly, change drivers or power-cycle/reconnect merely for this documentary clarification. The temporary approved Windows test did not change this canonical bench design or authorize further hardware activity.
+
+The canonical/default bench design is split across two execution hosts:
 
 ```text
                          SSH control / artifact transfer
@@ -28,15 +30,15 @@ Windows PowerShell 7  ------------------------------------>  Linux USB host (Ubu
                     +---------------------------+
 ```
 
-Exact ownership:
+Canonical/default intended ownership (reverify physical attachment before execution):
 
-- **STM32 native USB is physically connected to the Linux USB host (Ubuntu).**
+- **STM32 native USB is normally intended to be connected to the Linux USB host (Ubuntu).** Last verified connection was instead Windows on 2026-10-16; return is unconfirmed.
 - **STM32 UART/CH340 is physically connected to Windows.**
 - **STM32 ST-LINK/SWD is physically connected to Windows.**
 - Windows is the primary orchestration/build/debug host.
 - Windows reaches the Ubuntu USB host through OpenSSH, using `<SSH_USER>@<USB_HOST>` / SSH alias `<USB_HOST_ALIAS>`.
 
-This split-host topology is the default assumption for every new hardware acceptance package until this document is explicitly updated.
+This split-host topology is the **expected/default operating model**, not proof of current cable attachment. Every new hardware acceptance package must independently discover the physical USB-owning host first; persistent topology changes require an explicitly approved document update.
 
 ## 2. Windows execution domain
 
@@ -103,7 +105,7 @@ The target composite USB device is `1209:000C` / `Deus OS Device`:
 
 The firmware-update bootloader enumerates separately as private-test `1209:000D` / `Deus OS Bootloader`. Enumeration alone does not guarantee unprivileged libusb open authority: accepted hardware evidence has observed the current `/dev/bus/usb/BBB/DDD` node as `root:root` mode `664`, causing `LIBUSB_ERROR_ACCESS (-3)` for user `<SSH_USER>`. When a bootloader transaction requires permission repair, the accepted bench fixture is bounded to the exact currently enumerated ephemeral node: one operator-visible interactive privilege step may change that node to owner `deus`, mode `600`; no password is captured, no persistent udev rule is created, and the actual bootloader protocol must then execute unprivileged as `deus`. Bus/device tokens from `lsusb` are already zero-padded decimal strings and must be used as strings when constructing `/dev/bus/usb/$bus/$dev` (for example device `099`), not numerically reinterpreted.
 
-A current Windows harness MUST NOT assume that the STM32 USB device, WinUSB interface or CDC COM port is locally enumerable on Windows. Windows WinUSB remains an accepted product transport for a Windows-attached target, but it is **not the physical owner of target USB in the current bench wiring**.
+A Windows harness MUST NOT assume that STM32 USB/WinUSB/CDC is locally enumerable merely from the canonical Ubuntu-owned design. Windows WinUSB is an accepted transport **when physical discovery confirms a Windows-attached target** (last observed at the temporary 2026-10-16 UI test). Conversely Ubuntu libusb must not be assumed reachable until its USB preflight passes; the later return of the cable is unverified.
 
 ## 4. Repository views are not the Linux USB host
 

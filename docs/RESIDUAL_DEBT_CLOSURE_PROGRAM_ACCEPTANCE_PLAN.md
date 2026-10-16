@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Acceptance Plan
 
-Status: **PROGRAM EXIT AT RDC-08 GATE-8 — EVENT-CONDITIONED FINAL PUBLICATION / EXACT-SHA CI REQUIRED**
+Status: **RDC-08 GATE 8 AND ENTIRE RDC PROGRAM CLOSED/PUBLISHED** — final docs-only commit `c309428b03615a9afd514e3c7c8886a82a5112e9`, normal non-force publication, independent clean post-fetch `HEAD == origin/main == FETCH_HEAD`, exact-SHA CI `38079465787` SUCCESS (Core 84/84, Transport 24/24, Release 0 warnings/errors). The conditional requirements below are immutable historical acceptance criteria **met** by that published event, not a new Gate.
 
 Canonical program:
 

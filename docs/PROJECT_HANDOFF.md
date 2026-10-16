@@ -66,11 +66,11 @@ UART diagnostics:
 
 USB / display:
 
-- **current bench USB owner is the Ubuntu host on the Linux USB host**, reached from Windows through `<SSH_USER>@<USB_HOST>` / SSH alias `<USB_HOST_ALIAS>`;
-- current target USB management is therefore exercised through Linux libusb on the Linux USB host; CDC IF0/1 remains on Linux `cdc_acm`;
-- Windows WinUSB remains an accepted product transport when the target is physically attached to Windows, but it is not the current cable owner;
-- Windows owns ST-LINK/SWD and CH340/UART in the current bench;
-- the target USB cable is also the normal target power source, so the required physical power-cycle/reconnect action occurs on the Linux USB connection;
+- **Canonical expected wiring:** native USB/VBUS normally belongs to the Ubuntu Mac mini via libusb, reached from Windows via `<SSH_USER>@<USB_HOST>` / `<USB_HOST_ALIAS>`. CDC IF0/1 normally binds on that Linux USB host;
+- **Last physically verified attachment (2026-10-16): Windows WinUSB**, temporarily authorized for Desktop Inspector read-only Gate 3b. **Physical return to Ubuntu has NOT been verified**; do not infer the present USB-owning host from the canonical diagram;
+- verify actual USB device/IF2 on the intended host using bounded read-only discovery before any future hardware gate; no USB rewire, power-cycle or driver change is requested by this documentary status;
+- Windows owns ST-LINK/SWD and CH340/UART in the canonical bench; Windows WinUSB remains supported only while the target is actually Windows-attached;
+- the native USB cable is the normal target VBUS/power source; any separately approved physical power-cycle/reconnect must be executed on the **verified USB-owning host**, not blindly attributed to Ubuntu;
 - accepted OLED is SSD1306-class native `128x32` at I2C address `0x3C`;
 - exact operational topology and cross-host harness rules are canonical in `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`.
 
@@ -109,7 +109,7 @@ Exact current accepted product identities and versions are in `docs/CURRENT_STAT
 - Do not treat terminal PASS text alone as acceptance proof.
 - Where the standardized DEUS operator runner is installed, launch one verified `DEUS_OS_OPERATOR_BUNDLE_V2` package by its `PACKAGE_ID` using `deus-run <package_id> -ExpectedSha256 <zip_sha256>` in PowerShell 7. Do not replace it with a custom unzip/apply command. Its authoritative result is **one** self-contained `.evidence.zip` in Downloads (PASS or classified FAIL); inspect it before gate adjudication. If the command is unavailable, diagnose the runner installation/profile contract before changing the acceptance bundle.
 - Build acceptance harnesses **primitive-first**: independently prove PowerShell process control, SSH/SCP, Git archive portability, .NET/MTP test invocation and any hardware-access primitive on the real execution domain before composing one collector.
-- Never collapse the current split-host bench into one generic host: USB/libusb lives on `<SSH_USER>@<USB_HOST>`; ST-LINK/CubeProgrammer and CH340/UART live on Windows. A Windows-driven reset/Flash step that needs runtime proof must verify USB recovery remotely on the Linux USB host.
+- Never collapse the canonical split-host bench into one generic host: USB/libusb normally belongs to `<SSH_USER>@<USB_HOST>`; ST-LINK/CubeProgrammer and CH340/UART belong to Windows. Because last observed native USB was temporarily Windows-owned and a return is unverified, first confirm actual USB attachment before any separately authorized reset/Flash/recovery acceptance; observe USB recovery on the **verified** owning host.
 - Do **not** respond to harness failures with a `v1 -> v2 -> v3 -> ...` patch train. Freeze the composed collector, isolate/prove the failed primitive, then regenerate the collector from proven primitives. See `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` section 5.
 - Keep firmware/host source mutation separate from docs/evidence repair.
 - Do not amend accepted commits to repair harness/evidence mistakes.

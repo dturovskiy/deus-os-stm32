@@ -1,6 +1,6 @@
 # Deus OS — Host Management Service Foundation Acceptance Plan
 
-**Active result of architecture re-review C (2026-10-15): `WRAPPER_NO_GO / CONSUMER_REQUIRED`.** The architecture-C no-go was **accepted/published** in `87639102c938146c4f68d4cb2b52df18ab591374`, actual exact-SHA GitHub Actions `38744214870` SUCCESS and clean fresh-fetch `0/0`. This proves a docs-only architecture decision, not a Host service runtime. The subsequently selected Desktop Inspector has its own actual source/test CI (`4729341`, run `38748957900`) but its connected physical UI remains unverified. The Host-management product goal remains open for a separately scoped *real consumer*. Source implementation of `HostManagementRuntime` is **NOT AUTHORIZED** by this revision.
+**Historical 2026-10-15 architecture re-review C result (the wrapper NO-GO remains binding): `WRAPPER_NO_GO / CONSUMER_REQUIRED` at that decision point.** The architecture-C no-go was **accepted/published** in `87639102c938146c4f68d4cb2b52df18ab591374`, actual exact-SHA GitHub Actions `38744214870` SUCCESS and clean fresh-fetch `0/0`. This proves a docs-only architecture decision, not a Host service runtime. The subsequently selected Desktop Published Asset Inspector became the actual Host consumer: source/CI accepted at `4729341` (run `38748957900`), Ubuntu CLI Gate 3b.1 PASS and connected Windows Avalonia **read-only fallback Gate 3b `OPERATOR_ATTESTED_PASS`** on 2026-10-16. Positive physical retrieval of a previously committed OLED layout is **NOT_VERIFIED**. No *additional* Host consumer is currently activated; a future TUI/Web requires its own design/security/acceptance boundary. Source implementation of `HostManagementRuntime` is **NOT AUTHORIZED** by this revision.
 
 Canon: `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md`. Global state: `docs/CURRENT_STATE.md`.
 
@@ -45,9 +45,9 @@ Required acceptance predicates: (1) public/private existing Git clean, baseline 
 
 Old design commits `bfb30d5`, `0f95c2e`, `18e5037` and status sync `bdc5cdf` remain **historically accepted docs-only**; their proposed code implementation is **not** grandfathered. Do not revert/rewrite Git history merely to erase a mistaken proposal.
 
-## 4. Next useful product acceptance, explicitly NOT completed
+## 4. Historical 2026-10-15 next-consumer criteria (Desktop consumer later delivered; future consumers require fresh scope)
 
-**Next action is concrete-consumer selection and an implementation boundary, not immediate Core wrapper source.** One eligible path is a small local management display in the existing Avalonia Desktop; another is an explicit local read-only Web/API host with independent auth/threat model. Neither is authorized by this docs-only review. A future promotion must:
+**At the 2026-10-15 review the next action was concrete-consumer selection, not an unconsumed Core wrapper.** The small read-only Avalonia Desktop Inspector was later independently scoped, implemented and accepted for the no-committed-record fallback UI slice, as recorded above and in its own plan/acceptance pair. The following requirements still apply to a *different* future consumer such as a TUI or security-reviewed local Web/API host; neither is activated by this historical review. A future promotion must:
 
 1. State missing user workflow, named presentation/host consumer, expected observable result, exact source paths and why existing `DeusDeviceSession` + `ManagementServiceOperations` are insufficient alone.
 2. Require new executable feature tests *actually run* on the exact candidate; retain old Core≥84 and Transport≥24 baselines, MTP locked restore, zero failed/skipped, clean release. Any new tests increase actual counts, not merely documentation.
@@ -61,4 +61,4 @@ Old design commits `bfb30d5`, `0f95c2e`, `18e5037` and status sync `bdc5cdf` rem
 
 Do not create speculative `HostManagementRuntime.cs` / `HostManagementRuntimeTests.cs` just to obtain additional CI tests, hide three Core Control methods as if a wrapper enforced security, open HTTP/socket without a separate trust boundary, add an untested second reconnect state machine, implement unsupported disposal timeouts, auto-open an unselected device, assume USB locator authenticates hardware, modify MCU/bootloader/key/signer/private archive, or describe the current Host CI as a new feature test.
 
-**Decision:** `DESIGN_DUPLICATION_IDENTIFIED`; `SPECULATIVE_WRAPPER=NO_GO`; `PRODUCT_FEATURE=NOT_IMPLEMENTED`; `NEXT=CONCRETE_CONSUMER_BOUNDARY`. The exact published CI SHA must be recorded from live GitHub, not invented in advance.
+**Historical decision at architecture review C (not current Desktop product status):** `DESIGN_DUPLICATION_IDENTIFIED`; `SPECULATIVE_WRAPPER=NO_GO`; `PRODUCT_FEATURE=NOT_IMPLEMENTED` *for this proposed wrapper*; `NEXT=CONCRETE_CONSUMER_BOUNDARY` *at that time*. The separately scoped Desktop consumer was subsequently delivered and accepted for its read-only fallback Gate 3b. The exact published CI SHA must be recorded from live GitHub, not invented in advance.

@@ -1,6 +1,6 @@
 # Deus OS — RDC-08 Residual Debt Documentation Closure Acceptance Plan
 
-Status: **GATES 0–7 ACCEPTED/PUBLISHED — GATE-8 FINAL DOCS RELEASE / CI PREDICATE DETERMINES RDC-08 CLOSED vs OPEN**
+Status: **RDC-08 GATES 0–8 ACCEPTED/PUBLISHED; RDC PROGRAM CLOSED/PUBLISHED**. Actual final Gate-8 docs-only publication `c309428b03615a9afd514e3c7c8886a82a5112e9`, ordinary non-force push and fresh-fetch `HEAD == origin/main == FETCH_HEAD` clean 0/0, exact-SHA hosted CI `38079465787` SUCCESS, Core 84/84, Transport 24/24, zero skipped/failed and Release 0 warnings/errors. The conditional Gate-8 acceptance language below is retained as the **frozen pre-execution proof contract**, satisfied in that later event; no product scope or hardware work is reauthorized.
 
 Canonical design: `docs/RESIDUAL_DEBT_DOCUMENTATION_CLOSURE_PLAN.md`
 

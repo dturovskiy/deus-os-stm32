@@ -1,6 +1,6 @@
 # Deus OS — RDC-08 Residual Debt Documentation Closure Plan
 
-Status: **GATES 0–7 ACCEPTED/PUBLISHED (FINAL CANDIDATE `faabfe75bbb3b805548092c9f298ac862c38ef1d`) — GATE-8 CLOSURE EVENT-CONDITIONED ON FINAL DOCS SHA / CI**
+Status: **GATES 0–8 ACCEPTED/PUBLISHED — RDC-08 CLOSED**. Historical Gates 0–7 candidate `faabfe75bbb3b805548092c9f298ac862c38ef1d` was followed by independently published final Gate-8 docs-only `c309428b03615a9afd514e3c7c8886a82a5112e9`, non-force, fresh-fetch clean 0/0, exact-SHA CI `38079465787` SUCCESS. Future-tense Gate-8 instructions below are the frozen **already fulfilled** execution criteria, not active work.
 
 Boundary ID: `RESIDUAL_DEBT_DOCUMENTATION_CLOSURE`
 

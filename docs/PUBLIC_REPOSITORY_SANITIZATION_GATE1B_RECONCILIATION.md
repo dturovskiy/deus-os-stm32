@@ -69,7 +69,7 @@ The 259-path audited prestate is reconciled without rewriting the 254-row histor
 
 **Explicit human/privacy authority still required** for 49 PRIVATE transfers, 49 RETAIN final dispositions and 15 public redactions; named or delegated sign-off is not inferred from generic owner roles `ACCEPTANCE/DESIGN/OPERATIONS/DOCS`. A fully safe public-history erasure cannot be promised; historical paths require a documented residual-risk decision. Owner review is not a technical task that a signature scanner can self-approve.
 
-## Readiness and prohibited shortcuts
+## Readiness and prohibited shortcuts — FROZEN HISTORICAL 2026-10-11 STATUS (not current instructions)
 
 - **READY:** proceed with bounded Gate-1B owner/public-contract decision packages, safe-public-extract designs, owner risk acceptance and archive-location design; the exact inventory and technical Git-history object-reading backlog are now addressed.
 - **NOT READY:** Gate-1 final acceptance, Gate-2 archive mutation, Gate-3 migration, Gate-4 redaction, release-view deletion, Git force push/history rewrite or physical STM32 operations. Original 98 paths have no signed decision, a private sink has not been accepted/restore-tested, and external replicas/history exposure are not certified erased.
@@ -85,4 +85,4 @@ The 259-path audited prestate is reconciled without rewriting the 254-row histor
 - [ ] Safe private evidence sink ownership/policy and residual public history/hosting limitations explicitly approved; archive creation and independent restore belong to Gate-2 after authority.
 - [ ] Final Gate-1 acceptance review with approved disposition, fresh check of repository boundaries and required independent security sign-off.
 
-**Verdict: technical Git object history and tree-inventory tails CLOSED as scoped; publication/privacy Gate-1B remains OPEN; Gate-2 BLOCKED pending the enumerated approvals and authority.**
+**Historical verdict at the frozen Gate-1B technical checkpoint (superseded; NOT current project status):** technical Git object history and tree-inventory tails were CLOSED as scoped; publication/privacy Gate-1B was then OPEN, Gate-2 then BLOCKED. The later 113/113 grouped owner policy, Gate-1 exit and prospective-only 2026-10-14 final sanitization `CLOSED/PUBLISHED_WITH_RECORDED_LIMITS` govern today. Four unchecked historical decision boxes above are **not** current pending approvals; no rewriting of their event-bound signoff state.

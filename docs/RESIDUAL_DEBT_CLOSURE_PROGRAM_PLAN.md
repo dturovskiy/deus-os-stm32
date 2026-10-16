@@ -1,6 +1,6 @@
 # Deus OS — Residual Debt Closure Program Plan
 
-Status: **RDC-01..07 CLOSED/PUBLISHED / RDC-08 GATES 0–7 PUBLISHED / FINAL PROGRAM EXIT CONDITIONAL ON GATE-8 EXACT-COMMIT CI + CLEAN FRESH FETCH**
+Status: **RDC-01..08 CLOSED/PUBLISHED; PROGRAM CLOSED/PUBLISHED** (final RDC-08 Gate 8 published at `c309428b03615a9afd514e3c7c8886a82a5112e9`, exact-SHA hosted CI `38079465787` SUCCESS, post-publication fresh-fetch clean `0/0`; see `docs/CURRENT_STATE.md`). The earlier conditional wording and frozen exit criteria below are historical pre-Gate-8 requirements, **already satisfied**, not an active dependency.
 
 Program ID:
 
