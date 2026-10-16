@@ -205,6 +205,8 @@ These are complete and retained as scoped historical contracts:
 - `PRE_BOOTLOADER_RESOURCE_ARCHITECTURE_RECOVERY_ACCEPTANCE_PLAN.md`
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md`
 - `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`
+- `DESKTOP_PUBLISHED_ASSET_INSPECTOR_PLAN.md` — Host-only consumer; published source/CI and later operator-attested physical fallback UI Gate 3b accepted
+- `DESKTOP_PUBLISHED_ASSET_INSPECTOR_ACCEPTANCE_PLAN.md` — scoped read-only fallback evidence; positive committed-layout hardware read remains unverified
 
 ### D. Accepted protocol/hardware/UI references and promoted narrow consumer contracts
 
@@ -283,7 +285,7 @@ This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a2
 
 ### Current product implementation state
 
-**Current product governance (2026-10-15):** the broader Host-management/UI direction was selected, and the **concrete Desktop Published Asset Inspector has since been implemented and published** (`4729341e732ffd61e7fe2b0e48973f2c98726a5d`, exact CI `38748957900`, Core 87/87 / Transport 24/24 PASS). Its connected physical Desktop/UI remains NOT VERIFIED and is governed by the current `CURRENT_STATE.md` and scoped acceptance; no Web/service/HTTP or firmware product was thereby activated. The previous standalone EXE and in-process `HostManagementRuntime` ideas are now explicitly **`NO_GO_UNCONSUMED_RUNTIME_WRAPPER`** after independent duplication review; `docs/HOST_MANAGEMENT_SERVICE_FOUNDATION_PLAN.md` + `_ACCEPTANCE_PLAN.md` own that decision, and `docs/CURRENT_STATE.md` owns the live status. The concrete Desktop consumer is already scoped and source-published; the immediate pending work is **topology-correct Gate 3b physical acceptance on Ubuntu USB + separate actual GUI preflight**, not another dummy Core wrapper. A new secured Web consumer would require a separately promoted scope; this document alone cannot authorize HTTP/Web, an unconsumed Core wrapper, firmware or device writes. The last published firmware product-feature boundary is still `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`. FDC-01..10, RDC-01..08 and the prospective-only public sanitization programme remain completed/published within their recorded scopes; no mandatory debt programme is currently active.
+**Current product governance (updated after 2026-10-16):** `DESKTOP_PUBLISHED_ASSET_INSPECTOR` is a completed Host-only product consumer: implemented/published at `4729341e732ffd61e7fe2b0e48973f2c98726a5d` (Core 87/87 and Transport 24/24 source/CI PASS); Ubuntu USB/CLI Gate 3b.1 PASS; real connected Windows Avalonia manual published-asset fallback Gate 3b **operator-attested PASS**. The positive physical read of a previously committed OLED layout remains **NOT_VERIFIED** and is not part of the closed fallback acceptance. The last completed **target-resident** named feature remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; subsequent FDC/RDC are maintenance closures. **No next feature is activated yet.** Earlier proposed service EXE / `HostManagementRuntime` wrapper remain **`NO_GO_UNCONSUMED_RUNTIME_WRAPPER`**. Web/HTTP, TUI and network require separately promoted scopes and security/acceptance decisions; `CURRENT_STATE.md` alone owns the current project disposition.
 
 ### Later
 
@@ -324,7 +326,7 @@ Duplication is allowed only when the value is intrinsic to the scoped contract i
 
 ## 8. Audit inventory
 
-Live documentation inventory at FDC-10 final reconciliation:
+**Historical FDC-10 inventory snapshot (not a live count):**
 
 - Markdown files in `docs/`: `90`;
 - `*_ACCEPTANCE_PLAN.md` records: `30`;
@@ -344,8 +346,8 @@ Live documentation inventory at FDC-10 final reconciliation:
 - `KERNEL_COMPOSITION_ROOT_CONVERGENCE`, `SEMANTIC_SYSTEM_SERVICE_STATE`, `APPLICATION_STOP_FAILURE_HARDENING` and `TARGET_UPDATE_ROBUSTNESS_CLOSURE` plan/acceptance pairs are closed/published together at `6aa2df19ab02c14bde38833e738fe825008102e8` as FDC-05..08;
 - `DOCUMENTATION_CONSISTENCY_CLOSURE` is the final FDC-10 docs-only pair, published at `9c02e27f50349c9a0240ab24d34720580c3f3269`, and records the repo-wide reconciliation that completed the ten-item closure program;
 - `RESIDUAL_DEBT_CLOSURE_PROGRAM_PLAN.md` and `_ACCEPTANCE_PLAN.md` own historical post-FDC debt-first governance; their final RDC-08 Gate-8 release predicate determines when the mandatory program becomes CLOSED/PUBLISHED and product-feature **selection** becomes eligible;
-- latest named product-feature boundary remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; later FDC commits are hardening/closure, not a new product-feature boundary;
-- no new product feature boundary is currently active. `FDC-01..FDC-10` and `RDC-01..RDC-08` are CLOSED/PUBLISHED; the conditional RDC-08 Gate-8 predicate was actually fulfilled at `c309428b03615a9afd514e3c7c8886a82a5112e9` ([hosted CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS, verified fresh-fetch clean 0/0). Future service/Web/network work still requires a distinct explicit boundary, plan/acceptance and promotion.
+- at that historical inventory checkpoint, the last **target-resident** named feature was `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb`; later FDC commits were hardening/closure. The subsequently accepted Host-only Desktop Inspector is recorded in §4 above;
+- at the 2026-10-10 RDC-08 closeout, FDC-01..10 and RDC-01..08 were CLOSED/PUBLISHED; the exact Gate-8 predicate was fulfilled at `c309428b03615a9afd514e3c7c8886a82a5112e9` ([hosted CI 38079465787](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38079465787) SUCCESS). Later Desktop Inspector source/CI and physical read-only fallback acceptance are a separate Host product event. Future service/Web/network work still requires explicit promotion, plan/acceptance and security review.
 
 This inventory is descriptive governance data, not a replacement for live Git or `CURRENT_STATE.md`.
 
