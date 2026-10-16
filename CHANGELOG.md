@@ -1,3 +1,9 @@
+## 2026-10-16
+
+### Desktop Gate 3b — Ubuntu Server is headless
+
+The operator confirmed that the Ubuntu Mac mini has no installed graphical desktop or connected display. The planned Ubuntu Avalonia GUI preflight is therefore inapplicable: `ENVIRONMENT_BLOCKED_HEADLESS_GUI` is documented as operator-reported, not independently measured. Ubuntu USB/libusb and read-only CLI evidence remains open; connected Desktop UI remains `PHYSICAL_DESKTOP_UI=NOT_VERIFIED` until a separately authorized usable connection exists. No Ubuntu GUI installation, hardware rewiring or firmware change occurred.
+
 ## 2026-10-15
 
 ### Canonical Gate-3b execution-domain and source-of-truth reconciliation (docs-only)
