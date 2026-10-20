@@ -2,14 +2,14 @@
 
 **Boundary:** `MANAGEMENT_ONLY_RUNTIME_MIGRATION`
 
-**Status:** **OWNER-APPROVED GATE-0 DESIGN / DOCUMENT PUBLICATION PENDING / GATE 0 NOT YET FORMALLY ACCEPTED**
+**Status:** **GATE 0 ACCEPTED/PUBLISHED — GATE 1 OFFLINE ACTIVE — GATE 4 NOT AUTHORIZED**
 **Prepared:** 2026-10-18, based on source HEAD `1293abf08cf1677c81d99df018afee0ce31d37f1`, tree `ebe8ef6bdc0b26a2d5de937a3caf05a3b9fb84f7`. These are provenance anchors, not declarations of the current live HEAD.
 
-**Documentation authority:** `docs/CURRENT_STATE.md` alone determines activation/current project state; `docs/ROADMAP.md` owns sequencing; `docs/DOCUMENTATION_MODEL.md` owns document roles. This owner-approved **design draft is not yet a published/accepted Gate-0 amendment** to those documents; source-gate activation still requires separate documented publication and exact-SHA CI. Acceptance criteria and the live gate checklist are in `docs/MANAGEMENT_ONLY_RUNTIME_MIGRATION_ACCEPTANCE_PLAN.md`.
+**Documentation authority:** `docs/CURRENT_STATE.md` alone determines activation/current project state; `docs/ROADMAP.md` owns sequencing; `docs/DOCUMENTATION_MODEL.md` owns document roles. The owner-approved Gate-0 contract was **published at `7f73ebd89eabfcc515331c6985cf1e9a32ed9d09`**, and exact-SHA [Host deterministic CI run 39452032151](https://github.com/dturovskiy/deus-os-stm32/actions/runs/39452032151) **SUCCESS** independently confirmed. Gate 0 is accepted; `CURRENT_STATE.md` activates **Gate 1 offline only**. This document does not activate physical candidate operations. Acceptance criteria and the live gate checklist are in `docs/MANAGEMENT_ONLY_RUNTIME_MIGRATION_ACCEPTANCE_PLAN.md`.
 
 ## 1. Owner direction and boundary
 
-The owner selected **Management-only USB** and removal of target USB CDC ACM, then **conditionally approved the complete bounded Gate-0 design on 2026-10-20 after a fresh conflict review**. This records owner approval of the ABI and test/stop criteria **for documentation and bounded offline source qualification**; it is **not** completed Gate-0 publication, an active source gate, installed firmware, physical write, recovery operation or production USB identity. Current implementation/activation is owned by `CURRENT_STATE.md`.
+The owner selected **Management-only USB** and removal of target USB CDC ACM, then **conditionally approved the complete bounded Gate-0 design on 2026-10-20 after a fresh conflict review**. This records owner approval of the ABI and test/STOP criteria **for bounded offline source qualification**. Subsequent docs-only publication and exact-SHA CI **completed Gate 0 and activate Gate 1 offline only**; this is **not** installed firmware, a physical write, recovery operation or production USB identity. Current implementation/activation is owned by `CURRENT_STATE.md`.
 
 Existing accepted runtime: private-test `1209:000C`, composite CDC ACM IF0/IF1 + vendor Management IF2. Target private **test** candidate: `1209:000E`, a single vendor-specific Management IF0, class `FF/00/00`, bulk OUT `0x04` and IN `0x84`, 64-byte packets. Device-level class/subclass/protocol `00/00/00`, no CDC IAD. The new PID avoids binding/cache conflicts with existing `000C`. Official pid.codes confirms `1209:000E` is a **private Test PID** (https://pid.codes/1209/000E/); its eligibility does **not** itself approve this scoped Gate-0 proposal and never authorizes redistribution, sale, manufacturing or release identity.
 
@@ -17,7 +17,7 @@ The independent bootloader stays `1209:000D`, vendor IF0, bulk `0x01/0x81`, with
 
 Out of scope: bootloader rewrite, signing-key handling or migration, broad new CLI/Web privilege surface, source-wide refactor, production diagnostics split, RTOS/HAL introduction and new hardware transports.
 
-## 2. Owner-approved candidate design — **publication pending**
+## 2. Gate-0 accepted test-only candidate design — **not physically deployed**
 
 | Contract | Existing composite | Target test candidate |
 | --- | --- | --- |
@@ -57,9 +57,9 @@ The Command Service registry contains **36 RPC methods**, not 36 read-only metho
 | Target UART/CH340 (separate emergency path) | existing `mspstat`, `schedprod`, `fault`, `uptime`, `rxstat` and other explicit diagnostics subject to their own safety classification | USB CDC console does not return |
 | **Proposed** bounded Management stack/legacy diagnostics (additional test-only adapter, not currently a Host CLI command) | fixed-ID RPC `uptime=0x0002`, `rxstat=0x0004`, `cdcstat=0x0005`, `mspstat=0x0006`, `schedprod=0x0007`, `fault=0x000A`; no arbitrary ID input | `schedtest`/`schedworkload`/`schedisolate`, `wdogtrip`, `i2cscan`, OLED mutations, firmware-update entry, Asset writes |
 
-**Owner-approved Gate-0 diagnostic allowlist design, not yet formally published:** existing seven CLI read-only observations remain unchanged. A **test-only fixed-ID noninteractive adapter**, not the production Host CLI, is proposed for `uptime=0x0002`, `rxstat=0x0004`, legacy `cdcstat=0x0005`, `mspstat=0x0006`, `schedprod=0x0007`, `fault=0x000A`. Never add caller-selected `rpc <id>` or expose the `CLASS_SAFE` label as access control. By 2026-10-20, fixed-ID `rxstat`, `mspstat`, `schedprod` and `fault` have real read-only Host Core evidence **only on existing `000C/IF2`**; `uptime`/future `000E`/legacy `cdcstat` remain unproven in this particular adapter and must not be represented as accepted. Freeze per-method response schemas, side-effect classifications and rejection policy before promoting the allowlist; the 36-method target wire ABI remains unchanged.
+**Accepted/published Gate-0 diagnostic allowlist design (candidate behavior still unproven):** existing seven CLI read-only observations remain unchanged. A **test-only fixed-ID noninteractive adapter**, not the production Host CLI, is proposed for `uptime=0x0002`, `rxstat=0x0004`, legacy `cdcstat=0x0005`, `mspstat=0x0006`, `schedprod=0x0007`, `fault=0x000A`. Never add caller-selected `rpc <id>` or expose the `CLASS_SAFE` label as access control. By 2026-10-20, fixed-ID `rxstat`, `mspstat`, `schedprod` and `fault` have real read-only Host Core evidence **only on existing `000C/IF2`**; `uptime`/future `000E`/legacy `cdcstat` remain unproven in this particular adapter and must not be represented as accepted. Freeze per-method response schemas, side-effect classifications and rejection policy before promoting the allowlist; the 36-method target wire ABI remains unchanged.
 
-CDC removal and the **bounded Gate-0 design choices** are now owner-approved; source-level and real-device conformance remains to be proved at the proper subsequent Gates. **Formal Gate 0 remains pending documentation publication/exact-SHA CI and global activation synchronization**. Owner approval of design is not authorization for signing, protected recovery actions, flashing, replugging or reset.
+CDC removal and the **bounded Gate-0 design choices** are owner-approved and **formally Gate-0 accepted following verified docs-only publication/exact-SHA CI**. The only newly active work is Gate-1 offline source/static verification; real-device conformance remains subject to separate later gates. Owner approval of design is not authorization for signing, protected recovery actions, flashing, replugging or reset.
 
 ### Legacy `cdcstat` ABI freeze — explicit no-CDC semantics
 
@@ -74,7 +74,7 @@ For Management-only `1209:000E`, preserve method `cdcstat`, RPC ID `0x0005`, zer
 
 Tracked baseline `src/kernel.c` prints these fields in order and `src/drivers/usb_device.c` handles `configuration` as a shared 0/1 state. This is a normative *proposed new-candidate ABI*, **not evidence that the isolated `000E` implementation already passes**.
 
-### Gate-0 owner decision package — **design approved, publication pending** (2026-10-20)
+### Gate-0 owner decision package — **accepted/published after exact-SHA CI** (2026-10-20)
 
 **Owner approval record:** the owner authorized this bounded Gate-0 design **on condition that a fresh cross-document/source consistency audit found no material contradictions**. After the explicit `cdcstat` semantics and separate MSP policy were corrected, the 2026-10-20 read-only DEUS MCP audit passed **20/20 design-consistency checks**, verified **9/9** scope paths, preserved 36 registry IDs and found no remaining blocking *design-contract* conflict. This **satisfies the condition for owner design approval only**. It is **not Gate-0 publication**, not confirmation that the unflashed `000E` binary has passed every Gate-1/2 test, and not a physical GO. The following owner-approved review contract freezes the intended architecture; downstream acceptance tests must still prove compliance:
 
@@ -89,13 +89,13 @@ Tracked baseline `src/kernel.c` prints these fields in order and `src/drivers/us
 | Resource limits | Flash **≤53,248 B**, engineering static SRAM **≤11,264 B**, exact ELF/MAP/BIN/.su static evidence; source tree and Host tests must match | No physical `000E` stack readings until Gate-4 authorized deployment |
 | Runtime stack policy (proposal) | In Gate 4, `MSP_STACK_OK` and `SCHED_PROD_OK`, intact all three canaries, nonzero/high-water used below capacity, **≥256 B measured margin** for MSP, console, heartbeat; confirm the candidate's own capacity/guard and natural active scheduler; **MSP threshold must be independently enforced by the Gate-4 Host verifier**, because current firmware's `MSP_STACK_OK` checks bounds/canary but **not** a 256-byte minimum | This is a **proposed policy threshold awaiting Gate-0 acceptance**, not a retroactive accepted budget; an uninstalled candidate has no runtime stack evidence |
 | Operator safeguards | Windows owns CH340 and SWD, Ubuntu owns native USB/VBUS when rediscovered; fail on wrong device/host, source drift, malformed replies, correlation errors or lost recovery readiness | Gate 3 remains strictly read-only. Gate 4 requires a **new separate** explicit owner GO before flash/reset/USB-cable/power/signing actions |
-| Publication | the owner has approved the scoped design, and plan/acceptance and USB policy/current-state/roadmap agree on that **unpublished** status | **Formal Gate-0 completion** still requires docs-only Git publication, exact-SHA CI and current-state activation; no Gate-4 physical authorization follows from owner design approval |
+| Publication | owner-approved plan/acceptance and policy/global-state docs published in commit `7f73ebd89eabfcc515331c6985cf1e9a32ed9d09` with [exact-SHA CI 39452032151](https://github.com/dturovskiy/deus-os-stm32/actions/runs/39452032151) SUCCESS | **Gate 0 ACCEPTED/PUBLISHED; Gate 1 OFFLINE ACTIVE**. This is not physical Gate-4 authorization, hardware proof or Gate-5 product publication |
 
 **Stack-policy interpretation:** 256 B is a minimum **measured stop threshold**, not a worst-case call-chain/nested-interrupt safety proof. The Gate-4 harness must reject `<256 B` on any of the three stacks even if the target reports `MSP_STACK_OK`, and must independently exercise the agreed bounded real workload/watchdog/USB reconnection cases; no uninstalled-candidate runtime PASS can be predeclared.
 
 **Anti-circular gate boundary:** Gate 1 owns source/descriptor/negative **offline** proof; Gate 2 owns exact-tree ARM+Host builds, static resource/frame inventory and the **approved** candidate-runtime margin policy. Gate 3 is the existing rev5/`000C` **read-only** physical baseline plus currently applicable private recovery/power checks. Gate 4 owns **post-flash physical** `000E` enumeration, Management/legacy RPC, UART/OLED/IWDG and **real candidate MSP/scheduler watermarks** after an independently authorized signed update. Gate 5 owns review/publish only. Earlier rev5 proof is not re-executed to satisfy a future candidate condition.
 
-**Gate-0 disposition after owner's conditional approval and 20/20 scoped design review:** `DESIGN_DIRECTION=OWNER_SELECTED`; `CDC_REMOVAL_DECISION=OWNER_ACCEPTED`; `FULL_ABI_AND_STACK_STOP_POLICY=OWNER_DESIGN_APPROVED`; `GATE0_DOCUMENT_PUBLICATION=NOT_DONE`; `FORMAL_GATE0=NOT_ACCEPTED_UNTIL_PUBLISHED`; `ACTIVE_GATE=NONE`; `GATE4=NOT_AUTHORIZED`. This approval authorizes design and bounded offline checks, **not signing, package recovery, target writes/reset/replugging, or release**.
+**Final Gate-0 disposition after conditional approval, 20/20 design review and real docs publication:** `DESIGN_DIRECTION=OWNER_SELECTED`; `CDC_REMOVAL_DECISION=OWNER_ACCEPTED`; `FULL_ABI_AND_STACK_STOP_POLICY=APPROVED`; `GATE0_DOCUMENT_PUBLICATION=PASS_COMMIT_7F73EBD_CI_39452032151`; `FORMAL_GATE0=ACCEPTED_PUBLISHED`; `ACTIVE_GATE=GATE1_OFFLINE`; `GATE4=NOT_AUTHORIZED`. This authorizes **bounded offline source qualification only**, never signing, package recovery, target writes/reset/replugging or release.
 
 ## 4. Exact source/change scope
 
@@ -132,9 +132,9 @@ A path-scope expansion, release PID, update-authority change or hardware write i
 
 ## 6. Gate sequence and STOP conditions
 
-### Gate 0 — owner design approved; documentation publication/activation OPEN
+### Gate 0 — ACCEPTED/PUBLISHED (owner approval + docs commit + exact-SHA CI)
 
-The owner has **approved the bounded design contract and gate/STOP criteria** (test PID, IF0/EP4/BOS/MS OS 2.0, Host backward compatibility, exact legacy RPC/`cdcstat`, accepted loss of external USB COM, nine-source scope, resource and runtime-stack stop thresholds, test requirements, protected update/recovery policy). **Still required:** docs-only review/publication of the exact paired plans and relevant policy/global status through non-force Git + exact-SHA CI, then explicit `CURRENT_STATE` gate activation. Neither an untracked working copy nor owner design consent is a completed published Gate-0 PASS.
+The owner **approved** the bounded design contract and gate/STOP criteria (test PID, IF0/EP4/BOS/MS OS 2.0, Host compatibility, exact legacy RPC/`cdcstat`, loss of USB COM, nine-source scope, resource/stack stop thresholds, Host evidence, protected update/recovery policy). The eight-document docs-only publication at `7f73ebd89eabfcc515331c6985cf1e9a32ed9d09` was a normal non-force push; exact-SHA [GitHub Actions run 39452032151](https://github.com/dturovskiy/deus-os-stm32/actions/runs/39452032151) completed **SUCCESS**. **Gate 0 is ACCEPTED/PUBLISHED; Gate 1 offline becomes active**, subject to its own full acceptance predicates. None of this authorizes Gate 4.
 
 ### Gate 1 — isolated source and static/descriptor tests (PARTIAL)
 
@@ -168,7 +168,7 @@ This public planning contract contains no private host addresses, account identi
 
 ```text
 TARGET_ARCHITECTURE=MANAGEMENT_ONLY_SELECTED
-GATE0=NOT_ACCEPTED_UNTIL_DOCS_PUBLISHED
+GATE0=ACCEPTED_PUBLISHED_DOCS_CI_39452032151
 GATE0_OWNER_DESIGN=APPROVED_CONDITION_MET_2026_10_20
 CLEAN_OLD_PID_ARM=PASS_OFFLINE_ONLY
 NEW_PID_000E_ARM_V4=PASS_OFFLINE_ONLY_TREE_9562332F2E44E35CE686D0DF3EE60019D7550A25
@@ -182,6 +182,7 @@ GATE1=PARTIAL
 GATE2=PARTIAL_OFFLINE_SAME_TREE_PROOFS
 FULL_GATE3=NOT_ACCEPTED
 GATE4=NOT_AUTHORIZED
-ACTIVE_GATE=NONE
-PUBLICATION=NOT_STARTED
+ACTIVE_GATE=GATE1_OFFLINE
+GATE0_DOC_PUBLICATION=PASS_7F73EBD_CI_39452032151
+GATE5_PRODUCT_PUBLICATION=NOT_STARTED
 ```

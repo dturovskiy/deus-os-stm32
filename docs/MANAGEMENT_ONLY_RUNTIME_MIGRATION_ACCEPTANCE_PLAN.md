@@ -2,12 +2,12 @@
 
 **Boundary:** MANAGEMENT_ONLY_RUNTIME_MIGRATION
 
-**Status:** **OWNER-APPROVED GATE-0 DESIGN / DOCS PUBLICATION PENDING / FORMAL GATE 0 NOT ACCEPTED**
+**Status:** **GATE 0 ACCEPTED/PUBLISHED — GATE 1 OFFLINE ACTIVE — GATE 4 NOT AUTHORIZED**
 
 **Date:** 2026-10-18
 **Design pair:** docs/MANAGEMENT_ONLY_RUNTIME_MIGRATION_PLAN.md
 
-This file is the **scoped acceptance checklist**. It is not the global source of truth: docs/CURRENT_STATE.md controls gate activation, docs/ROADMAP.md controls sequencing, and docs/DOCUMENTATION_MODEL.md controls documentation roles. Owner-accepted Gate-0 **design** checklist items below record policy/specification freeze only. Previous checked source/evidence observations do **not** accept Gate 1–5, and **Gate 0 cannot close until its docs-only publication/exact-SHA CI and activation are verified**.
+This file is the **scoped acceptance checklist**. It is not the global source of truth: docs/CURRENT_STATE.md controls gate activation, docs/ROADMAP.md controls sequencing, and docs/DOCUMENTATION_MODEL.md controls documentation roles. Owner-accepted Gate-0 **design** checklist items below record policy/specification freeze only. Previous checked source/evidence observations do **not** accept Gate 1–5, and **Gate 0 is now accepted through independently verified owner approval, docs-only commit/push and exact-SHA GitHub CI**; Gate 1 remains partial pending its own offline predicates, and Gate 4 is not authorized.
 
 ## A. Provenance and preliminary work (not Gate acceptance)
 
@@ -22,7 +22,7 @@ This file is the **scoped acceptance checklist**. It is not the global source of
 - [x] **Owner design freeze:** fixed six-method test-only USB Management diagnostic allowlist and exact 15-field legacy `cdcstat` semantics are now defined in the paired plan; no USB CDC restoration, privilege widening or full COM terminal equivalence.
 - [ ] **Candidate-specific proof, not Gate-0 design freeze:** verify the actual new `000E` code and Host adapter obey those rules in Gate 1–2, then prove read-only runtime responses in authorized Gate 4.
 
-## Gate 0 — OWNER DESIGN APPROVED; DOCS PUBLICATION AND ACTIVATION OPEN
+## Gate 0 — ACCEPTED/PUBLISHED (docs-only Git + exact-SHA CI)
 
 - [x] **Owner design approval:** private test-only `1209:000E`, distinct from installed `000C` and bootloader `000D`, with production VID/PID separately required; this does not authorize flashing.
 - [x] **Design freeze:** one vendor Management IF0 `FF/00/00`, EP `0x04` bulk OUT and `0x84` bulk IN at 64 B; device `00/00/00`; configuration descriptor 32 B.
@@ -34,7 +34,7 @@ This file is the **scoped acceptance checklist**. It is not the global source of
 - [x] **Owner design approval:** exact nine-source-file scope (four firmware + five Host/test, including `WindowsWinUsbDiscovery.cs`), separate from docs and without bootloader/persistence changes.
 - [x] **Owner-approved execution policy (not current physical proof):** split Ubuntu native USB/VBUS from Windows CH340 UART and ST-LINK/SWD, preserve signed-update revision floor and rev5 recovery readiness, reject unsigned/unauthenticated changes, and STOP without separately authorized disruptive steps. Power-rail attestation, current rollback metadata and actual signed recovery package remain Gate-3 prerequisites.
 - [x] **Owner accepted paired plan/design conditionally, audit condition met on 2026-10-20:** 20/20 read-only cross-document/source checks, 9/9 existing source paths; earlier `cdcstat` and MSP-threshold ambiguities explicitly fixed. This approves **design only**, not source/hardware/product acceptance.
-- [ ] **Gate-0 completion still pending:** independently review exact public-safe docs changes, publish the scoped design/acceptance + policy/current-state/roadmap under ordinary non-force Git, confirm exact-SHA hosted CI and clean remote poststate; only then activate the next source Gate in `CURRENT_STATE.md`. Do not mark formal Gate 0 PASS or Gate 4 authorized merely because the owner approved the design.
+- [x] **Gate-0 publication accepted:** eight scoped public-safe documents (paired plans, CURRENT_STATE, ROADMAP, USB identity, documentation model, handoff, topology) staged exactly, `git diff --cached --check` PASS, committed to `main` as `7f73ebd89eabfcc515331c6985cf1e9a32ed9d09` and pushed to `origin/main` normally **without force**. Exact-SHA [Host deterministic CI 39452032151](https://github.com/dturovskiy/deus-os-stm32/actions/runs/39452032151) finished `completed/success` for the **same SHA**, verified via GitHub. Owner-approved Gate-0 design + docs publication/CI now satisfy formal Gate 0. **Only Gate 1 OFFLINE is activated**; firmware `000E` remains unflashed and Gate 4 needs a separate physical owner GO.
 
 ## Gate 1 — source/descriptor/Host static scope (PARTIAL; OFFLINE SOURCE/HOST VERIFIED)
 
@@ -273,7 +273,7 @@ Standard operator `deus-run v1.3.0` executed exact package `stm32_os_mgmt_uart_r
 
 **Safe next observation package prepared, but not physically executed:** `stm32_os_mgmt_hostcore_stack_fault_readonly_v1_20261020.zip`, whole-ZIP SHA-256 **`15F6CD9EEAD0CB605750C7B6E55576F0AD38A46A9A8D1C70A5EC0CDEBC8AC5E1`**, schema `DEUS_OS_OPERATOR_BUNDLE_V2` plus structured `DEUS_OS_RUNNER_RESULT_V1`; root `apply.ps1` and exhaustive `hashes.sha256`. Authoring checked clean ZIP extraction, CRC PASS, exact inventory and SHA **6/6**, **33/33** isolated Python tests, source manifest SHA and one real negative no-device Python launch that sealed matching `PRESTATE` FAIL evidence ZIP and returned nonzero. This is a **new** read-only .NET helper (not the previously compiled `rxstat` source); **real Windows compile and real Linux USB execution have NOT yet happened**. Built from canonical current Host Core and Linux libusb transport only after Git/source and locked .NET checks; Linux bounded `--selftest` verifies transferred DLL bytes before any target access. One actual Ubuntu Management `1209:000C/IF2` session uses HELLO + sysinfo then fixed safe RPCs **`mspstat 0x0006`, `schedprod 0x0007`, `fault 0x000A`**, captures native hex/text, verifies MSP capacity/guard/canary/margin, both production task stack canaries/margins and safe fault-record structure; no user-specified RPC IDs, no diagnostic workload, CDC, CH340 UART, SWD, Flash, reset, driver, Git or cabling mutation. A prior orphaned request ID must still fail closed; explicitly distinguish target `MSP_STACK_ERR` / `SCHED_PROD_ERR` (classified runtime-stack policy rejection) from Host Core correlation/transport errors and harness failures. On any error preserve actual native stdout/stderr and one classified evidence ZIP; Gate3 remains unaccepted until genuine evidence inspection. Runner launch only `deus-run mgmt_hostcore_stack_fault_readonly_v1_20261020 -ExpectedSha256 15F6CD9EEAD0CB605750C7B6E55576F0AD38A46A9A8D1C70A5EC0CDEBC8AC5E1`. The fault snapshot contains MCU addresses/registers: operator-only evidence, **not public source-control content**.
 
-**Gate boundaries at this historical v1 stack-reader checkpoint:** accepted 000C/IF2 UART/Management evidence is not reopened; metadata-only escrow audit does not close future Gate-4 owner GO or backup/recovery obligations; the v1 reader described here was not yet physically executed. The later v2 stack/fault hardware PASS and Gate-0 design approval are separate, dated subsequent records. Keep `FULL_GATE3=NOT_ACCEPTED`, `GATE4=NOT_AUTHORIZED`, `ACTIVE_GATE=NONE` and all existing checkbox marks pending full predicates.
+**Gate boundaries at this historical v1 stack-reader checkpoint:** accepted 000C/IF2 UART/Management evidence is not reopened; metadata-only escrow audit does not close future Gate-4 owner GO or backup/recovery obligations; the v1 reader described here was not yet physically executed. The later v2 stack/fault hardware PASS, Gate-0 design approval and subsequent successful Gate-0 documentation publication are separate dated records. The `ACTIVE_GATE=NONE` label **was valid at this earlier checkpoint**; current activation is Gate 1 OFFLINE. Keep `FULL_GATE3=NOT_ACCEPTED`, `GATE4=NOT_AUTHORIZED` and all existing checkbox marks pending full predicates.
 
 ### 2026-10-20 16:14 — Management Host Core stack/fault acceptance and Gate 0–3 evidence reconciliation
 
@@ -284,7 +284,7 @@ Standard operator `deus-run v1.3.0` executed exact package `stm32_os_mgmt_uart_r
 - [x] **Observed current rev5 fault snapshot:** `MAGIC=0`, `EXC=0`, `VALID=0`, `CFSR=0`, `HFSR=0`; **no recorded fault in this instant**, not proof of persistent crash logging or exhaustive exception safety. Raw register/address values remain operator-private.
 - [x] **Bounded run:** CDC not opened; no CH340/UART, SWD, Flash, erase, reset or driver change requested. Windows Git HEAD/tree/status are identical before/after, Linux temporary collector directory removed. Do not repeat previous `rxstat`/single-UART bracket or this rev5 stack test without a changed requirement.
 
-**Gate-by-gate adjudication.** Existing unchecked *compound* acceptance criteria remain unchecked unless every clause is proved. Earlier date-bound observations and FAILs are not rewritten.
+**Gate-by-gate adjudication at 16:14 on 2026-10-20, before the later owner approval and docs publication.** Existing unchecked *compound* acceptance criteria remain unchecked unless every clause is proved. Earlier date-bound observations and FAILs are not rewritten.
 
 | Gate / acceptance predicate | Supported evidence | Residual, not proved by that evidence |
 | --- | --- | --- |
@@ -343,13 +343,13 @@ The **Gate-2 compound budget+runtime checkbox** was separated into proven static
 
 ```text
 TARGET_ARCHITECTURE = MANAGEMENT_ONLY_SELECTED
-SCOPED_PLAN = OWNER_DESIGN_APPROVED_PUBLICATION_PENDING
+SCOPED_PLAN = GATE0_ACCEPTED_DOCS_PUBLISHED
 GATE0_OWNER_DESIGN = APPROVED_CONDITION_MET_2026_10_20
-GATE0 = NOT_ACCEPTED_UNTIL_DOCS_PUBLISHED
+GATE0 = ACCEPTED_PUBLISHED_DOCS_CI_39452032151
 GATE1 = PARTIAL_STATIC_AND_NEGATIVE_EVIDENCE
 GATE2 = PARTIAL_SAME_TREE_OFFLINE_ARM_HOST_PASS
 GATE3 = PARTIAL_INSTALLED_000C_READONLY_EVIDENCE
-ACTIVE_GATE = NONE
+ACTIVE_GATE = GATE1_OFFLINE
 CLEAN_000C_ARM_EXPERIMENT = PASS_OFFLINE_ONLY
 NEW_000E_ARM_V4 = PASS_OFFLINE_TREE_9562332F2E44E35CE686D0DF3EE60019D7550A25
 FINAL_V5_ARM_V6 = PASS_OFFLINE_TREE_4DF48389940E9F821DC7C94045E7473340EF80F4
