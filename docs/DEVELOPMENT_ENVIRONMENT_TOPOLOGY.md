@@ -4,7 +4,7 @@
 
 Status: **CANONICAL OPERATIONAL ENVIRONMENT / HARDWARE-OWNERSHIP REFERENCE**
 
-Last canonical-layout audit: 2026-10-07. Last separately accepted temporary USB attachment: Windows on 2026-10-16 (Desktop Inspector read-only Gate 3b).
+Last canonical-layout audit: 2026-10-07. Temporary owner-authorized Windows native-USB attachment: 2026-10-16 (Desktop Inspector Gate 3b). Latest **date-bound** Linux Management observation: **Ubuntu Mac mini on 2026-10-20**, installed `1209:000C` vendor Management IF2, Host Core `mspstat/schedprod/fault` read-only PASS; the historical 2026-10-19 observation additionally verified existing CDC IF0/IF1. The 2026-10-20 test **did not open CDC** and is not proof of future `1209:000E`/IF0 enumeration. Hardware attachment must be reverified for any future physical gate.
 
 This document owns the current development, hardware-attachment and acceptance-execution topology. It does **not** define product acceptance state, active gate status or firmware architecture; those remain owned by `docs/CURRENT_STATE.md`, the active boundary plan/acceptance pair and `docs/ARCHITECTURE.md`.
 
@@ -12,7 +12,7 @@ The purpose of this file is to prevent acceptance harnesses from executing a cor
 
 ## 1. Canonical physical topology
 
-**Important distinction — designed/default bench versus physically observed connection:** The **canonical expected/default wiring** remains native STM32 USB/VBUS on Ubuntu Mac mini, with UART/CH340 and ST-LINK/SWD on Windows. However, the **last positively observed native-USB attachment** was temporary **Windows WinUSB** during the operator-attested Desktop Gate 3b run on 2026-10-16. **Physical return of the USB cable to Ubuntu is NOT_VERIFIED**. Thus the canonical diagram below is not evidence that Ubuntu owns the cable *right now*. Before any new hardware acceptance, verify current USB ownership on the intended host using bounded read-only discovery; do not assume the cable moved back, invoke the other host's USB API blindly, change drivers or power-cycle/reconnect merely for this documentary clarification. The temporary approved Windows test did not change this canonical bench design or authorize further hardware activity.
+**Current observed bench and history are distinct:** the canonical native STM32 USB/VBUS on Ubuntu Mac mini plus Windows CH340/UART and ST-LINK/SWD topology was **again positively observed on 2026-10-19**. Independent Linux real-device evidence shows native USB `1209:000C` Management vendor IF2 and working CDC `ttyACM0` while Windows CH340 COM3 served an actual USART1 `help help` response; a later Management-only experiment on the **old** `000C/IF2` firmware encountered a host-probe failure, not proof the USB moved. The explicitly temporary 2026-10-16 Windows WinUSB attachment remains a **historical** Desktop Gate 3b step, not the latest observed wiring. This evidence fixes the previous obsolete 'return to Ubuntu NOT_VERIFIED' label **as of 2026-10-19 only**. Before any later hardware gate, reverify target ownership by bounded read-only discovery; don't rely on undated wiring assumptions, replug cables, change drivers or power-cycle for this documentation update.
 
 The canonical/default bench design is split across two execution hosts:
 
@@ -32,7 +32,7 @@ Windows PowerShell 7  ------------------------------------>  Linux USB host (Ubu
 
 Canonical/default intended ownership (reverify physical attachment before execution):
 
-- **STM32 native USB is normally intended to be connected to the Linux USB host (Ubuntu).** Last verified connection was instead Windows on 2026-10-16; return is unconfirmed.
+- **STM32 native USB** belongs to the Linux USB host (Ubuntu) in the canonical bench and was last positively observed there **2026-10-19** (`1209:000C`, Management IF2; CDC IF0/IF1). Future attachment must still be rediscovered.
 - **STM32 UART/CH340 is physically connected to Windows.**
 - **STM32 ST-LINK/SWD is physically connected to Windows.**
 - Windows is the primary orchestration/build/debug host.
@@ -237,7 +237,9 @@ Failure class: `HARNESS-EXECUTION-DOMAIN-OWNERSHIP-01`.
 
 The operator-facing workflow remains:
 
-`download ZIP -> run one PowerShell command on Windows -> return one self-contained evidence ZIP`.
+`download an exact-SHA `DEUS_OS_OPERATOR_BUNDLE_V2` ZIP -> run `deus-run <package_id> -ExpectedSha256 <zip_sha256>` on Windows PowerShell 7 -> return one self-contained evidence ZIP`.
+
+The installed DEUS Runner **v1.3.0** was operator-verified on Windows **2026-10-19**. It owns package selection, SHA/manifest validation, AST checking, child invocation and the **last green/red RESULT**. New bundle scripts report JSON via `DEUS_RUN_RESULT_PATH` under `DEUS_OS_RUNNER_RESULT_V1`. No custom `Expand-Archive; py ...`, per-ZIP launcher, or lone `DIAGNOSTIC_EXIT=1` is a valid new-package operator interface. Historical V2 packages without the structured contract remain supported by the runner in legacy exit-only mode.
 
 A delivery ZIP that spans both hosts should contain, as applicable:
 
@@ -249,7 +251,7 @@ A delivery ZIP that spans both hosts should contain, as applicable:
 - a bounded Linux payload script/archive to SCP to the Linux USB host;
 - exact candidate artifacts required by the gate.
 
-The orchestrator owns the final evidence package. Remote Linux evidence is copied back and embedded in it; the operator must not manually merge Windows and Linux evidence.
+The gate's `apply.ps1` owns the final evidence package; it copies remote Linux evidence back into the single Windows-assembled ZIP. The shared `deus-run` owns terminal finalization and verifies the declared evidence ZIP SHA in structured-result mode. The operator must not manually merge Windows and Linux evidence.
 
 The package must follow `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` for timestamps, section banners, categories, process control, evidence hashing, final red/green RESULT presentation and failure classification.
 

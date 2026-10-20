@@ -24,12 +24,13 @@ Product   Deus OS CDC Console
 Status    published CDC profile / private-test identity
 ```
 
-`0x000A`, `0x000B`, `0x000C`, and `0x000D` are pid.codes private **Test PID** allocations under VID `0x1209`. They may be used for private testing only; they must not be used for redistributed, sold, or manufactured devices and are not globally unique product identities.
+`0x000A`, `0x000B`, `0x000C`, `0x000D` and proposed `0x000E` are pid.codes private **Test PID** reservations under VID `0x1209`. They may be used only for private in-house testing and never for redistributed, sold or manufactured devices; they are not globally unique product identifiers. Naming an experimental PID here **does not** constitute Gate-0 approval or authorization to flash it.
 
 Authoritative allocation references:
 
 - `https://pid.codes/1209/000A/`
-- `https://pid.codes/1209/` (Test PID list including `0x000B`, `0x000C`, and `0x000D`)
+- `https://pid.codes/1209/` (Test PID list including `0x000B`, `0x000C`, `0x000D` and `0x000E`)
+- `https://pid.codes/1209/000E/` (official private Test PID confirmation for the proposed Management-only candidate)
 
 USB-IF remains the authority for USB Vendor IDs. This project does not claim ownership of VID `0x1209`; it uses only the private-test permission granted by that VID owner for these Test PIDs.
 
@@ -54,6 +55,12 @@ The new PID is required because the host-visible topology changes from CDC-only 
 The stable management device-interface GUID is not the USB product identity. It is a host discovery ABI for the WinUSB management interface:
 
 `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`
+
+## Owner-approved Management-only Test PID design — **not published or installed**
+
+The **owner-approved, unpublished** `MANAGEMENT_ONLY_RUNTIME_MIGRATION` scoped design selects **VID:PID `1209:000E`** for a **private test-only** runtime with a single vendor-specific Management **IF0 `FF/00/00`**, EP `0x04` bulk OUT / `0x84` bulk IN (64 B), and **no CDC ACM interfaces/IAD**. The existing physical runtime remains published composite `1209:000C` Management IF2 + CDC IF0/IF1; the independent published bootloader remains `1209:000D`. The new candidate preserves the established runtime Management discovery GUID `{C8B05EDE-1683-5002-81F0-95636B89CEC6}`, while matching Microsoft OS 2.0 WINUSB function-subset numbering to IF0. The new PID prevents accidental OS driver/cache reuse of the different composite topology; the host must reject mismatched VID/PID/interface/endpoint identities and must not confuse bootloader IF0 with runtime IF0.
+
+**Identity provenance:** pid.codes expressly lists [1209/000E as a Test PID](https://pid.codes/1209/000E/) reserved for in-house/private experiments. The published [Test PID usage restriction](https://pid.codes/pids/) excludes manufactured, redistributed and sold devices; it is not an assigned project/product identity. **This section records an owner-approved development design that remains unpublished**, not runtime policy activation, firmware deployment, driver installation, formal Gate-0 closure or distribution authorization. The owner has frozen the intended private-test identity in design; publication/exact-SHA CI remains a separate Gate-0 prerequisite, and any physical write requires an independently authorized Gate 4. Existing `000C` and `000D` allocations and historical acceptance remain unchanged.
 
 ## Bootloader development profile
 
@@ -94,4 +101,4 @@ A boundary that changes USB class topology in a way that changes host binding sh
 
 ## Gate effect
 
-This document authorizes private testing only. The historical published CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. The accepted/published `USB_MANAGEMENT_DEVICE_FOUNDATION` uses `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`. The published `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` uses `VID=0x1209`, `PID=0x000D`, product `Deus OS Bootloader`. None of these Test PIDs authorize production/distribution use.
+This document permits **private testing for accepted/published development profiles only**; it does not independently authorize proposed Gate-0 or Gate-4 changes. The historical CDC profile remains `VID=0x1209`, `PID=0x000B`, product `Deus OS CDC Console`. The accepted/published `USB_MANAGEMENT_DEVICE_FOUNDATION` uses `VID=0x1209`, `PID=0x000C`, product `Deus OS Device`. The published `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` uses `VID=0x1209`, `PID=0x000D`, product `Deus OS Bootloader`. Owner-approved design `1209:000E` remains **NOT PUBLISHED / NOT FLASHED / NOT FORMALLY GATE-0-ACCEPTED**. No Test PID authorizes production/distribution use.

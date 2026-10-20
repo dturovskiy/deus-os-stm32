@@ -135,7 +135,7 @@ Unchecked items in historical sections do not automatically become active work. 
 
 Operator/handoff/reference material only.
 
-It may point to current state, but must not duplicate or override it.
+It may point to current state, but must not duplicate or override it. Operator bundle format, runner and terminal-result obligations are **normative only in `HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`**; `PROJECT_HANDOFF.md` gives a concise invocation and a pointer. Copies uploaded to ChatGPT Project **Sources** are retrieval snapshots, not another independent source of truth: live Git/source bytes, then `CURRENT_STATE.md` for product state, then the domain's canonical document and accepted evidence retain their normal precedence.
 
 ### `IMPLEMENTATION_PLAN.md`
 
@@ -286,6 +286,8 @@ This boundary is complete/published at commit `27fb10288ef45dcc9292287603e5ab8a2
 ### Current product implementation state
 
 **Current product governance (updated after 2026-10-16):** `DESKTOP_PUBLISHED_ASSET_INSPECTOR` is a completed Host-only product consumer: implemented/published at `4729341e732ffd61e7fe2b0e48973f2c98726a5d` (Core 87/87 and Transport 24/24 source/CI PASS); Ubuntu USB/CLI Gate 3b.1 PASS; real connected Windows Avalonia manual published-asset fallback Gate 3b **operator-attested PASS**. The positive physical read of a previously committed OLED layout remains **NOT_VERIFIED** and is not part of the closed fallback acceptance. The last completed **target-resident** named feature remains `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION`; subsequent FDC/RDC are maintenance closures. **No next feature is activated yet.** Earlier proposed service EXE / `HostManagementRuntime` wrapper remain **`NO_GO_UNCONSUMED_RUNTIME_WRAPPER`**. Web/HTTP, TUI and network require separately promoted scopes and security/acceptance decisions; `CURRENT_STATE.md` alone owns the current project disposition.
+
+**2026-10-20 pre-activation scoped candidate:** `MANAGEMENT_ONLY_RUNTIME_MIGRATION_PLAN.md` and `MANAGEMENT_ONLY_RUNTIME_MIGRATION_ACCEPTANCE_PLAN.md` are **untracked, owner-design-approved but not published** scoped design and evidence-adjudication records, not additional global project-state sources. They preserve real experimental candidate `000E` offline builds and current `000C` read-only physical preflight but have **owner Gate-0 design approval / formal Gate 0 NOT ACCEPTED UNTIL DOC PUBLICATION**, `ACTIVE_GATE=NONE`, and no firmware flash authorization. The bounded design has been approved after the 2026-10-20 conflict audit; publish and verify `CURRENT_STATE.md`, `ROADMAP.md` and `USB_IDENTITY_POLICY.md` with the paired contracts through a distinct scoped Git/CI action before Gate activation. Diagnostic allowlist/recovery decisions cannot be inferred from preliminary checked evidence or from selecting an architecture direction.
 
 ### Later
 
