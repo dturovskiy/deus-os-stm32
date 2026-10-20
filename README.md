@@ -92,7 +92,7 @@ OS/
 - execution history: `docs/MASTER_EXECUTION_CHECKLIST.md`
 - operator/handoff reference: `docs/PROJECT_HANDOFF.md`
 - historical umbrella implementation notes: `docs/IMPLEMENTATION_PLAN.md`
-- harness/evidence rules: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`
+- harness/evidence and universal `deus-run` ZIP launch/result contract: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` (Windows-confirmed runner v1.3.0, 2026-10-19)
 - development/acceptance host + cable topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`
 - chronology: `CHANGELOG.md`
 

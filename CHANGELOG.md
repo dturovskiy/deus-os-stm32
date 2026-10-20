@@ -1,3 +1,9 @@
+## 2026-10-19 — DEUS Runner v1.3.0 accepted operator launch primitive (offline smoke only)
+
+The operator executed the SHA-pinned `DEUS_OS_OPERATOR_BUNDLE_V2` upgrade `stm32_os_deus_runner_v13_upgrade_v1_20261019` under the installed **v1.2.0** runner; SHA-256 `9432CDAE86019E9FBD31DBE328A5F158BA5594E200B7EAF728831CF015978B64`. Real Windows output confirms profile backup/update, installer selftest and byte-verified v1.3.0 installation. In a fresh PowerShell 7 session the **v1.3.0** runner successfully launched `stm32_os_deus_runner_contract_smoke_v1_20261019`, SHA-256 `3972BF712FBB41586C5C3F3FE8EE78C3A63F087927D2368FD2E2DBD5BBFE4549`; the actual console shows V2 manifest/entry validation, `apply.ps1` AST parse, `DEUS_OS_RUNNER_RESULT_V1` handshake and the final timestamped visually green `RESULT=PASS` / `CLASSIFICATION=OFFLINE_RUNNER_CONTRACT_SMOKE_ONLY` / `EVIDENCE_ZIP=NONE` block. **No STM32, USB, UART, SWD, Flash, reset or hardware Gate-3 test occurred.** The operator transcript is execution proof for these two exact bundles only, not a hardware acceptance artifact.
+
+Forward rule standardized in the canonical harness playbook: **`deus-run <package_id> -ExpectedSha256 <zip_sha256>`** is the only normal operator invocation for newly delivered packages. New V2 ZIPs must carry `apply.ps1`, `manifest.json`, `hashes.sha256`, `PACKAGE_README.txt` and structured result handshake; `deus-run` owns the final red/green terminal RESULT and validates existing evidence ZIP SHA-256. Old hand-assembled `Expand-Archive; py ...; DIAGNOSTIC_EXIT` launch commands are superseded as *instructions for future runs*; accepted old bundles, run logs and source/gate history remain unchanged. These are **docs-only procedure changes**, not product changes.
+
 ## 2026-10-16
 
 ### Post-closure acceptance/runbook and topology reconciliation (docs-only)
