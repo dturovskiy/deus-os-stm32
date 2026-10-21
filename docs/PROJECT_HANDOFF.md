@@ -32,9 +32,11 @@ Tools:
 
 `<WINDOWS_OPERATOR_PATH>`
 
-User-run artifact download directory:
+User-run artifact download directory (**temporary runner staging; not durable custody**):
 
 `$env:USERPROFILE\Downloads\`
+
+Artifact home: new reviewed/sanitized artifacts -> private `dturovskiy/deus-os-stm32-private-docs/operator_artifacts/` with SHA-256 and verified private readback; sensitive raw evidence -> owner-controlled encrypted storage off Git. The public repository holds only safe metadata; send private path/hash rather than attaching ZIPs or logs to chat. See canonical `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`.
 
 Primary shell:
 

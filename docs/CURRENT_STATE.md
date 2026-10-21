@@ -8,6 +8,8 @@ Git is authoritative for live repository bytes, commit/tree identity, branch sta
 
 For architecture, roadmap sequence, scoped boundary contracts, evidence policy and historical records, follow `docs/DOCUMENTATION_MODEL.md`.
 
+**2026-10-21 artifact-custody direction (governance only):** Owner requires new ZIPs, offline review archives, evidence and logs to be stored in controlled DEUS OS project storage instead of attached to chat by default. GitHub PRIVATE `dturovskiy/deus-os-stm32-private-docs` `operator_artifacts/` accepts reviewed/sanitized prospective items; protected/raw contents belong encrypted off Git, with only safe metadata in private Git. Historical private source archives remain frozen; public OS Git retains only public-safe policy and references. Canonical mechanics: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`; roles: `docs/DOCUMENTATION_MODEL.md`. A policy change is not proof that historic artifacts were migrated or that Gate-2/3/4 status changed.
+
 ## 1. Latest completed product boundary
 
 `FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION` remains the **latest fully closed target-resident product-feature boundary**: Gates 0–7 accepted/published at `27fb10288ef45dcc9292287603e5ab8a26bf1fcb` (source tree `0eca476d84eb1f06b633a7780b7883a3fadd8adb`). Its originally deployed signed firmware revision 2 and complete publication evidence are historical; **the physical board now runs the later accepted authenticated application revision 5**, documented in §4.

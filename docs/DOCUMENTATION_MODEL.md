@@ -33,6 +33,12 @@ When two sources appear to disagree, use this order:
    - `CHANGELOG.md`, `MASTER_EXECUTION_CHECKLIST.md`, `PROJECT_HANDOFF.md`, `IMPLEMENTATION_PLAN.md` and historical plan material;
    - useful context, but they do not define current project state.
 
+### Cross-repository evidence and artifact custody (owner direction 2026-10-21)
+
+The PUBLIC OS Git repository owns actual code, the canonical CURRENT_STATE, public-safe policy, scoped acceptance and **references** to actual evidence. GitHub PRIVATE `dturovskiy/deus-os-stm32-private-docs` may retain newly generated **reviewed/sanitized** operator bundles, independent reviews and evidence in its separate prospective `operator_artifacts/` lane, not the frozen historical originals or archive. Protected raw logs, signing/escrow keys, signed recovery/firmware packages and Flash/SWD images belong in separately access-controlled encrypted **off-Git** custody, never either Git. GitHub repository privacy alone is not a contents/security review.
+
+Neither ChatGPT uploads, source references, metadata indexes nor a claimed SHA alone prove off-host artifact custody. Verify actual transfer bytes, Git/private remote visibility, independent readback and recorded original SHA-256 before claiming an artifact stored; private records are not independent current project-state authority. Do not routinely attach ZIPs/evidence/logs to chat; give verified private path plus result/hash, with explicit-request/blocked-transfer fallback only. The `HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` owns the normative import/classification/retention/communication rule.
+
 ## 2. Allowed responsibilities
 
 ### `CURRENT_STATE.md`

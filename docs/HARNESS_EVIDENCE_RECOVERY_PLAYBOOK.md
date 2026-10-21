@@ -74,6 +74,18 @@ Examples:
 
 ## 3. Evidence-first rule
 
+### Artifact custody and chat delivery — mandatory (owner direction 2026-10-21)
+
+**Default destination is the controlled DEUS OS project archive, not chat.** Place newly generated operator bundles, `.evidence.zip`, machine reports, independent review archives and logs in the separately verified GitHub **PRIVATE** `dturovskiy/deus-os-stm32-private-docs` prospective `operator_artifacts/` lane **only after complete payload classification as safe for private Git**. The historical `originals/`, `history/` and older `evidence_registry/` are frozen, never automatically refreshed. Public OS Git and public CI contain only code, public-safe documentation, metadata and hashes; never raw evidence ZIPs or generated firmware.
+
+**Security and admission:** Before any transfer, verify the original full SHA-256, length, ZIP CRC, indexed member hashes, producer/run result (including FAIL), exact candidate/Git identity, and examine full contents, names and logs for credentials, secrets, private addresses and personal data. Never commit keys, HMAC/signing/escrow/DPAPI material, firmware update or recovery packages, raw Flash/SWD dumps or unreviewed/sensitive evidence to either Git repository, including the PRIVATE one. Such originals must remain in owner-controlled encrypted/off-Git storage with separately established access/backup; private Git may hold redacted metadata/index only. PRIVATE does not itself prove secret-safety or off-host recovery.
+
+**Required receipt:** Record unique immutable artifact path, SHA-256, bytes, creator/tool/run, timestamp, source tree/HEAD, evidence status/class, storage decision (`PRIVATE_GIT_SANITIZED`, `PRIVATE_OFF_GIT_PROTECTED`, `NOT_STORED`), access classification and limitations. No overwrites, no retroactive rewriting historical FAIL. For admitted private-Git files verify final remote visibility PRIVATE, non-force push/readback, hash and clean local Git. Until actual readback succeeds, do not claim remote storage; an inaccessible transfer is a reported blocker, not permission to use public Git.
+
+**Chat output:** Respond primarily with concise outcome, checks, SHA and a verified private path/link. Do **not** routinely paste or attach ZIPs/evidence/logs or long dumps to the conversation. A chat attachment is permitted only on explicit owner request or as an acknowledged fallback when secure transfer is unavailable. PowerShell `deus-run <package_id> -ExpectedSha256 <sha>` remains the standard one-line operator invocation. Windows `Downloads` is runner staging, **not permanent archival custody**; keep locally produced originals until verified transfer or owner retention decision. Existing chat attachments are not retroactively imported. No hardware/signing/Flash permission, test PASS or gate acceptance is conferred by storage.
+
+Private prospective lane policy: `deus-os-stm32-private-docs/operator_artifacts/README.md`. Canonical documentation roles: `docs/DOCUMENTATION_MODEL.md`.
+
 For every failure:
 
 1. Read the `.log`.
