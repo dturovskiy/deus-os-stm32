@@ -1,17 +1,7 @@
 name: Operator Bundle Guard
 on:
   push:
-    paths:
-      - 'scripts/operator_bundle_guard/**'
-      - 'docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md'
-      - 'docs/HARNESS_FAILURE_REGISTRY.md'
-      - '.github/workflows/operator-bundle-guard.yml'
   pull_request:
-    paths:
-      - 'scripts/operator_bundle_guard/**'
-      - 'docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md'
-      - 'docs/HARNESS_FAILURE_REGISTRY.md'
-      - '.github/workflows/operator-bundle-guard.yml'
   workflow_dispatch:
 
 permissions:

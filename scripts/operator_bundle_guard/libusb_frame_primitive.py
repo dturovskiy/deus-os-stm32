@@ -36,6 +36,7 @@ class ReadEvent:
     stash_bytes:int
     frames_completed:int
     elapsed_ms:int
+    at_ms:int  # monotonic milliseconds since this RPC started
 
 @dataclass(frozen=True)
 class Result:
@@ -117,6 +118,8 @@ class RpcReader:
         self._events:list[ReadEvent]=[]
         self._frames=0
         self._frame_summaries=[]
+        self._poisoned=False
+        self._rpc_start=0.0
 
     def _read_frame(self,deadline:float,fail):
         while True:
@@ -144,14 +147,16 @@ class RpcReader:
             timeout_ms=max(1,min(self.per_read_ms,int(left*1000)))
             start=self.clock()
             rc,data,n=self.reader.read(64,timeout_ms)
-            elapsed=max(0,int((self.clock()-start)*1000))
+            finished=self.clock()
+            elapsed=max(0,int((finished-start)*1000))
+            at_ms=max(0,int((finished-self._rpc_start)*1000))
             # An adapter returning a short read or partial on TIMEOUT must
             # preserve the actual byte count. Never silently pretend success.
             if type(rc) is not int or type(n) is not int or type(data) is not bytes:
                 fail("LIBUSB_ADAPTER_CONTRACT_INVALID")
             self._events.append(ReadEvent(
                 len(self._events)+1,rc,LIBUSB_CODES.get(rc,"UNKNOWN"),
-                timeout_ms,n,len(data),len(self.stash),self._frames,elapsed
+                timeout_ms,n,len(data),len(self.stash),self._frames,elapsed,at_ms
             ))
             if not 0<=n<=64 or n!=len(data):
                 fail("LIBUSB_ADAPTER_LENGTH_MISMATCH")
@@ -168,6 +173,8 @@ class RpcReader:
     def rpc(self,request_id:int,rpc_id:int)->Result:
         if not 0<request_id<=65535 or not 0<rpc_id<=65535:
             raise ValueError("INVALID_RPC_CONTEXT")
+        if self._poisoned:
+            raise RuntimeError("RPC_READER_POISONED_AFTER_FAILURE")
         self._events=[]
         self._frames=0
         self._frame_summaries=[]
@@ -175,8 +182,10 @@ class RpcReader:
         output_bytes=0
         end_domain=None
         end_code=None
-        deadline=self.clock()+self.rpc_budget_ms/1000
+        self._rpc_start=self.clock()
+        deadline=self._rpc_start+self.rpc_budget_ms/1000
         def fail(reason):
+            self._poisoned=True
             raise Failure(reason,request_id=request_id,rpc_id=rpc_id,
                           chunks=chunks,output_bytes=output_bytes,
                           end_domain=end_domain,end_code=end_code,
@@ -185,8 +194,11 @@ class RpcReader:
                           frame_summaries=self._frame_summaries[-12:])
         while True:
             ft,rid,body=self._read_frame(deadline,fail)
-            self._frame_summaries.append({"frame_type":FRAME_TYPES.get(ft,"UNKNOWN"),
-                                         "request_id":rid,"payload_bytes":len(body)})
+            summary={"frame_type":FRAME_TYPES.get(ft,"UNKNOWN"),
+                     "request_id":rid,"payload_bytes":len(body)}
+            if ft in (0x82,0x83) and len(body)>=4:
+                summary["rpc_id"],summary["sequence"]=struct.unpack_from("<HH",body)
+            self._frame_summaries.append(summary)
             if rid!=request_id:
                 fail("RPC_REQUEST_ID_MISMATCH")
             if ft==0x82:
@@ -207,6 +219,11 @@ class RpcReader:
                     fail("RPC_END_CORRELATION")
                 if end_domain!=0 or end_code!=0:
                     fail("RPC_END_STATUS_NONZERO")
+                # No unsolicited/pipelined frames exist in this one-request
+                # transport contract. Trailing bytes must not be carried into
+                # the next request and misreported as a successful response.
+                if self.stash:
+                    fail("RPC_TRAILING_BYTES_AFTER_END")
                 return Result(request_id,rpc_id,chunks,output_bytes,
                               end_domain,end_code,tuple(self._events))
             elif ft==0x84:

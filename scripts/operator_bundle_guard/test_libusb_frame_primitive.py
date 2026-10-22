@@ -174,6 +174,52 @@ class TestPrimitive(unittest.TestCase):
         e=self.assertReject([(0,b"x"*65)],"LIBUSB_ADAPTER_LENGTH_MISMATCH")
         self.assertEqual(e.events[0].transferred,65)
 
+    def test_24_trailing_bytes_after_end_are_not_success(self):
+        extra=wire(0x82,12,struct.pack("<HH",7,34)+b"!")
+        e=self.assertReject(packetize(frames()+[extra]),
+                            "RPC_TRAILING_BYTES_AFTER_END",expected_chunk=33)
+        self.assertGreater(e.remaining_stash,0)
+        self.assertEqual(e.frame_summaries[-1]["sequence"],33)
+
+    def test_25_no_reuse_of_failed_reader_with_stale_stash(self):
+        reader=RpcReader(Fake([(-7,b"x"*15)]))
+        with self.assertRaises(Failure):
+            reader.rpc(12,7)
+        with self.assertRaisesRegex(RuntimeError,"RPC_READER_POISONED"):
+            reader.rpc(13,7)
+
+    def test_26_last_frame_sequence_in_failure_receipt(self):
+        parts=frames()
+        parts[-1]=wire(0x83,12,struct.pack("<HHIBB",7,33,1183,0,4))
+        e=self.assertReject(packetize(parts),"RPC_END_STATUS_NONZERO")
+        headers=e.receipt()["recent_frame_headers"]
+        self.assertEqual(headers[-1]["frame_type"],"RPC_END")
+        self.assertEqual((headers[-1]["rpc_id"],headers[-1]["sequence"]),(7,33))
+        self.assertEqual(headers[-2]["sequence"],32)
+
+    def test_27_read_events_have_monotonic_rpc_relative_time(self):
+        class Clock:
+            def __init__(self): self.now=0.0
+            def __call__(self): return self.now
+        clock=Clock()
+        class TimedFake(Fake):
+            def read(self,max_bytes,timeout_ms):
+                clock.now+=0.037
+                return super().read(max_bytes,timeout_ms)
+        read=TimedFake(packetize(frames()))
+        result=RpcReader(read,clock=clock).rpc(12,7)
+        samples=[event.at_ms for event in result.events]
+        self.assertTrue(all(a<=b for a,b in zip(samples,samples[1:])))
+        self.assertGreaterEqual(samples[0],36)
+        self.assertGreater(samples[-1],samples[0])
+
+    def test_28_clean_reader_may_handle_next_request(self):
+        read=Fake(packetize(frames(request=12))+packetize(frames(request=13)))
+        r=RpcReader(read)
+        self.assertEqual(r.rpc(12,7).output_bytes,1183)
+        self.assertEqual(r.rpc(13,7).output_bytes,1183)
+        self.assertEqual(len(read.queue),0)
+
     def test_20_absolute_deadline_clamps_transfer_budget(self):
         class Clock:
             def __init__(self):self.now=0.0

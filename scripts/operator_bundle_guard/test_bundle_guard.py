@@ -228,5 +228,17 @@ class BundleGuardTests(unittest.TestCase):
             else:
                 self.assertIn(r["status"],("PENDING_REAL_PRIMITIVE","OPEN_UNPROVEN_CAUSE"))
 
+    def test_32_guard_ci_runs_without_path_filters(self):
+        # A pushed ZIP outside scripts/ must not skip the public repository guard.
+        workflow=(Path(__file__).resolve().parents[2]/
+                  '.github/workflows/operator-bundle-guard.yml').read_text()
+        self.assertIn('  push:\n',workflow)
+        self.assertIn('  pull_request:\n',workflow)
+        self.assertNotIn('    paths:',workflow)
+        # Negative fixture: the old path-filtered trigger must fail the guard.
+        with self.assertRaises(AssertionError):
+            self.assertNotIn('    paths:',workflow.replace('  push:\n',
+                                          '  push:\n    paths:\n      - scripts/**\n'))
+
 if __name__=="__main__":
     unittest.main(verbosity=2)

@@ -40,7 +40,7 @@
       "scope": "000c_session_collector",
       "offline_primitive": "scripts/operator_bundle_guard/libusb_frame_primitive.py",
       "offline_regression": "scripts/operator_bundle_guard/test_libusb_frame_primitive.py",
-      "offline_result": "23/23 PASS; real Mac mini source/execution still unqualified"
+      "offline_result": "28/28 PASS; real Mac mini source/execution still unqualified"
     },
     {
       "id": "HARNESS-RPC-STATUS-LOSS-20261022",
@@ -62,6 +62,22 @@
       "summary": "v3 schedprod text 1183B in 33 frames => ~1733B wire vs USB TX ring 1024B; v4 times out",
       "remediation": "Check IRQ-serviced TX drain and mgmt_tx_drop/tx_failures on actual installed firmware before modifying flow control",
       "scope": "000c_session_collector"
+    },
+    {
+      "id": "HARNESS-RPC-STALE-READER-20261022",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "scope": "000c_session_collector",
+      "summary": "Offline primitive permitted stale USB bytes after RPC_END and reuse after a failed partial read",
+      "remediation": "Reject trailing bytes on END; poison reader after any failed RPC and preserve sequence plus relative read-time diagnostics; qualify real Mac mini source separately",
+      "offline_regression": "test_24_trailing_bytes_after_end_are_not_success;test_25_no_reuse_of_failed_reader_with_stale_stash;test_26_last_frame_sequence_in_failure_receipt;test_27_read_events_have_monotonic_rpc_relative_time;test_28_clean_reader_may_handle_next_request"
+    },
+    {
+      "id": "HARNESS-CI-PATH-FILTER-BYPASS-20261022",
+      "status": "GUARDED_STATIC",
+      "test": "test_32_guard_ci_runs_without_path_filters",
+      "scope": "all_operator_bundles",
+      "summary": "Path-filtered bundle guard CI was not triggered for other source additions, including forbidden ZIPs",
+      "remediation": "Run Bundle Guard workflow on every push and pull request; branch protection still needs separate administrator proof"
     },
     {
       "id": "HARNESS-RESULT-STRUCTURE-01",
