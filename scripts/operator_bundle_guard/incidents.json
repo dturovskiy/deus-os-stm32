@@ -3,6 +3,13 @@
   "authority": "Historical incidents and automatic guard traceability; docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md is normative",
   "entries": [
     {
+      "id": "HARNESS-000C-REMOTE-CLEANUP-20261023",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "Operator native wire collector captured complete 000C schedprod success, but separate SSH cleanup hit 15000ms deadline with empty stdout/stderr; remote deletion UNKNOWN",
+      "remediation": "Prove bounded real Windows-to-Mac-mini SSH cleanup in isolation with independent remote directory observation; preserve USB subresult and terminal cleanup classification separately; no repeat RPC for cleanup",
+      "scope": "000c_native_bulk_in_primitive"
+    },
+    {
       "id": "HARNESS-000C-HELLO-OFFSET-20261022",
       "status": "PENDING_REAL_PRIMITIVE",
       "summary": "v1 HELLO parser used LINE_CAPACITY offset instead of registry count bytes 10-11",

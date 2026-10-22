@@ -26,6 +26,10 @@ The existing playbook already defined many `HARNESS-*` failure classes and the m
 
 The three original local v1/v3/v4 evidence ZIPs are authoritative for actual results. **No raw evidence ZIP or raw logs should be committed to public/private GitHub**; Windows Downloads owns the local originals. Nothing in this audit declares the installed rev5 broken or any `000E` effect measured.
 
+### 2026-10-23 — real Mac mini capture versus independent cleanup failure
+
+Original ZIP evidence SHA-256 `4609D582830365767974D22A3BD3B61117C1BB649FB675E639B0BA87259DCDF6` passes CRC and all 36 indexed member hashes. On a physical `1209:000C/IF2` read-only `schedprod` request the Mac mini delivered 1733 wire bytes, 1183 payload bytes in 33 sequenced/CRC-valid DATA frames and an error-free RPC_END, from 28 bulk-IN reads (all signed libusb result 0) in ~5 ms. This **positive one-shot native observation** establishes the long response can complete on the installed legacy firmware, but cannot explain the historical failing v4 request or prove absence of race/backpressure. The `deus-run` terminal FAIL arose only in the following SSH cleanup primitive, which hit 15000 ms with zero output and unknown remote removal. Do not mask the USB RPC positive result by attributing the classified POSTSTATE failure to firmware or libusb. Do not infer that a remote deletion did or did not execute. A new machine-indexed `HARNESS-000C-REMOTE-CLEANUP-20261023` incident requires independent SSH/removal primitive proof, not a monolithic v2 collector or another hardware USB transaction. Evidence stays Windows-local, no upload to GitHub. Gate2 PARTIAL 12/14; Gate3 NOT_ACCEPTED; Gate4 NOT_AUTHORIZED.
+
 ## Mandatory authoring gate (new)
 
 The tested generator and validator are in `scripts/operator_bundle_guard/`.
