@@ -37,7 +37,10 @@
       "status": "PENDING_REAL_PRIMITIVE",
       "summary": "v4 combined timeout/disconnect/pipe/etc negative libusb return statuses",
       "remediation": "Preserve signed libusb return code, transferred bytes, partial frames, elapsed time, and release/claim behavior",
-      "scope": "000c_session_collector"
+      "scope": "000c_session_collector",
+      "offline_primitive": "scripts/operator_bundle_guard/libusb_frame_primitive.py",
+      "offline_regression": "scripts/operator_bundle_guard/test_libusb_frame_primitive.py",
+      "offline_result": "23/23 PASS; real Mac mini source/execution still unqualified"
     },
     {
       "id": "HARNESS-RPC-STATUS-LOSS-20261022",
