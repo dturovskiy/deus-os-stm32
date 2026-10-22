@@ -5,8 +5,8 @@
     {
       "id": "HARNESS-000C-REMOTE-CLEANUP-20261023",
       "status": "PENDING_REAL_PRIMITIVE",
-      "summary": "Operator native wire collector captured complete 000C schedprod success, but separate SSH cleanup hit 15000ms deadline with empty stdout/stderr; remote deletion UNKNOWN",
-      "remediation": "Prove bounded real Windows-to-Mac-mini SSH cleanup in isolation with independent remote directory observation; preserve USB subresult and terminal cleanup classification separately; no repeat RPC for cleanup",
+      "summary": "Historical 000C collector SSH cleanup reached 15000ms timeout with unknown cause; isolated physical Mac-mini recovery verified exact old directory ALREADY_ABSENT with native SSH exit 0 (evidence SHA256 0CA0239741B127AB5AA9E53ECE164B360C91012C83E54B406A06DDC9EA9F0B4A). No orphan remains; old timeout root cause unresolved.",
+      "remediation": "Old remote temp recovery CLOSED_BY_NATIVE_ABSENCE; if future independent SSH cleanup timeouts recur, retain complete process/remote evidence and diagnose SSH timing without USB replay. Keep original timed-out run FAIL and Gate statuses unchanged.",
       "scope": "000c_native_bulk_in_primitive"
     },
     {
