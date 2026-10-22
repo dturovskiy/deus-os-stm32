@@ -206,6 +206,16 @@ class BundleGuardTests(unittest.TestCase):
             windows_ast_parse(SCRIPT+b"\n$b=@(\n")
         self.assertEqual(str(e.exception),"WINDOWS_POWERSHELL_AST_FAILED")
 
+    def test_31_mutating_release_cannot_bypass_separate_signed_gate(self):
+        spec=SPEC.copy()
+        spec["execution_profile"]="HARDWARE_MUTATING"
+        spec["workflow_id"]="other_approved_workflow"
+        (self.src/"bundle_spec.json").write_text(json.dumps(spec))
+        b=self.make()
+        with self.assertRaises(Invalid) as e:
+            release(self.zip,digest(b),self.root/"fabricated_receipt.json")
+        self.assertEqual(str(e.exception),"MUTATING_RELEASE_REQUIRES_SEPARATE_SIGNED_GATE")
+
     def test_27_incident_registry_links_all_guarded_defects(self):
         db=json.loads((Path.cwd()/"scripts/operator_bundle_guard/incidents.json").read_text())
         self.assertEqual(db["schema"],"DEUS_HARNESS_INCIDENT_REGISTRY_V1")

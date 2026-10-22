@@ -264,6 +264,8 @@ def release(path, expected_sha, proof):
     WARNING: receipt JSON is UNSIGNED; needs independent human verification.
     """
     res = validate_file(path, expected_sha)
+    need(res["profile"] != "HARDWARE_MUTATING",
+         "MUTATING_RELEASE_REQUIRES_SEPARATE_SIGNED_GATE")
     check_hardware_incident_blockers(path.read_bytes())
     windows_ast_parse(entries(path.read_bytes())["apply.ps1"])
     need(proof.is_file(), "NATIVE_PRIMITIVE_RECEIPT_MISSING")

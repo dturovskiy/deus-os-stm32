@@ -96,6 +96,14 @@
       "summary": "Historical early assertion suppressed failure MAP/native diagnostic outputs",
       "remediation": "Artifact collection before gate verdict; test classified FAIL paths",
       "scope": "all_operator_bundles"
+    },
+    {
+      "id": "HARNESS-MUTATING-RELEASE-REQUIRES-SIGNED-GATE",
+      "status": "GUARDED_STATIC",
+      "test": "test_31_mutating_release_cannot_bypass_separate_signed_gate",
+      "scope": "all_operator_bundles",
+      "summary": "Generic operator bundle guard must not grant any destructive firmware/device release from unsigned native receipts",
+      "remediation": "HARDWARE_MUTATING always rejects release; a separate signed owner-authorized gate is required"
     }
   ]
 }
