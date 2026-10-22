@@ -1,0 +1,101 @@
+{
+  "schema": "DEUS_HARNESS_INCIDENT_REGISTRY_V1",
+  "authority": "Historical incidents and automatic guard traceability; docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md is normative",
+  "entries": [
+    {
+      "id": "HARNESS-000C-HELLO-OFFSET-20261022",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "v1 HELLO parser used LINE_CAPACITY offset instead of registry count bytes 10-11",
+      "remediation": "Use exact firmware binary_rpc.c HELLO and existing host HelloParser; real Linux primitive before new collector",
+      "scope": "000c_session_collector"
+    },
+    {
+      "id": "HARNESS-MANIFEST-APPLY-SHA-20261022",
+      "status": "GUARDED_STATIC",
+      "test": "test_03_v2_apply_manifest_stale_even_when_index_updated",
+      "summary": "v2 manifest.apply_sha256 stale even when indexed hash valid",
+      "remediation": "Builder alone owns both manifest SHA and full index, validates complete ZIP",
+      "scope": "all_operator_bundles"
+    },
+    {
+      "id": "HARNESS-STRICTMODE-LATEST-20261022",
+      "status": "GUARDED_STATIC",
+      "test": "test_12_old_strict_mode_prohibited",
+      "summary": "v1-v4 Set-StrictMode Latest violated pinned 3.0",
+      "remediation": "Mandatory strict 3.0 prepublication rejection",
+      "scope": "all_operator_bundles"
+    },
+    {
+      "id": "HARNESS-UNPROVEN-PRIMITIVE-COMPOSITION-01",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "Repeated v1→v4 monolithic patch loop without independent Mac mini long-RPC primitive proof",
+      "remediation": "No composed USB acceptance package until real native USB long-stream primitive qualified",
+      "scope": "000c_session_collector"
+    },
+    {
+      "id": "HARNESS-LIBUSB-ERROR-COLLAPSE-20261022",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "v4 combined timeout/disconnect/pipe/etc negative libusb return statuses",
+      "remediation": "Preserve signed libusb return code, transferred bytes, partial frames, elapsed time, and release/claim behavior",
+      "scope": "000c_session_collector"
+    },
+    {
+      "id": "HARNESS-RPC-STATUS-LOSS-20261022",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "v3 nonzero RPC_END lacked domain/code/request/sample",
+      "remediation": "Retain raw response/end domain/code and partial data on failure",
+      "scope": "000c_session_collector"
+    },
+    {
+      "id": "HARNESS-POSTSTATE-MISCLASSIFICATION-20261022",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "v3-v4 remote RPC failure mislabeled environment and POSTSTATE",
+      "remediation": "Phase-owned REMOTE_RPC_CAPTURE; classify source only after native negative code and trace",
+      "scope": "000c_session_collector"
+    },
+    {
+      "id": "HARNESS-REAL-SCHEDPROD-FLOWCONTROL-20261022",
+      "status": "OPEN_UNPROVEN_CAUSE",
+      "summary": "v3 schedprod text 1183B in 33 frames => ~1733B wire vs USB TX ring 1024B; v4 times out",
+      "remediation": "Check IRQ-serviced TX drain and mgmt_tx_drop/tx_failures on actual installed firmware before modifying flow control",
+      "scope": "000c_session_collector"
+    },
+    {
+      "id": "HARNESS-RESULT-STRUCTURE-01",
+      "status": "GUARDED_STATIC",
+      "test": "test_22_runner_owned_banner",
+      "summary": "Historical child scripts printed duplicate RESULT markers",
+      "remediation": "Only deus-run prints terminal PASS/FAIL banner",
+      "scope": "all_operator_bundles"
+    },
+    {
+      "id": "HARNESS-FORBIDDEN-DEFENDER-BYPASS",
+      "status": "GUARDED_STATIC",
+      "test": "test_23_defender_bypass",
+      "summary": "AMSI-related scripts must never disable or bypass Windows security",
+      "remediation": "Static blocker plus native security policy",
+      "scope": "all_operator_bundles"
+    },
+    {
+      "id": "HARNESS-CANDIDATE-BYTE-DOMAIN-MISMATCH-01",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "Git clean-candidate materialization vs Windows CRLF source hash mismatch",
+      "remediation": "Hash materialized ownership bytes in native primitive",
+      "scope": "all_operator_bundles"
+    },
+    {
+      "id": "HARNESS-EXECUTION-DOMAIN-OWNERSHIP-01",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "Target USB owned by Linux Mac mini; SWD/UART by Windows",
+      "remediation": "Proofs on actual owner host",
+      "scope": "all_operator_bundles"
+    },
+    {
+      "id": "HARNESS-FAILURE-ARTIFACT-ORDER-01",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "summary": "Historical early assertion suppressed failure MAP/native diagnostic outputs",
+      "remediation": "Artifact collection before gate verdict; test classified FAIL paths",
+      "scope": "all_operator_bundles"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+name: Operator Bundle Guard
+on:
+  push:
+    paths:
+      - 'scripts/operator_bundle_guard/**'
+      - 'docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md'
+      - 'docs/HARNESS_FAILURE_REGISTRY.md'
+      - '.github/workflows/operator-bundle-guard.yml'
+  pull_request:
+    paths:
+      - 'scripts/operator_bundle_guard/**'
+      - 'docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md'
+      - 'docs/HARNESS_FAILURE_REGISTRY.md'
+      - '.github/workflows/operator-bundle-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-authoring-regressions:
+    name: Bundle authoring tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile guard source
+        run: python -m py_compile scripts/operator_bundle_guard/bundle_guard.py scripts/operator_bundle_guard/test_bundle_guard.py
+      - name: Execute fail-closed regression suite
+        run: python -m unittest discover -s scripts/operator_bundle_guard -p 'test_*.py' -v
+      - name: Assert no operator ZIP accidentally tracked in public repository
+        shell: bash
+        run: |
+          if git ls-files -z | tr '\0' '\n' | grep -E '(^|/)(stm32_os_.*\.zip|.*\.evidence\.zip)$'; then
+            echo 'Public repo must not contain operator bundles or run evidence ZIPs' >&2
+            exit 1
+          fi

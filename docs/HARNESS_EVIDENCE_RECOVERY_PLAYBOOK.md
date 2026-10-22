@@ -167,6 +167,16 @@ Do not ask the operator to repeat stable facts already recorded. Do not infer th
 
 Every new script must be validated against **current artifacts**, not memory.
 
+### Single-authority operator ZIP construction and mandatory release gate — 2026-10-22 addendum
+
+**No manually assembled or manually re-manifested operator ZIP is deliverable.** All **new** `DEUS_OS_OPERATOR_BUNDLE_V2` packages MUST be created by the executable `scripts/operator_bundle_guard/bundle_guard.py build` authority, from an immutable finalized `apply.ps1` and `bundle_spec.json`. The builder owns **both** `manifest.json` and `hashes.sha256`, derives `manifest.apply_sha256` from the final entrypoint bytes, refuses overwrites and independently reopens the final ZIP. Any post-build edit requires a new source/package identity and complete rebuild/requalification. See `scripts/operator_bundle_guard/README.md`.
+
+**Three separate required gates:** (1) `build`+ `validate --sha256` for static ZIP, schema, runner, hash, filesystem and known-harness-regression checks; (2) actual native Windows PowerShell 7/installed runner AST, process/result/timeout smoke AND, for hardware profiles, independent *real* Linux USB/SSH/libusb **exact payload** primitive proof including error/partial-frame paths; (3) `release --sha256 ... --primitive-receipt ...` on the real Windows authoring domain plus independent manual authenticity review of original native evidence. Static CI or unsigned JSON alone cannot prove hardware origin; do not call the package qualified solely because a receipt says PASS. New `HARDWARE_READONLY` or `HARDWARE_MUTATING` bundles MUST specify a scope-specific `workflow_id`. `release` rejects unresolved native/product incident blockers tied to that workflow. There is no permitted ChatGPT/Linux-only release substitute.
+
+**Machine-indexed incident register:** `scripts/operator_bundle_guard/incidents.json` with human operational index `docs/HARNESS_FAILURE_REGISTRY.md`. An incident may have `GUARDED_STATIC` status only while an actual named negative test exists in `scripts/operator_bundle_guard/test_bundle_guard.py`; CI executes the whole suite. `PENDING_REAL_PRIMITIVE` / `OPEN_UNPROVEN_CAUSE` remain blockers for the affected hardware workflow until new independently verified native/source evidence and reviewed remediation. No new `vN` ZIP is approved merely because the preceding `v(N-1)` failed. Direct ad-hoc ZIP generation, faux native proof, unreviewed evidence promotion and passing after a classified FAIL are `HARNESS-AUTHORING-GUARD-BYPASS-01`.
+
+**Operational limitation:** GitHub Actions and protected-branch requirements must be configured separately and the installed `deus-run` is not modified by this policy. The standard enforces release through the checked toolchain; it cannot intercept an arbitrary ZIP manually created outside that toolchain. A toolchain bypass is **not an accepted operator delivery**. No firmware/Flash permission is implied.
+
 ### Primitive-first composition contract — mandatory
 
 Acceptance harnesses MUST be built **primitive-first**, not by repeatedly patching a monolithic `v1 -> v2 -> v3 -> ...` collector after each operator-visible failure.
