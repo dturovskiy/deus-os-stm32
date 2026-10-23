@@ -2,10 +2,10 @@
 
 **Boundary:** `MANAGEMENT_ONLY_RUNTIME_MIGRATION`
 
-**Status:** **GATE 0 ACCEPTED/PUBLISHED — GATE 1 OFFLINE ACCEPTED (16/16, SCOPED) — GATE 2 OFFLINE PARTIAL — GATE 4 NOT AUTHORIZED**
+**Status:** **GATE 0 ACCEPTED/PUBLISHED — GATE 1 OFFLINE ACCEPTED (16/16, SCOPED) — GATE 2 SCOPED OFFLINE ACCEPTED (14/14) — GATE 3 NOT ACCEPTED — GATE 4 NOT AUTHORIZED**
 **Prepared:** 2026-10-18, based on source HEAD `1293abf08cf1677c81d99df018afee0ce31d37f1`, tree `ebe8ef6bdc0b26a2d5de937a3caf05a3b9fb84f7`. These are provenance anchors, not declarations of the current live HEAD.
 
-**Documentation authority:** `docs/CURRENT_STATE.md` alone determines activation/current project state; `docs/ROADMAP.md` owns sequencing; `docs/DOCUMENTATION_MODEL.md` owns document roles. The owner-approved Gate-0 contract was **published at `7f73ebd89eabfcc515331c6985cf1e9a32ed9d09`**, and exact-SHA [Host deterministic CI run 39452032151](https://github.com/dturovskiy/deus-os-stm32/actions/runs/39452032151) **SUCCESS** independently confirmed. Gate 0 and scoped offline Gate 1 are accepted; `CURRENT_STATE.md` now activates **Gate 2 offline reconciliation only**. This document does not activate physical candidate operations. Acceptance criteria and the live gate checklist are in `docs/MANAGEMENT_ONLY_RUNTIME_MIGRATION_ACCEPTANCE_PLAN.md`.
+**Documentation authority:** `docs/CURRENT_STATE.md` alone determines activation/current project state; `docs/ROADMAP.md` owns sequencing; `docs/DOCUMENTATION_MODEL.md` owns document roles. The owner-approved Gate-0 contract was **published at `7f73ebd89eabfcc515331c6985cf1e9a32ed9d09`**, and exact-SHA [Host deterministic CI run 39452032151](https://github.com/dturovskiy/deus-os-stm32/actions/runs/39452032151) **SUCCESS** independently confirmed. Gate 0, scoped offline Gate 1 and 14/14 scoped offline Gate 2 are accepted. `CURRENT_STATE.md` now activates **Gate 3 read-only preflight/recovery-readiness only**; no hardware candidate adoption or Gate-4 GO is implied. This document does not activate physical candidate operations. Acceptance criteria and the live gate checklist are in `docs/MANAGEMENT_ONLY_RUNTIME_MIGRATION_ACCEPTANCE_PLAN.md`.
 
 ## 1. Owner direction and boundary
 

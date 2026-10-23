@@ -104,6 +104,11 @@ jobs:
           PY
           echo 'NON_VACUOUS_PATCH_WHITESPACE=PASS'
 
+      - name: Validate recovery artifact ledger tooling (20 offline tests)
+        run: |
+          set -euo pipefail
+          python3 ../scripts/test_artifact_ledger.py
+
       - name: Restore locked Host solution
         run: dotnet restore DeusOs.Control.sln --locked-mode --disable-parallel
 
