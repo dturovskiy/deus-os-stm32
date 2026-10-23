@@ -471,6 +471,13 @@ Firmware BIN descriptor structure independently checked: 18-byte USB device desc
 
 ## Gate 3 — read-only hardware preflight (PARTIAL EVIDENCE / NOT ACCEPTED)
 
+### 2026-10-23 23:22 +02:00 — Authentic Windows V1 rebuild preflight HARNESS failure and bounded V2 repair
+
+- [x] Revalidated operator-original V1 evidence ZIP `stm32_os_mgmt_000e_gate3_recovery_rebuild_signer_qualification_v1_20261023_20261023_232242_4a9d5d39.evidence.zip` (SHA-256 `08DF9C834A46A170EC50A71621B55205DCA31EAAACF6C2E32C2275151421845F`), CRC PASS and **7/7** indexed hashes PASS. Original Windows PowerShell 12/12 smoke, exact historical rev5 Git tree, native `git archive`, `tar -xf`, and GNU GCC **15.3.1** version invocation PASS. `RESULT=FAIL`, phase `OFFLINE_LEGACY_REBUILD`, code `MISSING_TOOL_REV5_BUILD`: the V1 `Run-Native` `[IO.File]::Exists($Executable)` test rejected **child pwsh.exe execution path** before the legacy builder started. The exact bad path was not captured; do not invent why Get-Command `.Source` was unusable. Old BIN identity and synthetic signer were NOT TESTED. Original Git HEAD/origin `fcf414044141724d8009da0d346dc139c1c49b86` clean before/after, cleanup PASS, device IO none. Classify `HARNESS_NATIVE_CHILD_PWSH_PATH_RESOLUTION`, not `ARM_TOOLCHAIN_MISSING` or firmware regression.
+- [ ] **V2 native proof pending:** new ZIP `stm32_os_mgmt_000e_gate3_recovery_rebuild_signer_qualification_v2_20261023.zip`, exact SHA-256 `5EC5774CD3B4EDFD07A592D3209856264F1A68D82EF7EA6A19EA5FC9F7026082`, Windows OFFLINE, 5 unique indexed ZIP members (4 content hashes). It replaces the V1 child-PowerShell selector with `$PSHOME\pwsh.exe`, requires its actual file presence and subprocess sentinel PASS **before** the ARM build; saves a `host_pwsh_resolution.json` containing ONLY boolean metadata (no absolute local paths) and a separate native probe transcript. No changes to original signed source candidate, compiler/toolchain floor, rebuild expected SHA, synthetic HMAC test, cleanup, or no-device rule. Canonical validator STATIC PASS and real Windows execution NOT_RUN. Never mark Gate 3 complete from ZIP validation.
+
+
+
 ### 2026-10-23 — Exact old rev5 source recovered from published Git; Windows rebuild pending
 
 - [x] Read-only live `git rev-parse` independently verified original published RDC-06 commit `7bc5f27ce3447f0c907d2643e7db67669371210a` has exact accepted old rev5 tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`. Historical signed deployment evidence pins application 52,012 B/SHA-256 `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210`. Old source is preserved in Git, but exact rebuilt BIN and custody are not yet verified.
