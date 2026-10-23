@@ -62,6 +62,12 @@ Bootloader v1 protocol §9 requires signed version **greater than floor** for a 
 
 **Qualification boundary:** source/tree confirmation is accepted, but Windows native rebuild, actual production signer operability, protected BIN custody, independently restorable floor-compatible signed rescue, live bootloader floor and Gate 3 remain **UNVERIFIED** until their own original evidence is accepted. The package is an offline qualification, not permission to sign, publish raw firmware, reset/flash or run Gate 4.
 
+### 2026-10-23 23:38 +02:00 — Successful original Windows exact rebuild; custody remains separate
+
+The original Windows V2 evidence ZIP SHA-256 `24C1245584A4E1DFDED88446BC686E12BD8FE9A6F632C0E9444055672528D7FD` passes ZIP CRC and **13/13** indexed SHA-256. Exact source Git archive plus Arm GCC **15.3.1** rebuilt historical `000C` application **52,012 B / SHA-256 `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210`** in isolated Windows TEMP; 32/32 C compiles and link/objcopy PASS. Current package-builder synthetic test with nonproduction 32-byte key and 16-byte inert input independently checked v1 HMAC/header; real signer/vault decrypt remained **NOT_TESTED**. Temporary actual application BIN was removed by design, and no BIN or key is inside evidence. This is an **accepted reproducibility proof**, not verified protected off-Git custody or a signed recovery capability.
+
+**Mandatory next durable step:** in a separately approved no-device, no-production-key Windows operator custody workflow, reproduce the same bin and store it **outside project/Tools/Downloads/Git** in an explicitly owner-controlled restricted Windows folder. Verify the destination file's SHA/size by reopening it **after** the write; reject existing nonmatching files, reparse points, weak/unverifiable ACLs, and partial/failed deposits; record only a stable locator alias + relative name and proof digest in private metadata, never the raw BIN/secret in Git or evidence. Keep a second backup and restoration capability separately unverified until proved. After custody, complete real signer, authenticated live floor and monotonic-version signed rescue acceptance through distinct gates; do not present successful compiler or synthetic HMAC tests as recovery-ready.
+
 ## 5. Actual open acceptance predicates
 
 - Original rev5 payload bytes (or reproducible deterministic equivalent) are **NOT YET PROVEN AVAILABLE** in protected custody.
