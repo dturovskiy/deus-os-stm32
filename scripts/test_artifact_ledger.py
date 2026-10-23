@@ -49,6 +49,13 @@ class RegistryTests(unittest.TestCase):
     def test_verified_without_locator(self):self.check_rejected(lambda r:r['entries'][0].update(custody='VERIFIED_CUSTODY',locators=[]),'VERIFIED_WITHOUT_LOCATOR')
     def test_bound_root_not_absolute(self):
         with self.assertRaises(Refuse): root_map(['WINDOWS_DOWNLOADS=relative'])
+    def test_drive_root_forbidden(self):
+        with self.assertRaises(Refuse): root_map(['WINDOWS_DOWNLOADS='+str(pathlib.Path(self.root.anchor))])
+    def test_symlink_root_forbidden(self):
+        link = self.root.parent / ('deus_ledger_test_root_'+self.root.name)
+        self.addCleanup(lambda: link.unlink(missing_ok=True))
+        link.symlink_to(self.root, target_is_directory=True)
+        with self.assertRaises(Refuse): root_map(['WINDOWS_DOWNLOADS='+str(link)])
     def test_secret_data_not_in_result(self):
         x=str(report(self.reg,{'WINDOWS_DOWNLOADS':self.root}))
         self.assertNotIn(str(self.root),x)

@@ -85,7 +85,9 @@ def root_map(values):
         require(ALIAS.fullmatch(alias) and alias not in out, 'ROOT_ALIAS_DUPLICATE_OR_INVALID')
         p = Path(path).expanduser()
         require(p.is_absolute(), 'ROOT_MUST_BE_ABSOLUTE')
-        require(p.exists() and p.is_dir() and not p.is_symlink(), 'ROOT_NOT_REAL_DIRECTORY')
+        require(not p.drive.startswith('\\\\'), 'NETWORK_ROOT_FORBIDDEN')
+        require(p != Path(p.anchor), 'ROOT_OF_DRIVE_FORBIDDEN')
+        require(p.exists() and p.is_dir() and not p.is_symlink() and not getattr(p, 'is_junction', lambda: False)(), 'ROOT_NOT_REAL_DIRECTORY')
         out[alias] = p.resolve(strict=True)
     return out
 
@@ -116,8 +118,8 @@ def inspect_item(item, roots):
             try:
                 for part in parts:
                     cur = cur / part
-                    if cur.is_symlink():
-                        raise Refuse('SYMLINK_BLOCKED')
+                    if cur.is_symlink() or getattr(cur, 'is_junction', lambda: False)():
+                        raise Refuse('SYMLINK_OR_JUNCTION_BLOCKED')
                 target = cur.resolve(strict=False)
                 require(root == target or root in target.parents, 'PATH_OUTSIDE_ROOT')
                 if not target.exists():

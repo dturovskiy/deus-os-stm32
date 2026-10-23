@@ -104,7 +104,7 @@ jobs:
           PY
           echo 'NON_VACUOUS_PATCH_WHITESPACE=PASS'
 
-      - name: Validate recovery artifact ledger tooling (20 offline tests)
+      - name: Validate recovery artifact ledger tooling (22 offline tests)
         run: |
           set -euo pipefail
           python3 ../scripts/test_artifact_ledger.py
