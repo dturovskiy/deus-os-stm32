@@ -4,6 +4,8 @@ Status: **CANONICAL FORWARD SEQUENCING — CURRENT PROJECT STATE IS OWNED BY `do
 
 The roadmap defines ordering and prerequisites. It does not independently define which boundary is active.
 
+**Management-only `1209:000E` execution order (owner Gate-2 offline decision, 2026-10-23):** Gate 0 design PUBLISHED; Gate 1 **16/16 OFFLINE ACCEPTED**; Gate 2 **14/14 SCOPED OFFLINE ACCEPTED** on private nine-path combined ARM+Host source tree `081aac70c31909bf681254393e2288917cb9b8b2` and a separate test-only STOP v2 contract (not a hardware sample); the unmerged Core preview is NOT adopted. **Next is Gate 3** with four still-unaccepted non-disruptive prerequisites: current USB/VBUS/power ownership, 3.3-V/GND isolation, bootloader/revision-floor proof and an exact authenticated rev5 recovery/rollback path. Gate 4 cannot begin without Gate 3 acceptance and fresh owner GO: only then real `000E/IF0` enumeration, source-tied requests, bounded nondestructive RPC/Management/UART/OLED and two genuine numeric three-stack STOP snapshots can be collected. Gate 5 publication is last. See `docs/CURRENT_STATE.md` for current status and `docs/MANAGEMENT_ONLY_RUNTIME_MIGRATION_ACCEPTANCE_PLAN.md` for precise bounded evidence/conditions. No automatic reflash, cable manipulation or old-green-test rerun.
+
 <!-- BEGIN STM32_OS_ROADMAP_CHECKPOINT_2026_09_13 -->
 ## Published boundary chronology and forward order
 
