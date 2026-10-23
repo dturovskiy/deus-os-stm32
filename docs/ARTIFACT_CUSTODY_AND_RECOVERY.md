@@ -51,6 +51,14 @@ The 2026-10-23 bounded Windows search reached four active roots, 182 directories
 
 Bootloader v1 protocol §9 requires signed version **greater than floor** for a normal update with a valid app; only recovery without a valid committed app permits **version >= floor**. Old signed v5 is not a universal fallback after management-only `000E` increases authenticated floor. A **hypothetical** future 000E version 6 would require a separately signed, compatible legacy 000C-content package **at least version 7** for ordinary rollback. These numbers are an example, not an authorized revision assignment or permission to sign/reflash. A reconstructed source/old BIN SHA alone does not prove bootability, package authentication or a usable recovery channel.
 
+### 2026-10-23 — Deterministic historical rev5 source and rebuild route
+
+**Proven Git identity:** published RDC-06 commit `7bc5f27ce3447f0c907d2643e7db67669371210a` resolves via live Git `rev-parse` to the exact accepted rev5 tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`. Historical application image was **52,012 B**, SHA-256 `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210`. The published Git commit recovers original **source**, not an already built or signed recovery artifact.
+
+**Offline Windows operator check:** bundle ZIP SHA-256 `E57F9F82D83F1D599E92EEA667E54796B5F783094134C07321E6C756CAD3FA67`, 10,221 bytes, original package ID `stm32_os_mgmt_000e_gate3_recovery_rebuild_signer_qualification_v1_20261023` archives only the exact old commit into a disposable TEMP root, compiles with that archived commit's canonical ARM build script and Arm GCC 15.3.1, and requires the historical BIN size+SHA. Separately, the current canonical signing script processes an **inert 16-byte dummy image with a completely synthetic non-production key**, and the wrapper independently checks its HMAC/header/digest. The real DPAPI signer is only checked for file presence; no actual device key is accessed or decrypted. All temporary BIN, synthetic key and dummy `.pkg` are deleted; no firmware images are exported or retained. Only operator-local evidence metadata is produced.
+
+**Qualification boundary:** source/tree confirmation is accepted, but Windows native rebuild, actual production signer operability, protected BIN custody, independently restorable floor-compatible signed rescue, live bootloader floor and Gate 3 remain **UNVERIFIED** until their own original evidence is accepted. The package is an offline qualification, not permission to sign, publish raw firmware, reset/flash or run Gate 4.
+
 ## 5. Actual open acceptance predicates
 
 - Original rev5 payload bytes (or reproducible deterministic equivalent) are **NOT YET PROVEN AVAILABLE** in protected custody.

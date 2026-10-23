@@ -471,6 +471,13 @@ Firmware BIN descriptor structure independently checked: 18-byte USB device desc
 
 ## Gate 3 — read-only hardware preflight (PARTIAL EVIDENCE / NOT ACCEPTED)
 
+### 2026-10-23 — Exact old rev5 source recovered from published Git; Windows rebuild pending
+
+- [x] Read-only live `git rev-parse` independently verified original published RDC-06 commit `7bc5f27ce3447f0c907d2643e7db67669371210a` has exact accepted old rev5 tree `ccbd50200ec7f0ec53da6b1048d7377271dfb7bd`. Historical signed deployment evidence pins application 52,012 B/SHA-256 `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210`. Old source is preserved in Git, but exact rebuilt BIN and custody are not yet verified.
+- [ ] Native Windows result for new offline read-only `deus-run` rebuild/signer qualification bundle (ZIP SHA-256 `E57F9F82D83F1D599E92EEA667E54796B5F783094134C07321E6C756CAD3FA67`, 10,221 B; canonical operator Bundle Guard v2 5 indexed ZIP members STATIC PASS, NOT native Windows release): `git archive` exact published source commit, historical `build_firmware.ps1` + Arm GNU GCC 15.3.1, require exact old BIN SHA and length; check current signer script with a **synthetic non-production** 16-byte image and fake HMAC key, independently verify signature/header. No real signing, DPAPI decrypt, device I/O, persistent BIN/package export or Git mutation. Pre-delivery structural ZIP checks do not prove native execution.
+- [ ] After authentic Windows rebuild proof: choose authorized protected **off-Git** firmware destination, independently verify stored bytes and separately signed future rescue compatible with post-000E authenticated floor and the bootloader's recovery route. Preserve four original Gate-3 unfinished criteria; Gate-4 has no GO.
+
+
 ### 2026-10-23 22:28 +02:00 — Extended local recovery census v2: bounded PASS / signed recovery NOT LOCATED
 
 - [x] Independently inspected the **original Windows evidence** `stm32_os_mgmt_000e_gate3_recovery_census_v2_20261023_20261023_222810_853bc482.evidence.zip`, whole SHA-256 `2C780C9357E413E94B24F499EBD01EFAB855CC85185998FB884E4A319FA7C186`: **ZIP CRC PASS**, six unique members, **5/5** indexed nonmanifest SHA-256 PASS. Original report, run.log, outcome and exact Git pre/post receipts agree. Native Windows PowerShell self-test **10/10 PASS** (structural/helper unit smoke, **not** proof that every archive type/consumer was physically recovered). `main` and `origin/main` both `9804e4baa69cdfc1b4ae52e829719417db584436` at run time, clean, no tracked mutation. No USB/UART/SWD, reset, Flash, signing, DPAPI decrypt, private artifact export or network operation. `RESULT=PASS` means **bounded census execution**, NOT Gate-3 recovery readiness.
