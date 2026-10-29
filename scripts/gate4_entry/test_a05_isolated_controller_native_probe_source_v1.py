@@ -32,7 +32,9 @@ class CandidateTests(unittest.TestCase):
    with self.assertRaisesRegex(RuntimeError,"ORIGINAL_ADMISSION_RECEIPT_SHA"):
     m.validate_original(parent,target)
  def test_source_sha_pins_live(self):
-  src=ROOT/"OS/scripts/gate4_entry"
+  # In the owner workspace this repository lives under OS/; in CI it is checkout root.
+  # Pin the actual sibling source directory instead of assuming a parent named OS.
+  src=Path(m.__file__).resolve().parent
   m.check_sources(src)
   self.assertEqual(len(m.SOURCES),4)
  def test_source_drift_rejected(self):

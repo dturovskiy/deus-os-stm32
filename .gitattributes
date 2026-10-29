@@ -5,3 +5,9 @@
 *.s  text eol=lf
 *.ld text eol=lf
 *.md text eol=lf
+
+# Byte-pinned A-05 source contracts: prevent Windows checkout CRLF drift.
+# Keep the original content and published SHA-256 authorities unchanged.
+scripts/gate4_entry/*.py  text eol=lf
+scripts/gate4_entry/*.json text eol=lf
+scripts/gate4_entry/*.ps1 text eol=lf

@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 import zipfile
 import audit_a05_controller_isolated_deny_v2 as m
+import audit_a05_controller_ps_hashtable_keys_v1 as key_audit
 
 def digest(x):return hashlib.sha256(x).hexdigest().upper()
 def fixture(terminal=True):
@@ -39,6 +40,24 @@ def fixture(terminal=True):
         for k,v in data.items():z.writestr(k,v)
     return f.getvalue()
 class OriginalAuditorTests(unittest.TestCase):
+ def test_v2_keys_pass_in_clean_checkout_without_historical_v1(self):
+  with tempfile.TemporaryDirectory() as d:
+   capture=io.StringIO()
+   with patch.object(key_audit,"OLD",Path(d)/"missing_historical_v1.ps1"),patch("sys.stdout",capture):
+    key_audit.audit()
+   result=json.loads(capture.getvalue())
+   self.assertEqual(result["result"],"A05_CONTROLLER_V2_HASH_KEYS_STATIC_PASS")
+   self.assertEqual(result["historical_v1_source"],
+                    "HISTORICAL_V1_OFF_GIT_NOT_ATTESTED_SYNTHETIC_NEGATIVE_ONLY")
+   self.assertEqual(result["historical_v1_duplicate_keys"],["receipt_sha256"])
+   self.assertEqual((result["v2_typed_literal_keys"],result["v2_record_literal_keys"]),(32,19))
+ def test_present_tampered_historical_v1_not_silently_accepted(self):
+  with tempfile.TemporaryDirectory() as d:
+   fake=Path(d)/"historical_v1.ps1"
+   fake.write_text("NOT_THE_PINNED_ORIGINAL",encoding="utf-8")
+   with patch.object(key_audit,"OLD",fake):
+    with self.assertRaisesRegex(AssertionError,"HISTORICAL_V1_ORIGINAL_DRIFT"):
+     key_audit.audit()
  def test_missing_original_rejected(self):
   with self.assertRaisesRegex(AssertionError,"ORIGINAL_EVIDENCE_NOT_AVAILABLE"):
    m.evidence(m.ID+"_20990101_000000_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.evidence.zip","A"*64)

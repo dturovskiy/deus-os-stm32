@@ -5,13 +5,16 @@ Tracks the exact failure class seen in immutable owner v1 AST Evidence.
 A static key/delimiter check is NOT a substitute for native PowerShell AST.
 """
 from pathlib import Path
+import hashlib
 import re
 import json
 from audit_a05_cp314_pwsh_delimiters_v1 import delimiters
 
-ROOT=Path(__file__).resolve().parents[3]
-OLD=ROOT/"OS/scripts/gate4_entry/apply_a05_controller_isolated_deny_v1_20261029.ps1"
-NEW=ROOT/"OS/scripts/gate4_entry/apply_a05_controller_isolated_deny_v2_20261029.ps1"
+HERE=Path(__file__).resolve().parent
+# Historical v1 was quarantined off Git. Only consult the original if present.
+OLD=HERE.parents[2]/"Archive/QuarantinedOperatorSource/Gate4/20261029/apply_a05_controller_isolated_deny_v1_20261029.ps1"
+OLD_SHA="76B7B7323DF4865FAC9D70CD6481B31A9B8B8C7F57B21A9ED9DC807DF6F22AED"
+NEW=HERE/"apply_a05_controller_isolated_deny_v2_20261029.ps1"
 def need(x,msg):
     if not x:raise AssertionError(msg)
 def ordered_literal_keys(source,name):
@@ -35,23 +38,43 @@ def ordered_literal_keys(source,name):
     return rows,duplicate
 
 def audit():
-    v1=OLD.read_text(encoding="utf-8")
     v2=NEW.read_text(encoding="utf-8")
-    oldkeys,olddup=ordered_literal_keys(v1,"typed")
     newkeys,newdup=ordered_literal_keys(v2,"typed")
-    oldrecord,oldrecorddup=ordered_literal_keys(v1,"record")
     newrecord,newrecorddup=ordered_literal_keys(v2,"record")
-    need(olddup==["receipt_sha256"],"V1_EXPECTED_ORIGINAL_DUPLICATE_KEY")
-    need(not oldrecorddup and not newdup and not newrecorddup,
+    need(not newdup and not newrecorddup,
          "V2_DUPLICATE_ORDERED_HASH_LITERAL_KEY")
     need("receipt_sha256" in newkeys and
-         "expected_receipt_sha256" in newkeys and
-         len(newkeys)==len(oldkeys),"V2_REPAIR_DROPPED_OR_DUPLICATED_FACT")
+         "expected_receipt_sha256" in newkeys,
+         "V2_REPAIR_DROPPED_OR_DUPLICATED_FACT")
     need(delimiters(v2)["balanced"],"V2_UNBALANCED_PARENS")
     need(v2.count("DEUS_RUN_RESULT_PATH")>=2 and
          v2.count("WriteNew ([IO.Path]::GetFullPath($env:DEUS_RUN_RESULT_PATH))")==1,
          "RESULT_WRITER_DRIFT")
+    if OLD.is_file():
+        need(not OLD.is_symlink() and
+             hashlib.sha256(OLD.read_bytes()).hexdigest().upper()==OLD_SHA,
+             "HISTORICAL_V1_ORIGINAL_DRIFT")
+        v1=OLD.read_text(encoding="utf-8")
+        oldkeys,olddup=ordered_literal_keys(v1,"typed")
+        _,oldrecorddup=ordered_literal_keys(v1,"record")
+        need(olddup==["receipt_sha256"] and not oldrecorddup and
+             len(newkeys)==len(oldkeys),
+             "ORIGINAL_V1_DUPLICATE_OR_V2_FACT_COUNT")
+        history="PINNED_ORIGINAL_V1_READONLY"
+    else:
+        # Public source checkout has no quarantined v1; exercise the detector
+        # against a synthetic duplicate of the *current* v2, never claim v1 proof.
+        token="$typed=[ordered]@{"
+        need(v2.count(token)==1,"V2_TYPED_MARKER_MISSING")
+        synthetic=v2.replace(token,token+"\n    receipt_sha256='SYNTHETIC';",1)
+        synthetic_keys,synthetic_dups=ordered_literal_keys(synthetic,"typed")
+        need(synthetic_dups==["receipt_sha256"] and
+             len(synthetic_keys)==len(newkeys)+1,
+             "SYNTHETIC_DUPLICATE_NOT_DETECTED:"+repr((synthetic_dups,len(synthetic_keys),len(newkeys))))
+        olddup=synthetic_dups
+        history="HISTORICAL_V1_OFF_GIT_NOT_ATTESTED_SYNTHETIC_NEGATIVE_ONLY"
     print(json.dumps({"result":"A05_CONTROLLER_V2_HASH_KEYS_STATIC_PASS",
+      "historical_v1_source":history,
       "historical_v1_duplicate_keys":olddup,
       "v2_typed_literal_keys":len(newkeys),
       "v2_record_literal_keys":len(newrecord),
