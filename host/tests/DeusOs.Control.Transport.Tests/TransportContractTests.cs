@@ -26,6 +26,42 @@ public sealed class TransportContractTests
     }
 
     [Fact]
+    public void LinuxManagementOnlyProfileMatchesSignedV6Contract()
+    {
+        Assert.Equal((ushort)0x1209, LinuxLibUsbDiscovery.VendorId);
+        Assert.Equal((ushort)0x000E, LinuxLibUsbDiscovery.ManagementOnlyProductId);
+        Assert.Equal(0, LinuxLibUsbDiscovery.ManagementOnlyInterfaceNumber);
+        Assert.Equal((byte)0x04, LinuxLibUsbDiscovery.ManagementOnlyProfile.OutEndpoint);
+        Assert.Equal((byte)0x84, LinuxLibUsbDiscovery.ManagementOnlyProfile.InEndpoint);
+        Assert.Equal(
+            (ushort)0x000E,
+            LinuxLibUsbDiscovery.SelectRuntimeProfile(
+                new DeviceCandidate("usb:001:8", "Deus OS Management-Only", "Linux")).ProductId);
+    }
+
+    [Fact]
+    public void LinuxLegacyRuntimeStillOpensExactCompositeProfile()
+    {
+        var profile = LinuxLibUsbDiscovery.SelectRuntimeProfile(
+            new DeviceCandidate("usb:001:8", "Deus OS Device", "Linux"));
+        Assert.Equal((ushort)0x000C, profile.ProductId);
+        Assert.Equal(2, profile.InterfaceNumber);
+        Assert.Equal((byte)0x04, profile.OutEndpoint);
+        Assert.Equal((byte)0x84, profile.InEndpoint);
+    }
+
+    [Theory]
+    [InlineData("Deus OS Bootloader", "Linux")]
+    [InlineData("Deus OS Management-Only", "Windows")]
+    [InlineData("unknown runtime", "Linux")]
+    public void LinuxRuntimeRejectsUnrecognizedCandidateProfile(string display, string platform)
+    {
+        Assert.Throws<DeusHostException>(
+            () => LinuxLibUsbDiscovery.SelectRuntimeProfile(
+                new DeviceCandidate("usb:001:8", display, platform)));
+    }
+
+    [Fact]
     public void LinuxLocatorUsesBusAndPhysicalPortPathOnly()
     {
         Assert.Equal(

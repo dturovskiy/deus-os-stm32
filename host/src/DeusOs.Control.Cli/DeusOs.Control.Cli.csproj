@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../DeusOs.Control.Core/DeusOs.Control.Core.csproj" />
+    <ProjectReference Include="../DeusOs.Control.Recovery.ReadOnly/DeusOs.Control.Recovery.ReadOnly.csproj" />
     <ProjectReference Include="../DeusOs.Control.Transport.Windows/DeusOs.Control.Transport.Windows.csproj" />
     <ProjectReference Include="../DeusOs.Control.Transport.Linux/DeusOs.Control.Transport.Linux.csproj" />
   </ItemGroup>

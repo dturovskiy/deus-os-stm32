@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeusOs.Control.Transport.Wi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeusOs.Control.Transport.Linux", "src\DeusOs.Control.Transport.Linux\DeusOs.Control.Transport.Linux.csproj", "{CC03A1F2-6E9D-4CD3-A1F3-19AF3978130D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeusOs.Control.Recovery.ReadOnly", "src\DeusOs.Control.Recovery.ReadOnly\DeusOs.Control.Recovery.ReadOnly.csproj", "{AE35C55B-5385-42A0-8CE3-AFBBD6081014}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeusOs.Control.Cli", "src\DeusOs.Control.Cli\DeusOs.Control.Cli.csproj", "{9F64E7D3-51FB-4517-946B-72D8AA3B174B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeusOs.Control.Desktop", "src\DeusOs.Control.Desktop\DeusOs.Control.Desktop.csproj", "{CB3C90B5-61EF-4D80-8B37-0B812920D92F}"
@@ -15,6 +17,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeusOs.Control.Core.Tests", "tests\DeusOs.Control.Core.Tests\DeusOs.Control.Core.Tests.csproj", "{F37A8A35-54C6-46AD-B71B-2C94B2C19618}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeusOs.Control.Transport.Tests", "tests\DeusOs.Control.Transport.Tests\DeusOs.Control.Transport.Tests.csproj", "{D5DD22C7-A1E3-4C5C-95B0-56E9CFC8EF5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeusOs.Control.Recovery.Acceptance", "tests\DeusOs.Control.Recovery.Acceptance\DeusOs.Control.Recovery.Acceptance.csproj", "{284886F9-21BA-42E7-A06D-8E90229ACAA2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,6 +38,10 @@ Global
 		{CC03A1F2-6E9D-4CD3-A1F3-19AF3978130D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC03A1F2-6E9D-4CD3-A1F3-19AF3978130D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC03A1F2-6E9D-4CD3-A1F3-19AF3978130D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE35C55B-5385-42A0-8CE3-AFBBD6081014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE35C55B-5385-42A0-8CE3-AFBBD6081014}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE35C55B-5385-42A0-8CE3-AFBBD6081014}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE35C55B-5385-42A0-8CE3-AFBBD6081014}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9F64E7D3-51FB-4517-946B-72D8AA3B174B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9F64E7D3-51FB-4517-946B-72D8AA3B174B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F64E7D3-51FB-4517-946B-72D8AA3B174B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -50,5 +58,9 @@ Global
 		{D5DD22C7-A1E3-4C5C-95B0-56E9CFC8EF5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5DD22C7-A1E3-4C5C-95B0-56E9CFC8EF5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5DD22C7-A1E3-4C5C-95B0-56E9CFC8EF5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{284886F9-21BA-42E7-A06D-8E90229ACAA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{284886F9-21BA-42E7-A06D-8E90229ACAA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{284886F9-21BA-42E7-A06D-8E90229ACAA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{284886F9-21BA-42E7-A06D-8E90229ACAA2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

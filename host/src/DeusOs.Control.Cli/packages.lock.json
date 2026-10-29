@@ -5,6 +5,12 @@
       "deusos.control.core": {
         "type": "Project"
       },
+      "deusos.control.recovery.readonly": {
+        "type": "Project",
+        "dependencies": {
+          "DeusOs.Control.Core": "[1.0.0, )"
+        }
+      },
       "deusos.control.transport.linux": {
         "type": "Project",
         "dependencies": {

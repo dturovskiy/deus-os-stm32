@@ -1,4 +1,5 @@
 using DeusOs.Control.Core;
+using DeusOs.Control.Gate3Offline;
 using DeusOs.Control.Transport.Linux;
 using DeusOs.Control.Transport.Windows;
 
@@ -10,7 +11,21 @@ internal static class Program
     {
         try
         {
+            // Direct, minimal adapter to the existing firmware-update client.
+            // Normal CLI commands and formal Gate acceptance stay unchanged.
+            if (args.Length > 0 && args[0] == "bench-fw")
+                return await BenchFirmwareCommand.RunAsync(args[1..]);
+
             var parsed = CliArguments.Parse(args);
+
+            // Purely offline contract inspection. Must precede any discovery,
+            // session creation, USB open, reset or firmware update operation.
+            if (parsed.Command == "recovery-contract")
+            {
+                PrintRecoveryContract();
+                return 0;
+            }
+
             var discovery = CreateDiscovery();
 
             if (parsed.Command == "devices")
@@ -59,6 +74,19 @@ internal static class Program
             Console.Error.WriteLine($"ERROR: {exception.Message}");
             return 1;
         }
+    }
+
+    private static void PrintRecoveryContract()
+    {
+        // Expected identities only: no package file is opened or authenticated.
+        // Real owner evidence and physical target identity remain separate.
+        Console.WriteLine("RECOVERY_CONTRACT=SOURCE_PINS_ONLY");
+        Console.WriteLine($"COMBINED_TREE={RecoveryRouteReadiness.CombinedTree}");
+        Console.WriteLine($"NORMAL_V6_BYTES={RecoveryRouteReadiness.NormalPackageBytes} SHA256={RecoveryRouteReadiness.NormalPackageSha256}");
+        Console.WriteLine($"RESCUE_V7_BYTES={RecoveryRouteReadiness.RescuePackageBytes} SHA256={RecoveryRouteReadiness.RescuePackageSha256}");
+        Console.WriteLine("LIVE_USB=NOT_QUERIED PHYSICAL_IDENTITY_AUTHENTICATED=NO");
+        Console.WriteLine("DESTRUCTIVE_OPERATION_AUTHORIZED=NO");
+        Console.WriteLine("GATE3_AUTO_ACCEPTANCE=NO");
     }
 
     private static IDeviceDiscovery CreateDiscovery()
@@ -457,6 +485,19 @@ internal static class Program
                 Environment.Exit(0);
             }
 
+            if (remaining[0] == "recovery")
+            {
+                if (remaining.Count != 2 ||
+                    !StringComparer.Ordinal.Equals(remaining[1], "contract") ||
+                    device is not null)
+                {
+                    throw new ArgumentException(
+                        "recovery accepts only: recovery contract (offline; no --device)");
+                }
+
+                return new CliArguments("recovery-contract", null, null);
+            }
+
             if (remaining[0] == "ping")
             {
                 if (remaining.Count == 1)
@@ -544,6 +585,7 @@ internal static class Program
                 """
                 Deus OS CP CLI
                   deus-cp devices
+                  deus-cp recovery contract    (offline pins; never USB or Flash)
                   deus-cp [--device <locator>] info
                   deus-cp [--device <locator>] ping [--count <1..1024>]
                   deus-cp [--device <locator>] health

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>DeusOs.Control.Recovery.ReadOnly</AssemblyName>
+    <RootNamespace>DeusOs.Control.Recovery</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DeusOs.Control.Core/DeusOs.Control.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -15,7 +15,9 @@ public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
 {
     public const ushort VendorId = 0x1209;
     public const ushort ProductId = 0x000C;
+    public const ushort ManagementOnlyProductId = 0x000E;
     public const int InterfaceNumber = 2;
+    public const int ManagementOnlyInterfaceNumber = 0;
     public const byte OutEndpoint = 0x04;
     public const byte InEndpoint = 0x84;
 
@@ -26,6 +28,17 @@ public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
         OutEndpoint,
         InEndpoint,
         "Deus OS Device");
+
+    // The signed v6 changes runtime identity and management IF2 -> IF0.
+    // Keep the old 000C profile for rev5 and bind each discovered candidate
+    // to its exact VID/PID/interface topology before opening libusb.
+    internal static readonly LinuxUsbProfile ManagementOnlyProfile = new(
+        VendorId,
+        ManagementOnlyProductId,
+        ManagementOnlyInterfaceNumber,
+        OutEndpoint,
+        InEndpoint,
+        "Deus OS Management-Only");
 
     public ValueTask<IReadOnlyList<DeviceCandidate>> DiscoverAsync(
         CancellationToken cancellationToken)
@@ -40,7 +53,8 @@ public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
 
         try
         {
-            var candidates = LinuxLibUsbNative.EnumerateCandidates(RuntimeProfile);
+            var candidates = LinuxLibUsbNative.EnumerateCandidates(RuntimeProfile).ToList();
+            candidates.AddRange(LinuxLibUsbNative.EnumerateCandidates(ManagementOnlyProfile));
             return ValueTask.FromResult<IReadOnlyList<DeviceCandidate>>(candidates);
         }
         catch (Exception exception)
@@ -69,8 +83,26 @@ public sealed class LinuxLibUsbDiscovery : IDeviceDiscovery
 
         IDeviceTransport transport = LinuxLibUsbTransport.Open(
             candidate.Locator,
-            RuntimeProfile);
+            SelectRuntimeProfile(candidate));
         return ValueTask.FromResult(transport);
+    }
+
+    internal static LinuxUsbProfile SelectRuntimeProfile(DeviceCandidate candidate)
+    {
+        ArgumentNullException.ThrowIfNull(candidate);
+        if (!StringComparer.Ordinal.Equals(candidate.Platform, "Linux"))
+            throw new DeusHostException(
+                HostErrorKind.Open,
+                "Linux runtime discovery cannot open a non-Linux candidate");
+
+        return candidate.DisplayName switch
+        {
+            "Deus OS Device" => RuntimeProfile,
+            "Deus OS Management-Only" => ManagementOnlyProfile,
+            _ => throw new DeusHostException(
+                HostErrorKind.Open,
+                "unknown Linux runtime candidate identity"),
+        };
     }
 }
 
