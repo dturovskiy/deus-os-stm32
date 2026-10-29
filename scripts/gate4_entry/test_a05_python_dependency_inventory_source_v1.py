@@ -14,8 +14,10 @@ ROOT=Path(__file__).resolve().parents[3]
 HERE=ROOT/"OS/scripts/gate4_entry"
 def sha(x):return hashlib.sha256(x).hexdigest().upper()
 class SourceTests(unittest.TestCase):
+    @unittest.skipUnless(candidate.STAGE.is_dir(), "requires historical native operator stage outside public Git")
     def test_candidate_spec_and_source_stage(self):
         candidate.main()
+    @unittest.skipUnless((zipaudit.ROOT/'Bundle'/(zipaudit.ID+'.zip')).is_file(), "requires original historical ZIP outside public Git")
     def test_final_exact_bundle_bytes(self):
         zipaudit.audit()
     def test_probe_is_parseable_standard_library_only(self):

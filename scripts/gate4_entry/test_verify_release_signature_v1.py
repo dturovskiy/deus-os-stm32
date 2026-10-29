@@ -6,6 +6,7 @@ never a production signing key or allowed owner key.
 """
 import base64
 import hashlib
+from pathlib import Path
 import unittest
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -15,6 +16,10 @@ import verify_release_signature_v1 as v
 
 MESSAGE=ra01.canonical_bytes({"synthetic":"RA02_TEST_ONLY"})
 OTHER=b'{"synthetic":"RA02_TEST_ONLY_CHANGED"}\n'
+PRIVATE_EVIDENCE_ROOT=Path(__file__).resolve().parents[3]/"Evidence"
+TRUST_ORIGINAL_PRESENT=(PRIVATE_EVIDENCE_ROOT/v.TRUST_EVIDENCE_NAME).is_file()
+GATE3_NAMESPACE_ORIGINAL_PRESENT=(PRIVATE_EVIDENCE_ROOT/("stm32_os_gate3_physical_reset_node_info_owner_consent_offline_v1_20261027_"+"20261027_234630_623699d0508b48d1a47ad8441565c32b.evidence.zip")).is_file()
+
 
 def ssh_pub(private):
     public=private.public_key().public_bytes(
@@ -55,6 +60,7 @@ class CryptoTests(unittest.TestCase):
     def test_sha512_valid(self):
         self.assertEqual(v.verify_crypto(MESSAGE,fake_sign(self.key,alg=b"sha512"),self.pub),"ED25519_VERIFIED")
 
+    @unittest.skipUnless(TRUST_ORIGINAL_PRESENT and GATE3_NAMESPACE_ORIGINAL_PRESENT, "requires original pinned owner Evidence, absent from public Git")
     def test_actual_historical_gate3_owner_signature_cannot_authorize_gate4(self):
         # The genuine old signature's owner key is correct but its namespace is
         # deliberately different; a new Gate4 signature is required.
@@ -72,12 +78,14 @@ class CryptoTests(unittest.TestCase):
         with self.assertRaisesRegex(v.Reject,"SSHSIG_WRONG_NAMESPACE"):
             v.verify_crypto(message,signature,v.pinned_trust_from_original_evidence())
 
+    @unittest.skipUnless(TRUST_ORIGINAL_PRESENT, "requires original pinned owner Evidence, absent from public Git")
     def test_real_owner_anchor_is_accepted_and_matches_pin(self):
         original=v.pinned_trust_from_original_evidence()
         pub,fp=v.key_details(original)
         self.assertEqual(fp,v.OWNER_FP)
         self.assertEqual(len(pub),32)
 
+    @unittest.skipUnless(TRUST_ORIGINAL_PRESENT, "requires original pinned owner Evidence, absent from public Git")
     def test_real_owner_anchor_does_not_trust_synthetic_signature(self):
         original=v.pinned_trust_from_original_evidence()
         self.assertNotEqual(original,self.pub)

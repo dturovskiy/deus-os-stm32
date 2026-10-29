@@ -14,6 +14,10 @@ import test_verify_release_signature_v1 as ra02_test
 import release_admission_source_composition_v1 as c
 
 PROJECT = Path(__file__).resolve().parents[3]
+PRIVATE_RA03 = PROJECT / "Evidence" / c.RA03_NAME
+PRIVATE_TRUST = PROJECT / "Evidence" / ra02_test.v.TRUST_EVIDENCE_NAME
+PRIVATE_ORIGINALS_PRESENT = PRIVATE_RA03.is_file() and PRIVATE_TRUST.is_file()
+
 
 class CompositionTests(unittest.TestCase):
     def setUp(self):
@@ -53,6 +57,7 @@ class CompositionTests(unittest.TestCase):
         if expected is not None:
             self.assertEqual(str(cm.exception), expected)
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_synthetic_valid_signature_and_native_ra03_still_deny(self):
         result = self.inspect()
         self.assertEqual(result["result"], "PASS")
@@ -65,6 +70,7 @@ class CompositionTests(unittest.TestCase):
         self.assertEqual(result["device_io"], "NONE")
         self.assertEqual(result["gate4"], "NOT_AUTHORIZED")
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_real_owner_public_trust_must_reject_test_key(self):
         self.stop("SSHSIG_SIGNER_NOT_TRUSTED", _unit_test_public_key=None)
 
@@ -122,11 +128,13 @@ class CompositionTests(unittest.TestCase):
         f=dict(self.fields);f["nonce"]="1234567890abcdef1234567890abcdef"
         self.stop("INVALID_OWNER_SIGNATURE",statement=ra01.canonical_bytes(f))
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_explicit_native_ra03_original_evidence_attestation(self):
         result=c.attest_native_ra03(PROJECT)
         self.assertEqual(result["ra03_evidence_sha256"],c.RA03_SHA)
         self.assertEqual(result["native_cases"],24)
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_wrong_ra03_whole_digest_rejected(self):
         with self.assertRaisesRegex(c.Reject,"RA03_ORIGINAL_WHOLE_SHA"):
             c.attest_native_ra03(PROJECT,expected_sha="0"*64)
@@ -135,6 +143,7 @@ class CompositionTests(unittest.TestCase):
         with self.assertRaisesRegex(c.Reject,"RA03_ORIGINAL_ABSENT"):
             c.attest_native_ra03(self.root)
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_no_production_mutations(self):
         before=set(self.bundle.iterdir())
         self.inspect()
@@ -149,6 +158,7 @@ class CompositionTests(unittest.TestCase):
         kwargs.update(updates)
         return c.exercise_nonce_sequence_source_only(**kwargs)
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_synthetic_nonce_test_sink_only_after_all_source_checks(self):
         calls=[]
         def sink(nonce, statement_sha, zip_sha):
@@ -183,6 +193,7 @@ class CompositionTests(unittest.TestCase):
             self.handshake(sink)
         self.assertEqual(calls,[])
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_nonce_sink_failure_no_retry(self):
         calls=[]
         def sink(*x): calls.append(x); raise ValueError("SIMULATED_DURABILITY_UNKNOWN")
@@ -190,6 +201,7 @@ class CompositionTests(unittest.TestCase):
             self.handshake(sink)
         self.assertEqual(len(calls),1)
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_nonce_sink_invalid_receipt_no_retry(self):
         calls=[]
         def sink(nonce,*x):
@@ -202,6 +214,7 @@ class CompositionTests(unittest.TestCase):
             self.handshake(sink)
         self.assertEqual(len(calls),1)
 
+    @unittest.skipUnless(PRIVATE_ORIGINALS_PRESENT, "requires SHA-pinned private owner trust and original RA03 Evidence")
     def test_replay_against_test_sink_fails_no_retry(self):
         used=set()
         calls=[]

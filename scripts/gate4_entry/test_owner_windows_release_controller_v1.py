@@ -123,6 +123,7 @@ class SourceTests(unittest.TestCase):
         self.candidate.write_bytes(self.candidate.read_bytes()+b"!")
         with self.assertRaisesRegex(ra01.Reject,"CANDIDATE_SIZE"):
             ctrl.inspect_exact_approval(self.message,self.sig,cfg,ra01_test.NOW,ROOT)
+    @unittest.skipUnless((ROOT/"Evidence"/ssh_test.v.TRUST_EVIDENCE_NAME).is_file(), "requires pinned private owner trust Evidence")
     def test_real_owner_key_never_accepts_ephemeral_test_key(self):
         cfg=ctrl.load_owner_config(self.configpath)
         with self.assertRaisesRegex(ra01.Reject,"SSHSIG_SIGNER_NOT_TRUSTED"):
