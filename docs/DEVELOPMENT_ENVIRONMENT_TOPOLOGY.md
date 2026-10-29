@@ -4,7 +4,9 @@
 
 Status: **CANONICAL OPERATIONAL ENVIRONMENT / HARDWARE-OWNERSHIP REFERENCE**
 
-Last canonical-layout audit: 2026-10-07. Temporary owner-authorized Windows native-USB attachment: 2026-10-16 (Desktop Inspector Gate 3b). Latest **date-bound** Linux Management observation: **Ubuntu Mac mini on 2026-10-20**, installed `1209:000C` vendor Management IF2, Host Core `mspstat/schedprod/fault` read-only PASS; the historical 2026-10-19 observation additionally verified existing CDC IF0/IF1. The 2026-10-20 test **did not open CDC** and is not proof of future `1209:000E`/IF0 enumeration. Hardware attachment must be reverified for any future physical gate.
+**Latest owner-observed physical USB topology (2026-10-29 19:54):** Windows `deus-run` used SSH to the Ubuntu Mac mini, where a single real STM32 `1209:000C` was discovered, explicitly entered `1209:000D` bootloader, committed signed firmware version 6 at floor 5, rebooted and enumerated as **`1209:000E` Management-only IF0** on the same physical port `usb:001:8`. The Ubuntu `deus-cp` then returned `Protocol=1 Service=3 Registry=36`, `PONG` and watchdog-active `HEALTH`. This supersedes earlier date-bound `000C`/CDC current-device descriptions below; those are **history**, not the new USB profile. Windows continues to own SWD/ST-LINK and UART wiring unless physically reverified otherwise. The owner reports OLED looks as expected; UART v6 physical traffic is not yet separately attested. Formal Gate4 remains not authorized.
+
+Last canonical-layout audit: 2026-10-07. Temporary owner-authorized Windows native-USB attachment: 2026-10-16 (Desktop Inspector Gate 3b). Latest **date-bound** Linux Management observation: **Ubuntu Mac mini on 2026-10-20**, installed `1209:000C` vendor Management IF2, Host Core `mspstat/schedprod/fault` read-only PASS; the historical 2026-10-19 observation additionally verified existing CDC IF0/IF1. The 2026-10-20 test **did not open CDC** and is not proof of future `1209:000E`/IF0 enumeration. On 2026-10-28, separate owner-supplied **terminal-only** SSH output again observed current `1209:000C` at Ubuntu `usb1/1-8`, device number `090`, CDC IF0/IF1 and vendor IF2, node `root:plugdev 0660`, `deus` group membership and shell `-r/-w` checks YES; **no original indexed Evidence ZIP, `libusb_open`, `000D`, reset or INFO was produced**, so this observation does not advance Gate3. Hardware attachment must be reverified for any future physical gate.
 
 This document owns the current development, hardware-attachment and acceptance-execution topology. It does **not** define product acceptance state, active gate status or firmware architecture; those remain owned by `docs/CURRENT_STATE.md`, the active boundary plan/acceptance pair and `docs/ARCHITECTURE.md`.
 
@@ -50,9 +52,13 @@ Tools root:
 
 `<WINDOWS_OPERATOR_PATH>`
 
-Operator artifact directory:
+Operator input ZIP staging: an independently verified owner-local directory outside all Git worktrees. The exact path and Windows runner search configuration belong to private operator configuration. Any changed root needs native runner lookup acceptance before a ZIP is described as runnable.
 
-`$env:USERPROFILE\Downloads`
+Original operator **evidence output** directory for future runs (owner-created, independently preflighted):
+
+`<PARENT_OF_CANONICAL_OS_REPO>\Evidence` — sibling of `<PARENT_OF_CANONICAL_OS_REPO>\Tools` and `\Logs`; **outside** Public/Private Git; never use for BIN, `.pkg`, secrets or signer escrow. The owner reported manually relocating historical Downloads evidence into the new sibling `Evidence` on 2026-10-24; the individual moved files' SHA-256/CRC/new locator have **not** been independently verified in this repository. New operator runs must preserve immutable originals, and any relocation must retain exact hashes. See `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`.
+
+Selected portable protected recovery store for future Windows custody: `<PARENT_OF_CANONICAL_OS_REPO>\\ProtectedRecovery`, at the **same level** as `OS`, `Tools`, `Logs`, `Evidence`; the destination is not a Git directory, an Evidence folder, or the previous `%LOCALAPPDATA%/DeusOS/ProtectedRecovery`. Selection does not establish creation/ACL/security: provision it separately on real Windows, reject reparse/UNC/unexpected ACLs, and never assume Windows per-user ACL or DPAPI survives moving the workspace to another PC. Native `deus-run` Evidence output stays in sibling `Evidence`. Full normative contract: `docs/ARTIFACT_CUSTODY_AND_RECOVERY.md`.
 
 Primary shell:
 
@@ -237,9 +243,9 @@ Failure class: `HARNESS-EXECUTION-DOMAIN-OWNERSHIP-01`.
 
 The operator-facing workflow remains:
 
-`download an exact-SHA `DEUS_OS_OPERATOR_BUNDLE_V2` ZIP -> run `deus-run <package_id> -ExpectedSha256 <zip_sha256>` on Windows PowerShell 7 -> return one self-contained evidence ZIP`.
+The operator workflow remains: canonical `DEUS_OS_OPERATOR_BUNDLE_V2` construction in a validated off-Git staging directory, independently pinned SHA/manifest and native release checks, execution through the installed `deus-run <package_id> -ExpectedSha256 <sha>`, and original evidence retained in the approved local evidence store. Staging lookup changes require separate native Windows validation.
 
-The installed DEUS Runner **v1.3.0** was operator-verified on Windows **2026-10-19**. It owns package selection, SHA/manifest validation, AST checking, child invocation and the **last green/red RESULT**. New bundle scripts report JSON via `DEUS_RUN_RESULT_PATH` under `DEUS_OS_RUNNER_RESULT_V1`. No custom `Expand-Archive; py ...`, per-ZIP launcher, or lone `DIAGNOSTIC_EXIT=1` is a valid new-package operator interface. Historical V2 packages without the structured contract remain supported by the runner in legacy exit-only mode.
+Windows DEUS Runner **v1.3.0** was accepted on 2026-10-19; the actual installed runner was **upgraded to v1.3.1 on 2026-10-25**, original Windows evidence SHA-256 `536A882802F0B7192E97459B3E4C35BF95BE462BE3F3670236037F6A4005121C`, and native search of OS-sibling off-Git `Bundle` was accepted from nested OS directories. The legacy Downloads and current working-directory searches remain compatibility sources. It owns package selection, SHA/manifest validation, AST checking, child invocation and the **last green/red RESULT**. New bundle scripts report JSON via `DEUS_RUN_RESULT_PATH` under `DEUS_OS_RUNNER_RESULT_V1`. No custom `Expand-Archive; py ...`, per-ZIP launcher, or lone `DIAGNOSTIC_EXIT=1` is a valid new-package operator interface. Historical V2 packages without the structured contract remain supported by the runner in legacy exit-only mode.
 
 A delivery ZIP that spans both hosts should contain, as applicable:
 

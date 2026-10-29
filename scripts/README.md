@@ -10,6 +10,24 @@ Canonical operational references:
 - Asset recovery contract: `docs/ASSET_CONFIGURATION_STLINK_RECOVERY_V1.md`;
 - published Firmware Update / Bootloader design/acceptance: `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_PLAN.md` and `docs/FIRMWARE_UPDATE_BOOTLOADER_FOUNDATION_ACCEPTANCE_PLAN.md`.
 
+**Workspace archive classification (2026-10-29):** New off-Git sibling `Archive/` owns the intended destinations for dated single-use audit scripts and quarantined operator candidates, while `OS/scripts/` retains reusable build/validation source. An exact 132-file source SHA/path classification manifest is stored outside Git at `Reports/Audits/WORKSPACE_REORGANIZATION_MANIFEST_20261029.json`. **The relocation is complete for this inventory:** 30 individual one-off source files are SHA-verified in off-Git `Archive`, and 102 are SHA-verified in `OS` (11 tested Gate4 imports restored to source) as reusable/product source or source-lock/CI dependencies. Corresponding ZIP originals and historical proofs are in separate sibling directories. No one-off archive script should be invoked merely because a file looks old. Do not blindly `git add -A`, stage operator source candidates, or delete a source referenced by an active tool.
+
+**Latest signed-v6 bench outcome (2026-10-29):** Physical owner Windows/Ubuntu update successfully installed `1209:000E` Management-only IF0, and the real device returned USB info/ping/health with watchdog active. Prior statements below describing `000C` composite IF2 and CDC as the *current* runtime are historical; physical UART for v6 remains unverified. Native operator ZIPs, staged packages, original Evidence and protected firmware belong in the workspace sibling directories outside this source repository. The reusable tracked build/recovery scripts here are source tooling, not distributed operator ZIPs.
+
+**Local bench fast path (2026-10-29):** `docs/BENCH_DEVELOPMENT_WORKFLOW.md` is the concise procedure for a single STM32 board. Use `scripts/bench/check_candidate.py` for the existing signed v6/rescue package byte/format/vector check; use the existing `FirmwareUpdateClient` and target host for an approved real update. Do not require the formal Git/Evidence gate harness for every local source change; preserve detailed acceptance for explicit formal claims. See `docs/DOCUMENTATION_MODEL.md` section 0.
+
+## Permanent Gate 3 owner-signed operator audit (2026-10-28)
+
+Use `scripts/gate3_operator/gate3_auditor.py` and
+`scripts/gate3_operator/README.md` for the **reusable read-only source and
+Ed25519 owner-consent verifier**. The same versioned module checks new owner
+evidence ZIPs, exact SHA-indexed 14-file source-lock, original signer trust,
+expiry, one-reset scope and optional exact candidate V2 ZIP bytes. It does not
+build or release physical operator ZIPs, perform native Windows AST, or access
+STM32; an audit PASS is *not* Full Gate 3. Its regression suite is
+`scripts/gate3_operator/test_gate3_auditor.py`. The adjacent `policy.json` stores
+current owner-consent evidence hash for zero-argument recurrent verification.
+
 ## Script classes
 
 Do not treat every `.ps1` in this directory as an operator-facing acceptance harness.

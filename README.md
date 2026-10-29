@@ -42,9 +42,9 @@ README is an entry point only. It is **not** an authoritative current-state, acc
 - SRAM: 20 KiB
 - debug/recovery: SWD / ST-LINK V2
 - emergency diagnostics: USART1
-- primary product management: native USB management IF2 over WinUSB (Windows) or libusb (Linux)
-- **canonical/default** bench native-USB owner: Ubuntu Mac mini via libusb; Windows owns ST-LINK and UART. Last physically verified native-USB owner was **temporarily Windows** during 2026-10-16 UI acceptance; return to Ubuntu is unverified, so verify the actual USB-owning host before any new hardware operation (see `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`).
-- secondary USB diagnostics: CDC ACM
+- primary product management on the installed signed-v6 runtime: `1209:000E` Management IF0 via libusb on the Ubuntu USB host; the earlier composite `1209:000C` used Management IF2 (Windows WinUSB / Linux libusb). Windows support for the new device is not inferred from Linux acceptance.
+- **canonical/default** bench native-USB owner: Ubuntu Mac mini via libusb; Windows owns ST-LINK and UART. The 2026-10-29 owner-native signed-v6 update confirmed the Ubuntu host's real `1209:000E` USB enumeration and Management info/ping/health. Future hardware actions still rediscover the actual device/owner (see `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`).
+- historical composite `000C` USB diagnostics: CDC ACM; the installed Management-only `000E` runtime has no CDC interface. USART1/UART remains a separate diagnostics channel.
 - local display: SSD1306-class 128x32 OLED
 
 ## Implemented foundation areas
@@ -92,7 +92,7 @@ OS/
 - execution history: `docs/MASTER_EXECUTION_CHECKLIST.md`
 - operator/handoff reference: `docs/PROJECT_HANDOFF.md`
 - historical umbrella implementation notes: `docs/IMPLEMENTATION_PLAN.md`
-- harness/evidence and universal `deus-run` ZIP launch/result contract: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` (Windows-confirmed runner v1.3.0, 2026-10-19)
+- harness/evidence and universal `deus-run` ZIP launch/result contract: `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md` (owner-native Windows runner v1.3.2 observed 2026-10-29; historical versions remain dated)
 - development/acceptance host + cable topology: `docs/DEVELOPMENT_ENVIRONMENT_TOPOLOGY.md`
 - chronology: `CHANGELOG.md`
 
