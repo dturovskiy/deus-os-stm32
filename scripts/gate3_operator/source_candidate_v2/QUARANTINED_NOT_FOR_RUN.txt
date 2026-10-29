@@ -1,0 +1,3 @@
+SOURCE_CANDIDATE_V2_NOT_FOR_RUN
+
+This source-only candidate is NOT the previously signed 14-file source and is NOT a released hardware runner. No device, SSH, reset, INFO, flash, signing or one-shot consent is authorized by its presence. Do not package, publish, remove this marker, or invoke its hardware entrypoints. C# and Python have explicit execution-deny guards. Source SHA inventory is unsigned and does not replace a native-qualified signed owner consent.

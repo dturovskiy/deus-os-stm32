@@ -1,0 +1,7 @@
+{
+  "schema": "DEUS_GATE3_OPERATOR_AUDIT_POLICY_V1",
+  "current_owner_consent_evidence_sha256": "DD87116F54B7E3A8C9FB9A68CFC620C5CF58049C5F9B9001CF6E15110CE1E9C0",
+  "owner_consent_expiry_utc": "2026-10-28T22:45:18Z",
+  "scope": "ONE_RESET_ONE_INFO_USB_000D_NODE",
+  "operational_release": "DENIED_UNTIL_SEPARATE_NATIVE_HARDWARE_GATE"
+}

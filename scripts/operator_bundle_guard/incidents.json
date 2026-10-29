@@ -130,6 +130,37 @@
       "scope": "all_operator_bundles",
       "summary": "Generic operator bundle guard must not grant any destructive firmware/device release from unsigned native receipts",
       "remediation": "HARDWARE_MUTATING always rejects release; a separate signed owner-authorized gate is required"
+    },
+    {
+      "id": "HARNESS-G3-PHYSICAL-GATE-RESULT-ID-DRIFT-20261027",
+      "status": "GUARDED_STATIC",
+      "test": "test_43_mutating_hardware_top_level_gate_id_mismatch_rejected",
+      "scope": "gate3_000d_single_reset_info",
+      "summary": "Proposed outer hardware runner and original child had different package/gate IDs; runtime would detect mismatch after possible physical reset.",
+      "remediation": "Require the explicit exact HARDWARE_MUTATING entrypoint $PackageId and reject absence or manifest mismatch before publishing any ZIP; native runner evidence/exit proof is separately required."
+    },
+    {
+      "id": "HARNESS-G3-PHYSICAL-SECOND-RESULT-WRITER-20261027",
+      "status": "GUARDED_STATIC",
+      "test": "test_44_mutating_hardware_nested_second_result_writer_rejected",
+      "scope": "gate3_000d_single_reset_info",
+      "summary": "Proposed wrapper handed DEUS_RUN_RESULT_PATH to a second, signed but differently named PowerShell result writer.",
+      "remediation": "Reject any additional embedded PowerShell reporter for HARDWARE_MUTATING; use one result owner with separately native-qualified subprocess/evidence mediation."
+    },
+    {
+      "id": "HARNESS-G3-QUARANTINED-STAGE-PACKAGING-20261028",
+      "status": "GUARDED_STATIC",
+      "test": "test_48_quarantined_source_directory_never_builds",
+      "scope": "all_operator_bundles",
+      "summary": "A source-only hardware stage explicitly marked QUARANTINED_NOT_FOR_RUN.txt could previously be structurally built despite the quarantine marker.",
+      "remediation": "Guard rejects both quarantined source directories and submitted ZIPs containing the quarantine marker before publication (tests 48-49); hardware release still separately denied."
+    },
+    {
+      "id": "HARNESS-G3-POST-RESET-NESTED-EXIT-20261027",
+      "status": "PENDING_REAL_PRIMITIVE",
+      "scope": "gate3_000d_single_reset_info",
+      "summary": "Wrapper PowerShell nested invocation, child exit/evidence handoff, and reporting of reset attempts under post-reset failure are not native-qualified.",
+      "remediation": "Use a separate read-only native Windows harness primitive proving the full result and evidence contract with synthetic child outcomes, especially ambiguous reset-already-attempted failures; do not reuse blocked physical generator."
     }
   ]
 }

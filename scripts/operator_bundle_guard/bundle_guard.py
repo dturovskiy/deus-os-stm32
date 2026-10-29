@@ -26,7 +26,12 @@ ROOT = frozenset(("apply.ps1", "manifest.json", "hashes.sha256", "PACKAGE_README
 IDENT = re.compile(r"stm32_os_[a-z0-9_]{5,120}\Z")
 HEX = re.compile(r"[A-Fa-f0-9]{64}\Z")
 INDEX = re.compile(r"([A-Fa-f0-9]{64})  ([A-Za-z0-9_./-]+)\Z")
-PROFILES = frozenset(("OFFLINE", "HARDWARE_READONLY", "HARDWARE_MUTATING"))
+PROFILES = frozenset(("OFFLINE", "HARDWARE_READONLY", "HARDWARE_MUTATING", "REMOTE_PUBLIC_TRUST_MUTATING", "HOST_NETWORK_DOWNLOAD"))
+PUBLIC_TRUST_WORKFLOW = "gate3_macmini_owner_public_trust_enrollment"
+PUBLIC_TRUST_PACKAGE = "stm32_os_gate3_macmini_owner_public_trust_enrollment_v1_20261027"
+PUBLIC_TRUST_NAMESPACE = "deus-os-gate3-linux-public-trust-enrollment-v1"
+WHEEL_DOWNLOAD_PACKAGE = "stm32_os_gate4_a05_python314_wheel_download_v1_20261028"
+WHEEL_DOWNLOAD_WORKFLOW = "gate4_a05_pypi_wheel_acquisition"
 MAX_ZIP = 32 * 1024 * 1024
 MAX_MEMBER = 8 * 1024 * 1024
 MAX_MEMBERS = 96
@@ -92,7 +97,83 @@ def check_apply(data):
     need(re.search(r"(?im)Set-MpPreference\s+[^\r\n]*"
                    r"(?:DisableRealtimeMonitoring|ExclusionPath)", text)
          is None, "DEFENDER_BYPASS_FORBIDDEN")
+    # A-05 v4 did "$one=$one.Substring(0,600)" on a flattened traceback
+    # and discarded its final exception. Reject that known unsafe pattern.
+    # This is only a source anti-pattern guard; native writer FAIL-path
+    # testing remains mandatory before admitting an operator.
+    diag_prefix_only = re.search(
+        r"(?im)\$(?:one|line|diag(?:nostic)?|trace(?:back)?|stderr|stdout|"
+        r"nativeoutput|output|log|message|err(?:or)?)\s*=\s*"
+        r"\$(?:one|line|diag(?:nostic)?|trace(?:back)?|stderr|stdout|"
+        r"nativeoutput|output|log|message|err(?:or)?)"
+        r"\.Substring\s*\(\s*0\s*,", text)
+    if diag_prefix_only is not None:
+        # A single-line head+tail expression may safely start with a
+        # Substring(0,N); require a real Length-offset tail operation
+        # AND an explicit middle-truncation marker on that same line.
+        # Do not accept a marker alone as runtime proof of completeness.
+        end = text.find("\n", diag_prefix_only.start())
+        statement = text[diag_prefix_only.start():
+                         len(text) if end < 0 else end]
+        has_tail = re.search(
+            r"\.Substring\s*\(\s*\$\w+\.Length\s*-\s*\d+", statement,
+            flags=re.IGNORECASE) is not None
+        need(has_tail and "MIDDLE_TRUNCATED_TAIL_PRESERVED" in statement,
+             "EVIDENCE_PREFIX_ONLY_TRUNCATION_FORBIDDEN")
     return text
+
+
+def validate_profile_scope(info):
+    """Build/validate may carry a signed-gated candidate; never grant release."""
+    if info.get("package_id") == PUBLIC_TRUST_PACKAGE:
+        need(info.get("execution_profile") == "REMOTE_PUBLIC_TRUST_MUTATING",
+             "PUBLIC_TRUST_PROFILE_REQUIRED")
+    # A single owner-authorized acquisition workflow may contact official PyPI.
+    # It is NOT OFFLINE and is never accepted as a generic network or install profile.
+    # Only the exact one-purpose package can carry this network-capable profile.
+    if info.get("execution_profile") == "HOST_NETWORK_DOWNLOAD":
+        need(info.get("package_id") == WHEEL_DOWNLOAD_PACKAGE,
+             "NETWORK_DOWNLOAD_PACKAGE_NOT_ALLOWED")
+        need(info.get("workflow_id") == WHEEL_DOWNLOAD_WORKFLOW,
+             "NETWORK_DOWNLOAD_WORKFLOW_NOT_ALLOWED")
+        need(info.get("network_scope") == "PYPI_JSON_AND_FILESHOSTED_HTTPS_ONLY",
+             "NETWORK_DOWNLOAD_DOMAIN_SCOPE_REQUIRED")
+        need(info.get("host_mutation") == "DOWNLOAD_ONLY_NO_INSTALL",
+             "NETWORK_DOWNLOAD_NO_INSTALL_REQUIRED")
+        return
+    if info.get("package_id") == WHEEL_DOWNLOAD_PACKAGE:
+        need(False,"NETWORK_DOWNLOAD_PROFILE_REQUIRED")
+    if info.get("execution_profile") != "REMOTE_PUBLIC_TRUST_MUTATING":
+        return
+    need(info.get("workflow_id") == PUBLIC_TRUST_WORKFLOW,
+         "PUBLIC_TRUST_WORKFLOW_NOT_ALLOWED")
+    need(info.get("package_id") == PUBLIC_TRUST_PACKAGE,
+         "PUBLIC_TRUST_PACKAGE_NOT_ALLOWED")
+    need(info.get("owner_authorization_namespace") == PUBLIC_TRUST_NAMESPACE,
+         "PUBLIC_TRUST_OWNER_NAMESPACE_REQUIRED")
+    need(info.get("authorization_profile") == "SIGNED_OWNER_APPROVAL_REQUIRED",
+         "PUBLIC_TRUST_OWNER_SIGNED_GATE_REQUIRED")
+
+
+def check_hardware_runner_result_writers(info, members):
+    """Static STOP for ambiguous mutating runner result ownership.
+
+    This is a targeted negative gate, NOT signed or native hardware admission.
+    A delegated second reporter can perform reset before its wrong gate ID
+    reaches the parent deus-run result verifier.
+    """
+    if info.get("execution_profile") != "HARDWARE_MUTATING":
+        return
+    apply = check_apply(members["apply.ps1"])
+    match = re.search(r"(?im)^\s*\$PackageId\s*=\s*['\"](?P<id>stm32_os_[a-z0-9_]+)['\"]\s*$", apply)
+    need(match is not None, "HARDWARE_RESULT_GATE_ID_REQUIRED")
+    need(match.group("id") == info["package_id"],
+         "HARDWARE_RESULT_GATE_ID_DRIFT")
+    for name, data in members.items():
+        if name == "apply.ps1" or not name.casefold().endswith(".ps1"):
+            continue
+        need(b"DEUS_RUN_RESULT_PATH" not in data,
+             "HARDWARE_MULTIPLE_RUNNER_RESULT_WRITERS:" + name)
 
 
 def entries(blob):
@@ -129,6 +210,8 @@ def validate_blob(blob, expected_name=None, expected_sha=None):
              "BAD_EXPECTED_SHA")
         need(digest(blob) == expected_sha.upper(), "WHOLE_ZIP_SHA_MISMATCH")
     files = entries(blob)
+    need("QUARANTINED_NOT_FOR_RUN.txt" not in files,
+         "QUARANTINED_SOURCE_NOT_FOR_BUILD")
     info = parse_json(files["manifest.json"])
     need(type(info) is dict and info.get("schema") == SCHEMA, "WRONG_MANIFEST_SCHEMA")
     pid = info.get("package_id")
@@ -145,6 +228,8 @@ def validate_blob(blob, expected_name=None, expected_sha=None):
         need(type(info.get("workflow_id")) is str and
              re.fullmatch(r"[a-z0-9][a-z0-9_]{3,63}", info["workflow_id"]),
              "HARDWARE_WORKFLOW_ID_REQUIRED")
+    validate_profile_scope(info)
+    check_hardware_runner_result_writers(info, files)
     try:
         rows = files["hashes.sha256"].decode("ascii", "strict").splitlines()
     except UnicodeError as exc:
@@ -173,6 +258,8 @@ def validate_file(path, expected_sha=None):
 
 def build(src, dest):
     need(src.is_dir(), "SOURCE_DIRECTORY_REQUIRED")
+    need(not (src / "QUARANTINED_NOT_FOR_RUN.txt").exists(),
+         "QUARANTINED_SOURCE_NOT_FOR_BUILD")
     need(not dest.exists(), "REFUSE_OVERWRITE")
     members = {}
     for path in sorted(src.rglob("*")):
@@ -196,7 +283,9 @@ def build(src, dest):
         need(type(spec.get("workflow_id")) is str and
              re.fullmatch(r"[a-z0-9][a-z0-9_]{3,63}", spec["workflow_id"]),
              "HARDWARE_WORKFLOW_ID_REQUIRED")
+    validate_profile_scope(spec)
     check_apply(members["apply.ps1"])
+    check_hardware_runner_result_writers(spec, members)
     spec["apply_sha256"] = digest(members["apply.ps1"])
     members["manifest.json"] = (json.dumps(spec, indent=2, sort_keys=True) + "\n").encode()
     members["hashes.sha256"] = "".join(
@@ -264,8 +353,10 @@ def release(path, expected_sha, proof):
     WARNING: receipt JSON is UNSIGNED; needs independent human verification.
     """
     res = validate_file(path, expected_sha)
-    need(res["profile"] != "HARDWARE_MUTATING",
+    need(res["profile"] not in ("HARDWARE_MUTATING", "REMOTE_PUBLIC_TRUST_MUTATING"),
          "MUTATING_RELEASE_REQUIRES_SEPARATE_SIGNED_GATE")
+    need(res["profile"] != "HOST_NETWORK_DOWNLOAD",
+         "NETWORK_DOWNLOAD_NOT_A_RELEASE_ADMISSION")
     check_hardware_incident_blockers(path.read_bytes())
     windows_ast_parse(entries(path.read_bytes())["apply.ps1"])
     need(proof.is_file(), "NATIVE_PRIMITIVE_RECEIPT_MISSING")
@@ -301,12 +392,25 @@ def main(argv=None):
     cmd.add_argument("zip", type=Path)
     cmd.add_argument("--sha256", required=True)
     cmd.add_argument("--primitive-receipt", type=Path, required=True)
+    # Independently assess ORIGINAL owner Evidence without rebuilding it.
+    # This is not an equivalent to a native Windows writer negative test;
+    # only known source/host evidence schemas can be assessed here.
+    cmd = commands.add_parser("evidence")
+    cmd.add_argument("zip", type=Path)
+    cmd.add_argument("--sha256", required=True)
     args = p.parse_args(argv)
     try:
         if args.action == "build":
             result = build(args.source, args.zip)
         elif args.action == "release":
             result = release(args.zip, args.sha256, args.primitive_receipt)
+        elif args.action == "evidence":
+            from evidence_diagnostic_guard_v1 import (
+                RejectedEvidence, diagnose_original_evidence)
+            try:
+                result = diagnose_original_evidence(args.zip, args.sha256)
+            except RejectedEvidence as exc:
+                raise Invalid("ORIGINAL_EVIDENCE_REJECTED:" + exc.reason) from exc
         else:
             result = validate_file(args.zip, args.sha256)
         print(json.dumps({"result": "PASS", **result}, sort_keys=True))
