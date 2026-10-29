@@ -13,22 +13,23 @@ import json
 from pathlib import Path
 import re
 
-ROOT = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[2]
+ROOT = REPO.parent  # Off-Git owner workspace (optional in public CI checkout).
 RUNNER = (ROOT / "Bundle" / "_stage_deus_run_preflight_evidence_v132_source_20261028"
           / "deus-run-next.ps1")
 RUNNER_SHA = "60C090E8324EA1ECD2ECCF7114E26A6793402AA44B736CA507BB45321DD6EC75"
-BUILDER = ROOT / "OS/scripts/operator_bundle_guard/bundle_guard.py"
+BUILDER = REPO / "scripts/operator_bundle_guard/bundle_guard.py"
 BUILDER_SHA = "F706E51F231F663138E41533E288A7C856CDF7240ABA3675D94F32B6556427E0"
-CONTROLLER = ROOT / "OS/scripts/gate4_entry/owner_windows_release_controller_v1.py"
+CONTROLLER = REPO / "scripts/gate4_entry/owner_windows_release_controller_v1.py"
 CONTROLLER_SHA = "05B20216DD7354482C4AB009487DF4CF04E16FDB31482FC2DD67449F183CB2C6"
 NATIVE_DENY_EVIDENCE = (
     "stm32_os_gate4_a05_controller_isolated_native_deny_v2_20261029_"
     "20261029_011416_85a5af83ed814b6baabe2821b724efd1.evidence.zip"
 )
 NATIVE_DENY_SHA = "8297218F3C964E47FA35BD7E22B829DDD6BC81103E9C86416F1103F9C65A1A47"
-APPROVAL_SOURCE = ROOT / "OS/scripts/gate4_entry/release_approval_contract_v1.py"
+APPROVAL_SOURCE = REPO / "scripts/gate4_entry/release_approval_contract_v1.py"
 APPROVAL_SHA = "E954EE53E04148F01710B0017E0D6742704C0DB82963EAE728781E009CB7C3F3"
-SIGNATURE_SOURCE = ROOT / "OS/scripts/gate4_entry/verify_release_signature_v1.py"
+SIGNATURE_SOURCE = REPO / "scripts/gate4_entry/verify_release_signature_v1.py"
 SIGNATURE_SHA = "33CB33FBB5AEAFE23A329BBC48B7F094AA4430B421F795E70DBF5067DAE73F5C"
 
 class AuditStop(Exception):

@@ -3,7 +3,7 @@
 
 Offline, read-only for original artifacts; synthetic tests use temporary files.
 """
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from unittest import TestCase, main
 import hashlib
 import tempfile
@@ -51,8 +51,9 @@ class A05OriginalTests(TestCase):
             self.assertEqual(n,2)
             self.assertEqual(len(f1),64)
             entries=[f for f in root.rglob("*") if f.is_file()]
-            posix_entries=sorted(entries)
-            from pathlib import PureWindowsPath
+            # Native Path ordering is Windows-like on Windows runners; force
+            # both reference orderings explicitly for a cross-OS regression.
+            posix_entries=sorted(entries,key=lambda f:PurePosixPath(f.relative_to(root).as_posix()))
             windows_entries=sorted(entries,key=lambda f:PureWindowsPath(f.relative_to(root).as_posix()))
             self.assertNotEqual([f.relative_to(root).as_posix() for f in posix_entries],
                                 [f.relative_to(root).as_posix() for f in windows_entries])
