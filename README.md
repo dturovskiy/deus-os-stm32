@@ -2,6 +2,9 @@
 
 A small bare-metal operating-system project for STM32F103 / ARM Cortex-M3.
 
+**Language boundary:** Target firmware is C and ARM Assembly (`src/`, `bootloader/`); the Host control application is C# (`host/`). Python is an optional host-side test/CI and one-off operator language, **not part of the firmware, scheduler, bootloader or target image**. One-time local audits and workspace maintenance are retained outside the Git checkout in the parent STM32 workspace. CI-bound regression fixtures remain versioned until safe replacement; see `scripts/README.md`.
+
+
 The target firmware is written without STM32 HAL, Arduino, FreeRTOS, a heap, or a dynamic process loader. The project uses direct-register drivers, a bounded static scheduler/runtime, native USB, UART diagnostics, an SSD1306 local UI, and a C#/.NET host control application.
 
 ## Start here

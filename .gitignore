@@ -11,7 +11,8 @@ build/
 
 # Local logs / archives / evidence outputs
 # Defense in depth: these are mandatory workspace SIBLINGS of OS, never directories in Git.
-# They are also checked by scripts/audit_repository_layout.py, because Git ignore is not file-custody proof.
+# Workspace inventory/audit now lives outside Git under Archive/SourceHistory/WorkspaceMaintenance/.
+# Git ignore is not file-custody proof.
 /Bundle/
 /Evidence/
 /ProtectedRecovery/

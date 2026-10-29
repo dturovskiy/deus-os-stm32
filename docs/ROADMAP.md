@@ -4,6 +4,9 @@ Status: **CANONICAL FORWARD SEQUENCING — CURRENT PROJECT STATE IS OWNED BY `do
 
 The roadmap defines ordering and prerequisites. It does not independently define which boundary is active.
 
+**2026-10-30 maintenance priority:** Keep the public repository focused on C/ARM Assembly firmware, C# Host, essential build tools and repeatable source/CI regressions. Do not add new Python auditors for routine source housekeeping. Seven local housekeeping/history/replay tools have been extracted from `OS` into the off-Git sibling `Archive/SourceHistory/WorkspaceMaintenance/20261030/` with SHA-verified custody. Next verify clean-checkout CI on the resulting source commit and reconcile the older off-Git SHA manifest for five later modified Gate4 files; separately review historical `Bundle/` stages and private archive without treating them as firmware work. Previous statements below that push remains pending are dated pre-2026-10-30 snapshots.
+
+
 **HOST SOURCE FINALIZATION — ACCEPTED 2026-10-29:** Seven local Git commits completed through `e5013e8`, `git status` clean. Owner Windows locked restore and warnings-as-errors Release solution build PASS; MTP Core 87/87 and Transport 29/29 PASS; Gate3 offline 34/34 + integrated V2 23/23 PASS. Original `Logs/host_final_e5013e8.log` independently available to DEUS MCP and SHA-pinned; note its transcript does not capture detailed child test output, which is present in owner console. Separate public-source export passes Bundle Guard 115 and Gate4 219 tests; GitHub push remains pending owner authorization. **Next practical work:** choose the next product feature, not another routine restore/build or an unrelated formal Gate4 exercise. Full operator evidence report: `Reports/Audits/HOST_FINAL_WINDOWS_RELEASE_AND_OFFLINE_TESTS_20261029.md` (off Git).
 
 

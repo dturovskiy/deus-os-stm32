@@ -1,6 +1,6 @@
 # Deus OS — Repository Scripts
 
-This directory contains versioned build, board-inspection and candidate-recovery utilities. It is not part of the target firmware runtime and does not authorize product functionality by itself.
+This directory contains source-coupled build, device/recovery interfaces and CI regression tests. **Workspace housekeeping and one-shot audits are not kept in this repository**: they were moved with exact SHA custody to sibling `Archive/SourceHistory/WorkspaceMaintenance/20261030/` (off Git; index in `Reports/Audits/WORKSPACE_MAINTENANCE_EXTRACT_20261030.json`). CI source tests remain tracked because GitHub's clean checkout must run them without private/off-Git dependencies. No Python is part of the MCU image or C/ARM assembly toolchain. It is not part of the target firmware runtime and does not authorize product functionality by itself.
 
 Canonical operational references:
 
