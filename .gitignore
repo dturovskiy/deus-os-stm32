@@ -10,11 +10,24 @@ build/
 *.lst
 
 # Local logs / archives / evidence outputs
+# Defense in depth: these are mandatory workspace SIBLINGS of OS, never directories in Git.
+# They are also checked by scripts/audit_repository_layout.py, because Git ignore is not file-custody proof.
+/Bundle/
+/Evidence/
+/ProtectedRecovery/
+/Reports/
+/Tools/
+/Logs/
+/HostDependencies/
+/Wheelhouse/
+/private_docs_archive/
+/Archive/
 *.log
 *.zip
 *.7z
 *.tar
 *.gz
+*.sshsig
 
 # Host .NET generated artifacts
 host/**/bin/
@@ -23,6 +36,10 @@ host/**/TestResults/
 host/**/.vs/
 host/**/artifacts/
 host/**/coverage/
+# Gate3 v2 source-only helper has its own local .NET build output outside host/.
+# Never stage generated DLL/EXE/PDB or restore intermediates from this tree.
+scripts/gate3_operator/source_candidate_v2/bin/
+scripts/gate3_operator/source_candidate_v2/obj/
 *.trx
 *.coverage
 *.coveragexml
