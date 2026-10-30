@@ -16,6 +16,98 @@ public sealed class TransportContractTests
     }
 
     [Fact]
+    public void WindowsManagementRuntimeAcceptsOnlyInterfaceZeroAndTwo()
+    {
+        Assert.True(WindowsWinUsbTransport.IsSupportedRuntimeInterface(0));
+        Assert.True(WindowsWinUsbTransport.IsSupportedRuntimeInterface(2));
+        Assert.False(WindowsWinUsbTransport.IsSupportedRuntimeInterface(1));
+        Assert.False(WindowsWinUsbTransport.IsSupportedRuntimeInterface(3));
+    }
+
+    [Fact]
+    public void WindowsManagementDiscoveryBindsVidPidAndInterface()
+    {
+        var guid = WindowsWinUsbDiscovery.ManagementInterfaceGuid.ToString("B");
+        Assert.True(WindowsWinUsbDiscovery.TrySelectRuntimeInterface(
+            $@"\\?\usb#vid_1209&pid_000c&mi_02#physical#{guid}", out var composite));
+        Assert.Equal((byte)2, composite);
+        Assert.True(WindowsWinUsbDiscovery.TrySelectRuntimeInterface(
+            $@"\\?\usb#VID_1209&PID_000E#physical#{guid}", out var management));
+        Assert.Equal((byte)0, management);
+        Assert.True(WindowsWinUsbDiscovery.TrySelectRuntimeInterface(
+            $@"\\?\usb#vid_1209&pid_000e&mi_00#physical#{guid}", out var managementMi));
+        Assert.Equal((byte)0, managementMi);
+    }
+
+    [Theory]
+    [InlineData("vid_1209&pid_000d")]
+    [InlineData("vid_1209&pid_000c")]
+    [InlineData("vid_1209&pid_000c&mi_00")]
+    [InlineData("vid_1209&pid_000e&mi_02")]
+    [InlineData("vid_1209&pid_000e&mi_01")]
+    [InlineData("vid_ffff&pid_000e")]
+    [InlineData("vid_1209&pid_000e&extra")]
+    public void WindowsManagementDiscoveryRejectsWrongUsbIdentity(string identity)
+    {
+        var guid = WindowsWinUsbDiscovery.ManagementInterfaceGuid.ToString("B");
+        Assert.False(WindowsWinUsbDiscovery.TrySelectRuntimeInterface(
+            $@"\\?\usb#{identity}#physical#{guid}", out _));
+    }
+
+    [Fact]
+    public void WindowsManagementDiscoveryRejectsMalformedPathAndForeignGuid()
+    {
+        var guid = WindowsWinUsbDiscovery.ManagementInterfaceGuid.ToString("B");
+        Assert.False(WindowsWinUsbDiscovery.TrySelectRuntimeInterface(null, out _));
+        Assert.False(WindowsWinUsbDiscovery.TrySelectRuntimeInterface(
+            $@"\\?\hid#vid_1209&pid_000e#physical#{guid}", out _));
+        Assert.False(WindowsWinUsbDiscovery.TrySelectRuntimeInterface(
+            @"\\?\usb#vid_1209&pid_000e#physical#{00000000-0000-0000-0000-000000000000}", out _));
+    }
+
+    [Fact]
+    public void WindowsManagementTopologyValidatesBothProfilesAndEndpoints()
+    {
+        var good = new (byte Address, int Type, ushort MaxPacketSize)[]
+        {
+            (0x04, 2, 64), (0x84, 2, 64)
+        };
+        foreach (byte iface in new byte[] { 0, 2 })
+        {
+            WindowsWinUsbTransport.ValidateTopologyDescriptor(
+                iface, 9, 4, iface, 0, 0xFF, 0, 0, good, 0x04, 0x84);
+        }
+
+        Assert.Throws<DeusHostException>(() =>
+            WindowsWinUsbTransport.ValidateTopologyDescriptor(
+                0, 9, 4, 2, 0, 0xFF, 0, 0, good, 0x04, 0x84));
+        Assert.Throws<DeusHostException>(() =>
+            WindowsWinUsbTransport.ValidateTopologyDescriptor(
+                null, 9, 4, 1, 0, 0xFF, 0, 0, good, 0x04, 0x84));
+        Assert.Throws<DeusHostException>(() =>
+            WindowsWinUsbTransport.ValidateTopologyDescriptor(
+                0, 9, 4, 0, 1, 0xFF, 0, 0, good, 0x04, 0x84));
+        Assert.Throws<DeusHostException>(() =>
+            WindowsWinUsbTransport.ValidateTopologyDescriptor(
+                0, 9, 4, 0, 0, 0x02, 0, 0, good, 0x04, 0x84));
+        Assert.Throws<DeusHostException>(() =>
+            WindowsWinUsbTransport.ValidateTopologyDescriptor(
+                0, 9, 4, 0, 0, 0xFF, 0, 0,
+                new (byte, int, ushort)[] { (0x04, 2, 64), (0x85, 2, 64) },
+                0x04, 0x84));
+        Assert.Throws<DeusHostException>(() =>
+            WindowsWinUsbTransport.ValidateTopologyDescriptor(
+                0, 9, 4, 0, 0, 0xFF, 0, 0,
+                new (byte, int, ushort)[] { (0x04, 2, 64), (0x84, 2, 32) },
+                0x04, 0x84));
+        Assert.Throws<DeusHostException>(() =>
+            WindowsWinUsbTransport.ValidateTopologyDescriptor(
+                0, 9, 4, 0, 0, 0xFF, 0, 0,
+                new (byte, int, ushort)[] { (0x04, 3, 64), (0x84, 2, 64) },
+                0x04, 0x84));
+    }
+
+    [Fact]
     public void LinuxTopologyConstantsMatchFirmwareContract()
     {
         Assert.Equal((ushort)0x1209, LinuxLibUsbDiscovery.VendorId);

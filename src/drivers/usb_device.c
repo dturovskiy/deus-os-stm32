@@ -88,13 +88,8 @@
 #define USB_EP_STAT_RX_VALID    (0x3u << 12)
 
 #define USB_EP0                 0u
-#define USB_CDC_NOTIFY_EP       1u
-#define USB_CDC_OUT_EP          2u
-#define USB_CDC_IN_EP           3u
 #define USB_MANAGEMENT_EP       4u
 #define USB_EP0_MAX_PACKET      64u
-#define USB_CDC_DATA_MAX_PACKET 64u
-#define USB_CDC_NOTIFY_PACKET   16u
 
 #define USB_MS_OS_20_VENDOR_CODE            0x20u
 #define USB_MS_OS_20_DESCRIPTOR_INDEX       0x0007u
@@ -110,9 +105,6 @@
 #define USB_BTABLE_LOCAL        0x000u
 #define USB_EP0_TX_LOCAL        0x040u
 #define USB_EP0_RX_LOCAL        0x080u
-#define USB_EP1_TX_LOCAL        0x0C0u
-#define USB_EP2_RX_LOCAL        0x100u
-#define USB_EP3_TX_LOCAL        0x140u
 #define USB_EP4_RX_LOCAL        0x180u
 #define USB_EP4_TX_LOCAL        0x1C0u
 
@@ -129,11 +121,6 @@
 #define USB_RX_COUNT_64         0x8400u
 #define USB_COUNT_MASK          0x03FFu
 #define USB_PMA_LOGICAL_BYTES   512u
-
-#define USB_CDC_RX_RING_CAPACITY 1024u
-#define USB_CDC_RX_RING_MASK     (USB_CDC_RX_RING_CAPACITY - 1u)
-#define USB_CDC_TX_RING_CAPACITY 2048u
-#define USB_CDC_TX_RING_MASK     (USB_CDC_TX_RING_CAPACITY - 1u)
 
 #define USB_MANAGEMENT_RX_RING_CAPACITY 512u
 #define USB_MANAGEMENT_RX_RING_MASK     (USB_MANAGEMENT_RX_RING_CAPACITY - 1u)
@@ -161,11 +148,6 @@
 #define USB_REQ_GET_INTERFACE     10u
 #define USB_REQ_SET_INTERFACE     11u
 
-#define USB_CDC_REQ_SET_LINE_CODING        0x20u
-#define USB_CDC_REQ_GET_LINE_CODING        0x21u
-#define USB_CDC_REQ_SET_CONTROL_LINE_STATE 0x22u
-#define USB_CDC_NOTIFICATION_SERIAL_STATE   0x20u
-
 #define USB_DESC_DEVICE        1u
 #define USB_DESC_CONFIGURATION 2u
 #define USB_DESC_STRING        3u
@@ -173,11 +155,7 @@
 
 #define USB_CONFIGURATION_NONE 0u
 #define USB_CONFIGURATION_ONE  1u
-#define USB_CDC_CONTROL_INTERFACE 0u
-#define USB_CDC_DATA_INTERFACE    1u
 
-#define USB_EP0_OUT_NONE            0u
-#define USB_EP0_OUT_SET_LINE_CODING 1u
 
 typedef struct
 {
@@ -192,7 +170,6 @@ typedef enum
 {
     USB_EP0_IDLE = 0,
     USB_EP0_DATA_IN,
-    USB_EP0_DATA_OUT,
     USB_EP0_STATUS_OUT,
     USB_EP0_STATUS_IN
 } usb_ep0_state_t;
@@ -201,9 +178,9 @@ static const uint8_t usb_device_descriptor[] =
 {
     18u, USB_DESC_DEVICE,
     0x10u, 0x02u,             /* bcdUSB 2.10: BOS supported */
-    0xEFu,                    /* Miscellaneous Device Class */
-    0x02u,                    /* Common Class */
-    0x01u,                    /* Interface Association Descriptor protocol */
+    0x00u,                    /* class defined per interface */
+    0x00u,                    /* no device subclass */
+    0x00u,                    /* no IAD */
     USB_EP0_MAX_PACKET,
     (uint8_t)(USB_DEVICE_DEVELOPMENT_VID & 0xFFu),
     (uint8_t)(USB_DEVICE_DEVELOPMENT_VID >> 8),
@@ -218,90 +195,15 @@ static const uint8_t usb_device_descriptor[] =
 
 static const uint8_t usb_configuration_descriptor[] =
 {
-    /* Configuration descriptor. */
-    9u, USB_DESC_CONFIGURATION,
-    98u, 0u,                  /* wTotalLength */
-    3u,                       /* CDC control/data + management */
-    USB_CONFIGURATION_ONE,
-    0u,
-    0x80u,                    /* bus powered */
-    50u,                      /* 100 mA */
-
-    /* CDC Interface Association Descriptor: interfaces 0 and 1. */
-    8u, 11u,
-    USB_CDC_CONTROL_INTERFACE,
-    2u,
-    0x02u,
-    0x02u,
-    0x01u,
-    0u,
-
-    /* CDC Communication Class Interface. */
-    9u, 4u,
-    USB_CDC_CONTROL_INTERFACE,
-    0u,
-    1u,
-    0x02u,
-    0x02u,
-    0x00u,
-    0u,
-
-    /* CDC Header Functional Descriptor: CDC 1.10. */
-    5u, 0x24u, 0x00u, 0x10u, 0x01u,
-
-    /* CDC Call Management Functional Descriptor. */
-    5u, 0x24u, 0x01u, 0x00u, USB_CDC_DATA_INTERFACE,
-
-    /* CDC ACM Functional Descriptor: line coding/control line supported. */
-    4u, 0x24u, 0x02u, 0x02u,
-
-    /* CDC Union Functional Descriptor. */
-    5u, 0x24u, 0x06u, USB_CDC_CONTROL_INTERFACE, USB_CDC_DATA_INTERFACE,
-
-    /* EP1 IN: CDC notification endpoint. */
-    7u, 5u, 0x81u, 0x03u,
-    USB_CDC_NOTIFY_PACKET, 0u,
-    16u,
-
-    /* CDC Data Class Interface. */
-    9u, 4u,
-    USB_CDC_DATA_INTERFACE,
-    0u,
-    2u,
-    0x0Au,
-    0x00u,
-    0x00u,
-    0u,
-
-    /* EP2 OUT: host -> device bulk data. */
-    7u, 5u, 0x02u, 0x02u,
-    USB_CDC_DATA_MAX_PACKET, 0u,
-    0u,
-
-    /* EP3 IN: device -> host bulk data. */
-    7u, 5u, 0x83u, 0x02u,
-    USB_CDC_DATA_MAX_PACKET, 0u,
-    0u,
-
-    /* Vendor-specific management interface 2. */
-    9u, 4u,
-    USB_MANAGEMENT_INTERFACE_NUMBER,
-    0u,
-    2u,
-    0xFFu,
-    0x00u,
-    0x00u,
-    0u,
-
-    /* EP4 OUT: host -> management bulk data. */
+    /* Single vendor-specific Management IF0, EP4 bulk OUT/IN. */
+    9u, USB_DESC_CONFIGURATION, 32u, 0u, 1u,
+    USB_CONFIGURATION_ONE, 0u, 0x80u, 50u,
+    9u, 4u, USB_MANAGEMENT_INTERFACE_NUMBER, 0u, 2u,
+    0xFFu, 0x00u, 0x00u, 0u,
     7u, 5u, USB_MANAGEMENT_OUT_ENDPOINT, 0x02u,
-    USB_MANAGEMENT_MAX_PACKET, 0u,
-    0u,
-
-    /* EP4 IN: management -> host bulk data. */
+    USB_MANAGEMENT_MAX_PACKET, 0u, 0u,
     7u, 5u, USB_MANAGEMENT_IN_ENDPOINT, 0x02u,
-    USB_MANAGEMENT_MAX_PACKET, 0u,
-    0u
+    USB_MANAGEMENT_MAX_PACKET, 0u, 0u
 };
 
 static const uint8_t usb_bos_descriptor[] =
@@ -341,7 +243,7 @@ static const uint8_t usb_ms_os_20_descriptor_set[] =
     (uint8_t)(USB_MS_OS_20_CONFIG_SUBSET_LENGTH & 0xFFu),
     (uint8_t)(USB_MS_OS_20_CONFIG_SUBSET_LENGTH >> 8),
 
-    /* Function subset: management interface 2 only. */
+    /* Function subset: Management-only interface 0. */
     0x08u, 0x00u,
     0x02u, 0x00u,
     USB_MANAGEMENT_INTERFACE_NUMBER,
@@ -391,8 +293,8 @@ static const uint8_t usb_string_product[] =
 
 _Static_assert(sizeof(usb_device_descriptor) == 18u,
     "USB device descriptor must be 18 bytes");
-_Static_assert(sizeof(usb_configuration_descriptor) == 98u,
-    "USB composite configuration tree must be 98 bytes");
+_Static_assert(sizeof(usb_configuration_descriptor) == 32u,
+    "USB Management-only configuration tree must be 32 bytes");
 _Static_assert(sizeof(usb_bos_descriptor) == 33u,
     "USB BOS descriptor must be 33 bytes");
 _Static_assert(sizeof(usb_ms_os_20_descriptor_set) == USB_MS_OS_20_SET_TOTAL_LENGTH,
@@ -421,22 +323,12 @@ _Static_assert(
     "USB BTABLE overlaps EP0 TX PMA");
 _Static_assert((USB_EP0_TX_LOCAL + USB_EP0_MAX_PACKET) <= USB_EP0_RX_LOCAL,
     "USB EP0 TX overlaps EP0 RX PMA");
-_Static_assert((USB_EP0_RX_LOCAL + USB_EP0_MAX_PACKET) <= USB_EP1_TX_LOCAL,
-    "USB EP0 RX overlaps EP1 TX PMA");
-_Static_assert((USB_EP1_TX_LOCAL + USB_CDC_NOTIFY_PACKET) <= USB_EP2_RX_LOCAL,
-    "USB EP1 TX overlaps EP2 RX PMA");
-_Static_assert((USB_EP2_RX_LOCAL + USB_CDC_DATA_MAX_PACKET) <= USB_EP3_TX_LOCAL,
-    "USB EP2 RX overlaps EP3 TX PMA");
-_Static_assert((USB_EP3_TX_LOCAL + USB_CDC_DATA_MAX_PACKET) <= USB_EP4_RX_LOCAL,
-    "USB EP3 TX overlaps EP4 RX PMA");
+_Static_assert((USB_EP0_RX_LOCAL + USB_EP0_MAX_PACKET) <= USB_EP4_RX_LOCAL,
+    "USB EP0 RX overlaps EP4 RX PMA");
 _Static_assert((USB_EP4_RX_LOCAL + USB_MANAGEMENT_MAX_PACKET) <= USB_EP4_TX_LOCAL,
     "USB EP4 RX overlaps EP4 TX PMA");
 _Static_assert((USB_EP4_TX_LOCAL + USB_MANAGEMENT_MAX_PACKET) <= USB_PMA_LOGICAL_BYTES,
     "USB PMA allocation exceeds STM32F103 packet memory");
-_Static_assert((USB_CDC_RX_RING_CAPACITY & (USB_CDC_RX_RING_CAPACITY - 1u)) == 0u,
-    "USB CDC RX ring capacity must be power-of-two");
-_Static_assert((USB_CDC_TX_RING_CAPACITY & (USB_CDC_TX_RING_CAPACITY - 1u)) == 0u,
-    "USB CDC TX ring capacity must be power-of-two");
 _Static_assert(USB_MANAGEMENT_OUT_ENDPOINT == USB_MANAGEMENT_EP,
     "USB management OUT address must target EP4");
 _Static_assert(USB_MANAGEMENT_IN_ENDPOINT == (0x80u | USB_MANAGEMENT_EP),
@@ -458,36 +350,10 @@ static usb_ep0_state_t usb_ep0_state;
 static const uint8_t *usb_ep0_in_data;
 static uint16_t usb_ep0_in_remaining;
 static uint8_t usb_ep0_need_zlp;
-static uint8_t usb_ep0_out_request;
-static uint16_t usb_ep0_out_expected;
 static uint8_t usb_pending_address;
 static uint8_t usb_pending_address_valid;
 static uint8_t usb_pending_configuration;
 static uint8_t usb_pending_configuration_valid;
-static uint16_t usb_pending_control_line_state;
-static uint8_t usb_pending_control_line_state_valid;
-static uint8_t usb_pending_line_coding[7];
-static uint8_t usb_pending_line_coding_valid;
-static uint8_t usb_line_coding[7] =
-{
-    0x00u, 0xC2u, 0x01u, 0x00u, /* 115200 */
-    0u,                         /* 1 stop bit */
-    0u,                         /* no parity */
-    8u                          /* 8 data bits */
-};
-
-static volatile uint8_t usb_cdc_rx_ring[USB_CDC_RX_RING_CAPACITY];
-static volatile uint32_t usb_cdc_rx_head;
-static volatile uint32_t usb_cdc_rx_tail;
-static volatile uint8_t usb_cdc_tx_ring[USB_CDC_TX_RING_CAPACITY];
-static volatile uint32_t usb_cdc_tx_head;
-static volatile uint32_t usb_cdc_tx_tail;
-static volatile uint16_t usb_cdc_tx_inflight;
-static volatile uint8_t usb_cdc_tx_active;
-static volatile uint8_t usb_cdc_notify_active;
-static volatile uint8_t usb_cdc_notify_pending;
-static usb_cdc_rx_notify_t usb_cdc_rx_notify;
-
 static volatile uint8_t usb_management_rx_ring[USB_MANAGEMENT_RX_RING_CAPACITY];
 static volatile uint32_t usb_management_rx_head;
 static volatile uint32_t usb_management_rx_tail;
@@ -675,15 +541,10 @@ static void usb_ep0_reset_transfer_state(void)
     usb_ep0_in_data = (const uint8_t *)0;
     usb_ep0_in_remaining = 0u;
     usb_ep0_need_zlp = 0u;
-    usb_ep0_out_request = USB_EP0_OUT_NONE;
-    usb_ep0_out_expected = 0u;
     usb_pending_address = 0u;
     usb_pending_address_valid = 0u;
     usb_pending_configuration = 0u;
     usb_pending_configuration_valid = 0u;
-    usb_pending_control_line_state = 0u;
-    usb_pending_control_line_state_valid = 0u;
-    usb_pending_line_coding_valid = 0u;
 }
 
 static void usb_ep0_stall(void)
@@ -783,26 +644,7 @@ static void usb_ep0_start_status_in(void)
         0u);
 }
 
-static void usb_ep0_start_out(uint8_t request, uint16_t expected_length)
-{
-    usb_ep0_out_request = request;
-    usb_ep0_out_expected = expected_length;
-    usb_ep0_state = USB_EP0_DATA_OUT;
-    usb_ep_set_tx_status(USB_EP0, USB_EP_STAT_TX_NAK);
-    usb_ep0_arm_rx();
-}
 
-static void usb_cdc_reset_rings(void)
-{
-    usb_cdc_rx_head = 0u;
-    usb_cdc_rx_tail = 0u;
-    usb_cdc_tx_head = 0u;
-    usb_cdc_tx_tail = 0u;
-    usb_cdc_tx_inflight = 0u;
-    usb_cdc_tx_active = 0u;
-    usb_cdc_notify_active = 0u;
-    usb_cdc_notify_pending = 0u;
-}
 
 static void usb_management_reset_rings(void)
 {
@@ -814,330 +656,13 @@ static void usb_management_reset_rings(void)
     usb_management_tx_active = 0u;
 }
 
-static int usb_cdc_line_coding_valid(const uint8_t *coding)
-{
-    uint32_t baud;
 
-    if (coding == (const uint8_t *)0)
-    {
-        return 0;
-    }
 
-    baud =
-        (uint32_t)coding[0] |
-        ((uint32_t)coding[1] << 8) |
-        ((uint32_t)coding[2] << 16) |
-        ((uint32_t)coding[3] << 24);
 
-    if ((baud == 0u) || (coding[4] > 2u) || (coding[5] > 4u))
-    {
-        return 0;
-    }
 
-    if (
-        (coding[6] != 5u) &&
-        (coding[6] != 6u) &&
-        (coding[6] != 7u) &&
-        (coding[6] != 8u) &&
-        (coding[6] != 16u)
-    ) {
-        return 0;
-    }
 
-    return 1;
-}
 
-static void usb_cdc_notification_kick(void)
-{
-    static const uint8_t serial_state_zero[10] =
-    {
-        0xA1u, USB_CDC_NOTIFICATION_SERIAL_STATE,
-        0u, 0u,
-        USB_CDC_CONTROL_INTERFACE, 0u,
-        2u, 0u,
-        0u, 0u
-    };
 
-    if (
-        (usb_device_diagnostics.cdc_configured == 0u) ||
-        (usb_cdc_notify_active != 0u) ||
-        (usb_cdc_notify_pending == 0u)
-    ) {
-        return;
-    }
-
-    usb_pma_write(
-        USB_EP1_TX_LOCAL,
-        serial_state_zero,
-        (uint16_t)sizeof(serial_state_zero));
-    usb_pma_write16(
-        USB_BTABLE_EP_TX_COUNT(USB_CDC_NOTIFY_EP),
-        (uint16_t)sizeof(serial_state_zero));
-
-    usb_cdc_notify_pending = 0u;
-    usb_cdc_notify_active = 1u;
-    usb_ep_set_tx_status(USB_CDC_NOTIFY_EP, USB_EP_STAT_TX_VALID);
-}
-
-static void usb_cdc_endpoints_disable(void)
-{
-    usb_ep_runtime_reset(USB_CDC_NOTIFY_EP, USB_EP_TYPE_INTERRUPT);
-    usb_ep_runtime_reset(USB_CDC_OUT_EP, USB_EP_TYPE_BULK);
-    usb_ep_runtime_reset(USB_CDC_IN_EP, USB_EP_TYPE_BULK);
-
-    USB_EP_REG(USB_CDC_NOTIFY_EP) = 0u;
-    USB_EP_REG(USB_CDC_OUT_EP) = 0u;
-    USB_EP_REG(USB_CDC_IN_EP) = 0u;
-
-    usb_cdc_reset_rings();
-    usb_device_diagnostics.cdc_configured = 0u;
-}
-
-static void usb_cdc_endpoints_enable(void)
-{
-    usb_pma_write16(
-        USB_BTABLE_EP_TX_ADDR(USB_CDC_NOTIFY_EP),
-        USB_EP1_TX_LOCAL);
-    usb_pma_write16(
-        USB_BTABLE_EP_TX_COUNT(USB_CDC_NOTIFY_EP),
-        0u);
-    usb_pma_write16(
-        USB_BTABLE_EP_RX_ADDR(USB_CDC_NOTIFY_EP),
-        0u);
-    usb_pma_write16(
-        USB_BTABLE_EP_RX_COUNT(USB_CDC_NOTIFY_EP),
-        0u);
-
-    usb_pma_write16(
-        USB_BTABLE_EP_TX_ADDR(USB_CDC_OUT_EP),
-        0u);
-    usb_pma_write16(
-        USB_BTABLE_EP_TX_COUNT(USB_CDC_OUT_EP),
-        0u);
-    usb_pma_write16(
-        USB_BTABLE_EP_RX_ADDR(USB_CDC_OUT_EP),
-        USB_EP2_RX_LOCAL);
-    usb_pma_write16(
-        USB_BTABLE_EP_RX_COUNT(USB_CDC_OUT_EP),
-        USB_RX_COUNT_64);
-
-    usb_pma_write16(
-        USB_BTABLE_EP_TX_ADDR(USB_CDC_IN_EP),
-        USB_EP3_TX_LOCAL);
-    usb_pma_write16(
-        USB_BTABLE_EP_TX_COUNT(USB_CDC_IN_EP),
-        0u);
-    usb_pma_write16(
-        USB_BTABLE_EP_RX_ADDR(USB_CDC_IN_EP),
-        0u);
-    usb_pma_write16(
-        USB_BTABLE_EP_RX_COUNT(USB_CDC_IN_EP),
-        0u);
-
-    usb_ep_runtime_reset(
-        USB_CDC_NOTIFY_EP,
-        USB_EP_TYPE_INTERRUPT);
-    usb_ep_runtime_reset(
-        USB_CDC_OUT_EP,
-        USB_EP_TYPE_BULK);
-    usb_ep_runtime_reset(
-        USB_CDC_IN_EP,
-        USB_EP_TYPE_BULK);
-
-    usb_ep_set_rx_status(USB_CDC_NOTIFY_EP, USB_EP_STAT_RX_DISABLED);
-    usb_ep_set_tx_status(USB_CDC_NOTIFY_EP, USB_EP_STAT_TX_NAK);
-
-    usb_ep_set_tx_status(USB_CDC_OUT_EP, USB_EP_STAT_TX_DISABLED);
-    usb_ep_set_rx_status(USB_CDC_OUT_EP, USB_EP_STAT_RX_VALID);
-
-    usb_ep_set_rx_status(USB_CDC_IN_EP, USB_EP_STAT_RX_DISABLED);
-    usb_ep_set_tx_status(USB_CDC_IN_EP, USB_EP_STAT_TX_NAK);
-
-    usb_cdc_reset_rings();
-    usb_device_diagnostics.cdc_configured = 1u;
-}
-
-static void usb_cdc_tx_kick(void)
-{
-    uint32_t available;
-    uint16_t length;
-    uint16_t index;
-
-    if (
-        (usb_device_diagnostics.configuration != USB_CONFIGURATION_ONE) ||
-        (usb_device_diagnostics.cdc_configured == 0u) ||
-        (usb_cdc_tx_active != 0u)
-    ) {
-        return;
-    }
-
-    available = usb_cdc_tx_head - usb_cdc_tx_tail;
-    if (available == 0u)
-    {
-        return;
-    }
-
-    length = (available > USB_CDC_DATA_MAX_PACKET) ?
-        USB_CDC_DATA_MAX_PACKET :
-        (uint16_t)available;
-
-    for (index = 0u; index < length; index = (uint16_t)(index + 2u))
-    {
-        uint16_t word =
-            usb_cdc_tx_ring[(usb_cdc_tx_tail + index) & USB_CDC_TX_RING_MASK];
-
-        if ((uint16_t)(index + 1u) < length)
-        {
-            word |=
-                (uint16_t)(
-                    (uint16_t)usb_cdc_tx_ring[
-                        (usb_cdc_tx_tail + index + 1u) & USB_CDC_TX_RING_MASK]
-                    << 8);
-        }
-
-        usb_pma_write16(
-            (uint16_t)(USB_EP3_TX_LOCAL + index),
-            word);
-    }
-
-    usb_pma_write16(
-        USB_BTABLE_EP_TX_COUNT(USB_CDC_IN_EP),
-        length);
-    usb_cdc_tx_inflight = length;
-    usb_cdc_tx_active = 1u;
-    usb_ep_set_tx_status(USB_CDC_IN_EP, USB_EP_STAT_TX_VALID);
-}
-
-static void usb_cdc_handle_out(void)
-{
-    const uint16_t count =
-        (uint16_t)(
-            usb_pma_read16(USB_BTABLE_EP_RX_COUNT(USB_CDC_OUT_EP)) &
-            USB_COUNT_MASK);
-    uint16_t index;
-    uint16_t word = 0u;
-    uint32_t accepted = 0u;
-
-    usb_ep_clear_ctr_rx(USB_CDC_OUT_EP);
-    ++usb_device_diagnostics.cdc_rx_packet_count;
-    usb_device_diagnostics.cdc_rx_byte_count += count;
-
-    for (index = 0u; index < count; ++index)
-    {
-        const uint32_t depth = usb_cdc_rx_head - usb_cdc_rx_tail;
-        uint8_t byte;
-
-        if ((index & 1u) == 0u)
-        {
-            word = usb_pma_read16((uint16_t)(USB_EP2_RX_LOCAL + index));
-            byte = (uint8_t)(word & 0xFFu);
-        }
-        else
-        {
-            byte = (uint8_t)(word >> 8);
-        }
-
-        if (depth < USB_CDC_RX_RING_CAPACITY)
-        {
-            const uint32_t next_depth = depth + 1u;
-
-            usb_cdc_rx_ring[usb_cdc_rx_head & USB_CDC_RX_RING_MASK] = byte;
-            ++usb_cdc_rx_head;
-            ++accepted;
-
-            if (next_depth > usb_device_diagnostics.cdc_rx_high_water)
-            {
-                usb_device_diagnostics.cdc_rx_high_water = next_depth;
-            }
-        }
-        else
-        {
-            ++usb_device_diagnostics.cdc_rx_drop_count;
-        }
-    }
-
-    usb_pma_write16(
-        USB_BTABLE_EP_RX_COUNT(USB_CDC_OUT_EP),
-        USB_RX_COUNT_64);
-    usb_ep_set_rx_status(USB_CDC_OUT_EP, USB_EP_STAT_RX_VALID);
-
-    if ((accepted != 0u) && (usb_cdc_rx_notify != (usb_cdc_rx_notify_t)0))
-    {
-        usb_cdc_rx_notify();
-    }
-}
-
-static void usb_cdc_handle_in(void)
-{
-    usb_ep_clear_ctr_tx(USB_CDC_IN_EP);
-
-    if (usb_cdc_tx_active != 0u)
-    {
-        usb_cdc_tx_tail += usb_cdc_tx_inflight;
-        ++usb_device_diagnostics.cdc_tx_packet_count;
-        usb_device_diagnostics.cdc_tx_byte_count += usb_cdc_tx_inflight;
-        usb_cdc_tx_inflight = 0u;
-        usb_cdc_tx_active = 0u;
-    }
-
-    usb_ep_set_tx_status(USB_CDC_IN_EP, USB_EP_STAT_TX_NAK);
-    usb_cdc_tx_kick();
-}
-
-static void usb_cdc_handle_ctr(uint8_t endpoint)
-{
-    uint16_t endpoint_value = USB_EP_REG(endpoint);
-
-    if (endpoint == USB_CDC_NOTIFY_EP)
-    {
-        if ((endpoint_value & USB_EP_CTR_TX) != 0u)
-        {
-            usb_ep_clear_ctr_tx(endpoint);
-            usb_cdc_notify_active = 0u;
-            usb_ep_set_tx_status(endpoint, USB_EP_STAT_TX_NAK);
-            usb_cdc_notification_kick();
-        }
-
-        endpoint_value = USB_EP_REG(endpoint);
-        if ((endpoint_value & USB_EP_CTR_RX) != 0u)
-        {
-            usb_ep_clear_ctr_rx(endpoint);
-            ++usb_device_diagnostics.error_count;
-        }
-        return;
-    }
-
-    if (endpoint == USB_CDC_OUT_EP)
-    {
-        if ((endpoint_value & USB_EP_CTR_RX) != 0u)
-        {
-            usb_cdc_handle_out();
-        }
-
-        endpoint_value = USB_EP_REG(endpoint);
-        if ((endpoint_value & USB_EP_CTR_TX) != 0u)
-        {
-            usb_ep_clear_ctr_tx(endpoint);
-            ++usb_device_diagnostics.error_count;
-        }
-        return;
-    }
-
-    if (endpoint == USB_CDC_IN_EP)
-    {
-        if ((endpoint_value & USB_EP_CTR_TX) != 0u)
-        {
-            usb_cdc_handle_in();
-        }
-
-        endpoint_value = USB_EP_REG(endpoint);
-        if ((endpoint_value & USB_EP_CTR_RX) != 0u)
-        {
-            usb_ep_clear_ctr_rx(endpoint);
-            ++usb_device_diagnostics.error_count;
-        }
-    }
-}
 
 static void usb_management_endpoints_disable(void)
 {
@@ -1441,9 +966,7 @@ static int usb_ep0_standard_in(
             (recipient == USB_REQ_RECIP_INTERFACE) &&
             (usb_device_diagnostics.configuration ==
                 USB_CONFIGURATION_ONE) &&
-            ((setup->w_index == USB_CDC_CONTROL_INTERFACE) ||
-             (setup->w_index == USB_CDC_DATA_INTERFACE) ||
-             (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER))
+            (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER)
         ) {
             usb_ep0_start_in(
                 zero_status,
@@ -1457,11 +980,8 @@ static int usb_ep0_standard_in(
             ((setup->w_index == 0x0000u) ||
              (setup->w_index == 0x0080u) ||
              ((usb_device_diagnostics.configuration == USB_CONFIGURATION_ONE) &&
-              ((setup->w_index == 0x0081u) ||
-               (setup->w_index == 0x0002u) ||
-               (setup->w_index == 0x0083u) ||
-               (setup->w_index == USB_MANAGEMENT_OUT_ENDPOINT) ||
-               (setup->w_index == USB_MANAGEMENT_IN_ENDPOINT))))
+              ((setup->w_index == USB_MANAGEMENT_OUT_ENDPOINT) ||
+                (setup->w_index == USB_MANAGEMENT_IN_ENDPOINT))))
         ) {
             usb_ep0_start_in(
                 zero_status,
@@ -1494,9 +1014,7 @@ static int usb_ep0_standard_in(
         (setup->b_request == USB_REQ_GET_INTERFACE) &&
         (setup->bm_request_type == 0x81u) &&
         (setup->w_value == 0u) &&
-        ((setup->w_index == USB_CDC_CONTROL_INTERFACE) ||
-         (setup->w_index == USB_CDC_DATA_INTERFACE) ||
-         (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER)) &&
+        (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER) &&
         (setup->w_length == 1u) &&
         (usb_device_diagnostics.configuration ==
             USB_CONFIGURATION_ONE)
@@ -1554,9 +1072,7 @@ static int usb_ep0_standard_out(
         (setup->b_request == USB_REQ_SET_INTERFACE) &&
         (setup->bm_request_type == 0x01u) &&
         (setup->w_value == 0u) &&
-        ((setup->w_index == USB_CDC_CONTROL_INTERFACE) ||
-         (setup->w_index == USB_CDC_DATA_INTERFACE) ||
-         (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER)) &&
+        (setup->w_index == USB_MANAGEMENT_INTERFACE_NUMBER) &&
         (setup->w_length == 0u) &&
         (usb_device_diagnostics.configuration ==
             USB_CONFIGURATION_ONE)
@@ -1580,65 +1096,7 @@ static int usb_ep0_standard_out(
     return 0;
 }
 
-static int usb_ep0_class_in(const usb_setup_packet_t *setup)
-{
-    if (
-        (usb_device_diagnostics.configuration != USB_CONFIGURATION_ONE) ||
-        (setup->bm_request_type != 0xA1u) ||
-        (setup->w_index != USB_CDC_CONTROL_INTERFACE)
-    ) {
-        return 0;
-    }
 
-    if (
-        (setup->b_request == USB_CDC_REQ_GET_LINE_CODING) &&
-        (setup->w_value == 0u) &&
-        (setup->w_length == 7u)
-    ) {
-        usb_ep0_start_in(
-            usb_line_coding,
-            (uint16_t)sizeof(usb_line_coding),
-            setup->w_length);
-        return 1;
-    }
-
-    return 0;
-}
-
-static int usb_ep0_class_out(const usb_setup_packet_t *setup)
-{
-    if (
-        (usb_device_diagnostics.configuration != USB_CONFIGURATION_ONE) ||
-        (setup->bm_request_type != 0x21u) ||
-        (setup->w_index != USB_CDC_CONTROL_INTERFACE)
-    ) {
-        return 0;
-    }
-
-    if (
-        (setup->b_request == USB_CDC_REQ_SET_LINE_CODING) &&
-        (setup->w_value == 0u) &&
-        (setup->w_length == 7u)
-    ) {
-        usb_ep0_start_out(
-            USB_EP0_OUT_SET_LINE_CODING,
-            7u);
-        return 1;
-    }
-
-    if (
-        (setup->b_request == USB_CDC_REQ_SET_CONTROL_LINE_STATE) &&
-        ((setup->w_value & 0xFFFCu) == 0u) &&
-        (setup->w_length == 0u)
-    ) {
-        usb_pending_control_line_state = setup->w_value;
-        usb_pending_control_line_state_valid = 1u;
-        usb_ep0_start_status_in();
-        return 1;
-    }
-
-    return 0;
-}
 
 static int usb_ep0_vendor_in(const usb_setup_packet_t *setup)
 {
@@ -1700,10 +1158,6 @@ static void usb_ep0_handle_setup(void)
         {
             handled = usb_ep0_standard_in(&setup);
         }
-        else if ((setup.bm_request_type & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS)
-        {
-            handled = usb_ep0_class_in(&setup);
-        }
         else if ((setup.bm_request_type & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_VENDOR)
         {
             handled = usb_ep0_vendor_in(&setup);
@@ -1721,10 +1175,6 @@ static void usb_ep0_handle_setup(void)
         if ((setup.bm_request_type & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_STANDARD)
         {
             handled = usb_ep0_standard_out(&setup);
-        }
-        else if ((setup.bm_request_type & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS)
-        {
-            handled = usb_ep0_class_out(&setup);
         }
 
         if (handled == 0)
@@ -1752,35 +1202,6 @@ static void usb_ep0_handle_rx(uint16_t endpoint_value)
             usb_ep0_stall();
         }
 
-        return;
-    }
-
-    if (usb_ep0_state == USB_EP0_DATA_OUT)
-    {
-        if (
-            (usb_ep0_out_request == USB_EP0_OUT_SET_LINE_CODING) &&
-            (usb_ep0_out_expected == 7u) &&
-            (count == 7u)
-        ) {
-            usb_pma_read(
-                USB_EP0_RX_LOCAL,
-                usb_pending_line_coding,
-                7u);
-
-            if (usb_cdc_line_coding_valid(usb_pending_line_coding) == 0)
-            {
-                usb_ep0_stall();
-                return;
-            }
-
-            usb_pending_line_coding_valid = 1u;
-            usb_ep0_out_request = USB_EP0_OUT_NONE;
-            usb_ep0_out_expected = 0u;
-            usb_ep0_start_status_in();
-            return;
-        }
-
-        usb_ep0_stall();
         return;
     }
 
@@ -1812,7 +1233,6 @@ static void usb_ep0_apply_pending_status_action(void)
 
         if (usb_pending_address == 0u)
         {
-            usb_cdc_endpoints_disable();
             usb_management_endpoints_disable();
             usb_device_diagnostics.configuration =
                 USB_CONFIGURATION_NONE;
@@ -1824,12 +1244,10 @@ static void usb_ep0_apply_pending_status_action(void)
         if (usb_pending_configuration == USB_CONFIGURATION_ONE)
         {
             usb_device_diagnostics.configuration = USB_CONFIGURATION_ONE;
-            usb_cdc_endpoints_enable();
             usb_management_endpoints_enable();
         }
         else
         {
-            usb_cdc_endpoints_disable();
             usb_management_endpoints_disable();
             usb_device_diagnostics.configuration = USB_CONFIGURATION_NONE;
         }
@@ -1837,37 +1255,6 @@ static void usb_ep0_apply_pending_status_action(void)
         usb_pending_configuration_valid = 0u;
     }
 
-    if (usb_pending_control_line_state_valid != 0u)
-    {
-        usb_device_diagnostics.cdc_control_line_state =
-            usb_pending_control_line_state;
-        usb_pending_control_line_state_valid = 0u;
-        usb_cdc_notify_pending = 1u;
-        usb_cdc_notification_kick();
-    }
-
-    if (usb_pending_line_coding_valid != 0u)
-    {
-        uint32_t baud;
-        uint32_t index;
-
-        for (index = 0u; index < 7u; ++index)
-        {
-            usb_line_coding[index] = usb_pending_line_coding[index];
-        }
-
-        baud =
-            (uint32_t)usb_line_coding[0] |
-            ((uint32_t)usb_line_coding[1] << 8) |
-            ((uint32_t)usb_line_coding[2] << 16) |
-            ((uint32_t)usb_line_coding[3] << 24);
-
-        usb_device_diagnostics.cdc_line_coding_baud = baud;
-        usb_device_diagnostics.cdc_line_coding_stop_bits = usb_line_coding[4];
-        usb_device_diagnostics.cdc_line_coding_parity = usb_line_coding[5];
-        usb_device_diagnostics.cdc_line_coding_data_bits = usb_line_coding[6];
-        usb_pending_line_coding_valid = 0u;
-    }
 }
 
 static void usb_ep0_handle_tx(void)
@@ -1964,25 +1351,10 @@ static void usb_bus_reset(void)
         (uint16_t)(USB_EP_TYPE_CONTROL | USB_EP0);
 
     usb_ep0_reset_transfer_state();
-    usb_cdc_endpoints_disable();
     usb_management_endpoints_disable();
-
-    usb_line_coding[0] = 0x00u;
-    usb_line_coding[1] = 0xC2u;
-    usb_line_coding[2] = 0x01u;
-    usb_line_coding[3] = 0x00u;
-    usb_line_coding[4] = 0u;
-    usb_line_coding[5] = 0u;
-    usb_line_coding[6] = 8u;
 
     usb_device_diagnostics.address = 0u;
     usb_device_diagnostics.configuration = USB_CONFIGURATION_NONE;
-    usb_device_diagnostics.cdc_control_line_state = 0u;
-    usb_device_diagnostics.cdc_line_coding_baud = 115200u;
-    usb_device_diagnostics.cdc_line_coding_stop_bits = 0u;
-    usb_device_diagnostics.cdc_line_coding_parity = 0u;
-    usb_device_diagnostics.cdc_line_coding_data_bits = 8u;
-
     USB_DADDR = USB_DADDR_EF;
 
     usb_ep_set_tx_status(
@@ -2068,20 +1440,6 @@ int usb_device_init(uint32_t core_clock_hz)
     usb_device_diagnostics.configuration = USB_CONFIGURATION_NONE;
     usb_device_diagnostics.last_bm_request_type = 0u;
     usb_device_diagnostics.last_b_request = 0u;
-    usb_device_diagnostics.cdc_configured = 0u;
-    usb_device_diagnostics.cdc_rx_packet_count = 0u;
-    usb_device_diagnostics.cdc_rx_byte_count = 0u;
-    usb_device_diagnostics.cdc_rx_drop_count = 0u;
-    usb_device_diagnostics.cdc_rx_high_water = 0u;
-    usb_device_diagnostics.cdc_tx_packet_count = 0u;
-    usb_device_diagnostics.cdc_tx_byte_count = 0u;
-    usb_device_diagnostics.cdc_tx_drop_count = 0u;
-    usb_device_diagnostics.cdc_tx_high_water = 0u;
-    usb_device_diagnostics.cdc_control_line_state = 0u;
-    usb_device_diagnostics.cdc_line_coding_baud = 115200u;
-    usb_device_diagnostics.cdc_line_coding_stop_bits = 0u;
-    usb_device_diagnostics.cdc_line_coding_parity = 0u;
-    usb_device_diagnostics.cdc_line_coding_data_bits = 8u;
     usb_device_diagnostics.management_configured = 0u;
     usb_device_diagnostics.management_rx_packet_count = 0u;
     usb_device_diagnostics.management_rx_byte_count = 0u;
@@ -2093,9 +1451,7 @@ int usb_device_init(uint32_t core_clock_hz)
     usb_device_diagnostics.management_tx_high_water = 0u;
     usb_device_diagnostics.management_ms_os_20_request_count = 0u;
 
-    usb_cdc_rx_notify = (usb_cdc_rx_notify_t)0;
     usb_management_rx_notify = (usb_management_rx_notify_t)0;
-    usb_cdc_reset_rings();
     usb_management_reset_rings();
     usb_ep0_reset_transfer_state();
 
@@ -2135,104 +1491,10 @@ int usb_device_init(uint32_t core_clock_hz)
     return 1;
 }
 
-void usb_cdc_set_rx_notify(usb_cdc_rx_notify_t notify)
-{
-    usb_cdc_rx_notify = notify;
-}
 
-int usb_cdc_is_configured(void)
-{
-    return
-        (usb_device_diagnostics.configuration == USB_CONFIGURATION_ONE) &&
-        (usb_device_diagnostics.cdc_configured != 0u);
-}
 
-int usb_cdc_try_getc(char *c)
-{
-    const uint32_t tail = usb_cdc_rx_tail;
 
-    if ((c == (char *)0) || (tail == usb_cdc_rx_head))
-    {
-        return 0;
-    }
 
-    *c = (char)usb_cdc_rx_ring[tail & USB_CDC_RX_RING_MASK];
-    usb_cdc_rx_tail = tail + 1u;
-    return 1;
-}
-
-int usb_cdc_write_byte(uint8_t byte)
-{
-    const uint32_t head = usb_cdc_tx_head;
-    const uint32_t depth = head - usb_cdc_tx_tail;
-
-    if (usb_cdc_is_configured() == 0)
-    {
-        ++usb_device_diagnostics.cdc_tx_drop_count;
-        return 0;
-    }
-
-    if (depth >= USB_CDC_TX_RING_CAPACITY)
-    {
-        ++usb_device_diagnostics.cdc_tx_drop_count;
-        return 0;
-    }
-
-    usb_cdc_tx_ring[head & USB_CDC_TX_RING_MASK] = byte;
-    usb_cdc_tx_head = head + 1u;
-
-    if ((depth + 1u) > usb_device_diagnostics.cdc_tx_high_water)
-    {
-        usb_device_diagnostics.cdc_tx_high_water = depth + 1u;
-    }
-
-    usb_cdc_tx_kick();
-    return 1;
-}
-
-int usb_cdc_write_span_atomic(const uint8_t *data, uint32_t length)
-{
-    const uint32_t head = usb_cdc_tx_head;
-    const uint32_t depth = head - usb_cdc_tx_tail;
-    uint32_t index;
-    uint32_t next_depth;
-
-    if (length == 0u)
-    {
-        return 1;
-    }
-
-    if ((data == (const uint8_t *)0) ||
-        (usb_cdc_is_configured() == 0) ||
-        (length > USB_CDC_TX_RING_CAPACITY) ||
-        (depth > USB_CDC_TX_RING_CAPACITY) ||
-        (length > (USB_CDC_TX_RING_CAPACITY - depth)))
-    {
-        usb_device_diagnostics.cdc_tx_drop_count += length;
-        return 0;
-    }
-
-    /*
-     * The ring has one Thread-mode producer. Copy the complete span while the
-     * published head remains unchanged; USB IRQ may drain older bytes but
-     * cannot observe any byte from this span until the single head update.
-     */
-    for (index = 0u; index < length; ++index)
-    {
-        usb_cdc_tx_ring[(head + index) & USB_CDC_TX_RING_MASK] = data[index];
-    }
-
-    usb_cdc_tx_head = head + length;
-    next_depth = depth + length;
-
-    if (next_depth > usb_device_diagnostics.cdc_tx_high_water)
-    {
-        usb_device_diagnostics.cdc_tx_high_water = next_depth;
-    }
-
-    usb_cdc_tx_kick();
-    return 1;
-}
 
 void usb_management_set_rx_notify(usb_management_rx_notify_t notify)
 {
@@ -2327,14 +1589,6 @@ void USB_LP_CAN1_RX0_IRQHandler(void)
         if (endpoint == USB_EP0)
         {
             usb_ep0_handle_ctr();
-        }
-        else if (
-            (usb_device_diagnostics.cdc_configured != 0u) &&
-            ((endpoint == USB_CDC_NOTIFY_EP) ||
-             (endpoint == USB_CDC_OUT_EP) ||
-             (endpoint == USB_CDC_IN_EP))
-        ) {
-            usb_cdc_handle_ctr(endpoint);
         }
         else if (
             (usb_device_diagnostics.management_configured != 0u) &&

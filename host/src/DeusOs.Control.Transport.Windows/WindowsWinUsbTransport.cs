@@ -132,11 +132,18 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
     public string Locator { get; }
 
     public static WindowsWinUsbTransport Open(string locator) =>
-        Open(locator, 2, OutPipe, InPipe);
+        Open(locator, null, OutPipe, InPipe);
 
     internal static WindowsWinUsbTransport Open(
         string locator,
         byte interfaceNumber,
+        byte outPipe,
+        byte inPipe) =>
+        Open(locator, (byte?)interfaceNumber, outPipe, inPipe);
+
+    private static WindowsWinUsbTransport Open(
+        string locator,
+        byte? interfaceNumber,
         byte outPipe,
         byte inPipe)
     {
@@ -258,9 +265,12 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
                 _fileHandle.Dispose();
             });
 
+    internal static bool IsSupportedRuntimeInterface(byte interfaceNumber) =>
+        interfaceNumber is 0 or 2;
+
     private static void ValidateInterface(
         SafeWinUsbHandle handle,
-        byte interfaceNumber,
+        byte? interfaceNumber,
         byte outPipe,
         byte inPipe)
     {
@@ -274,43 +284,86 @@ internal sealed class WindowsWinUsbTransport : IDeviceTransport
                 "WinUsb_QueryInterfaceSettings");
         }
 
-        if (descriptor.InterfaceNumber != interfaceNumber ||
-            descriptor.InterfaceClass != 0xFF ||
-            descriptor.InterfaceSubClass != 0 ||
-            descriptor.InterfaceProtocol != 0 ||
-            descriptor.NumEndpoints != 2)
+        if (descriptor.NumEndpoints != 2)
         {
             throw new DeusHostException(
                 HostErrorKind.Open,
-                $"WinUSB interface does not match IF{interfaceNumber} FF/00/00 with two endpoints");
+                "WinUSB management interface must expose exactly two endpoints");
+        }
+
+        var pipes = new (byte Address, int Type, ushort MaxPacketSize)[2];
+        for (byte index = 0; index < 2; ++index)
+        {
+            if (!NativeMethods.WinUsb_QueryPipe(handle, 0, index, out var pipe))
+            {
+                throw CreateIoException(HostErrorKind.Open, "WinUsb_QueryPipe");
+            }
+
+            pipes[index] = (
+                pipe.PipeId,
+                (int)pipe.PipeType,
+                pipe.MaximumPacketSize);
+        }
+
+        ValidateTopologyDescriptor(
+            interfaceNumber,
+            descriptor.Length,
+            descriptor.DescriptorType,
+            descriptor.InterfaceNumber,
+            descriptor.AlternateSetting,
+            descriptor.InterfaceClass,
+            descriptor.InterfaceSubClass,
+            descriptor.InterfaceProtocol,
+            pipes,
+            outPipe,
+            inPipe);
+    }
+
+    // Real WinUSB open and negative tests use the very same validator.
+    // No native handle is opened when called from an offline test.
+    internal static void ValidateTopologyDescriptor(
+        byte? expectedInterface,
+        byte descriptorLength,
+        byte descriptorType,
+        byte interfaceNumber,
+        byte alternateSetting,
+        byte interfaceClass,
+        byte interfaceSubClass,
+        byte interfaceProtocol,
+        IReadOnlyList<(byte Address, int Type, ushort MaxPacketSize)> pipes,
+        byte outPipe,
+        byte inPipe)
+    {
+        if ((expectedInterface.HasValue
+                ? interfaceNumber != expectedInterface.Value
+                : !IsSupportedRuntimeInterface(interfaceNumber)) ||
+            descriptorLength != 9 ||
+            descriptorType != 4 ||
+            alternateSetting != 0 ||
+            interfaceClass != 0xFF ||
+            interfaceSubClass != 0 ||
+            interfaceProtocol != 0 ||
+            pipes is null || pipes.Count != 2)
+        {
+            throw new DeusHostException(
+                HostErrorKind.Open,
+                "WinUSB management descriptor must be IF0/2 FF/00/00 with two endpoints");
         }
 
         var sawOut = false;
         var sawIn = false;
-
-        for (byte index = 0; index < descriptor.NumEndpoints; ++index)
+        foreach (var pipe in pipes)
         {
-            if (!NativeMethods.WinUsb_QueryPipe(
-                    handle,
-                    0,
-                    index,
-                    out var pipe))
-            {
-                throw CreateIoException(
-                    HostErrorKind.Open,
-                    "WinUsb_QueryPipe");
-            }
-
-            if (pipe.PipeType != UsbdPipeType.Bulk ||
-                pipe.MaximumPacketSize != 64)
+            if (pipe.Type != (int)UsbdPipeType.Bulk ||
+                pipe.MaxPacketSize != 64)
             {
                 throw new DeusHostException(
                     HostErrorKind.Open,
-                    $"unexpected pipe 0x{pipe.PipeId:X2} type/packet");
+                    $"unexpected WinUSB management pipe 0x{pipe.Address:X2} type/packet");
             }
 
-            sawOut |= pipe.PipeId == outPipe;
-            sawIn |= pipe.PipeId == inPipe;
+            sawOut |= pipe.Address == outPipe;
+            sawIn |= pipe.Address == inPipe;
         }
 
         if (!sawOut || !sawIn)

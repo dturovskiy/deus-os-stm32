@@ -42,11 +42,9 @@
 #define PRODUCTION_IWDG_RELOAD 1249u
 #define PRODUCTION_IWDG_SPIN_LIMIT 1000000u
 #define PRODUCTION_UART_RX_EVENT           (1u << 0)
-#define PRODUCTION_USB_CDC_RX_EVENT        (1u << 1)
 #define PRODUCTION_USB_MANAGEMENT_RX_EVENT (1u << 2)
 #define PRODUCTION_CONSOLE_RX_EVENTS       \
     (PRODUCTION_UART_RX_EVENT | \
-     PRODUCTION_USB_CDC_RX_EVENT | \
      PRODUCTION_USB_MANAGEMENT_RX_EVENT)
 #define BOOT_DESKTOP_UI_SPLASH_MIN_MS 1000u
 #define BOOT_DESKTOP_UI_POLL_MS       250u
@@ -217,20 +215,7 @@ static int console_uart_write_byte(void *context, uint8_t byte)
     return usart1_write_byte(byte);
 }
 
-static int console_usb_cdc_write_byte(void *context, uint8_t byte)
-{
-    (void)context;
-    return usb_cdc_write_byte(byte);
-}
 
-static int binary_rpc_usb_send_wire(
-    void *context,
-    const uint8_t *data,
-    uint32_t length)
-{
-    (void)context;
-    return usb_cdc_write_span_atomic(data, length);
-}
 
 static int binary_rpc_management_send_wire(
     void *context,
@@ -241,19 +226,7 @@ static int binary_rpc_management_send_wire(
     return usb_management_write_span_atomic(data, length);
 }
 
-static binary_frame_parser_t usb_cdc_binary_parser;
-static binary_rpc_state_t usb_cdc_binary_rpc_state;
 static binary_rpc_workspace_t production_binary_rpc_workspace;
-
-static const binary_rpc_binding_t usb_cdc_binary_rpc_binding =
-{
-    binary_rpc_usb_send_wire,
-    (void *)0,
-    console_execute_request,
-    (void *)0,
-    PRODUCTION_USB_CDC_RX_EVENT,
-    BINARY_RPC_CAPABILITY_FLAGS_CDC
-};
 
 static const binary_rpc_binding_t usb_management_binary_rpc_binding =
 {
@@ -299,10 +272,6 @@ void USART1_IRQHandler(void)
     }
 }
 
-static void usb_cdc_rx_event_notify(void)
-{
-    scheduler_event_signal(PRODUCTION_USB_CDC_RX_EVENT);
-}
 
 static void usb_management_rx_event_notify(void)
 {
@@ -383,19 +352,6 @@ static console_command_state_t uart_command_state =
         0u
     }
 };
-
-static console_command_state_t usb_cdc_command_state =
-{
-    { 0 },
-    0u,
-    {
-        console_usb_cdc_write_byte,
-        (void *)0,
-        PRODUCTION_USB_CDC_RX_EVENT,
-        0u
-    }
-};
-
 
 static void oled_fb_draw_char_1x(uint32_t x, uint32_t y, char c)
 {
@@ -1055,7 +1011,7 @@ static void system_service_state_refresh(void)
     system_service_state_update(
         kernel_time_now(),
         (uint8_t)(boot_desktop_ui_runtime_ready() != 0),
-        (uint8_t)(usb_cdc_is_configured() != 0),
+        (uint8_t)(usb_management_is_configured() != 0),
         0u);
 }
 
@@ -1857,39 +1813,17 @@ static void console_msp_stack_stats(command_service_context_t *context)
 
 static void console_usb_cdc_stats(command_service_context_t *context)
 {
-    console_write(context, "USB_CDC_CONFIGURED=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_configured);
-    console_write(context, " CONFIGURATION=");
+    /* Legacy RPC 0x0005: CDC is absent; preserve the historical fields. */
+    console_write(context, "USB_CDC_CONFIGURED=00000000 CONFIGURATION=");
     console_write_hex32(context, usb_device_diagnostics.configuration);
-    console_write(context, " RX_PACKETS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_rx_packet_count);
-    console_write(context, " RX_BYTES=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_rx_byte_count);
-    console_write(context, " RX_DROPS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_rx_drop_count);
-    console_write(context, " RX_HIGH_WATER=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_rx_high_water);
-    console_write(context, " TX_PACKETS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_tx_packet_count);
-    console_write(context, " TX_BYTES=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_tx_byte_count);
-    console_write(context, " TX_DROPS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_tx_drop_count);
-    console_write(context, " TX_HIGH_WATER=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_tx_high_water);
-    console_write(context, " CONTROL=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_control_line_state);
-    console_write(context, " BAUD=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_baud);
-    console_write(context, " STOP=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_stop_bits);
-    console_write(context, " PARITY=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_parity);
-    console_write(context, " DATA_BITS=");
-    console_write_hex32(context, usb_device_diagnostics.cdc_line_coding_data_bits);
-    console_write(context, "\r\n");
+    console_write(context,
+        " RX_PACKETS=00000000 RX_BYTES=00000000"
+        " RX_DROPS=00000000 RX_HIGH_WATER=00000000"
+        " TX_PACKETS=00000000 TX_BYTES=00000000"
+        " TX_DROPS=00000000 TX_HIGH_WATER=00000000"
+        " CONTROL=00000000 BAUD=00000000"
+        " STOP=00000000 PARITY=00000000 DATA_BITS=00000000\r\n");
 }
-
 
 static command_service_status_t console_execute_application_method(
     const command_service_request_t *request,
@@ -2461,40 +2395,6 @@ static void console_drain_uart_rx(void)
     }
 }
 
-static void console_drain_usb_cdc_rx(void)
-{
-    char c;
-
-    while (usb_cdc_try_getc(&c) != 0)
-    {
-        binary_frame_view_t frame;
-        const binary_frame_feed_result_t feed_result =
-            binary_frame_parser_feed(
-                &usb_cdc_binary_parser,
-                (uint8_t)c,
-                &frame);
-
-        if ((feed_result == BINARY_FRAME_FEED_TEXT) ||
-            (feed_result == BINARY_FRAME_FEED_SYNC_ERROR_TEXT))
-        {
-            console_feed_char(&usb_cdc_command_state, c);
-        }
-        else if (feed_result == BINARY_FRAME_FEED_FRAME_READY)
-        {
-            if ((frame.frame_type == BINARY_FRAME_TYPE_RPC_REQUEST) &&
-                (production_console_task_started != 0u))
-            {
-                ++production_console_command_count;
-            }
-
-            (void)binary_rpc_handle_frame(
-                &usb_cdc_binary_rpc_state,
-                &frame,
-                &usb_cdc_binary_rpc_binding);
-        }
-    }
-}
-
 
 static void production_console_task(void *argument)
 {
@@ -2519,7 +2419,6 @@ static void production_console_task(void *argument)
     for (;;)
     {
         console_drain_uart_rx();
-        console_drain_usb_cdc_rx();
         production_console_command_count +=
             usb_management_runtime_service(
                 &usb_management_binary_rpc_binding);
@@ -2772,17 +2671,10 @@ void kernel_main(void)
             "SCHED_PROD_INIT_ERR");
     }
 
-    usb_cdc_set_rx_notify(usb_cdc_rx_event_notify);
     usb_management_set_rx_notify(usb_management_rx_event_notify);
 
     uart_command_state.length = 0u;
     uart_command_state.context.write_failed = 0u;
-    usb_cdc_command_state.length = 0u;
-    usb_cdc_command_state.context.write_failed = 0u;
-    binary_frame_parser_init(&usb_cdc_binary_parser);
-    binary_rpc_init(
-        &usb_cdc_binary_rpc_state,
-        &production_binary_rpc_workspace);
 
     if (usb_management_runtime_init(
             &production_binary_rpc_workspace) == 0)

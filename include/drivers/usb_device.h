@@ -9,14 +9,13 @@
  * devices. See docs/USB_IDENTITY_POLICY.md before any release.
  */
 #define USB_DEVICE_DEVELOPMENT_VID 0x1209u
-#define USB_DEVICE_DEVELOPMENT_PID 0x000Cu
+#define USB_DEVICE_DEVELOPMENT_PID 0x000Eu
 
-#define USB_MANAGEMENT_INTERFACE_NUMBER 2u
+#define USB_MANAGEMENT_INTERFACE_NUMBER 0u
 #define USB_MANAGEMENT_OUT_ENDPOINT     0x04u
 #define USB_MANAGEMENT_IN_ENDPOINT      0x84u
 #define USB_MANAGEMENT_MAX_PACKET       64u
 
-typedef void (*usb_cdc_rx_notify_t)(void);
 typedef void (*usb_management_rx_notify_t)(void);
 
 typedef struct
@@ -33,21 +32,6 @@ typedef struct
     uint32_t last_bm_request_type;
     uint32_t last_b_request;
 
-    uint32_t cdc_configured;
-    uint32_t cdc_rx_packet_count;
-    uint32_t cdc_rx_byte_count;
-    uint32_t cdc_rx_drop_count;
-    uint32_t cdc_rx_high_water;
-    uint32_t cdc_tx_packet_count;
-    uint32_t cdc_tx_byte_count;
-    uint32_t cdc_tx_drop_count;
-    uint32_t cdc_tx_high_water;
-    uint32_t cdc_control_line_state;
-    uint32_t cdc_line_coding_baud;
-    uint32_t cdc_line_coding_stop_bits;
-    uint32_t cdc_line_coding_parity;
-    uint32_t cdc_line_coding_data_bits;
-
     uint32_t management_configured;
     uint32_t management_rx_packet_count;
     uint32_t management_rx_byte_count;
@@ -63,12 +47,6 @@ typedef struct
 extern volatile usb_device_diagnostics_t usb_device_diagnostics;
 
 int usb_device_init(uint32_t core_clock_hz);
-
-void usb_cdc_set_rx_notify(usb_cdc_rx_notify_t notify);
-int usb_cdc_is_configured(void);
-int usb_cdc_try_getc(char *c);
-int usb_cdc_write_byte(uint8_t byte);
-int usb_cdc_write_span_atomic(const uint8_t *data, uint32_t length);
 
 void usb_management_set_rx_notify(usb_management_rx_notify_t notify);
 int usb_management_is_configured(void);

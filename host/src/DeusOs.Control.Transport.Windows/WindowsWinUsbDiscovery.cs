@@ -26,6 +26,7 @@ public sealed class WindowsWinUsbDiscovery : IDeviceDiscovery
             var paths = EnumerateInterfacePaths(
                 ManagementInterfaceGuid);
             IReadOnlyList<DeviceCandidate> candidates = paths
+                .Where(path => TrySelectRuntimeInterface(path, out _))
                 .Select(path => new DeviceCandidate(
                     path,
                     "Deus OS Device",
@@ -59,8 +60,14 @@ public sealed class WindowsWinUsbDiscovery : IDeviceDiscovery
 
         try
         {
+            if (!StringComparer.Ordinal.Equals(candidate.Platform, "Windows") ||
+                !TrySelectRuntimeInterface(candidate.Locator, out var interfaceNumber))
+            {
+                throw new DeusHostException(
+                    HostErrorKind.Open, "unrecognized Windows runtime USB identity");
+            }
             IDeviceTransport transport =
-                WindowsWinUsbTransport.Open(candidate.Locator);
+                WindowsWinUsbTransport.Open(candidate.Locator, interfaceNumber, 0x04, 0x84);
             return ValueTask.FromResult(transport);
         }
         catch (Exception exception)
@@ -71,6 +78,43 @@ public sealed class WindowsWinUsbDiscovery : IDeviceDiscovery
                 $"failed to open WinUSB device '{candidate.Locator}'",
                 exception);
         }
+    }
+
+    // Verify the USB device-interface path, not just the management GUID.
+    // The bootloader has a distinct VID/PID and cannot be opened as runtime.
+    internal static bool TrySelectRuntimeInterface(string? locator, out byte interfaceNumber)
+    {
+        interfaceNumber = 0;
+        if (string.IsNullOrWhiteSpace(locator))
+        {
+            return false;
+        }
+
+        var segments = locator.Split('#');
+        if (segments.Length != 4 ||
+            !string.Equals(segments[0], @"\\?\usb", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(segments[3], ManagementInterfaceGuid.ToString("B"),
+                StringComparison.OrdinalIgnoreCase) ||
+            segments[2].Length == 0)
+        {
+            return false;
+        }
+
+        if (string.Equals(segments[1], "vid_1209&pid_000c&mi_02",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            interfaceNumber = 2;
+            return true;
+        }
+        if (string.Equals(segments[1], "vid_1209&pid_000e",
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(segments[1], "vid_1209&pid_000e&mi_00",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            interfaceNumber = 0;
+            return true;
+        }
+        return false;
     }
 
     internal static IReadOnlyList<string> EnumerateInterfacePaths(Guid guid) =>
