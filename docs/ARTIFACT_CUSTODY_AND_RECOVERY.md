@@ -2,6 +2,8 @@
 
 **Scope:** Operational artifact lifecycle, **not** a second project-state authority. Effective: 2026-10-23. The sole project-state authority remains `docs/CURRENT_STATE.md`; signing, update ABI, and Gate authority remain in the respective protocol/acceptance plans. The operator ZIP/evidence rules remain in `docs/HARNESS_EVIDENCE_RECOVERY_PLAYBOOK.md`.
 
+**2026-10-30 source custody addendum:** Non-firmware Python, Gate3/Gate4 authoring sources, Bundle Guard, bench verifiers and their 27 support files now reside under the off-Git workspace sibling `Tools/scripts/`. Exact original source custody is locked by its 100-member `TOOLING_CUSTODY_MANIFEST.json` (full SHA-256/size). `Tools/` also retains vendor packages. Operator source files are **not** runnable ZIPs or accepted new execution authority, and this relocation does not move `Evidence`, protected signed packages, signer keys or previously accepted hardware artifacts. Future operator execution from Tools requires separate Windows/path/native evidence; GitHub product CI remains self-contained without these private sources.
+
 ## 1. Where each class lives (one role per source)
 
 | Artifact class | Authoritative custody | Proof / disclosure |

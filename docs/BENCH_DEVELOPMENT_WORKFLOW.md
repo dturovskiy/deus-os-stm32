@@ -1,6 +1,10 @@
 # DEUS OS — local STM32 development bench
 
 **Mode:** single-board engineering loop, not a production release service.
+
+**Python tool location (2026-10-30):** The read-only existing signed package verifier is now outside Git at the workspace sibling `Tools/scripts/bench/check_candidate.py`. From the `OS` repository root its command is `python ../Tools/scripts/bench/check_candidate.py`; it is not part of the firmware and does not flash/reset the board. Historical signed-v6 Evidence chain auditor is also copied to `Tools/scripts/bench/check_v6_evidence_chain_20261029.py` (with its separately SHA-preserved Archive copy). Relocation is **source custody**, not new operator native qualification. `Bundle/`, `Evidence/`, `ProtectedRecovery/` and `Reports/` remain off Git; the accepted physical signed v6 installation is unchanged.
+
+
 **Current target:** STM32F103C8; published bootloader, application origin `0x08002000`.
 
 **Current navigation (after 2026-10-29 installation and workspace cleanup):** v6 is **already installed and observed** at `1209:000E`, and the owner has reported the OLED content appears expected. Sections below describing `000C` discovery, an unperformed Flash or `000E` as a future outcome are dated **pre-install engineering history**, not current instructions. Their original operator ZIPs have been moved by exact SHA into `../../Bundle/Historical/Bench_20261029_Consumed/` or `Bench_20261029_Unreleased/` (see `../../Reports/Audits/WORKSPACE_BUNDLE_HISTORICAL_CUSTODY_20261029.json`). Do **not** rerun them. UART is not owner-attested; formal Gate4 is separate.
@@ -22,7 +26,7 @@ Keep production/distribution governance plans deferred, not deleted. Do not conf
 - App length **48,992 bytes**, SHA256 `1F6966788923496170F47FED9AC24311BEA177B53B3045C2B89CA6305E1B56E1`; origin `0x08002000`, startup MSP `0x20005000`, reset vector `0x080020D9`.
 - Reserved rescue v7: `ProtectedRecovery/deus_os_rev5_000c_recovery_future_floor7_v1.pkg`, **52,092 bytes**; SHA256 `C2B026C5944E794781B77E6220C40CE42CC91D9ADD1A3974835D4E13681CAE7A`.
 - **Version-floor trap:** installing rescue v7 prevents returning to normal v6 under the current antirollback contract. Treat v7 as a contingency, not an automatic rollback or ordinary test step.
-- Quick local byte check: `python scripts/bench/check_candidate.py`. It verifies actual protected package bytes, header, SHA and vector structure. It does **not** re-prove HMAC production authentication or touch hardware.
+- Quick local byte check: `python ../Tools/scripts/bench/check_candidate.py`. It verifies actual protected package bytes, header, SHA and vector structure. It does **not** re-prove HMAC production authentication or touch hardware.
 
 ## Existing Host CLI: direct bench firmware commands
 

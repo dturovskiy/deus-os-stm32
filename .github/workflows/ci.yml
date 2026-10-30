@@ -53,16 +53,9 @@ jobs:
           set -euo pipefail
           mkdir -p "$DOTNET_CLI_HOME" "$NUGET_PACKAGES"
           dotnet --info
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          p = json.loads(Path('global.json').read_text(encoding='utf-8'))
-          assert p['sdk']['version'] == '10.0.100'
-          assert p['sdk']['rollForward'] == 'latestFeature'
-          assert p['sdk']['allowPrerelease'] is False
-          assert p['test']['runner'] == 'Microsoft.Testing.Platform'
-          print('GLOBAL_JSON_SDK_AND_MTP=PASS')
-          PY
+          command -v jq >/dev/null
+          jq -e '.sdk.version == "10.0.100" and .sdk.rollForward == "latestFeature" and .sdk.allowPrerelease == false and .test.runner == "Microsoft.Testing.Platform"' global.json >/dev/null
+          echo 'GLOBAL_JSON_SDK_AND_MTP=PASS'
 
       - name: Non-vacuous patch and tracked-file hygiene
         env:
@@ -82,32 +75,42 @@ jobs:
           changed="$(git diff --name-only "$base" HEAD)"
           [[ -n "$changed" ]] || { echo 'EMPTY_PATCH_RANGE' >&2; exit 1; }
           git diff --check "$base" HEAD
-          python3 - <<'PY'
-          import re
-          import subprocess
-          from pathlib import PurePosixPath
-          paths = subprocess.check_output(['git', '-C', '..', 'ls-files', '-z']).decode('utf-8').split('\0')
-          paths = [p for p in paths if p]
-          assert '.github/workflows/ci.yml' in paths, 'CI_WORKFLOW_NOT_TRACKED'
-          forbidden = re.compile(r'(^|/)(build|bin|obj|TestResults|artifacts|coverage)/|\.(?:bin|elf|map|log|zip|7z|pfx|p12|pem|key|dpapi|pkg|nupkg|snupkg)$', re.I)
-          forbidden_fixtures = ('scratch/device.dpapi', 'scratch/update.pkg', 'build/example.elf', 'host/example/bin/test.dll')
-          allowed_fixtures = ('.github/workflows/ci.yml', 'docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md', 'scripts/create_firmware_update_package.ps1')
-          assert all(forbidden.search(p) for p in forbidden_fixtures), 'FORBIDDEN_OUTPUT_NEGATIVE_TEST_FAILED'
-          assert all(not forbidden.search(p) for p in allowed_fixtures), 'FORBIDDEN_OUTPUT_FALSE_POSITIVE'
-          for suffix in ('.dpapi', '.pkg'):
-              subprocess.run(['git', '-C', '..', 'check-ignore', '--quiet', '--no-index', 'untracked-secret-fixture' + suffix], check=True)
-          print('FORBIDDEN_OUTPUT_NEGATIVE_FIXTURES=PASS')
-          bad = [p for p in paths if forbidden.search(p)]
-          if bad:
-              raise SystemExit('FORBIDDEN_TRACKED_OUTPUT=' + ','.join(bad))
-          print('TRACKED_OUTPUT_HYGIENE=PASS count=' + str(len(paths)))
-          PY
+          # Self-contained product checkout, without private operator tooling.
+          forbidden_re='(^|/)(build|bin|obj|TestResults|artifacts|coverage)/|\.(bin|elf|map|log|zip|7z|pfx|p12|pem|key|dpapi|pkg|nupkg|snupkg)$'
+          shopt -s nocasematch
+          for fixture in scratch/device.dpapi scratch/update.pkg build/example.elf host/example/bin/test.dll; do
+            [[ "$fixture" =~ $forbidden_re ]] || { echo "FORBIDDEN_OUTPUT_NEGATIVE_TEST_FAILED=$fixture" >&2; exit 1; }
+          done
+          for fixture in .github/workflows/ci.yml docs/FIRMWARE_UPDATE_BOOTLOADER_PROTOCOL_V1.md scripts/create_firmware_update_package.ps1; do
+            if [[ "$fixture" =~ $forbidden_re ]]; then
+              echo "FORBIDDEN_OUTPUT_FALSE_POSITIVE=$fixture" >&2
+              exit 1
+            fi
+          done
+          for suffix in .dpapi .pkg; do
+            git -C .. check-ignore --quiet --no-index "untracked-secret-fixture$suffix"
+          done
+          git -C .. ls-files -z > "$RUNNER_TEMP/deus-tracked-paths.nul"
+          count=0
+          found_workflow=0
+          while IFS= read -r -d '' item; do
+            ((count+=1))
+            [[ "$item" != '.github/workflows/ci.yml' ]] || found_workflow=1
+            if [[ "$item" =~ $forbidden_re ]]; then
+              echo "FORBIDDEN_TRACKED_OUTPUT=$item" >&2
+              exit 1
+            fi
+            case "$item" in
+              *.py|scripts/bench/*|scripts/gate3_operator/*|scripts/gate4_entry/*|scripts/operator_bundle_guard/*)
+                echo "INTERNAL_OPERATOR_TOOLING_TRACKED=$item" >&2
+                exit 1
+                ;;
+            esac
+          done < "$RUNNER_TEMP/deus-tracked-paths.nul"
+          [[ "$found_workflow" -eq 1 && "$count" -gt 0 ]] || { echo 'CI_WORKFLOW_NOT_TRACKED' >&2; exit 1; }
+          echo 'FORBIDDEN_OUTPUT_NEGATIVE_FIXTURES=PASS'
+          echo "TRACKED_OUTPUT_HYGIENE=PASS count=$count"
           echo 'NON_VACUOUS_PATCH_WHITESPACE=PASS'
-
-      - name: Validate recovery artifact ledger tooling (22 offline tests)
-        run: |
-          set -euo pipefail
-          python3 ../scripts/test_artifact_ledger.py
 
       - name: Restore locked Host solution
         run: dotnet restore DeusOs.Control.sln --locked-mode --disable-parallel

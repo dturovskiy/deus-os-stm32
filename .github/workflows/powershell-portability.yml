@@ -5,13 +5,11 @@ on:
     branches: [main]
     paths:
       - 'scripts/**/*.ps1'
-      - 'scripts/public_sanitization_ps_offline_preflight.py'
       - '.github/workflows/powershell-portability.yml'
   pull_request:
     branches: [main]
     paths:
       - 'scripts/**/*.ps1'
-      - 'scripts/public_sanitization_ps_offline_preflight.py'
       - '.github/workflows/powershell-portability.yml'
 
 permissions:

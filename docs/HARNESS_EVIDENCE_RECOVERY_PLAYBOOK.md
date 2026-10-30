@@ -3,6 +3,8 @@
 > **Public-safe operational view:** Local operator paths, login identities and SSH aliases are placeholders. Substitute values only from separately authorized private operational configuration. This document does not authorize hardware actions; public protocol, ownership and pin-map invariants remain unchanged.
 
 Status: project engineering rulebook
+
+**2026-10-30 location update:** The former repository-local Python Bundle Guard and Gate3/Gate4 operator source suites were SHA-preserved in off-Git `../Tools/scripts/` (from `OS/`); for a project-root PowerShell invocation of the static builder use `python ../Tools/scripts/operator_bundle_guard/bundle_guard.py ...` after requalifying the exact external source and paths. Historical commands `python scripts/operator_bundle_guard/...` below describe their pre-extraction placement; they are no longer active. Public OS CI no longer qualifies internal operator tooling. Hardware-mutation authorization rules and original Evidence remain unchanged.
 Scope: Windows-orchestrated build/evidence scripts, Windows-owned UART and STM32CubeProgrammer/ST-LINK hardware access, SSH/SCP coordination with the Ubuntu/Linux USB execution domain, Linux libusb runtime acceptance, Git evidence gates.
 
 ## Scope and effort budget — 2026-10-29
