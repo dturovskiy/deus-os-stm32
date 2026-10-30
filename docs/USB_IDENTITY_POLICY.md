@@ -2,6 +2,8 @@
 
 Status: **PRIVATE DEVELOPMENT/TESTING POLICY — NOT A PRODUCT IDENTITY**
 
+**Current physical/working-tree clarification — 2026-10-30:** A signed Management-only v6 (`1209:000E`, IF0) was installed on the real STM32 on 2026-10-29 and passed the scoped USB software smoke test (see `CURRENT_STATE.md`). The original Gate-0 material below is a dated pre-install design record, not the current device state. The CDC-free source and Windows Host synchronization are now present as **reviewed BENCH source changes, subsequently committed locally (`27fda91`)** in public `main`; native Windows Host/Transport 40/40 and ARM build/Flash/SRAM observations for those source bytes are now verified from the original 2026-10-30 V2 Evidence (Flash=48992, SRAM=7516). Historical V2 operator FAIL was caused by its CRLF sanitizer/metric regex defect; its original Evidence remains immutable. The corrected **V3** offline operator subsequently returned genuine **Windows-native PASS** at 2026-10-30 22:27, independently verified from original sealed Evidence (53/53 checks, 40/40 Transport tests, Flash=48992, SRAM=7516; exact Evidence SHA256 `ABD98A917F1B2FC9678750A86C2CD130A75B0A5EBDDD12121EC7E133C7CFEEAF`). See `CURRENT_STATE.md` and off-Git `Reports/Audits/BENCH_000E_SOURCE_SYNC_V3_NATIVE_EVIDENCE_ACCEPTANCE_20261030.md`. This confirms only the offline source-sync bench, **not** a new physical firmware installation or signed release. The USB Test PID restriction remains unchanged.
+
 ## Development profiles
 
 The published native USB Device core foundation uses the historical profile:
