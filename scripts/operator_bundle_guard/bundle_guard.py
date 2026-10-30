@@ -120,6 +120,15 @@ def check_apply(data):
             flags=re.IGNORECASE) is not None
         need(has_tail and "MIDDLE_TRUNCATED_TAIL_PRESERVED" in statement,
              "EVIDENCE_PREFIX_ONLY_TRUNCATION_FORBIDDEN")
+    # Scrub() turns Windows CRLF into '?\n' before an anchored BUILD_* regex.
+    # Parse machine metrics from unmodified child stdout, not redacted Evidence.
+    scrubs_stdout = re.search(r"(?i)\bScrub\s+\$stdout\b", text) is not None
+    parses_redacted_arm_metrics = re.search(
+        r"(?is)\[regex\]::Match\s*\(\s*(?:\[string\]\s*)?"
+        r"\$streams\.arm_stdout\s*,\s*['\"]\(\?[a-z]*m[a-z]*\)\^BUILD_",
+        text) is not None
+    need(not (scrubs_stdout and parses_redacted_arm_metrics),
+         "ARM_METRIC_AFTER_REDACTION_FORBIDDEN")
     return text
 
 

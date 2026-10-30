@@ -405,6 +405,47 @@ class BundleGuardTests(unittest.TestCase):
         self.assertEqual(str(err.exception),"QUARANTINED_SOURCE_NOT_FOR_BUILD")
 
 
+    def test_90_arm_metrics_parsed_after_scrub_rejected_before_build(self):
+        # Exact observed failure pattern: Windows CRLF is changed to '?\\n'
+        # by the Evidence sanitizer, invalidating a line-anchored ARM metric.
+        script = (SCRIPT +
+                  b"$streams.arm_stdout=Scrub $stdout\n" +
+                  b"$f=[regex]::Match([string]$streams.arm_stdout,"
+                  b"'(?m)^BUILD_FLASH=(\\d+)\\s*$')\n")
+        (self.src/"apply.ps1").write_bytes(script)
+        with self.assertRaises(Invalid) as error:
+            self.make()
+        self.assertEqual(str(error.exception),
+                         "ARM_METRIC_AFTER_REDACTION_FORBIDDEN")
+        self.assertFalse(self.zip.exists())
+
+    def test_91_arm_metrics_parsed_after_scrub_rejected_by_validate(self):
+        blob=self.make()
+        def update(data):
+            bad=(SCRIPT + b"$streams.arm_stdout=Scrub $stdout\n" +
+                 b"$f=[regex]::Match([string]$streams.arm_stdout,"
+                 b"'(?m)^BUILD_FLASH=(\\d+)\\s*$')\n")
+            data["apply.ps1"]=bad
+            manifest=json.loads(data["manifest.json"])
+            manifest["apply_sha256"]=digest(bad)
+            data["manifest.json"]=(json.dumps(manifest,sort_keys=True)+"\n").encode()
+            data["hashes.sha256"]="".join(
+                digest(v)+"  "+n+"\n" for n,v in sorted(data.items())
+                if n!="hashes.sha256").encode()
+        with self.assertRaises(Invalid) as error:
+            validate_blob(self.repack(blob,update),PID+".zip")
+        self.assertEqual(str(error.exception),
+                         "ARM_METRIC_AFTER_REDACTION_FORBIDDEN")
+
+    def test_92_arm_metrics_from_raw_stdout_before_scrub_allowed(self):
+        # Positive synthetic source-only check. Not an ARM or Windows native run.
+        script=(SCRIPT +
+                b"$f=[regex]::Match($stdout,'(?m)^BUILD_FLASH=(\\d+)\\s*$')\n" +
+                b"$streams.arm_stdout=Scrub $stdout\n")
+        (self.src/"apply.ps1").write_bytes(script)
+        self.make()
+        self.assertEqual(validate_file(self.zip)["profile"],"OFFLINE")
+
     def test_50_evidence_prefix_only_traceback_rejected_before_build(self):
         # Reproduces the exact A-05 v4 lost-terminal-exception source pattern.
         (self.src/"apply.ps1").write_bytes(
