@@ -19,7 +19,9 @@ RUNNER = (ROOT / "Bundle" / "_stage_deus_run_preflight_evidence_v132_source_2026
           / "deus-run-next.ps1")
 RUNNER_SHA = "60C090E8324EA1ECD2ECCF7114E26A6793402AA44B736CA507BB45321DD6EC75"
 BUILDER = REPO / "scripts/operator_bundle_guard/bundle_guard.py"
-BUILDER_SHA = "F706E51F231F663138E41533E288A7C856CDF7240ABA3675D94F32B6556427E0"
+# 2026-10-30: reviewed additive CRLF/ARM metric parser guard on 60b1bab;
+# public-trust mutating release denial and RA-07 admission boundary unchanged.
+BUILDER_SHA = "2E98E216195C4EACE48CD2B53D43690E68D797744F2B988AB1B646E2F78BD2B2"
 CONTROLLER = REPO / "scripts/gate4_entry/owner_windows_release_controller_v1.py"
 CONTROLLER_SHA = "05B20216DD7354482C4AB009487DF4CF04E16FDB31482FC2DD67449F183CB2C6"
 NATIVE_DENY_EVIDENCE = (
