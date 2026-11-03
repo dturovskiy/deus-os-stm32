@@ -5,6 +5,10 @@
 
 This file is a historical execution/checklist ledger. It is **not** the global current-state authority. Current project state and the active next boundary are owned by `docs/CURRENT_STATE.md`.
 
+**ESP01-009 bounded completion (2026-11-01):** Original owner native v3 Windows+Ubuntu resource inspection PASS, independently accepted original Evidence SHA256 `787A9BA39F8594BA22FCB3217BC5BA1E6317F51D6787AE98C90F3739E083B378` (ZIP CRC 6/6, indexed SHA 5/5). Original 9 source files and 7 ELF/BIN/MAP objects rehashed, SDK Make Git blobs 4/4, 1MiB config-derived Flash layout and 70 ELF static sections; independent host node-link integration emulator 36/36 previously accepted. ESP01-009 **ACCEPTED_OFFDEVICE** only; physical ESP/STM32/UART, runtime heap and firmware flashing NOT ATTESTED. ESP01-008 remains DONE, ESP01-010 next source-only. Original receipt: `Coordination/receipts/A000009__E003__T009__V3_NATIVE_RESOURCE_EVIDENCE_ACCEPTED_20261101.json`. Historical checkboxes below retain their original scope.
+
+**ESP-01 operator task indexing (2026-11-01):** Current private task board and plan/checklist are outside this Git repo in workspace sibling `Coordination/INDEX.md`, with `Coordination/tasks/ESP01-001..015/` definitions/results and distinct `receipts/`. This is a reference to local operator coordination, **not** a second product scheduler or an online GitHub link; the historical checklist below is untouched.
+
 ### Desktop Published Asset Inspector — source accepted and connected read-only fallback UI Gate 3b operator-attested PASS (2026-10-16)
 
 - [x] **Gate 0 — concrete Desktop read-only scope ACCEPTED/PUBLISHED:** paired `docs/DESKTOP_PUBLISHED_ASSET_INSPECTOR_PLAN.md` / `_ACCEPTANCE_PLAN.md`; six docs-only paths, non-force commit `457be3dc4ff2e642138bd62178d91420ee552570`, fresh-fetch clean 0/0, [exact-SHA hosted CI 38746868482](https://github.com/dturovskiy/deus-os-stm32/actions/runs/38746868482) SUCCESS (Core 84/84, Transport 24/24, Release 0 warnings/errors).

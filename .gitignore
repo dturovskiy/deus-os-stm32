@@ -30,6 +30,13 @@ build/
 *.gz
 *.sshsig
 
+# ESP8266 SDK local configuration and generated outputs (source is in OS/nodes/).
+/nodes/**/build/
+/nodes/**/sdkconfig
+/nodes/**/sdkconfig.old
+/nodes/**/managed_components/
+/nodes/**/*.a
+
 # Host .NET generated artifacts
 host/**/bin/
 host/**/obj/

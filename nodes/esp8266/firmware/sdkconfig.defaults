@@ -1,0 +1,5 @@
+# Source-only candidate: ensure ROM flash layout before build.
+# Target 1 MiB ESP-01; MUST validate build's effective sdkconfig with SDK v3.4.
+CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y
+CONFIG_ESPTOOLPY_FLASHFREQ_40M=y
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
