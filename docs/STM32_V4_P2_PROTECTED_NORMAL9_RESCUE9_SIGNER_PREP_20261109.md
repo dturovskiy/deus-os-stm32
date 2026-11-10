@@ -1,0 +1,46 @@
+# Deus OS — P2 protected rescue9 + optimized normal9 signer, source-locked Windows operator
+
+**2026-11-09 00:37–00:38 Europe/Paris — SUPERSEDED PREPARATION STATUS:** This was the pre-execution source-only readiness snapshot. The owner subsequently ran the exact Windows v2 P2 signer **once, native Windows runner PASS**, created and independently verified both protected v9 packages and original Evidence, accepted scope in `docs/STM32_V4_P2_NATIVE_V9_SIGNER_ORIGINAL_EVIDENCE_ACCEPTANCE_20261109.md`. The former active signer ZIP was **archived** to `Bundle/Historical/Bench_20261109_Consumed_NativeP2V9SignerPASS/` with exact SHA; **DO NOT RERUN**. Original Evidence SHA `DA7AF7BAC95F954A7307C73D041776F329425CE61A2AC97EBF204943F883396C`, original audit `task_1794181186442_547e36b4381df3cd` PASS. Prior PENDING/ABSENT text below is historical. Independent second protected restore copy and future-floor post-rescue normal10+ STILL NOT_ATTESTED; P3/Gate4 NOT_AUTHORIZED.
+
+**2026-11-09 Europe/Paris · Current status: `OWNER_AUTHORIZED_P2_SOURCE_STATIC_VALIDATED; OWNER_WINDOWS_NATIVE_SIGNING_PENDING`.** This report is the scope of the new first Windows signer run, **not** a completed signing receipt. The installed signed STM32 normal **v8** and ESP app **v2** remain untouched. **P3 update/reset/USB/Flash/Gate4 NOT_AUTHORIZED.**
+
+## Source of authority: original signer and Evidence
+
+- **Real owner Windows v8 signer operator (already consumed; DO NOT rerun)**: `Bundle/Historical/Bench_20261107_Consumed_NativeSignerPass_RunnerExitMismatch/stm32_os_esp01_010_v8_normal_rescue_sign_offline_v2_20261107.zip` 16,176 B SHA256 **`CA5E5E8539A3DEC5B51C5391EF6C5B27C381DF51C5DD825539480347A1EC4AE6`**. It successfully created **two original protected v8 packages** and self-verified same-key HMAC but the outer runner reported a real **PASS/result exit mismatch FAIL**. Root cause was its unqualified PowerShell `$result` (case-insensitively shadowing `$Script:Result`); do not reclassify historical outer FAIL. Original Evidence ZIP `Evidence/stm32_os_esp01_010_v8_normal_rescue_sign_offline_v2_20261107_20261107_180134_00569696de8145b8aca5a9994c9c03a3.evidence.zip`, 2551B SHA **`9C28ABCD5CE0BE0161CC4C397333DFF956C63543D9AEF999488E7003859AFBF9`**, independent current re-review **CRC5/5, indexed SHA4/4, indexed sizes3/3, native HMAC selfcheck markers and package identity2/2 PASS**, task **`task_1794179931132_35f92e32a6648d11`**. Not an independent key/HMAC recomputation; no secret read in auditor.
+- **Source-fixed previous signer**: `OS/build/esp010_v8_normal_rescue_signer_source_v3_exitfix_20261107/apply.ps1`, 32,525 B SHA **`F738FC9A8413ACBF7946AEF238ED8727C309CAD4ACF1EB6DB93686B0DE785D3D`**, previously source-reviewed exact `$runnerReport` rename (not owner-run native). New v9 operator inherits masked CredUI, memory-only V10 escrow decryption, PBKDF2/AES-GCM, same-key HMAC verification of existing v8 normal/rescue, exclusive protected write, file SHA/HMAC readback, restrictive native Windows ACL checks, source Git pre/post fingerprint and original indexed Evidence sealing. None of these primitives was rewritten or exposed in a user-facing script.
+- Current existing original protected input normal v8 **53,276B SHA `DDFBB8AB5B829852B9D0245CE779F26B2B274354AD5E8FD7BAA1474DF4B4281D`**; rescue rev5-content v8 **52,092B SHA `CDBD0DE29DBFBEBFD24C49FFF3E1D68B1A0D68C69E34CC134F525C65714F2959`**. Actual v4 unsigned native ARM 49,020B SHA **`6035D50379B5ED5D8BBE26CF02297B82524E96AE43930A71EC5F8EC49C26CF9E`**; original v4 Windows ARM Evidence SHA **`FFC0F6AC1F080E2831C1CC77013154FA7CB665E804055D9BFA4D9F29094F286B`**, 36 distinct `.su` and 75/75 source SHA indexed. Source index whole SHA **`EDC5E08AE8DEE2455994339C4C438E620C84DF1A5975F501CCD431DC9AD5BBC9`**.
+
+## One NEW canonical operator, not the consumed v8/v9 prototype
+
+**Only currently intended runnable P2 signer:**
+
+`Bundle/stm32_os_esp01_bridge_v4_protected_normal9_rescue9_sign_offline_v2_20261109.zip`
+
+- **17,263 bytes; canonical whole ZIP SHA256 `E80A61249011E38B3F03D0F98537F8B27185F850D410EAB0C19196809889A41C`**; `apply.ps1` SHA **`5332BCFA7B86EAAD778940D95C0C01AD4ED29E8B0E4BF03B988BBC3531D8D8BE`**. `Bundle Guard build+validate` PASS, exact 5 members, original SHA75/75 and Windows-mounted `D:\Projects\STM32\Bundle` byte SHA/length identical PASS, independent audited `task_1794179844168_3279283c44f41766`. Actual native Windows `deus-run`/PowerShell AST/signer/key authorization **NOT YET RUN**.
+- Before publishing the above v2, an **unexecuted v1 static ZIP** (SHA `1F056FB0C6D6345FB1CB31A8E4D3E44E60C57FDEE93A5ACA0ADFD566C84489F4`) was caught with an incorrect literal `[uint32]8` argument in both sign calls despite requested v9 headers. The header-SHA guard would have rejected signing, but it is **not an acceptable operator**. Preserved under `Bundle/Historical/Bench_20261109_Unreleased_Static_SignerV9ArgV8Defect/`, **removed from active Bundle before v2 was built**; no native run and no protected outputs. The final v2 uses `Sign-One-Exact ... ([uint32]9) 'RESCUE_V9'` **and** `'NORMAL_V9'`; direct source-level safety assert tests PASS. Final crypto/signing primitive-body exactness audit `task_1794179841145_3eaa1ba28d0edec3` PASS.
+- The operator carries **no signed package bytes, no firmware BIN payload, no escrow file, no HMAC secret/passphrase**, only SHA-pinned source index and PowerShell source, with `execution_profile=OFFLINE`, `device_access=NONE`. Only two unique, initially absent outputs are authorized by this source contract.
+
+| Output in the existing owner-only `ProtectedRecovery` | Firmware version | Expected signed length | Image SHA256 | Expected public 48B header SHA |
+|---|---:|---:|---|---|
+| `deus_os_rev5_000c_recovery_future_floor9_v1.pkg` (FIRST) | 9 | 52,092B | `AA4F83C1F33858D6ADF381DDF3CE5B3EC8A5A7C72B6C254EEDC4D8518B7F6210` | `E0331085E5A17151C1562F4DF07722058B6B154183BD6267CA785EE2B3B83089` |
+| `deus_os_000e_bridge_optimized_full_normal_v9_20261109.pkg` (SECOND) | 9 | 49,100B | `6035D50379B5ED5D8BBE26CF02297B82524E96AE43930A71EC5F8EC49C26CF9E` | `30265E605A2DC420F5B0252E62B1CF57F49503592CEA25AD5B0EA47654BE96F3` |
+
+Actual **new signed whole-package SHA values cannot be known before owner Windows signing**; never invent them. Native owner CredUI masked entry of the existing V10 escrow passphrase is mandatory and must not be transmitted to chat or terminal. Existing normal v8 and rescue v8 protected packages are inputs for same-key HMAC verification, not update targets. No firmware update/RESET, BOOT/EN, USB, CH340, UART, SWD or Git mutation occurs in this P2 operator.
+
+**Owner exactly one Windows PowerShell invocation**, from the existing OS host directory:
+
+```powershell
+deus-run stm32_os_esp01_bridge_v4_protected_normal9_rescue9_sign_offline_v2_20261109 -ExpectedSha256 E80A61249011E38B3F03D0F98537F8B27185F850D410EAB0C19196809889A41C
+```
+
+**Stop on FAIL/partial output or ambiguous owner UI**. Never rerun the consumed v8 signer nor new P2 v2 blindly: a successful rescue write followed by a normal failure leaves a deliberate partial state that must be independently inspected. Preserve first original Evidence and runner output unchanged.
+
+## Independent POST-RUN verification already prepared (not yet executable without original result)
+
+`Tools/scripts/bench/read_p2_v9_signer_original_evidence_20261109.py` expects **the exact original Evidence filename + owner-reported 64-hex whole SHA**, under sibling `Evidence`. It rejects mismatched package ID/manifest identifiers, checks exact whole original ZIP SHA, CRC5/5, indexed SHA4/4/sizes3/3, signed-v9 rescue then normal native HMAC-selfcheck markers (no key access), new protected package exact SHA/length/header/version9/payload digest/vectors, unchanged protected old v8 SHA and Git pre/post, and flags no physical operations. Script AST/contract static check task **`task_1794179991940_cfabe23eadad1209` PASS**; **original Windows P2 signing/output Evidence not yet available**. The auditor must report `NATIVE_PENDING` until owner runs once.
+
+## What remains after protected signing
+
+**P2 protected package creation is not P3 install permission**. To authorize a real v8→v9 device update, separately establish at least one controlled second recovery copy and independent restore readback, a concrete reachable recovery transfer mode when rescue rev5-content exposes older `000C` USB topology (not assume `000E`), actual fresh device/bootloader floor when a separately approved non-invasive method is available, and owner decision about post-rescue normal10 + compatible rescue10 strategy. Once normal v9 committed, existing rescue v8 is version-inadmissible (8<9). If rescue v9 is committed as a valid app, a subsequent normal v9 is rejected (9<=9); normal10+ would be required for ordinary return, which itself changes future floor and rescue compatibility. Separate owner permission still required for any signing beyond this P2 two-package pair or any physical device update.
+
+**Current decision:** `P2_OFFLINE_SIGNER_BUNDLE_STATIC_PASS`, `P2_OWNER_NATIVE_WINDOWS_SIGNED_ARTIFACTS_PENDING`, `P3_FLASH_NOT_AUTHORIZED`, `V4_PHYSICAL_NOT_ATTESTED`, `SIGNED_NORMAL_V8_DEVICE_INSTALLED_UNCHANGED`, `ESP_V2_UNCHANGED`. This is BENCH P2 preparation, not formal Gate4 acceptance.

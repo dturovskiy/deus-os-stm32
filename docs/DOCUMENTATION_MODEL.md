@@ -2,6 +2,9 @@
 
 Status: **CANONICAL DOCUMENTATION GOVERNANCE**
 
+**STM32/Blue Pill pin naming — mandatory documentation rule (2026-11-07):** In all new and updated *physical wiring diagrams, tables, cable instructions and hardware plans*, write **the marking actually printed on the board first, followed by the official STM32 MCU designation in parentheses**. Examples: **A2 (PA2, USART2_TX)**, **A3 (PA3, USART2_RX)**, **B0 (PB0)**, **B8 (PB8)**, **C13 (PC13)**. When the connection is labeled by signal on a dedicated connector, use the *actual connector silkscreen* plus official pin, e.g. **SWDIO (PA13)** and **SWCLK (PA14)**; do not pretend the connector is printed `A13/A14` if it is not. **B0 (PB0) is not the BOOT0 jumper.** Code, register names and vendor APIs retain official `PAx/PBx/PCx` symbols, but any human-facing physical instruction must repeat the board label. Unverified GPIO allocations must be marked *proposed, not wired/implemented*. This is a documentation-format change only; do not rewrite old immutable Evidence or infer an electrical connection from a label.
+
+
 This file defines what each documentation class is allowed to mean.
 
 The goal is to prevent several files from independently claiming to be the current project state.
