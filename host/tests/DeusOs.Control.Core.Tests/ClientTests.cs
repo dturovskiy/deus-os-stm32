@@ -34,6 +34,123 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public async Task NodeV5Registry39SupportsExplicitCommandsAndLegacyPing()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 7);
+        transport.EnqueueResponse(CreateHelloResponse(1, registryCount: 39));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcSysInfo, 2, ValidSysInfo()));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcNodeStart, 3, "NODE_HELLO_QUEUED\r\n"));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcNodeCrc, 4, "NODE_CRC_QUEUED\r\n"));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcNodeStat, 5, "NODE_READY=0x00000001\r\n"));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcPing, 6, "PONG\r\n"));
+
+        await using var client = new DeusDeviceClient(transport);
+        var negotiation = await client.NegotiateAsync(
+            TestContext.Current.CancellationToken);
+        Assert.Equal((ushort)39, negotiation.Hello.RegistryCount);
+
+        Assert.True((await client.StartNodeAsync(
+            0xAABBCCDDu, TestContext.Current.CancellationToken)).IsSuccess);
+        Assert.True((await client.NodeCrcAsync(
+            "DEUS", TestContext.Current.CancellationToken)).IsSuccess);
+        Assert.True((await client.NodeStatAsync(
+            TestContext.Current.CancellationToken)).IsSuccess);
+        Assert.True((await client.PingAsync(
+            TestContext.Current.CancellationToken)).IsSuccess);
+
+        Assert.Equal(6, transport.Writes.Count);
+        Assert.Equal(ProtocolConstants.RpcNodeStart,
+            BinaryPrimitives.ReadUInt16LittleEndian(transport.Writes[2].AsSpan(10, 2)));
+        Assert.Equal(ProtocolConstants.RpcNodeCrc,
+            BinaryPrimitives.ReadUInt16LittleEndian(transport.Writes[3].AsSpan(10, 2)));
+        Assert.Equal(ProtocolConstants.RpcNodeStat,
+            BinaryPrimitives.ReadUInt16LittleEndian(transport.Writes[4].AsSpan(10, 2)));
+        Assert.Equal(ProtocolConstants.RpcPing,
+            BinaryPrimitives.ReadUInt16LittleEndian(transport.Writes[5].AsSpan(10, 2)));
+        Assert.Equal((byte)1, transport.Writes[2][12]);
+        Assert.Equal((byte)10, transport.Writes[2][14]);
+        Assert.Equal("0xAABBCCDD",
+            Encoding.ASCII.GetString(transport.Writes[2], 15, 10));
+        Assert.Equal("DEUS",
+            Encoding.ASCII.GetString(transport.Writes[3], 15, 4));
+    }
+
+    [Fact]
+    public async Task NodeV5LegacyRegistry36RejectsNodeCommandsBeforeTransport()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        EnqueueNegotiation(transport, DefaultSourceTree);
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        var exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.StartNodeAsync(
+                0xAABBCCDDu, TestContext.Current.CancellationToken));
+        Assert.Equal(HostErrorKind.IncompatibleService, exception.Kind);
+
+        exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.NodeStatAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(HostErrorKind.IncompatibleService, exception.Kind);
+        Assert.Equal(2, transport.Writes.Count);
+    }
+
+    [Theory]
+    [InlineData(37)]
+    [InlineData(38)]
+    [InlineData(40)]
+    public async Task NodeV5RejectsUnknownRegistryCounts(int count)
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(
+            1, registryCount: checked((ushort)count)));
+        await using var client = new DeusDeviceClient(transport);
+        var exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.NegotiateAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(HostErrorKind.IncompatibleService, exception.Kind);
+        Assert.Equal(ConnectionState.Faulted, client.State);
+        Assert.Single(transport.Writes);
+    }
+
+    [Fact]
+    public async Task NodeV5RejectsUnknownServiceVersionBeforeSysinfo()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(
+            1, registryCount: 39, serviceVersion: 4));
+        await using var client = new DeusDeviceClient(transport);
+        var exception = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.NegotiateAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(HostErrorKind.IncompatibleService, exception.Kind);
+        Assert.Equal(ConnectionState.Faulted, client.State);
+        Assert.Single(transport.Writes);
+    }
+
+    [Fact]
+    public async Task NodeV5InvalidArgumentsDoNotWrite()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 512);
+        transport.EnqueueResponse(CreateHelloResponse(1, registryCount: 39));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcSysInfo, 2, ValidSysInfo()));
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => client.StartNodeAsync(0u, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => client.NodeCrcAsync("DE US", TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => client.NodeCrcAsync(
+                "ABCDEFGHIJKLMNOPQ", TestContext.Current.CancellationToken));
+        Assert.Equal(2, transport.Writes.Count);
+    }
+
+    [Fact]
     public async Task RpcRejectsWrongRequestId()
     {
         var transport = new ScriptedTransport(readChunkLimit: 512);
@@ -1429,17 +1546,19 @@ public sealed class ClientTests
 
     private static byte[] CreateHelloResponse(
         ushort requestId,
-        uint capabilityFlags = 0x0000003F)
+        uint capabilityFlags = 0x0000003F,
+        ushort registryCount = 36,
+        byte serviceVersion = 3)
     {
         var payload = new byte[16];
         payload[0] = 1;
-        payload[1] = 3;
+        payload[1] = serviceVersion;
         payload[2] = 4;
         payload[3] = 0;
         BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(4, 2), 32);
         BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(6, 2), 132);
         BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(8, 2), 48);
-        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(10, 2), 36);
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(10, 2), registryCount);
         BinaryPrimitives.WriteUInt32LittleEndian(
             payload.AsSpan(12, 4),
             capabilityFlags);

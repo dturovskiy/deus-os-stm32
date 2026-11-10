@@ -230,6 +230,99 @@ internal static class Program
                 return 0;
             }
 
+            case "stacks":
+            {
+                // Both RPCs have been SAFE/read-only since registry 36;
+                // usable with the installed v6 or future registry 39.
+                // Avoid "schedstack": it is a DIAGNOSTIC test, blocked
+                // while the production scheduler is active.
+                const ushort rpcMspStat = 0x0006;
+                const ushort rpcSchedProd = 0x0007;
+                var msp = await session.ExecuteAsync(
+                    (client, token) => client.RpcAsync(
+                        rpcMspStat, cancellationToken: token),
+                    CancellationToken.None);
+                EnsureSuccess(msp, "mspstat");
+                Console.Write(msp.OutputText);
+
+                var psp = await session.ExecuteAsync(
+                    (client, token) => client.RpcAsync(
+                        rpcSchedProd, cancellationToken: token),
+                    CancellationToken.None);
+                EnsureSuccess(psp, "schedprod");
+                Console.Write(psp.OutputText);
+
+                // An RPC can succeed even when the firmware detects a
+                // stack-canary or margin failure. Do not return exit 0.
+                if (!msp.OutputText.Contains(
+                        "MSP_STACK_OK\r\n", StringComparison.Ordinal) ||
+                    !psp.OutputText.Contains(
+                        "SCHED_PROD_OK\r\n", StringComparison.Ordinal))
+                {
+                    Console.Error.WriteLine("STACKS_STATUS=FAIL");
+                    return 2;
+                }
+
+                Console.WriteLine("STACKS_STATUS=PASS");
+                return 0;
+            }
+
+            case "node-start":
+            {
+                // Caller supplies a fresh nonzero 32-bit session ID.  No
+                // cross-reboot uniqueness or authentication is implied.
+                var nonce = ParseNodeNonce(parsed.CommandArgument);
+                var result = await session.ExecuteAsync(
+                    (client, token) => client.StartNodeAsync(nonce, token),
+                    CancellationToken.None);
+                EnsureSuccess(result, "node start");
+                Console.Write(result.OutputText);
+                return 0;
+            }
+
+            case "node-crc":
+            {
+                var payload = parsed.CommandArgument ??
+                    throw new ArgumentException("node crc requires ASCII text");
+                var result = await session.ExecuteAsync(
+                    (client, token) => client.NodeCrcAsync(payload, token),
+                    CancellationToken.None);
+                EnsureSuccess(result, "node crc");
+                Console.Write(result.OutputText);
+                return 0;
+            }
+
+            case "node-status":
+            {
+                var result = await session.ExecuteAsync(
+                    (client, token) => client.NodeStatAsync(token),
+                    CancellationToken.None);
+                EnsureSuccess(result, "node status");
+                Console.Write(result.OutputText);
+                return 0;
+            }
+
+            case "wifi-scan":
+                await RunWifiScanAsync(session);
+                return 0;
+            case "wifi-caps":
+            case "wifi-status":
+            case "wifi-result":
+            {
+                var command = parsed.Command switch {
+                    "wifi-caps" => "caps",
+                    "wifi-status" => "status",
+                    _ => "result"
+                };
+                var result = await session.ExecuteAsync(
+                    (client, token) => client.NodeWifiAsync(
+                        command, cancellationToken: token),
+                    CancellationToken.None);
+                EnsureSuccess(result, "wifi " + command);
+                Console.Write(result.OutputText);
+                return 0;
+            }
+
             case "apps":
                 PrintApplications(await session.ExecuteAsync(
                     (client, token) => client.ApplicationsAsync(token),
@@ -422,6 +515,242 @@ internal static class Program
         return count;
     }
 
+    /* Wi-Fi commands require a future registry-40 STM32 and an already
+     * admitted Node HELLO. Legacy normal9 (registry-39) is refused by
+     * DeusDeviceClient BEFORE any Wi-Fi request leaves the host.
+     * No automatic HELLO, reset, retry of SCAN_START, or credentials.
+     */
+    private static Dictionary<string, string> ParseWifiReply(string text)
+    {
+        var fields = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var part in text.Split(
+                     new[] { ' ', '\r', '\n', '\t' },
+                     StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = part.IndexOf('=');
+            if (separator <= 0 || separator == part.Length - 1)
+            {
+                // The firmware prints WIFI_SSID_HEX= for hidden AP names.
+                if (part == "WIFI_SSID_HEX=")
+                    fields.TryAdd("WIFI_SSID_HEX", "");
+                continue;
+            }
+            if (part.StartsWith("WIFI_", StringComparison.Ordinal) &&
+                !fields.TryAdd(part[..separator], part[(separator + 1)..]))
+                throw new InvalidOperationException(
+                    "duplicate Wi-Fi response field: " + part[..separator]);
+        }
+        return fields;
+    }
+    private static uint WifiHex(
+        IReadOnlyDictionary<string, string> fields, string key)
+    {
+        if (!fields.TryGetValue(key, out var value) ||
+            value.Length != 10 ||
+            !value.StartsWith("0x", StringComparison.Ordinal) ||
+            !uint.TryParse(value[2..],
+                System.Globalization.NumberStyles.AllowHexSpecifier,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsed))
+            throw new InvalidOperationException(
+                "malformed or missing Wi-Fi reply field " + key);
+        return parsed;
+    }
+    private static async Task<Dictionary<string,string>> WifiQueueAndWaitAsync(
+        DeusDeviceSession session, string action,
+        uint generation = 0, byte index = 0, byte offset = 0)
+    {
+        var command = await session.ExecuteAsync(
+            (client, token) => client.NodeWifiAsync(
+                action, generation, index, offset, token),
+            CancellationToken.None);
+        EnsureSuccess(command, "wifi " + action);
+        var expected = action switch
+        {
+            "caps" => 0x85u, "scan" => 0x86u,
+            "status" => 0x87u, "page" => 0x88u,
+            _ => throw new ArgumentException("unknown Wi-Fi command")
+        };
+        var queued = action switch
+        {
+            "caps" => 0x05u, "scan" => 0x06u,
+            "status" => 0x07u, _ => 0x08u
+        };
+        if (!command.OutputText.Contains(
+                $"NODE_WIFI_QUEUED=0x{queued:X8}",
+                StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "Wi-Fi request was not confirmed queued: " + action);
+        // Only read the MCU's snapshot. Polling never sends a second
+        // SCAN_START. 5s bounds the 3s radio-start deadline plus USB.
+        for (var attempt = 0; attempt < 50; ++attempt)
+        {
+            var result = await session.ExecuteAsync(
+                (client, token) => client.NodeWifiAsync(
+                    "result", cancellationToken: token),
+                CancellationToken.None);
+            EnsureSuccess(result, "wifi result");
+            var fields = ParseWifiReply(result.OutputText);
+            if (WifiHex(fields, "WIFI_VALID") == 1u)
+            {
+                var remoteError = WifiHex(fields, "WIFI_ERROR");
+                if (remoteError != 0u)
+                    throw new InvalidOperationException(
+                        $"ESP NodeLink returned Wi-Fi error {remoteError} for {action}; " +
+                        "no automatic re-HELLO or RF retry.");
+                if (WifiHex(fields, "WIFI_REPLY_TYPE") != expected)
+                    throw new InvalidOperationException(
+                        "unexpected Wi-Fi reply opcode (stale/corrupted result)");
+                return fields;
+            }
+            if (WifiHex(fields, "WIFI_READY") == 0u)
+                throw new InvalidOperationException(
+                    "Node lost READY while waiting for Wi-Fi reply; no automatic retry.");
+            await Task.Delay(100);
+        }
+        throw new TimeoutException(
+            "Wi-Fi request has no accepted reply; no automatic retry.");
+    }
+    private static async Task RunWifiScanAsync(DeusDeviceSession session)
+    {
+        // The host refuses to send SCAN_START without an existing HELLO
+        // session and explicit registry-40 capability.
+        var node = await session.ExecuteAsync(
+            (client, token) => client.NodeStatAsync(token),
+            CancellationToken.None);
+        EnsureSuccess(node, "node status");
+        if (!node.OutputText.Contains("NODE_READY=0x00000001",StringComparison.Ordinal) ||
+            !node.OutputText.Contains("NODE_PENDING=0x00000000",StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "Wi-Fi scan requires already READY, idle Node Link; " +
+                "run no implicit node start.");
+
+        var caps = await WifiQueueAndWaitAsync(session, "caps");
+        if (WifiHex(caps, "WIFI_MAX_APS") != 4u ||
+            WifiHex(caps, "WIFI_MAX_SSID") != 32u ||
+            WifiHex(caps, "WIFI_PAGE_MAX") != 14u)
+            throw new InvalidOperationException(
+                "ESP Wi-Fi capability geometry incompatible; scan NOT started.");
+
+        var started = await WifiQueueAndWaitAsync(session, "scan");
+        var generation = WifiHex(started, "WIFI_GENERATION");
+        if (generation == 0u || WifiHex(started, "WIFI_STATE") != 2u)
+            throw new InvalidOperationException(
+                "ESP did not acknowledge new nonblocking Wi-Fi scan.");
+
+        // SDK V0 scanning times out after 8s. Accept only current
+        // generation, never stale pre-HELLO/status data.
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(11);
+        Dictionary<string,string> state;
+        do
+        {
+            await Task.Delay(250);
+            state = await WifiQueueAndWaitAsync(session, "status");
+            if (WifiHex(state, "WIFI_GENERATION") != generation)
+                throw new InvalidOperationException(
+                    "Wi-Fi scan generation drift; refuse stale AP results.");
+            var s = WifiHex(state, "WIFI_STATE");
+            if (s == 4u)
+                throw new InvalidOperationException(
+                    $"ESP Wi-Fi SDK scan failed: 0x{WifiHex(state,"WIFI_LAST_ERROR"):X8}");
+            if (s == 3u)
+                break;
+            if (s != 2u)
+                throw new InvalidOperationException(
+                    "ESP scan state changed unexpectedly.");
+        } while (DateTimeOffset.UtcNow < deadline);
+        if (WifiHex(state, "WIFI_STATE") != 3u)
+            throw new TimeoutException(
+                "Wi-Fi scan exceeded local deadline, no repeat issued.");
+
+        var count = WifiHex(state, "WIFI_COUNT");
+        var truncated = WifiHex(state, "WIFI_TRUNCATED");
+        if (count > 4u || truncated > 1u)
+            throw new InvalidOperationException("ESP AP count invalid.");
+        Console.WriteLine(
+            $"WIFI_SCAN=RESULTS GENERATION=0x{generation:X8} AP_COUNT={count} TRUNCATED={truncated}");
+        for (byte apIndex = 0; apIndex < count; ++apIndex)
+        {
+            var name = new List<byte>(32);
+            uint? channel = null;
+            uint? rawRssi = null;
+            uint? authmode = null;
+            uint? expectedLength = null;
+            do
+            {
+                var page = await WifiQueueAndWaitAsync(
+                    session, "page", generation, apIndex,
+                    checked((byte)name.Count));
+                if (WifiHex(page, "WIFI_GENERATION") != generation ||
+                    WifiHex(page, "WIFI_AP_INDEX") != apIndex ||
+                    WifiHex(page, "WIFI_SSID_OFFSET") != name.Count)
+                    throw new InvalidOperationException(
+                        "Wi-Fi AP page correlation failed.");
+                var length = WifiHex(page, "WIFI_SSID_LENGTH");
+                var pageLength = WifiHex(page, "WIFI_PAGE_LENGTH");
+                var ch = WifiHex(page, "WIFI_CHANNEL");
+                var rssi = WifiHex(page, "WIFI_RSSI_U8");
+                var auth = WifiHex(page, "WIFI_AUTHMODE");
+                if (length > 32u || pageLength > 14u ||
+                    rssi > 255u || ch > 255u || auth > 255u ||
+                    (expectedLength.HasValue && expectedLength.Value != length) ||
+                    (channel.HasValue && channel.Value != ch) ||
+                    (rawRssi.HasValue && rawRssi.Value != rssi) ||
+                    (authmode.HasValue && authmode.Value != auth))
+                    throw new InvalidOperationException(
+                        "inconsistent or oversized AP page data.");
+                expectedLength = length;
+                channel = ch;
+                rawRssi = rssi;
+                authmode = auth;
+                if (!page.TryGetValue("WIFI_SSID_HEX", out var hex) ||
+                    hex.Length != pageLength * 2u ||
+                    hex.Any(c => !Uri.IsHexDigit(c)))
+                    throw new InvalidOperationException(
+                        "Wi-Fi SSID contains invalid hex data.");
+                var bytes = Convert.FromHexString(hex);
+                if (bytes.Length != pageLength ||
+                    name.Count + bytes.Length > length)
+                    throw new InvalidOperationException(
+                        "Wi-Fi SSID page overrun.");
+                name.AddRange(bytes);
+                if (name.Count < length && pageLength == 0u)
+                    throw new InvalidOperationException(
+                        "zero-progress AP pagination.");
+            } while (name.Count < expectedLength!.Value);
+            var signedRssi = unchecked((sbyte)(byte)rawRssi!.Value);
+            Console.WriteLine(
+                $"WIFI_AP_INDEX={apIndex} CHANNEL={channel} RSSI_DBM={signedRssi} " +
+                $"AUTHMODE={authmode} SSID_HEX={Convert.ToHexString(name.ToArray())}");
+        }
+    }
+
+    private static uint ParseNodeNonce(string? text)
+    {
+        if (text is null)
+        {
+            throw new ArgumentException(
+                "node start requires a fresh nonzero 8-digit hex session id");
+        }
+
+        var digits = text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            ? text[2..]
+            : text;
+        if (digits.Length != 8 ||
+            !uint.TryParse(
+                digits,
+                System.Globalization.NumberStyles.AllowHexSpecifier,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var nonce) ||
+            nonce == 0u)
+        {
+            throw new ArgumentException(
+                "node start requires exactly 8 hex digits (nonzero); use a new ID after reboot");
+        }
+
+        return nonce;
+    }
+
     private static ushort ParseApplicationId(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -514,6 +843,43 @@ internal static class Program
                 return new CliArguments("ping", device, remaining[2]);
             }
 
+            if (remaining[0] == "wifi")
+            {
+                if (remaining.Count != 2)
+                    throw new ArgumentException(
+                        "wifi accepts scan, caps, status, or result");
+                var wifiCommand = remaining[1] switch
+                {
+                    "scan" => "wifi-scan",
+                    "caps" => "wifi-caps",
+                    "status" => "wifi-status",
+                    "result" => "wifi-result",
+                    _ => throw new ArgumentException(
+                        "wifi accepts scan, caps, status, or result")
+                };
+                return new CliArguments(wifiCommand,device,null);
+            }
+            if (remaining[0] == "node")
+            {
+                if (remaining.Count < 2)
+                {
+                    throw new ArgumentException(
+                        "node requires start, crc, or status");
+                }
+
+                return remaining[1] switch
+                {
+                    "start" when remaining.Count == 3 =>
+                        new CliArguments("node-start", device, remaining[2]),
+                    "crc" when remaining.Count == 3 =>
+                        new CliArguments("node-crc", device, remaining[2]),
+                    "status" when remaining.Count == 2 =>
+                        new CliArguments("node-status", device, null),
+                    _ => throw new ArgumentException(
+                        "node accepts: start <fresh_hex8>, crc <ASCII1..16>, status"),
+                };
+            }
+
             if (remaining[0] == "app")
             {
                 if (remaining.Count < 2)
@@ -570,6 +936,7 @@ internal static class Program
                     "ping" or
                     "health" or
                     "rpcinfo" or
+                    "stacks" or
                     "apps"))
             {
                 throw new ArgumentException(
@@ -590,6 +957,14 @@ internal static class Program
                   deus-cp [--device <locator>] ping [--count <1..1024>]
                   deus-cp [--device <locator>] health
                   deus-cp [--device <locator>] rpcinfo
+                  deus-cp [--device <locator>] stacks   (read-only MSP + PSP watermarks)
+                  deus-cp [--device <locator>] node start <fresh_hex8>
+                  deus-cp [--device <locator>] node crc <ASCII1..16>
+                  deus-cp [--device <locator>] node status
+                  deus-cp [--device <locator>] wifi caps     (future registry-40 only)
+                  deus-cp [--device <locator>] wifi scan     (explicit on-demand RF, future registry-40 only)
+                  deus-cp [--device <locator>] wifi status   (single NodeLink status request)
+                  deus-cp [--device <locator>] wifi result   (MCU cached result only)
                   deus-cp [--device <locator>] apps
                   deus-cp [--device <locator>] app start <id>
                   deus-cp [--device <locator>] app stop

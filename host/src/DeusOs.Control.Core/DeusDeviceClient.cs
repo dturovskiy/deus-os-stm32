@@ -118,6 +118,109 @@ public sealed class DeusDeviceClient : IAsyncDisposable
                 cancellationToken));
     }
 
+    /* Node Link v0 command-service extension. Neither method executes a
+     * device operation until called explicitly on a READY, negotiated client.
+     * The caller owns never-reused challenge allocation across MCU reboots.
+     */
+    public Task<RpcResult> StartNodeAsync(
+        uint freshNonce,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureNodeCommandRegistry();
+        if (freshNonce == 0u)
+        {
+            throw new ArgumentOutOfRangeException(nameof(freshNonce));
+        }
+        return RpcAsync(
+            ProtocolConstants.RpcNodeStart,
+            new[] { "0x" + freshNonce.ToString("X8") },
+            cancellationToken: cancellationToken);
+    }
+
+    public Task<RpcResult> NodeCrcAsync(
+        string payload,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureNodeCommandRegistry();
+        if (payload is null || payload.Length < 1 || payload.Length > 16)
+        {
+            throw new ArgumentOutOfRangeException(nameof(payload));
+        }
+        foreach (var ch in payload)
+        {
+            if (ch < '!' || ch > '~')
+            {
+                throw new ArgumentException(
+                    "Node CRC text must be printable ASCII without spaces.",
+                    nameof(payload));
+            }
+        }
+        return RpcAsync(
+            ProtocolConstants.RpcNodeCrc,
+            new[] { payload },
+            cancellationToken: cancellationToken);
+    }
+
+    public Task<RpcResult> NodeStatAsync(
+        CancellationToken cancellationToken = default)
+    {
+        EnsureNodeCommandRegistry();
+        return RpcAsync(
+            ProtocolConstants.RpcNodeStat,
+            cancellationToken: cancellationToken);
+    }
+
+    /* Optional STM32 firmware registry-40 Wi-Fi commands, NEVER silently
+     * sent to installed normal9 registry-39 peers. SCAN_START is an
+     * explicit caller operation; no implicit re-HELLO or retry.
+     */
+    public Task<RpcResult> NodeWifiAsync(
+        string operation, uint generation = 0u,
+        byte apIndex = 0, byte ssidOffset = 0,
+        CancellationToken cancellationToken = default)
+    {
+        if (State != ConnectionState.Ready ||
+            Hello?.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount)
+        {
+            throw new DeusHostException(
+                HostErrorKind.IncompatibleService,
+                "Wi-Fi NodeLink requires explicitly negotiated service-v3 registry-40; no command sent.");
+        }
+        ArgumentNullException.ThrowIfNull(operation);
+        IReadOnlyList<string> args;
+        if (operation == "page")
+        {
+            if (generation == 0u || apIndex >= 4 || ssidOffset > 32)
+                throw new ArgumentOutOfRangeException(nameof(generation),
+                    "Wi-Fi AP page needs nonzero generation, index 0..3 and offset 0..32.");
+            args = new[] { "page", "0x" + generation.ToString("X8"),
+                           apIndex.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                           ssidOffset.ToString(System.Globalization.CultureInfo.InvariantCulture) };
+        }
+        else if ((operation == "caps" || operation == "scan" ||
+                  operation == "status" || operation == "result") &&
+                 generation == 0u && apIndex == 0 && ssidOffset == 0)
+            args = new[] { operation };
+        else
+            throw new ArgumentException(
+                "Node Wi-Fi accepts caps, scan, status, result, or bounded AP page.",
+                nameof(operation));
+        return RpcAsync(ProtocolConstants.RpcNodeWifi,args,
+                        cancellationToken:cancellationToken);
+    }
+
+    private void EnsureNodeCommandRegistry()
+    {
+        if (State != ConnectionState.Ready ||
+            (Hello?.RegistryCount != ProtocolConstants.ExpectedNodeRegistryCount &&
+             Hello?.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount))
+        {
+            throw new DeusHostException(
+                HostErrorKind.IncompatibleService,
+                "Node control commands require negotiated service-v3 registry-39.");
+        }
+    }
+
     public async Task<FirmwareUpdateResponse> EnterBootloaderAsync(
         FirmwareUpdateAccessPolicy policy = FirmwareUpdateAccessPolicy.PublishedOnly,
         CancellationToken cancellationToken = default)
@@ -323,12 +426,19 @@ public sealed class DeusDeviceClient : IAsyncDisposable
         }
 
         if (hello.ServiceVersion != ProtocolConstants.ExpectedServiceVersion ||
-            hello.RegistryCount != ProtocolConstants.ExpectedRegistryCount)
+            (hello.RegistryCount != ProtocolConstants.ExpectedRegistryCount &&
+             hello.RegistryCount != ProtocolConstants.ExpectedNodeRegistryCount &&
+             hello.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount))
         {
             throw new DeusHostException(
                 HostErrorKind.IncompatibleService,
-                $"service/registry {hello.ServiceVersion}/{hello.RegistryCount} != " +
-                $"{ProtocolConstants.ExpectedServiceVersion}/{ProtocolConstants.ExpectedRegistryCount}");
+                $"service/registry {hello.ServiceVersion}/{hello.RegistryCount}; " +
+                $"expected {ProtocolConstants.ExpectedServiceVersion}/" +
+                $"{ProtocolConstants.ExpectedRegistryCount} or " +
+                $"{ProtocolConstants.ExpectedServiceVersion}/" +
+                $"{ProtocolConstants.ExpectedNodeRegistryCount} or " +
+                $"{ProtocolConstants.ExpectedServiceVersion}/" +
+                $"{ProtocolConstants.ExpectedWifiRegistryCount}");
         }
 
         if (hello.MaxArgs != ProtocolConstants.MaxArgs ||
