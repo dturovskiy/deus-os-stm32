@@ -3,6 +3,9 @@
 #include "kernel/asset_transfer.h"
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
+#include "kernel/esp_bridge_core_v0.h"
+#include "kernel/node_transport.h"
+#include "drivers/usart2_node.h"
 #include "kernel/time.h"
 #include "kernel/usb_management.h"
 
@@ -33,6 +36,10 @@
 #define FIRMWARE_UPDATE_TOKEN1 0xD35Au
 #define FIRMWARE_UPDATE_TOKEN2 0x2CA5u
 
+_Static_assert((BINARY_FRAME_FIXED_PREFIX_BYTES +
+    ESP_BRIDGE_MAX_REPLY_PAYLOAD + BINARY_FRAME_CRC_BYTES) <=
+    USB_MANAGEMENT_MAX_PACKET,
+    "ESP bridge reply must fit one EP4 packet");
 _Static_assert(BINARY_RPC_DATA_WIRE_MAX <= USB_MANAGEMENT_MAX_PACKET,
     "management RPC response wire frame must fit one EP4 packet");
 _Static_assert(ASSET_TRANSFER_RESPONSE_WIRE_MAX <= USB_MANAGEMENT_MAX_PACKET,
@@ -48,6 +55,7 @@ typedef union
 
 static binary_frame_parser_t usb_management_parser;
 static binary_rpc_state_t usb_management_rpc_state;
+static esp_bridge_core_v0_t usb_management_esp_bridge;
 static firmware_update_response_wire_t firmware_update_response_wire;
 static uint32_t usb_management_last_bus_reset_count;
 static uint32_t firmware_update_reset_baseline_packet_count;
@@ -189,8 +197,110 @@ __attribute__((cold, noinline)) static void firmware_update_handle_runtime_frame
     firmware_update_reset_pending = 1u;
 }
 
+/* ESP bridge v0 privileged adapter. IMPORTANT: actual ESP GPIO0 and
+ * EN/RST are still CH340-owned/unverified. Hardware admission is hard OFF.
+ * No USB request can enable direct USART2 traffic in this candidate. */
+static int usb_bridge_can_enter(void *context)
+{
+    (void)context;
+    (void)firmware_update_reset_pending;
+    return 0;
+}
+
+static int usb_bridge_enter(void *context)
+{
+    (void)context;
+    if (node_transport_maintenance_enter() == 0) return 0;
+    usart2_node_rx_arm();
+    return 1;
+}
+
+static void usb_bridge_leave(void *context)
+{
+    (void)context;
+    node_transport_maintenance_leave();
+}
+
+static int usb_bridge_tx(void *context, const uint8_t *data, uint8_t length)
+{
+    (void)context;
+    return usart2_node_write_frame(data, (uint32_t)length);
+}
+
+static int usb_bridge_rx(void *context, uint8_t *data, uint8_t capacity)
+{
+    uint32_t i;
+    usart2_node_sample_t sample;
+    (void)context;
+    for (i = 0u; i < capacity; ++i)
+    {
+        const int result = usart2_node_try_read(&sample);
+        if (result < 0) return -1;
+        if (result == 0) break;
+        data[i] = sample.byte;
+    }
+    return (int)i;
+}
+
+static const esp_bridge_io_v0_t usb_bridge_io = {
+    usb_bridge_can_enter, usb_bridge_enter, usb_bridge_leave,
+    usb_bridge_tx, usb_bridge_rx, (void *)0
+};
+
+/* Outer parser has already checked CRC16; core owns session and sequence.
+ * Serialize into existing shared 64-byte Management workspace (no new 64B
+ * BSS buffer). A failed USB reply or UART status locks the session. */
+static void usb_bridge_handle_frame(
+    const binary_frame_view_t *frame,
+    const binary_rpc_binding_t *binding)
+{
+    uint8_t *wire;
+    uint8_t payload_length;
+    uint32_t wire_length;
+
+    if (frame->version != BINARY_FRAME_PROTOCOL_VERSION ||
+        frame->flags != 0u || frame->reserved != 0u ||
+        frame->request_id == 0u ||
+        frame->payload == (const uint8_t *)0 ||
+        frame->payload_length < 8u || frame->payload_length > 48u ||
+        binding->send_wire == (binary_rpc_send_wire_t)0)
+    {
+        if (usb_management_esp_bridge.active != 0u)
+            esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+        return;
+    }
+
+    wire = usb_management_rpc_state.workspace->wire;
+    payload_length = esp_bridge_core_v0_handle(
+        &usb_management_esp_bridge, &usb_bridge_io,
+        frame->payload, (uint8_t)frame->payload_length,
+        &wire[BINARY_FRAME_FIXED_PREFIX_BYTES],
+        ESP_BRIDGE_MAX_REPLY_PAYLOAD);
+
+    if (payload_length == 0u)
+    {
+        if (usb_management_esp_bridge.active != 0u)
+            esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+        return;
+    }
+    if (wire[BINARY_FRAME_FIXED_PREFIX_BYTES + 7u] ==
+        ESP_BRIDGE_UART_UNCERTAIN)
+    {
+        esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+    }
+
+    wire_length = binary_frame_finalize_in_place(
+        BINARY_FRAME_TYPE_ESP_BRIDGE_RESPONSE, 0u, frame->request_id,
+        payload_length, wire);
+    if (binding->send_wire(binding->send_context, wire, wire_length) == 0)
+        esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+}
+
 static void usb_management_protocol_reset(void)
 {
+    /* USB reset/unconfigure cannot leave a serial maintenance owner alive. */
+    if (usb_management_esp_bridge.active != 0u)
+        esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
     binary_rpc_workspace_t *workspace =
         usb_management_rpc_state.workspace;
 
@@ -213,6 +323,7 @@ int usb_management_runtime_init(binary_rpc_workspace_t *workspace)
     }
 
     binary_frame_parser_init(&usb_management_parser);
+    esp_bridge_core_v0_init(&usb_management_esp_bridge);
     binary_rpc_init(
         &usb_management_rpc_state,
         workspace);
@@ -276,11 +387,26 @@ uint32_t usb_management_runtime_service(
             if (frame.frame_type ==
                 BINARY_FRAME_TYPE_FIRMWARE_UPDATE_REQUEST)
             {
+                if (usb_management_esp_bridge.active != 0u)
+                {
+                    /* Never reset STM32 while ESP owns USART2. */
+                    (void)firmware_update_send_response(
+                        &frame, binding,
+                        FIRMWARE_UPDATE_STATUS_INVALID_STATE, 0u);
+                    continue;
+                }
                 firmware_update_handle_runtime_frame(&frame, binding);
                 if (firmware_update_reset_pending != 0u)
                 {
                     firmware_update_reset_service();
                 }
+                continue;
+            }
+
+            if (frame.frame_type ==
+                BINARY_FRAME_TYPE_ESP_BRIDGE_REQUEST)
+            {
+                usb_bridge_handle_frame(&frame, binding);
                 continue;
             }
 

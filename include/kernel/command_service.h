@@ -60,7 +60,11 @@ typedef enum
     COMMAND_SERVICE_RPC_APPLIST = 0x0021u,
     COMMAND_SERVICE_RPC_APPSTART = 0x0022u,
     COMMAND_SERVICE_RPC_APPSTOP = 0x0023u,
-    COMMAND_SERVICE_RPC_SYSINFO = 0x0024u
+    COMMAND_SERVICE_RPC_SYSINFO = 0x0024u,
+    COMMAND_SERVICE_RPC_NODESTART = 0x0025u,
+    COMMAND_SERVICE_RPC_NODECRC = 0x0026u,
+    COMMAND_SERVICE_RPC_NODESTAT = 0x0027u,
+    COMMAND_SERVICE_RPC_NODEWIFI = 0x0028u
 } command_service_rpc_id_t;
 
 typedef enum
@@ -101,6 +105,10 @@ typedef enum
     COMMAND_SERVICE_METHOD_APPSTART,
     COMMAND_SERVICE_METHOD_APPSTOP,
     COMMAND_SERVICE_METHOD_SYSINFO,
+    COMMAND_SERVICE_METHOD_NODESTART,
+    COMMAND_SERVICE_METHOD_NODECRC,
+    COMMAND_SERVICE_METHOD_NODESTAT,
+    COMMAND_SERVICE_METHOD_NODEWIFI,
     COMMAND_SERVICE_METHOD_COUNT
 } command_service_method_id_t;
 
@@ -155,6 +163,11 @@ command_service_status_t command_service_write_line(
     const char *text);
 command_service_status_t command_service_write_hex32(
     command_service_context_t *context,
+    uint32_t value);
+/* Preserve original three independent writes even after a failed sink byte. */
+void command_service_write_hex_line(
+    command_service_context_t *context,
+    const char *label,
     uint32_t value);
 command_service_status_t command_service_execute_help(
     const command_service_request_t *request,

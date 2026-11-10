@@ -15,6 +15,7 @@
 .extern PendSV_Handler
 .extern SysTick_Handler
 .extern USART1_IRQHandler
+.extern USART2_IRQHandler
 .extern USB_LP_CAN1_RX0_IRQHandler
 .extern fault_capture
 .extern _smsp_stack
@@ -50,6 +51,7 @@ g_pfnVectors:
 .word Default_Handler
 .endr
 .word USART1_IRQHandler           /* IRQ37: USART1 */
+.word USART2_IRQHandler           /* IRQ38: USART2 */
 
 .section .text.Reset_Handler, "ax", %progbits
 .thumb_func

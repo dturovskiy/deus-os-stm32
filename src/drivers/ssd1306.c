@@ -10,6 +10,20 @@
 #define SSD1306_FLUSH_CHUNK_DATA 16u
 
 static ssd1306_present_stats_t ssd1306_last_present_stats;
+static ssd1306_progress_hook_t ssd1306_progress_hook;
+
+void ssd1306_set_progress_hook(ssd1306_progress_hook_t hook)
+{
+    ssd1306_progress_hook = hook;
+}
+
+static void ssd1306_service_progress(void)
+{
+    if (ssd1306_progress_hook != (ssd1306_progress_hook_t)0)
+    {
+        ssd1306_progress_hook();
+    }
+}
 
 static void ssd1306_present_stats_reset(void)
 {
@@ -108,6 +122,8 @@ static int ssd1306_fill_checkerboard(void)
             return 0;
         }
 
+        /* Keep diagnostic full-screen pattern output cooperative too. */
+        ssd1306_service_progress();
         bytes_remaining -= SSD1306_PATTERN_DATA;
     }
 
@@ -183,6 +199,8 @@ int ssd1306_present_full(const uint8_t *framebuffer)
         {
             return 0;
         }
+        /* I2C transaction fully closed: permit same-task RX service. */
+        ssd1306_service_progress();
     }
 
     return 1;
@@ -277,6 +295,8 @@ int ssd1306_present(mono_fb_t *fb)
                 return 0;
             }
 
+            /* Leave the transaction before servicing the USART2 SPSC RX. */
+            ssd1306_service_progress();
             offset += chunk;
         }
 

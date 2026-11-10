@@ -41,7 +41,11 @@ static const command_service_descriptor_t command_registry[] =
     COMMAND_ENTRY("applist", COMMAND_SERVICE_RPC_APPLIST, COMMAND_SERVICE_METHOD_APPLIST, COMMAND_SERVICE_CLASS_SAFE, 0u, 0u),
     COMMAND_ENTRY("appstart", COMMAND_SERVICE_RPC_APPSTART, COMMAND_SERVICE_METHOD_APPSTART, COMMAND_SERVICE_CLASS_SAFE, 1u, 1u),
     COMMAND_ENTRY("appstop", COMMAND_SERVICE_RPC_APPSTOP, COMMAND_SERVICE_METHOD_APPSTOP, COMMAND_SERVICE_CLASS_SAFE, 0u, 0u),
-    COMMAND_ENTRY("sysinfo", COMMAND_SERVICE_RPC_SYSINFO, COMMAND_SERVICE_METHOD_SYSINFO, COMMAND_SERVICE_CLASS_SAFE, 0u, 0u)
+    COMMAND_ENTRY("sysinfo", COMMAND_SERVICE_RPC_SYSINFO, COMMAND_SERVICE_METHOD_SYSINFO, COMMAND_SERVICE_CLASS_SAFE, 0u, 0u),
+    COMMAND_ENTRY("nodestart", COMMAND_SERVICE_RPC_NODESTART, COMMAND_SERVICE_METHOD_NODESTART, COMMAND_SERVICE_CLASS_DIAGNOSTIC, 1u, 1u),
+    COMMAND_ENTRY("nodecrc", COMMAND_SERVICE_RPC_NODECRC, COMMAND_SERVICE_METHOD_NODECRC, COMMAND_SERVICE_CLASS_DIAGNOSTIC, 1u, 1u),
+    COMMAND_ENTRY("nodestat", COMMAND_SERVICE_RPC_NODESTAT, COMMAND_SERVICE_METHOD_NODESTAT, COMMAND_SERVICE_CLASS_SAFE, 0u, 0u),
+    COMMAND_ENTRY("nodewifi", COMMAND_SERVICE_RPC_NODEWIFI, COMMAND_SERVICE_METHOD_NODEWIFI, COMMAND_SERVICE_CLASS_DIAGNOSTIC, 1u, 4u)
 };
 
 typedef char command_registry_count_must_match[
@@ -111,22 +115,23 @@ const command_service_descriptor_t *command_service_find(const char *name)
 
 const command_service_descriptor_t *command_service_find_rpc_id(uint16_t rpc_id)
 {
-    uint32_t index;
+    const command_service_descriptor_t *descriptor;
 
-    if (rpc_id == 0u)
+    /* RPC IDs are 1-based and ordered exactly like METHOD_ID in the
+     * frozen v3 registry. Avoid a linear scan on every RPC request.
+     * Exhaustive offline equivalence tests pin the contiguous mapping. */
+    if ((rpc_id == 0u) || ((uint32_t)rpc_id > command_service_registry_count()))
     {
         return (const command_service_descriptor_t *)0;
     }
 
-    for (index = 0u; index < command_service_registry_count(); ++index)
+    descriptor = &command_registry[(uint32_t)rpc_id - 1u];
+    if (descriptor->rpc_id != rpc_id)
     {
-        if (command_registry[index].rpc_id == rpc_id)
-        {
-            return &command_registry[index];
-        }
+        return (const command_service_descriptor_t *)0;
     }
 
-    return (const command_service_descriptor_t *)0;
+    return descriptor;
 }
 
 const char *command_service_class_name(command_service_class_t command_class)
@@ -327,6 +332,16 @@ command_service_status_t command_service_write_hex32(
     }
 
     return COMMAND_SERVICE_STATUS_OK;
+}
+
+void command_service_write_hex_line(
+    command_service_context_t *context,
+    const char *label,
+    uint32_t value)
+{
+    (void)command_service_write(context, label);
+    (void)command_service_write_hex32(context, value);
+    (void)command_service_write(context, "\r\n");
 }
 
 static void command_service_write_command_descriptor(

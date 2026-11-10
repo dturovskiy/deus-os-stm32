@@ -6,6 +6,9 @@
 #include "drivers/status_led.h"
 #include "drivers/stm32f103_clock.h"
 #include "drivers/usart1.h"
+#include "drivers/usart2_node.h"
+#include "kernel/node_transport.h"
+#include "deus_node_link.h"
 #include "drivers/usb_device.h"
 #include "gfx/mono_fb.h"
 #include "gfx/font5x7.h"
@@ -42,9 +45,11 @@
 #define PRODUCTION_IWDG_RELOAD 1249u
 #define PRODUCTION_IWDG_SPIN_LIMIT 1000000u
 #define PRODUCTION_UART_RX_EVENT           (1u << 0)
+#define PRODUCTION_ESP_RX_EVENT            (1u << 1)
 #define PRODUCTION_USB_MANAGEMENT_RX_EVENT (1u << 2)
 #define PRODUCTION_CONSOLE_RX_EVENTS       \
     (PRODUCTION_UART_RX_EVENT | \
+     PRODUCTION_ESP_RX_EVENT | \
      PRODUCTION_USB_MANAGEMENT_RX_EVENT)
 #define BOOT_DESKTOP_UI_SPLASH_MIN_MS 1000u
 #define BOOT_DESKTOP_UI_POLL_MS       250u
@@ -269,6 +274,14 @@ void USART1_IRQHandler(void)
     if (usart1_irq_service() != 0)
     {
         scheduler_event_signal(PRODUCTION_UART_RX_EVENT);
+    }
+}
+
+void USART2_IRQHandler(void)
+{
+    if (usart2_node_irq_service(kernel_ticks) != 0)
+    {
+        scheduler_event_signal(PRODUCTION_ESP_RX_EVENT);
     }
 }
 
@@ -760,13 +773,9 @@ static int ssd1306_show_dirty_present_test(
         return 0;
     }
 
-    console_write(context, "OLED_DIRTY_BASELINE_PAYLOAD=");
-    console_write_hex32(context, payload_bytes);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "OLED_DIRTY_BASELINE_PAYLOAD=", payload_bytes);
 
-    console_write(context, "OLED_DIRTY_BASELINE_WRITES=");
-    console_write_hex32(context, stats.i2c_write_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "OLED_DIRTY_BASELINE_WRITES=", stats.i2c_write_count);
 
     /* Clean present must perform no I2C transaction at all. */
     if (ssd1306_present(&oled_surface) == 0)
@@ -826,9 +835,7 @@ static int ssd1306_show_dirty_present_test(
         return 0;
     }
 
-    console_write(context, "OLED_DIRTY_NARROW_PAYLOAD=");
-    console_write_hex32(context, payload_bytes);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "OLED_DIRTY_NARROW_PAYLOAD=", payload_bytes);
 
     /*
      * Establish exact status reference 00:00, then prove 00:00 -> 00:01
@@ -884,15 +891,9 @@ static int ssd1306_show_dirty_present_test(
         return 0;
     }
 
-    console_write(context, "OLED_DIRTY_TIME_MIN_X=");
-    console_write_hex32(context, min_x);
-    console_write(context, "\r\n");
-    console_write(context, "OLED_DIRTY_TIME_MAX_X=");
-    console_write_hex32(context, max_x);
-    console_write(context, "\r\n");
-    console_write(context, "OLED_DIRTY_TIME_PAYLOAD=");
-    console_write_hex32(context, payload_bytes);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "OLED_DIRTY_TIME_MIN_X=", min_x);
+    command_service_write_hex_line(context, "OLED_DIRTY_TIME_MAX_X=", max_x);
+    command_service_write_hex_line(context, "OLED_DIRTY_TIME_PAYLOAD=", payload_bytes);
 
     /* Default reference USB is FILLED; change only USB to RING. */
     oled_status_bar_set_indicators(
@@ -936,15 +937,9 @@ static int ssd1306_show_dirty_present_test(
         return 0;
     }
 
-    console_write(context, "OLED_DIRTY_USB_MIN_X=");
-    console_write_hex32(context, min_x);
-    console_write(context, "\r\n");
-    console_write(context, "OLED_DIRTY_USB_MAX_X=");
-    console_write_hex32(context, max_x);
-    console_write(context, "\r\n");
-    console_write(context, "OLED_DIRTY_USB_PAYLOAD=");
-    console_write_hex32(context, payload_bytes);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "OLED_DIRTY_USB_MIN_X=", min_x);
+    command_service_write_hex_line(context, "OLED_DIRTY_USB_MAX_X=", max_x);
+    command_service_write_hex_line(context, "OLED_DIRTY_USB_PAYLOAD=", payload_bytes);
 
     return ssd1306_display_on();
 }
@@ -1589,49 +1584,35 @@ static void console_i2c_scan(command_service_context_t *context)
 
         if (result != 0)
         {
-            console_write(context, "ADDR=");
-            console_write_hex32(context, address);
-            console_write(context, "\r\n");
+            command_service_write_hex_line(context, "ADDR=", address);
             ++count;
         }
     }
 
-    console_write(context, "COUNT=");
-    console_write_hex32(context, count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "COUNT=", count);
 }
 
 static void console_write_fault(command_service_context_t *context)
 {
-    console_write(context, "FAULTREC=");
-    console_write_hex32(context, (uint32_t)&fault_record);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "FAULTREC=", (uint32_t)&fault_record);
 
     console_write(context, "MAGIC=");
     console_write_hex32(context, fault_record.magic);
-    console_write(context, " EXC=");
-    console_write_hex32(context, fault_record.exception_number);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, " EXC=", fault_record.exception_number);
 
     console_write(context, "SP=");
     console_write_hex32(context, fault_record.stacked_sp);
-    console_write(context, " VALID=");
-    console_write_hex32(context, fault_record.stack_valid);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, " VALID=", fault_record.stack_valid);
 
     console_write(context, "PC=");
     console_write_hex32(context, fault_record.pc);
-    console_write(context, " LR=");
-    console_write_hex32(context, fault_record.lr);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, " LR=", fault_record.lr);
 
     console_write(context, "CFSR=");
     console_write_hex32(context, SCB_CFSR);
     console_write(context, " HFSR=");
     console_write_hex32(context, SCB_HFSR);
-    console_write(context, " SHCSR=");
-    console_write_hex32(context, SCB_SHCSR);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, " SHCSR=", SCB_SHCSR);
 }
 
 static void console_uart_rx_stats(command_service_context_t *context)
@@ -1640,33 +1621,19 @@ static void console_uart_rx_stats(command_service_context_t *context)
 
     usart1_diagnostics_get(&diagnostics);
 
-    console_write(context, "RX_CAPACITY=");
-    console_write_hex32(context, diagnostics.capacity);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "RX_CAPACITY=", diagnostics.capacity);
 
-    console_write(context, "RX_IRQ_COUNT=");
-    console_write_hex32(context, diagnostics.irq_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "RX_IRQ_COUNT=", diagnostics.irq_count);
 
-    console_write(context, "RX_BYTE_COUNT=");
-    console_write_hex32(context, diagnostics.byte_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "RX_BYTE_COUNT=", diagnostics.byte_count);
 
-    console_write(context, "RX_DROP_COUNT=");
-    console_write_hex32(context, diagnostics.drop_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "RX_DROP_COUNT=", diagnostics.drop_count);
 
-    console_write(context, "RX_ERROR_COUNT=");
-    console_write_hex32(context, diagnostics.error_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "RX_ERROR_COUNT=", diagnostics.error_count);
 
-    console_write(context, "RX_HIGH_WATER=");
-    console_write_hex32(context, diagnostics.high_water);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "RX_HIGH_WATER=", diagnostics.high_water);
 
-    console_write(context, "RX_DEPTH=");
-    console_write_hex32(context, diagnostics.depth);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "RX_DEPTH=", diagnostics.depth);
 
     if (
         (diagnostics.irq_count != 0u) &&
@@ -1766,33 +1733,19 @@ static void console_msp_stack_stats(command_service_context_t *context)
     const uint32_t margin = (used < capacity) ? (capacity - used) : 0u;
     const uint32_t canary = (msp_stack_canary_intact() != 0) ? 1u : 0u;
 
-    console_write(context, "MSP_RESERVED=");
-    console_write_hex32(context, reserved);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "MSP_RESERVED=", reserved);
 
-    console_write(context, "MSP_GUARD=");
-    console_write_hex32(context, MSP_STACK_GUARD_BYTES);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "MSP_GUARD=", MSP_STACK_GUARD_BYTES);
 
-    console_write(context, "MSP_CAPACITY=");
-    console_write_hex32(context, capacity);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "MSP_CAPACITY=", capacity);
 
-    console_write(context, "MSP_USED=");
-    console_write_hex32(context, used);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "MSP_USED=", used);
 
-    console_write(context, "MSP_MARGIN=");
-    console_write_hex32(context, margin);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "MSP_MARGIN=", margin);
 
-    console_write(context, "MSP_CURRENT=");
-    console_write_hex32(context, current);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "MSP_CURRENT=", current);
 
-    console_write(context, "MSP_CANARY=");
-    console_write_hex32(context, canary);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "MSP_CANARY=", canary);
 
     if (
         (reserved == MSP_STACK_RESERVED_BYTES) &&
@@ -1942,131 +1895,69 @@ static void console_production_scheduler_stats(command_service_context_t *contex
         task1_priority = task1->priority;
     }
 
-    console_write(context, "SCHED_PROD_ACTIVE=");
-    console_write_hex32(context, active);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_ACTIVE=", active);
 
     console_write_line(context, "SCHED_PROD_MODE=COOPERATIVE");
 
-    console_write(context, "SCHED_PROD_THREAD_PSP=");
-    console_write_hex32(context, thread_psp);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_THREAD_PSP=", thread_psp);
 
-    console_write(context, "SCHED_PROD_CONTROL=");
-    console_write_hex32(context, control);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_CONTROL=", control);
 
-    console_write(context, "SCHED_PROD_PSP=");
-    console_write_hex32(context, psp);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_PSP=", psp);
 
-    console_write(context, "SCHED_PROD_PSP_IN_RANGE=");
-    console_write_hex32(context, psp_in_range);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_PSP_IN_RANGE=", psp_in_range);
 
-    console_write(context, "SCHED_PROD_TASK0_STATE=");
-    console_write_hex32(context, task0_state);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_TASK0_STATE=", task0_state);
 
-    console_write(context, "SCHED_PROD_TASK0_PRIORITY=");
-    console_write_hex32(context, task0_priority);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_TASK0_PRIORITY=", task0_priority);
 
-    console_write(context, "SCHED_PROD_TASK0_WAIT_EVENTS=");
-    console_write_hex32(context, task0_wait_events);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_TASK0_WAIT_EVENTS=", task0_wait_events);
 
-    console_write(context, "SCHED_PROD_TASK0_WAKE_EVENTS=");
-    console_write_hex32(context, task0_wake_events);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_TASK0_WAKE_EVENTS=", task0_wake_events);
 
-    console_write(context, "SCHED_PROD_TASK1_STATE=");
-    console_write_hex32(context, task1_state);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_TASK1_STATE=", task1_state);
 
-    console_write(context, "SCHED_PROD_TASK1_PRIORITY=");
-    console_write_hex32(context, task1_priority);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_TASK1_PRIORITY=", task1_priority);
 
-    console_write(context, "SCHED_PROD_CONSOLE_CAPACITY=");
-    console_write_hex32(context, console_capacity);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_CONSOLE_CAPACITY=", console_capacity);
 
-    console_write(context, "SCHED_PROD_CONSOLE_USED=");
-    console_write_hex32(context, console_used);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_CONSOLE_USED=", console_used);
 
-    console_write(context, "SCHED_PROD_CONSOLE_MARGIN=");
-    console_write_hex32(context, console_margin);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_CONSOLE_MARGIN=", console_margin);
 
-    console_write(context, "SCHED_PROD_CONSOLE_CANARY=");
-    console_write_hex32(context, console_canary);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_CONSOLE_CANARY=", console_canary);
 
-    console_write(context, "SCHED_PROD_HEARTBEAT_STARTED=");
-    console_write_hex32(context, production_heartbeat_task_started);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_HEARTBEAT_STARTED=", production_heartbeat_task_started);
 
-    console_write(context, "SCHED_PROD_HEARTBEAT_COUNT=");
-    console_write_hex32(context, production_heartbeat_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_HEARTBEAT_COUNT=", production_heartbeat_count);
 
-    console_write(context, "SCHED_PROD_HEARTBEAT_LED_ON=");
-    console_write_hex32(context, production_heartbeat_led_on);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_HEARTBEAT_LED_ON=", production_heartbeat_led_on);
 
-    console_write(context, "SCHED_PROD_HEARTBEAT_FAULT=");
-    console_write_hex32(context, production_heartbeat_fault);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_HEARTBEAT_FAULT=", production_heartbeat_fault);
 
-    console_write(context, "SCHED_PROD_HEARTBEAT_CAPACITY=");
-    console_write_hex32(context, heartbeat_capacity);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_HEARTBEAT_CAPACITY=", heartbeat_capacity);
 
-    console_write(context, "SCHED_PROD_HEARTBEAT_USED=");
-    console_write_hex32(context, heartbeat_used);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_HEARTBEAT_USED=", heartbeat_used);
 
-    console_write(context, "SCHED_PROD_HEARTBEAT_MARGIN=");
-    console_write_hex32(context, heartbeat_margin);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_HEARTBEAT_MARGIN=", heartbeat_margin);
 
-    console_write(context, "SCHED_PROD_HEARTBEAT_CANARY=");
-    console_write_hex32(context, heartbeat_canary);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_HEARTBEAT_CANARY=", heartbeat_canary);
 
-    console_write(context, "SCHED_PROD_IDLE_WAITS=");
-    console_write_hex32(context, idle_waits);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_IDLE_WAITS=", idle_waits);
 
-    console_write(context, "SCHED_PROD_WAIT_COUNT=");
-    console_write_hex32(context, production_console_wait_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_WAIT_COUNT=", production_console_wait_count);
 
-    console_write(context, "SCHED_PROD_WAKE_COUNT=");
-    console_write_hex32(context, production_console_wake_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_WAKE_COUNT=", production_console_wake_count);
 
-    console_write(context, "SCHED_PROD_WAKE_EVENTS=");
-    console_write_hex32(context, production_console_wake_events);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_WAKE_EVENTS=", production_console_wake_events);
 
-    console_write(context, "SCHED_PROD_COMMAND_COUNT=");
-    console_write_hex32(context, production_console_command_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_COMMAND_COUNT=", production_console_command_count);
 
-    console_write(context, "SCHED_PROD_DIAG_BUSY_COUNT=");
-    console_write_hex32(context, scheduler_diagnostics_busy_count());
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_DIAG_BUSY_COUNT=", scheduler_diagnostics_busy_count());
 
-    console_write(context, "SCHED_PROD_PREEMPT_SWITCHES=");
-    console_write_hex32(context, preempt_switches);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_PREEMPT_SWITCHES=", preempt_switches);
 
-    console_write(context, "SCHED_PROD_FAULT=");
-    console_write_hex32(context, production_console_fault);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PROD_FAULT=", production_console_fault);
 
     passed =
         (active != 0u) &&
@@ -2103,12 +1994,224 @@ static void console_production_scheduler_stats(command_service_context_t *contex
     }
 }
 
+/* Controlled Node Link V0 commands, task0 only. The HELLO challenge must be
+ * provided by a caller that guarantees non-reuse across STM32 reboots.
+ * An 8-digit hex string is not authentication, nor a hardware RNG.
+ */
+static int node_nonce_arg_parse(const char *text, uint32_t *value)
+{
+    uint32_t parsed = 0u;
+    uint32_t i;
+    if (text == (const char *)0 || value == (uint32_t *)0) return 0;
+    if (text[0] == '0' && (text[1] == 'x' || text[1] == 'X'))
+        text += 2;
+    for (i = 0u; i < 8u; ++i) {
+        uint32_t digit;
+        char ch = text[i];
+        if (ch >= '0' && ch <= '9') digit = (uint32_t)(ch - '0');
+        else if (ch >= 'a' && ch <= 'f')
+            digit = (uint32_t)(ch - 'a') + 10u;
+        else if (ch >= 'A' && ch <= 'F')
+            digit = (uint32_t)(ch - 'A') + 10u;
+        else return 0;
+        parsed = (parsed << 4) | digit;
+    }
+    if (text[8] != '\0' || parsed == 0u) return 0;
+    *value = parsed;
+    return 1;
+}
+
+static command_service_status_t node_command_crc(
+    const command_service_request_t *request,
+    command_service_context_t *context)
+{
+    const char *text = request->argv[0];
+    uint8_t length = 0u;
+    if (text == (const char *)0) return COMMAND_SERVICE_STATUS_BAD_ARGS;
+    while (text[length] != '\0') {
+        /* Text-only V0 command. Full 0..16 binary job support stays in
+         * node_transport_submit_crc32; the CLI allows visible 1..16 ASCII. */
+        if (length >= DNL_MAX_JOB_BYTES ||
+            (uint8_t)text[length] < 0x21u ||
+            (uint8_t)text[length] > 0x7eu)
+            return COMMAND_SERVICE_STATUS_BAD_ARGS;
+        ++length;
+    }
+    if (length == 0u) return COMMAND_SERVICE_STATUS_BAD_ARGS;
+    if (node_transport_submit_crc32(
+            (const uint8_t *)text, length, kernel_ticks) == 0)
+        return COMMAND_SERVICE_STATUS_BUSY;
+    console_write_line(context, "NODE_CRC_QUEUED");
+    return COMMAND_SERVICE_STATUS_OK;
+}
+
+static void node_command_status(command_service_context_t *context)
+{
+    node_transport_diagnostics_t s;
+    node_transport_diagnostics_get(&s);
+    console_write(context, "NODE_READY=");
+    console_write_hex32(context, (uint32_t)s.ready);
+    console_write(context, " NODE_PENDING=");
+    console_write_hex32(context, (uint32_t)s.pending);
+    console_write(context, " JOBS_VERIFIED=");
+    console_write_hex32(context, s.jobs_verified);
+    console_write(context, " JOBS_BAD_CRC=");
+    console_write_hex32(context, s.jobs_bad_crc);
+    console_write(context, " LAST_CRC32=");
+    console_write_hex32(context, s.last_job_crc32);
+    command_service_write_hex_line(context, " VALID=", (uint32_t)s.last_job_valid);
+}
+
+/* Candidate normal10: explicit optional Wi-Fi commands over already-open
+ * NodeLink session. No boot-time scan or HELLO. `nodewifi result` only
+ * copies task0 state; it NEVER touches ESP radio or USART2.
+ */
+static int node_wifi_text_eq(const char *a,const char *b)
+{
+    if(!a || !b)return 0;
+    while(*a && *b) {
+        if(*a!=*b)return 0;
+        ++a;++b;
+    }
+    return *a=='\0' && *b=='\0';
+}
+static int node_wifi_decimal(const char *text,uint8_t max,uint8_t *out)
+{
+    uint32_t v=0u,n=0u;
+    if(!text || !out)return 0;
+    for(;*text;++text) {
+        if(*text<'0' || *text>'9' || ++n>2u)return 0;
+        v=v*10u+(uint32_t)(*text-'0');
+        if(v>max)return 0;
+    }
+    if(n==0u)return 0;
+    *out=(uint8_t)v;
+    return 1;
+}
+static void node_wifi_write_result(command_service_context_t *ctx)
+{
+    node_transport_wifi_snapshot_t r;
+    const deus_wifi_ext_result_v0_t *w;
+    uint32_t i;
+    static const char alphabet[]="0123456789ABCDEF";
+    node_transport_wifi_snapshot_get(&r);
+    console_write(ctx,"WIFI_READY=");
+    console_write_hex32(ctx,(uint32_t)r.ready);
+    console_write(ctx," WIFI_PENDING=");
+    console_write_hex32(ctx,(uint32_t)r.pending);
+    console_write(ctx," WIFI_VALID=");
+    console_write_hex32(ctx,(uint32_t)r.valid);
+    if(r.valid==0u) {
+        console_write_line(ctx,"");
+        return;
+    }
+    w=&r.result;
+    console_write(ctx," WIFI_REPLY_TYPE=");
+    console_write_hex32(ctx,(uint32_t)w->type);
+    console_write(ctx," WIFI_ERROR=");
+    console_write_hex32(ctx,(uint32_t)r.remote_error);
+    console_write(ctx," WIFI_GENERATION=");
+    console_write_hex32(ctx,w->generation);
+    console_write(ctx," WIFI_STATE=");
+    console_write_hex32(ctx,(uint32_t)w->state);
+    console_write(ctx," WIFI_COUNT=");
+    console_write_hex32(ctx,(uint32_t)w->count);
+    console_write(ctx," WIFI_TRUNCATED=");
+    console_write_hex32(ctx,(uint32_t)w->truncated);
+    console_write(ctx," WIFI_LAST_ERROR=");
+    console_write_hex32(ctx,(uint32_t)w->last_error);
+    console_write(ctx," WIFI_MAX_APS=");
+    console_write_hex32(ctx,(uint32_t)w->max_aps);
+    console_write(ctx," WIFI_MAX_SSID=");
+    console_write_hex32(ctx,(uint32_t)w->max_ssid);
+    console_write(ctx," WIFI_PAGE_MAX=");
+    console_write_hex32(ctx,(uint32_t)w->max_page);
+    console_write(ctx," WIFI_AP_INDEX=");
+    console_write_hex32(ctx,(uint32_t)w->ap_index);
+    console_write(ctx," WIFI_SSID_OFFSET=");
+    console_write_hex32(ctx,(uint32_t)w->ssid_offset);
+    console_write(ctx," WIFI_SSID_LENGTH=");
+    console_write_hex32(ctx,(uint32_t)w->ssid_length);
+    console_write(ctx," WIFI_PAGE_LENGTH=");
+    console_write_hex32(ctx,(uint32_t)w->page_length);
+    console_write(ctx," WIFI_CHANNEL=");
+    console_write_hex32(ctx,(uint32_t)w->channel);
+    console_write(ctx," WIFI_RSSI_U8=");
+    console_write_hex32(ctx,(uint32_t)(uint8_t)w->rssi_dbm);
+    console_write(ctx," WIFI_AUTHMODE=");
+    console_write_hex32(ctx,(uint32_t)w->authmode);
+    console_write(ctx," WIFI_SSID_HEX=");
+    for(i=0u;i<(uint32_t)w->page_length &&
+              i<DEUS_WIFI_EXT_PAGE_MAX;++i) {
+        const uint8_t v=w->page[i];
+        (void)command_service_write_byte(ctx,
+               (uint8_t)alphabet[(v>>4)&15u]);
+        (void)command_service_write_byte(ctx,
+               (uint8_t)alphabet[v&15u]);
+    }
+    console_write_line(ctx,"");
+}
+static command_service_status_t node_command_wifi(
+    const command_service_request_t *request,
+    command_service_context_t *context)
+{
+    uint8_t opcode=0u,index=0u,offset=0u;
+    uint32_t generation=0u;
+    if(request->argc==1u &&
+       node_wifi_text_eq(request->argv[0],"result")) {
+        node_wifi_write_result(context);
+        return COMMAND_SERVICE_STATUS_OK;
+    }
+    if(request->argc==1u &&
+       node_wifi_text_eq(request->argv[0],"caps"))
+        opcode=DEUS_WIFI_CMD_CAPS;
+    else if(request->argc==1u &&
+       node_wifi_text_eq(request->argv[0],"scan"))
+        opcode=DEUS_WIFI_CMD_SCAN_START;
+    else if(request->argc==1u &&
+       node_wifi_text_eq(request->argv[0],"status"))
+        opcode=DEUS_WIFI_CMD_SCAN_STATUS;
+    else if(request->argc==4u &&
+        node_wifi_text_eq(request->argv[0],"page")) {
+        if(!node_nonce_arg_parse(request->argv[1],&generation) ||
+           !node_wifi_decimal(request->argv[2],3u,&index) ||
+           !node_wifi_decimal(request->argv[3],32u,&offset))
+            return COMMAND_SERVICE_STATUS_BAD_ARGS;
+        opcode=DEUS_WIFI_CMD_SCAN_AP_PAGE;
+    } else return COMMAND_SERVICE_STATUS_BAD_ARGS;
+    if(node_transport_wifi_request(opcode,generation,index,
+                                   offset,kernel_ticks)==0)
+        return COMMAND_SERVICE_STATUS_BUSY;
+    console_write(context,"NODE_WIFI_QUEUED=");
+    console_write_hex32(context,(uint32_t)opcode);
+    console_write_line(context,"");
+    return COMMAND_SERVICE_STATUS_OK;
+}
+
 static command_service_status_t console_execute_safe_method(
     const command_service_request_t *request,
     command_service_context_t *context)
 {
     switch (request->descriptor->method_id)
     {
+        case COMMAND_SERVICE_METHOD_NODESTART:
+        {
+            uint32_t nonce;
+            if (request->argc != 1u ||
+                node_nonce_arg_parse(request->argv[0], &nonce) == 0)
+                return COMMAND_SERVICE_STATUS_BAD_ARGS;
+            if (node_transport_start(nonce, kernel_ticks) == 0)
+                return COMMAND_SERVICE_STATUS_BUSY;
+            console_write_line(context, "NODE_HELLO_QUEUED");
+            return COMMAND_SERVICE_STATUS_OK;
+        }
+        case COMMAND_SERVICE_METHOD_NODECRC:
+            return node_command_crc(request, context);
+        case COMMAND_SERVICE_METHOD_NODESTAT:
+            node_command_status(context);
+            return COMMAND_SERVICE_STATUS_OK;
+        case COMMAND_SERVICE_METHOD_NODEWIFI:
+            return node_command_wifi(request,context);
         case COMMAND_SERVICE_METHOD_RPCINFO:
         case COMMAND_SERVICE_METHOD_APPLIST:
         case COMMAND_SERVICE_METHOD_APPSTART:
@@ -2133,9 +2236,7 @@ static command_service_status_t console_execute_safe_method(
             break;
 
         case COMMAND_SERVICE_METHOD_UPTIME:
-            console_write(context, "UPTIME_MS=");
-            console_write_hex32(context, kernel_time_now());
-            console_write(context, "\r\n");
+            command_service_write_hex_line(context, "UPTIME_MS=", kernel_time_now());
             break;
 
         case COMMAND_SERVICE_METHOD_HEALTH:
@@ -2149,9 +2250,7 @@ static command_service_status_t console_execute_safe_method(
             console_write_hex32(context, production_watchdog_reload_count);
             console_write(context, " RESET_FLAGS=");
             console_write_hex32(context, production_reset_flags);
-            console_write(context, " IWDG_RESET=");
-            console_write_hex32(context, production_iwdg_reset);
-            console_write(context, "\r\n");
+            command_service_write_hex_line(context, " IWDG_RESET=", production_iwdg_reset);
             break;
 
         case COMMAND_SERVICE_METHOD_RXSTAT:
@@ -2286,6 +2385,15 @@ static command_service_status_t console_execute_request(
             return console_execute_safe_method(request, context);
 
         case COMMAND_SERVICE_CLASS_DIAGNOSTIC:
+            /* Node control methods share the bounded task0 command handlers.
+             * They are DIAGNOSTIC registry entries, not scheduler tests.
+             * Preserve the accepted scheduler diagnostic dispatch unchanged. */
+            if (request->descriptor->method_id == COMMAND_SERVICE_METHOD_NODESTART ||
+                (request->descriptor->method_id == COMMAND_SERVICE_METHOD_NODECRC ||
+                  request->descriptor->method_id == COMMAND_SERVICE_METHOD_NODEWIFI))
+            {
+                return console_execute_safe_method(request, context);
+            }
             return console_execute_scheduler_diagnostic(request, context);
 
         case COMMAND_SERVICE_CLASS_DESTRUCTIVE:
@@ -2396,6 +2504,18 @@ static void console_drain_uart_rx(void)
 }
 
 
+/* This callback is invoked only between complete I2C transfers. The
+ * same PSP task owns both OLED rendering and Node Link parsing; cooperative
+ * progress avoids long uninterrupted OLED blocks while IRQ38 publishes RX.
+ */
+static void production_oled_progress_hook(void)
+{
+    if (scheduler_is_active() != 0)
+    {
+        node_transport_service(kernel_ticks);
+    }
+}
+
 static void production_console_task(void *argument)
 {
     uint32_t events;
@@ -2419,6 +2539,7 @@ static void production_console_task(void *argument)
     for (;;)
     {
         console_drain_uart_rx();
+        node_transport_service(kernel_ticks);
         production_console_command_count +=
             usb_management_runtime_service(
                 &usb_management_binary_rpc_binding);
@@ -2671,6 +2792,9 @@ void kernel_main(void)
             "SCHED_PROD_INIT_ERR");
     }
 
+    node_transport_init(kernel_ticks);
+    usart2_node_init();
+    ssd1306_set_progress_hook(production_oled_progress_hook);
     usb_management_set_rx_notify(usb_management_rx_event_notify);
 
     uart_command_state.length = 0u;

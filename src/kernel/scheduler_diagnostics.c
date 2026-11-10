@@ -42,25 +42,11 @@ static volatile uint32_t scheduler_wait_wake_framing_bytes;
 
 static const scheduler_diagnostics_bindings_t *scheduler_diagnostics_bindings;
 
-static void console_write(
-    command_service_context_t *context,
-    const char *text)
-{
-    (void)command_service_write(context, text);
-}
-
 static void console_write_line(
     command_service_context_t *context,
     const char *text)
 {
     (void)command_service_write_line(context, text);
-}
-
-static void console_write_hex32(
-    command_service_context_t *context,
-    uint32_t value)
-{
-    (void)command_service_write_hex32(context, value);
 }
 
 static int scheduler_diagnostics_ui_show(void)
@@ -231,25 +217,15 @@ static void console_scheduler_stack_water_test(command_service_context_t *contex
     capacity0 = scheduler_stack_capacity_bytes(0u);
     capacity1 = scheduler_stack_capacity_bytes(1u);
 
-    console_write(context, "STACK_CAPACITY=");
-    console_write_hex32(context, capacity0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "STACK_CAPACITY=", capacity0);
 
-    console_write(context, "STACK_COOP_T0_USED=");
-    console_write_hex32(context, coop_used0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "STACK_COOP_T0_USED=", coop_used0);
 
-    console_write(context, "STACK_COOP_T1_USED=");
-    console_write_hex32(context, coop_used1);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "STACK_COOP_T1_USED=", coop_used1);
 
-    console_write(context, "STACK_PREEMPT_T0_USED=");
-    console_write_hex32(context, preempt_used0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "STACK_PREEMPT_T0_USED=", preempt_used0);
 
-    console_write(context, "STACK_PREEMPT_T1_USED=");
-    console_write_hex32(context, preempt_used1);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "STACK_PREEMPT_T1_USED=", preempt_used1);
 
     passed =
         (coop_result != 0) &&
@@ -338,37 +314,21 @@ static void console_scheduler_workload_test(command_service_context_t *context)
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
-    console_write(context, "WORKLOAD_CAPACITY=");
-    console_write_hex32(context, capacity0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "WORKLOAD_CAPACITY=", capacity0);
 
-    console_write(context, "WORKLOAD_T0_USED=");
-    console_write_hex32(context, used0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "WORKLOAD_T0_USED=", used0);
 
-    console_write(context, "WORKLOAD_T1_USED=");
-    console_write_hex32(context, used1);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "WORKLOAD_T1_USED=", used1);
 
-    console_write(context, "WORKLOAD_SWITCHES=");
-    console_write_hex32(context, switches);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "WORKLOAD_SWITCHES=", switches);
 
-    console_write(context, "WORKLOAD_UI_RESULT=");
-    console_write_hex32(context, scheduler_workload_ui_result);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "WORKLOAD_UI_RESULT=", scheduler_workload_ui_result);
 
-    console_write(context, "WORKLOAD_PEER_OVERLAP=");
-    console_write_hex32(context, scheduler_workload_peer_overlap);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "WORKLOAD_PEER_OVERLAP=", scheduler_workload_peer_overlap);
 
-    console_write(context, "WORKLOAD_CANARY_T0=");
-    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "WORKLOAD_CANARY_T0=", (canary0 != 0) ? 1u : 0u);
 
-    console_write(context, "WORKLOAD_CANARY_T1=");
-    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "WORKLOAD_CANARY_T1=", (canary1 != 0) ? 1u : 0u);
 
     passed =
         (start_result != 0) &&
@@ -571,53 +531,29 @@ static void console_scheduler_console_probe_test(command_service_context_t *cont
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
-    console_write(context, "CONSOLE_PROBE_CAPACITY=");
-    console_write_hex32(context, capacity0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_CAPACITY=", capacity0);
 
-    console_write(context, "CONSOLE_PROBE_USED=");
-    console_write_hex32(context, used0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_USED=", used0);
 
-    console_write(context, "CONSOLE_PROBE_MARGIN=");
-    console_write_hex32(context, margin0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_MARGIN=", margin0);
 
-    console_write(context, "CONSOLE_PROBE_PEER_CAPACITY=");
-    console_write_hex32(context, capacity1);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_PEER_CAPACITY=", capacity1);
 
-    console_write(context, "CONSOLE_PROBE_PEER_USED=");
-    console_write_hex32(context, used1);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_PEER_USED=", used1);
 
-    console_write(context, "CONSOLE_PROBE_SWITCHES=");
-    console_write_hex32(context, switches);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_SWITCHES=", switches);
 
-    console_write(context, "CONSOLE_PROBE_OVERLAP=");
-    console_write_hex32(context, scheduler_console_probe_peer_overlap);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_OVERLAP=", scheduler_console_probe_peer_overlap);
 
-    console_write(context, "CONSOLE_PROBE_SURFACE_COUNT=");
-    console_write_hex32(context, SCHED_CONSOLE_PROBE_COMMAND_COUNT);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_SURFACE_COUNT=", SCHED_CONSOLE_PROBE_COMMAND_COUNT);
 
-    console_write(context, "CONSOLE_PROBE_COMPLETED=");
-    console_write_hex32(context, scheduler_console_probe_completed_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_COMPLETED=", scheduler_console_probe_completed_count);
 
-    console_write(context, "CONSOLE_PROBE_UI_RESTORE=");
-    console_write_hex32(context, scheduler_console_probe_ui_restore_result);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_UI_RESTORE=", scheduler_console_probe_ui_restore_result);
 
-    console_write(context, "CONSOLE_PROBE_CANARY=");
-    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_CANARY=", (canary0 != 0) ? 1u : 0u);
 
-    console_write(context, "CONSOLE_PROBE_PEER_CANARY=");
-    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "CONSOLE_PROBE_PEER_CANARY=", (canary1 != 0) ? 1u : 0u);
 
     passed =
         (start_result != 0) &&
@@ -803,37 +739,21 @@ static void console_scheduler_wait_wake_test(command_service_context_t *context)
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
-    console_write(context, "SCHED_WAIT_WAKE_EVENTS=");
-    console_write_hex32(context, scheduler_wait_wake_events);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_WAIT_WAKE_EVENTS=", scheduler_wait_wake_events);
 
-    console_write(context, "SCHED_WAIT_WAKE_BYTE=");
-    console_write_hex32(context, scheduler_wait_wake_byte);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_WAIT_WAKE_BYTE=", scheduler_wait_wake_byte);
 
-    console_write(context, "SCHED_WAIT_WAKE_FRAMING_BYTES=");
-    console_write_hex32(context, scheduler_wait_wake_framing_bytes);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_WAIT_WAKE_FRAMING_BYTES=", scheduler_wait_wake_framing_bytes);
 
-    console_write(context, "SCHED_WAIT_WAKE_IDLE_WAITS=");
-    console_write_hex32(context, idle_waits);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_WAIT_WAKE_IDLE_WAITS=", idle_waits);
 
-    console_write(context, "SCHED_WAIT_WAKE_USED_T0=");
-    console_write_hex32(context, used0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_WAIT_WAKE_USED_T0=", used0);
 
-    console_write(context, "SCHED_WAIT_WAKE_USED_T1=");
-    console_write_hex32(context, used1);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_WAIT_WAKE_USED_T1=", used1);
 
-    console_write(context, "SCHED_WAIT_WAKE_CANARY_T0=");
-    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_WAIT_WAKE_CANARY_T0=", (canary0 != 0) ? 1u : 0u);
 
-    console_write(context, "SCHED_WAIT_WAKE_CANARY_T1=");
-    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_WAIT_WAKE_CANARY_T1=", (canary1 != 0) ? 1u : 0u);
 
     passed =
         (start_result != 0) &&
@@ -1023,49 +943,27 @@ static void console_scheduler_isolation_test(command_service_context_t *context)
     task0 = scheduler_task_get(0u);
     task1 = scheduler_task_get(1u);
 
-    console_write(context, "SCHED_ISOLATE_CAPACITY_T0=");
-    console_write_hex32(context, capacity0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_CAPACITY_T0=", capacity0);
 
-    console_write(context, "SCHED_ISOLATE_USED_T0=");
-    console_write_hex32(context, used0);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_USED_T0=", used0);
 
-    console_write(context, "SCHED_ISOLATE_CAPACITY_T1=");
-    console_write_hex32(context, capacity1);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_CAPACITY_T1=", capacity1);
 
-    console_write(context, "SCHED_ISOLATE_USED_T1=");
-    console_write_hex32(context, used1);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_USED_T1=", used1);
 
-    console_write(context, "SCHED_ISOLATE_SWITCHES=");
-    console_write_hex32(context, switches);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_SWITCHES=", switches);
 
-    console_write(context, "SCHED_ISOLATE_INIT_REJECT=");
-    console_write_hex32(context, scheduler_isolation_init_reject);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_INIT_REJECT=", scheduler_isolation_init_reject);
 
-    console_write(context, "SCHED_ISOLATE_BLOCKED_DIAGNOSTICS=");
-    console_write_hex32(context, scheduler_diagnostic_busy_count);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_BLOCKED_DIAGNOSTICS=", scheduler_diagnostic_busy_count);
 
-    console_write(context, "SCHED_ISOLATE_ACTIVE_PRESERVED=");
-    console_write_hex32(context, scheduler_isolation_active_preserved);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_ACTIVE_PRESERVED=", scheduler_isolation_active_preserved);
 
-    console_write(context, "SCHED_ISOLATE_OVERLAP=");
-    console_write_hex32(context, scheduler_isolation_peer_overlap);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_OVERLAP=", scheduler_isolation_peer_overlap);
 
-    console_write(context, "SCHED_ISOLATE_CANARY_T0=");
-    console_write_hex32(context, (canary0 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_CANARY_T0=", (canary0 != 0) ? 1u : 0u);
 
-    console_write(context, "SCHED_ISOLATE_CANARY_T1=");
-    console_write_hex32(context, (canary1 != 0) ? 1u : 0u);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_ISOLATE_CANARY_T1=", (canary1 != 0) ? 1u : 0u);
 
     passed =
         (start_result != 0) &&
@@ -1152,29 +1050,17 @@ static void console_scheduler_priority_test(command_service_context_t *context)
 
     console_write_line(context, "SCHED_PRIO_POLICY=LOWER_VALUE_HIGHER");
 
-    console_write(context, "SCHED_PRIO_HIGHEST=");
-    console_write_hex32(context, SCHEDULER_PRIORITY_HIGHEST);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PRIO_HIGHEST=", SCHEDULER_PRIORITY_HIGHEST);
 
-    console_write(context, "SCHED_PRIO_DEFAULT=");
-    console_write_hex32(context, SCHEDULER_PRIORITY_DEFAULT);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PRIO_DEFAULT=", SCHEDULER_PRIORITY_DEFAULT);
 
-    console_write(context, "SCHED_PRIO_LOWEST=");
-    console_write_hex32(context, SCHEDULER_PRIORITY_LOWEST);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PRIO_LOWEST=", SCHEDULER_PRIORITY_LOWEST);
 
-    console_write(context, "SCHED_PRIO_TASK0=");
-    console_write_hex32(context, task0_priority_after);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PRIO_TASK0=", task0_priority_after);
 
-    console_write(context, "SCHED_PRIO_TASK1=");
-    console_write_hex32(context, task1_priority_after);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PRIO_TASK1=", task1_priority_after);
 
-    console_write(context, "SCHED_PRIO_SELFTEST=");
-    console_write_hex32(context, self_test);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_PRIO_SELFTEST=", self_test);
 
     if (
         (scheduler_is_active() != 0) &&
@@ -1241,9 +1127,7 @@ static void console_scheduler_timed_test(command_service_context_t *context)
     elapsed =
         (kernel_time_ms_t)(kernel_time_now() - start);
 
-    console_write(context, "SCHED_TIMED_SLEEP_ELAPSED=");
-    console_write_hex32(context, elapsed);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_TIMED_SLEEP_ELAPSED=", elapsed);
 
     if (elapsed >= SCHED_TIMED_SLEEP_MS)
     {
@@ -1270,9 +1154,7 @@ static void console_scheduler_timed_test(command_service_context_t *context)
     elapsed =
         (kernel_time_ms_t)(kernel_time_now() - start);
 
-    console_write(context, "SCHED_TIMED_TIMEOUT_ELAPSED=");
-    console_write_hex32(context, elapsed);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_TIMED_TIMEOUT_ELAPSED=", elapsed);
 
     if (
         (events == 0u) &&
@@ -1301,13 +1183,9 @@ static void console_scheduler_timed_test(command_service_context_t *context)
     elapsed =
         (kernel_time_ms_t)(kernel_time_now() - start);
 
-    console_write(context, "SCHED_TIMED_EVENT_EVENTS=");
-    console_write_hex32(context, events);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_TIMED_EVENT_EVENTS=", events);
 
-    console_write(context, "SCHED_TIMED_EVENT_ELAPSED=");
-    console_write_hex32(context, elapsed);
-    console_write(context, "\r\n");
+    command_service_write_hex_line(context, "SCHED_TIMED_EVENT_ELAPSED=", elapsed);
 
     if (
         (events == rx_event) &&

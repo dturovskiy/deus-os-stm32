@@ -17,6 +17,13 @@ typedef struct
     uint32_t presented_pages;
 } ssd1306_present_stats_t;
 
+typedef void (*ssd1306_progress_hook_t)(void);
+/* Optional cooperative task0 service between completed I2C data chunks.
+ * Hook is installed only after the scheduler transport has been initialized.
+ * Never called from within an open I2C transaction or from an ISR.
+ */
+void ssd1306_set_progress_hook(ssd1306_progress_hook_t hook);
+
 int ssd1306_init(void);
 int ssd1306_display_on(void);
 int ssd1306_ping(void);

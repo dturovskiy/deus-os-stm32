@@ -42,6 +42,10 @@ $SourcePaths = @(
     "src/drivers/status_led.c"
     "src/drivers/stm32f103_clock.c"
     "src/drivers/usart1.c"
+    "src/drivers/usart2_node.c"
+    "src/drivers/deus_node_link.c"
+    "src/drivers/wifi_node_extension_v0.c"
+    "src/drivers/node_link_memory.c"
     "src/drivers/usb_device.c"
     "src/gfx/font3x5.c"
     "src/gfx/font5x6.c"
@@ -57,12 +61,15 @@ $SourcePaths = @(
     "src/kernel/binary_frame.c"
     "src/kernel/binary_rpc.c"
     "src/kernel/command_service.c"
+    "src/kernel/esp_bridge_core_v0.c"
     "src/kernel/oled_console.c"
     "src/kernel/oled_status_bar.c"
     "src/kernel/oled_ui_layout.c"
     "src/kernel/oled_ui_layout_config_v1.c"
     "src/kernel/scheduler_diagnostics.c"
     "src/kernel/scheduler.c"
+    "src/kernel/node_transport.c"
+    "src/kernel/node_wifi_client_v0.c"
     "src/kernel/system_identity.c"
     "src/kernel/system_service_state.c"
     "src/kernel/usb_management.c"
@@ -76,6 +83,10 @@ $ObjectNames = @(
     "src_drivers_status_led.o"
     "src_drivers_stm32f103_clock.o"
     "src_drivers_usart1.o"
+    "src_drivers_usart2_node.o"
+    "src_drivers_deus_node_link.o"
+    "src_drivers_wifi_node_extension_v0.o"
+    "src_drivers_node_link_memory.o"
     "src_drivers_usb_device.o"
     "src_gfx_font3x5.o"
     "src_gfx_font5x6.o"
@@ -91,12 +102,15 @@ $ObjectNames = @(
     "src_kernel_binary_frame.o"
     "src_kernel_binary_rpc.o"
     "src_kernel_command_service.o"
+    "src_kernel_esp_bridge_core_v0.o"
     "src_kernel_oled_console.o"
     "src_kernel_oled_status_bar.o"
     "src_kernel_oled_ui_layout.o"
     "src_kernel_oled_ui_layout_config_v1.o"
     "src_kernel_scheduler_diagnostics.o"
     "src_kernel_scheduler.o"
+    "src_kernel_node_transport.o"
+    "src_kernel_node_wifi_client_v0.o"
     "src_kernel_system_identity.o"
     "src_kernel_system_service_state.o"
     "src_kernel_usb_management.o"
@@ -162,7 +176,8 @@ $CommonC = @(
     "-Werror",
     "-fstack-usage",
     "-include",$Header,
-    "-I",(Join-Path $ProjectRoot "include")
+    "-I",(Join-Path $ProjectRoot "include"),
+    "-I",(Join-Path $ProjectRoot "nodes/esp8266/firmware/wifi_lab")
 )
 
 $Objects = [System.Collections.Generic.List[string]]::new()
@@ -170,16 +185,34 @@ $Objects = [System.Collections.Generic.List[string]]::new()
 $SizeOptimizedSources = @(
     "src/drivers/flash_persistence.c"
     "src/drivers/i2c1.c"
+    "src/drivers/ssd1306.c"
     "src/drivers/status_led.c"
     "src/drivers/stm32f103_clock.c"
     "src/drivers/usart1.c"
+    "src/drivers/usart2_node.c"
+    "src/drivers/deus_node_link.c"
+    "src/drivers/wifi_node_extension_v0.c"
+    "src/drivers/node_link_memory.c"
+    "src/kernel/node_transport.c"
+    "src/kernel/node_wifi_client_v0.c"
     "src/kernel.c"
     "src/kernel/application_commands.c"
+    "src/kernel/application_runtime_bridge.c"
     "src/kernel/application_runtime.c"
     "src/kernel/asset_persistence.c"
     "src/kernel/asset_transfer.c"
+    "src/kernel/binary_frame.c"
+    "src/kernel/binary_rpc.c"
+    "src/kernel/command_service.c"
     "src/kernel/oled_ui_layout_config_v1.c"
     "src/kernel/scheduler.c"
+    "src/kernel/scheduler_diagnostics.c"
+    "src/gfx/font3x5.c"
+    "src/gfx/mono_fb.c"
+    "src/gfx/text_renderer.c"
+    "src/kernel/oled_console.c"
+    "src/kernel/oled_status_bar.c"
+    "src/kernel/esp_bridge_core_v0.c"
     "src/kernel/system_service_state.c"
     "src/kernel/usb_management.c"
 )
@@ -253,7 +286,7 @@ if ($SizeDataLine -notmatch '^\s*(\d+)\s+(\d+)\s+(\d+)\s+') {
 $TextBytes = [int64]$Matches[1]
 $DataBytes = [int64]$Matches[2]
 $BssBytes = [int64]$Matches[3]
-$FlashUsage = $TextBytes + $DataBytes
+$FlashSectionBytes = $TextBytes + $DataBytes
 $SramUsage = $DataBytes + $BssBytes
 
 Invoke-Tool -Label "nm-undefined" -Exe $Nm -Arguments @("-u",$Elf)
@@ -270,8 +303,38 @@ $BinInfo = Get-Item -LiteralPath $Bin
 $ElfInfo = Get-Item -LiteralPath $Elf
 $MapInfo = Get-Item -LiteralPath $Map
 
-if ($BinInfo.Length -ne $FlashUsage) {
-    throw ("BIN size {0} does not match text+data Flash usage {1}" -f $BinInfo.Length,$FlashUsage)
+# Count the actual binary, not just sections. The original IRQ38 image had
+# a 4-byte gap between the 220-byte vector and .text, but a size-optimized
+# object order can legitimately place .text immediately after the vector.
+# Verify the exact 0/4-byte gap from the native linker MAP, without accepting
+# arbitrary extra bytes or modifying the bootloader/metadata Flash boundary.
+$FlashUsage = [int64]$BinInfo.Length
+$FlashLoadPadding = $FlashUsage - $FlashSectionBytes
+$MapText = [System.IO.File]::ReadAllText($Map)
+$MapVector = [regex]::Matches($MapText, '(?m)^\.isr_vector[ \t]+0x([0-9A-Fa-f]+)[ \t]+0x([0-9A-Fa-f]+)')
+$MapCode = [regex]::Matches($MapText, '(?m)^\.text[ \t]+0x([0-9A-Fa-f]+)[ \t]+0x([0-9A-Fa-f]+)')
+$MapData = [regex]::Matches($MapText, '(?m)^\.data[ \t]+0x([0-9A-Fa-f]+)[ \t]+0x([0-9A-Fa-f]+)[ \t]+load address 0x([0-9A-Fa-f]+)')
+if (($MapVector.Count -ne 1) -or ($MapCode.Count -ne 1) -or ($MapData.Count -ne 1)) {
+    throw "native MAP missing unique Flash vector/text/data output section"
+}
+$VectorOrigin = [Convert]::ToInt64($MapVector[0].Groups[1].Value,16)
+$VectorBytes = [Convert]::ToInt64($MapVector[0].Groups[2].Value,16)
+$TextOrigin = [Convert]::ToInt64($MapCode[0].Groups[1].Value,16)
+$TextBytesInMap = [Convert]::ToInt64($MapCode[0].Groups[2].Value,16)
+$DataBytesInMap = [Convert]::ToInt64($MapData[0].Groups[2].Value,16)
+$DataLoadOrigin = [Convert]::ToInt64($MapData[0].Groups[3].Value,16)
+$MapFlashGap = $TextOrigin - ($VectorOrigin + $VectorBytes)
+$MapBinBytes = ($DataLoadOrigin + $DataBytesInMap) - $VectorOrigin
+if (($VectorOrigin -ne 0x08002000) -or ($VectorBytes -ne 220) -or
+    (($TextOrigin % 4) -ne 0) -or
+    (($MapFlashGap -ne 0) -and ($MapFlashGap -ne 4)) -or
+    ($MapFlashGap -ne $FlashLoadPadding) -or
+    (($VectorBytes + $TextBytesInMap) -ne $TextBytes) -or
+    ($DataBytesInMap -ne $DataBytes) -or
+    ($DataLoadOrigin -ne ($TextOrigin + $TextBytesInMap)) -or
+    ($MapBinBytes -ne $FlashUsage)) {
+    throw ("native Flash load geometry mismatch: padding={0}, MAP_gap={1}, MAP_bin={2}, binary={3}" -f
+        $FlashLoadPadding,$MapFlashGap,$MapBinBytes,$FlashUsage)
 }
 if ($FlashUsage -gt $FlashAcceptanceCeiling) {
     throw ("Flash usage {0} exceeds Bootloader application ceiling {1}" -f $FlashUsage,$FlashAcceptanceCeiling)
@@ -289,6 +352,8 @@ Write-Host ("BUILD_HEADER_SHA256={0}" -f $HeaderSha)
 Write-Host ("BUILD_TEXT={0}" -f $TextBytes)
 Write-Host ("BUILD_DATA={0}" -f $DataBytes)
 Write-Host ("BUILD_BSS={0}" -f $BssBytes)
+Write-Host ("BUILD_FLASH_SECTION_SUM={0}" -f $FlashSectionBytes)
+Write-Host ("BUILD_FLASH_LOAD_PADDING={0}" -f $FlashLoadPadding)
 Write-Host ("BUILD_FLASH={0}" -f $FlashUsage)
 Write-Host ("BUILD_FLASH_CEILING={0}" -f $FlashAcceptanceCeiling)
 Write-Host ("BUILD_SRAM={0}" -f $SramUsage)
