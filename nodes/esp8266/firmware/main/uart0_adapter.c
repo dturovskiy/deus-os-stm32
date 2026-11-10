@@ -1,4 +1,4 @@
-/* ESP8266 RTOS SDK v3.4 UART0 adapter, not host-executed. NO FLASH OPS. */
+/* ESP8266 RTOS SDK v3.4 UART0 adapter. Source-only; NO FLASH OPS. */
 #include "node_runtime.h"
 /* ESP8266 SDK queue.h needs FreeRTOS macros before driver/uart.h. */
 #include "freertos/FreeRTOS.h"
@@ -13,6 +13,13 @@
 #define DEUS_ESP01_UART_CHUNK 32
 
 static deus_esp01_node_runtime_t g_node;
+
+/* Keep scheduling even if SDK tick resolution is coarser than the delay.
+ * No logs on UART0: the port carries binary Node Link REV2 frames. */
+static TickType_t wait_ticks(uint32_t ms){
+ TickType_t n=pdMS_TO_TICKS(ms);
+ return n ? n : (TickType_t)1;
+}
 
 /* Explicit API boundary: SDK UART driver owns its internal queues/heap.
  * This application never mallocs; no UART0 debug logs may be emitted by us.
@@ -39,7 +46,13 @@ static void app_process_uart(void){
   /* Finite blocking interval avoids busy looping when link is idle. */
   int n=uart_read_bytes(DEUS_ESP01_UART,rx,sizeof(rx),pdMS_TO_TICKS(10));
   int i;
-  if(n<=0)continue;
+  if(n<0){
+   /* A failed SDK read must not spin forever or retain a partial frame. */
+   dnl_stream_init(&g_node.stream);
+   vTaskDelay(wait_ticks(10));
+   continue;
+  }
+  if(n==0)continue;
   for(i=0;i<n && i<(int)sizeof(rx);++i){
    size_t tx_length=0;
    uint32_t now_ms=(uint32_t)xTaskGetTickCount()*(uint32_t)portTICK_PERIOD_MS;
@@ -56,6 +69,10 @@ static void app_process_uart(void){
 }
 void app_main(void){
  deus_esp01_node_runtime_init(&g_node);
- if(!init_uart0())return;
+ /* Returning here permanently kills Node Link if UART init transiently fails.
+  * Retry with a bounded non-spinning delay; do not reboot or change GPIO. */
+ while(!init_uart0()){
+  vTaskDelay(wait_ticks(100));
+ }
  app_process_uart();
 }
