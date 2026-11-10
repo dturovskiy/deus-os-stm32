@@ -1,0 +1,206 @@
+/* OFFLINE actual USB Management ESP-bridge frame dispatch test.
+ * Compiled against byte-identical product usb_management.c with ONLY
+ * ARM-only reset inline instructions neutralized in temporary test copy.
+ * Never access memory mapped peripherals. USB OUT/IN are in-memory mocks.
+ */
+#include <stdint.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "drivers/usb_device.h"
+#include "drivers/usart2_node.h"
+#include "kernel/binary_frame.h"
+#include "kernel/binary_rpc.h"
+#include "kernel/usb_management.h"
+#include "kernel/asset_transfer.h"
+#include "kernel/node_transport.h"
+#include "kernel/time.h"
+
+#define CHECK(c) do { if (!(c)) { \
+    printf("USB_BRIDGE_MOCK_FAIL line=%d expr=%s\n",__LINE__,#c);exit(2); } } while (0)
+
+volatile usb_device_diagnostics_t usb_device_diagnostics;
+static uint8_t inbound[8192], response[64];
+static uint32_t inbound_len, inbound_pos, response_len, responses;
+static uint32_t uart_reads, uart_writes, uart_arms, node_enters, node_leaves;
+static uint32_t asset_requests, rpc_requests_seen, reset_sessions, asset_polls;
+static uint32_t mocked_configured=1;
+static uint32_t send_fail;
+static binary_rpc_workspace_t workspace;
+static binary_rpc_binding_t binding;
+
+int usb_management_is_configured(void) {return (int)mocked_configured;}
+int usb_management_try_getc(uint8_t *out) {
+    if(inbound_pos>=inbound_len) {inbound_pos=inbound_len=0;return 0;}
+    *out=inbound[inbound_pos++];return 1;
+}
+int send_wire(void *ctx,const uint8_t *bytes,uint32_t length) {
+    (void)ctx;
+    if(length>sizeof(response) || length<12u) return 0;
+    ++responses;
+    memcpy(response,bytes,length);
+    response_len=length;
+    return !send_fail;
+}
+void asset_transfer_init(void) {}
+void asset_transfer_reset_session(void) {++reset_sessions;}
+void asset_transfer_poll(void) {++asset_polls;}
+int asset_transfer_handle_frame(const binary_frame_view_t *frame,
+   asset_transfer_send_wire_t send,void *ctx) {
+    (void)frame;(void)send;(void)ctx;
+    ++asset_requests;return 1;
+}
+void binary_rpc_init(binary_rpc_state_t *s,binary_rpc_workspace_t *w) {
+    memset(s,0,sizeof(*s));s->workspace=w;
+}
+int binary_rpc_handle_frame(binary_rpc_state_t *s,
+ const binary_frame_view_t *frame,const binary_rpc_binding_t *b) {
+    (void)s;(void)frame;(void)b;
+    ++rpc_requests_seen;return 1;
+}
+kernel_time_ms_t kernel_time_now(void){return 0u;}
+int kernel_time_reached(kernel_time_ms_t a,kernel_time_ms_t b){return a>=b;}
+int kernel_time_elapsed(kernel_time_ms_t a,kernel_time_ms_t b){(void)a;(void)b;return 0;}
+int node_transport_maintenance_enter(void){++node_enters;return 1;}
+void node_transport_maintenance_leave(void){++node_leaves;}
+void usart2_node_rx_arm(void){++uart_arms;}
+int usart2_node_write_frame(const uint8_t *bytes,uint32_t count) {
+    (void)bytes;(void)count;++uart_writes;return 1;
+}
+int usart2_node_try_read(usart2_node_sample_t *out) {
+    (void)out;++uart_reads;return 0;
+}
+static uint16_t req_id=10u;
+static uint8_t session_payload[48];
+static void setup_input(uint8_t op,uint16_t seq,uint8_t count) {
+    memset(session_payload,0,sizeof(session_payload));
+    session_payload[0]=op;
+    session_payload[1]=0x78;session_payload[2]=0x56;session_payload[3]=0x34;session_payload[4]=0x12;
+    session_payload[5]=(uint8_t)seq;session_payload[6]=(uint8_t)(seq>>8);
+    session_payload[7]=count;
+}
+static void push(uint8_t type,uint8_t flags,uint8_t reserved,uint16_t request,
+    const uint8_t *payload,uint16_t size) {
+    uint8_t tmp[144];uint32_t len,i;
+    len=binary_frame_encode(type,flags,request,payload,size,tmp,sizeof(tmp));
+    CHECK(len>0u);
+    /* Deliberately modify reserved byte only after CRC recomputation. */
+    if(reserved!=0u) {
+        tmp[5]=reserved;
+        {
+            uint16_t c=binary_frame_crc16_ccitt_false(tmp+2,len-4u);
+            tmp[len-2]=(uint8_t)c;tmp[len-1]=(uint8_t)(c>>8);
+        }
+    }
+    CHECK(inbound_len+len<sizeof(inbound));
+    for(i=0;i<len;++i)inbound[inbound_len+i]=tmp[i];
+    inbound_len += len;
+}
+static uint8_t read_response_status(uint8_t expected_type,uint16_t request) {
+    binary_frame_parser_t parser;binary_frame_view_t frame;
+    uint32_t i;int got=0;uint8_t status=255u;
+    binary_frame_parser_init(&parser);
+    for(i=0;i<response_len;++i){
+        if(binary_frame_parser_feed(&parser,response[i],&frame)==BINARY_FRAME_FEED_FRAME_READY) {
+            CHECK(frame.frame_type==expected_type);
+            CHECK(frame.request_id==request);
+            CHECK(frame.version==1u);
+            CHECK(frame.payload_length==9u);
+            CHECK(frame.payload[8]==0u);
+            status=frame.payload[7];
+            ++got;
+        }
+    }
+    CHECK(got==1);
+    return status;
+}
+static void expect_no_uart(void){
+    CHECK(uart_reads==0u && uart_writes==0u && uart_arms==0u &&
+          node_enters==0u && node_leaves==0u);
+}
+int main(void) {
+    uint32_t before;
+    binding.send_wire=send_wire;
+    binding.send_context=0;
+    binding.command_handler=0;
+    binding.command_handler_context=0;
+    binding.source_rx_event_mask=0;
+    binding.capability_flags=0;
+    CHECK(usb_management_runtime_init(&workspace)==1);
+    /* OPEN is hard-denied even with a valid CRC and matching session/sequence. */
+    setup_input(1u,0u,0u);
+    push(0x05u,0u,0u,req_id,session_payload,8u);
+    CHECK(usb_management_runtime_service(&binding)==0u);
+    CHECK(responses==1u && response_len<=64u);
+    CHECK(read_response_status(0x87u,req_id)==1u);
+    expect_no_uart();
+    /* Unopened TX/RX/CLOSE never touch a UART byte. */
+    for(uint8_t op=2u;op<=4u;++op){
+        ++req_id;setup_input(op,1u,op==2u?1u:0u);
+        if(op==2u)session_payload[8]=0xC0u;
+        push(0x05u,0u,0u,req_id,session_payload,op==2u?9u:8u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==2u);
+    }
+    expect_no_uart();
+    /* Invalid count receives BAD_LENGTH but does not mutate owner. */
+    ++req_id;setup_input(2u,1u,2u);session_payload[8]=0xA1u;
+    push(0x05u,0u,0u,req_id,session_payload,9u);
+    CHECK(usb_management_runtime_service(&binding)==0u);
+    CHECK(read_response_status(0x87u,req_id)==4u);
+    expect_no_uart();
+    /* CRC corruption means zero response/zero hardware access. */
+    ++req_id;setup_input(1u,0u,0u);
+    push(0x05u,0u,0u,req_id,session_payload,8u);
+    inbound[inbound_len-1] ^= 0x5Au;
+    before=responses;
+    CHECK(usb_management_runtime_service(&binding)==0u);
+    CHECK(responses==before);
+    expect_no_uart();
+    /* Reserved/flags/request-id invalid: no positive admission. */
+    ++req_id;push(0x05u,1u,0u,req_id,session_payload,8u);
+    before=responses;CHECK(usb_management_runtime_service(&binding)==0u);
+    CHECK(responses==before);
+    ++req_id;push(0x05u,0u,1u,req_id,session_payload,8u);
+    before=responses;CHECK(usb_management_runtime_service(&binding)==0u);
+    CHECK(responses==before);
+    push(0x05u,0u,0u,0u,session_payload,8u);
+    before=responses;CHECK(usb_management_runtime_service(&binding)==0u);
+    CHECK(responses==before);
+    expect_no_uart();
+    /* A failed USB IN does not open maintenance or trigger UART. */
+    send_fail=1u;++req_id;
+    push(0x05u,0u,0u,req_id,session_payload,8u);
+    CHECK(usb_management_runtime_service(&binding)==0u);
+    send_fail=0u;expect_no_uart();
+    /* USB reset and deconfiguration safely reset parser and session. */
+    ++usb_device_diagnostics.bus_reset_count;
+    CHECK(usb_management_runtime_service(&binding)==0u);
+    mocked_configured=0u;
+    CHECK(usb_management_runtime_service(&binding)==0u);
+    mocked_configured=1u;
+    ++req_id;push(0x05u,0u,0u,req_id,session_payload,8u);
+    CHECK(usb_management_runtime_service(&binding)==0u);
+    CHECK(read_response_status(0x87u,req_id)==1u);
+    expect_no_uart();
+    /* Asset, RPC and non-destructive-invalid STM32 firmware requests
+       retain their original dispatch paths and do not touch ESP UART. */
+    ++req_id;push(0x03u,0u,0u,req_id,session_payload,8u);
+    CHECK(usb_management_runtime_service(&binding)==0u);
+    CHECK(asset_requests==1u);
+    ++req_id;push(0x02u,0u,0u,req_id,session_payload,8u);
+    CHECK(usb_management_runtime_service(&binding)==1u);
+    CHECK(rpc_requests_seen==1u);
+    ++req_id;{
+        uint8_t invalid[1]={0xFFu};
+        push(0x04u,0u,0u,req_id,invalid,1u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(responses>0u && response_len==28u);
+    }
+    expect_no_uart();
+    CHECK(reset_sessions>=2u);
+    CHECK(asset_polls>=3u);
+    printf("USB_BRIDGE_REAL_DISPATCH_OFFLINE=PASS HARD_DENY=YES UART_WRITES=0 NO_DEVICE_ACCESS=YES\n");
+    return 0;
+}
