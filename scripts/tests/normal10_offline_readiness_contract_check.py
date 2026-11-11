@@ -71,6 +71,24 @@ def main() -> None:
     need("NO_RESET_NO_ERASE_NO_PROGRAM_NO_OPTION_BYTE_WRITE=YES" in swd,
          "no_target_mutation_declared")
     need("POST_SWD_USB_RUNTIME=NOT_ATTESTED" in swd, "post_swd_usb_not_fabricated")
+    # Native V1 original Evidence: HOST_PRECHECK rejected PATH/Get-Command lookup.
+    # V2 must select the SHA-pinned, already installed sibling Tools executable.
+    exact_cli = "269DB404ED3F2CDD7CFCCCC257AB0A907F2364C3D44E39EDAB6B007CB5F668ED"
+    def cli_source_contract(src: str) -> bool:
+        return (("Tools/STM32Cube/STM32CubeProgrammer/bin" in src)
+                and ("STM32_Programmer_CLI.exe" in src)
+                and (exact_cli in src)
+                and ("CUBE_CLI_PINNED_WORKSPACE_TOOLS_MISSING" in src)
+                and ("CUBE_CLI_PINNED_SHA256_MISMATCH" in src)
+                and ("CUBE_CLI_RESOLUTION=PINNED_WORKSPACE_TOOLS_SHA256" in src)
+                and ("Get-Command -Name STM32_Programmer_CLI.exe" not in src)
+                and ("DEUS_STM32_PROGRAMMER_CLI" not in src))
+    need(cli_source_contract(swd), "canonical_workspace_cubeprogrammer_sha_pinned_no_path_fallback")
+    need(not cli_source_contract(swd.replace(exact_cli, "0" * 64)),
+         "negative_mutated_cubeprogrammer_sha_rejected")
+    need("CUBE_CLI_BINARY_REPARSE_FORBIDDEN" in swd and
+         "CUBE_CLI_DIRECTORY_REPARSE_FORBIDDEN" in swd,
+         "cubeprogrammer_executable_path_no_reparse")
     for token in ["'-rst'", "'-e'", "'--erase'", "'-w'", "'-d'", "'-go'",
                   "'--readunprotect'", "'mode=NORMAL'", "'-rdu'"]:
         need(token not in swd, "forbid_arg_" + token)

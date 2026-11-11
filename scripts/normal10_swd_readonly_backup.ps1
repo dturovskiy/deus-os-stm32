@@ -3,13 +3,14 @@
 param(
     [Parameter(Mandatory=$true)][string]$ProtectedBackupRoot,
     [Parameter(Mandatory=$true)][string]$WorkspaceRoot,
-    [string]$ProgrammerCli = $env:DEUS_STM32_PROGRAMMER_CLI,
     [ValidateSet(950,480,240,125)][int]$SwdKHz = 950
 )
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $FlashBytes = 65536
+$ProgrammerCli = $null
+$PinnedCubeCliSha256 = '269DB404ED3F2CDD7CFCCCC257AB0A907F2364C3D44E39EDAB6B007CB5F668ED'
 $script:phase = 'HOST_PRECHECK'
 $script:logPath = $null
 
@@ -141,14 +142,36 @@ try {
         $item = $item.Parent
     }
     Assert-PrivateAcl -Path $root
-    if ([string]::IsNullOrWhiteSpace($ProgrammerCli)) {
-        $candidates = @(Get-Command -Name STM32_Programmer_CLI.exe -CommandType Application -All -ErrorAction SilentlyContinue |
-            Select-Object -ExpandProperty Source -Unique)
-        if ($candidates.Count -ne 1) { throw 'CubeProgrammer CLI must resolve uniquely' }
-        $ProgrammerCli = $candidates[0]
+    # Proven Windows Gate3 CubeProgrammer identity: workspace sibling Tools, not PATH.
+    # No environment override, Get-Command fallback, installer scan or network lookup.
+    $cubeDir = [System.IO.Path]::GetFullPath(
+        (Join-Path $workspaceFull 'Tools/STM32Cube/STM32CubeProgrammer/bin'))
+    $ProgrammerCli = [System.IO.Path]::GetFullPath(
+        (Join-Path $cubeDir 'STM32_Programmer_CLI.exe'))
+    foreach ($candidate in @(
+        (Join-Path $workspaceFull 'Tools'),
+        (Join-Path $workspaceFull 'Tools/STM32Cube'),
+        (Join-Path $workspaceFull 'Tools/STM32Cube/STM32CubeProgrammer'),
+        $cubeDir
+    )) {
+        if (-not [System.IO.Directory]::Exists($candidate)) {
+            throw 'CUBE_CLI_PINNED_DIRECTORY_MISSING'
+        }
+        if (([System.IO.File]::GetAttributes($candidate) -band
+            [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw 'CUBE_CLI_DIRECTORY_REPARSE_FORBIDDEN'
+        }
     }
-    if (-not (Test-Path -LiteralPath $ProgrammerCli -PathType Leaf)) {
-        throw 'Configured CubeProgrammer CLI not found'
+    if (-not [System.IO.File]::Exists($ProgrammerCli)) {
+        throw 'CUBE_CLI_PINNED_WORKSPACE_TOOLS_MISSING'
+    }
+    if (([System.IO.File]::GetAttributes($ProgrammerCli) -band
+        [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw 'CUBE_CLI_BINARY_REPARSE_FORBIDDEN'
+    }
+    $actualCubeSha = (Get-FileHash -LiteralPath $ProgrammerCli -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($actualCubeSha -cne $PinnedCubeCliSha256) {
+        throw 'CUBE_CLI_PINNED_SHA256_MISMATCH'
     }
     $id = 'normal10_swd_preflight_' + (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ') +
         '_' + [Guid]::NewGuid().ToString('N').Substring(0,8)
@@ -163,6 +186,8 @@ try {
     Add-Record ('RUN_ID=' + $id)
     Add-Record ('SWD_KHZ=' + $SwdKHz)
     Add-Record 'HOST_BACKUP_DESTINATION=ProtectedRecovery'
+    Add-Record 'CUBE_CLI_RESOLUTION=PINNED_WORKSPACE_TOOLS_SHA256'
+    Add-Record ('CUBE_CLI_SHA256=' + $actualCubeSha)
     Add-Record 'NONVOLATILE_MUTATION_REQUESTED=NO'
     Add-Record 'NO_RESET_NO_ERASE_NO_PROGRAM_NO_OPTION_BYTE_WRITE=YES'
     Add-Record 'CPU_NONINTERFERENCE_NOT_ATTESTED=YES'
