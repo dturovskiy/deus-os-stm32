@@ -1,0 +1,71 @@
+{
+  "schema": "DEUS_NORMAL10_SOURCE_ONLY_RELEASE_LOCK_V1",
+  "created_utc_date": "2026-11-11",
+  "scope": "SOURCE_ONLY_NO_SIGNING_NO_HARDWARE",
+  "accepted_source_index_sha256": "D892610A4B842FE84B17C68DA2546BD29C5698B66B9B76D408BB430D93CD1BC5",
+  "reference_bootloader_source_sha256": "A7A52D4962F48D7C95506FB97613BC6A5F7DA661BC07CF3CE850D86247EE25E3",
+  "package_format": {
+    "product_id": "0x534F4544",
+    "target_device_id": "0x0410",
+    "format_version": 1,
+    "application_origin": "0x08002000",
+    "header_bytes": 48,
+    "hmac_tag_bytes": 32,
+    "authenticated_domain": "DEUSHDR1",
+    "key_source": "EXISTING_OWNER_ONLY_PROTECTED_ESCROW_NOT_ACCESSED"
+  },
+  "candidates": [
+    {
+      "role": "normal10",
+      "version": 10,
+      "source": "EXISTING_WINDOWS_NATIVE_ARM_WIFI_V2_OS_BIN",
+      "image_length": 52052,
+      "image_sha256": "6F7378619B7631114926FDFC31B881B06CA49A2660FA2D79E563F4D506E24B73",
+      "public_header_sha256": "350083010A8BB790232712187B776C001EA91485A2578931BC8C34568559606F",
+      "expected_package_bytes": 52132,
+      "readiness": "UNSIGNED_NOT_INSTALLED"
+    },
+    {
+      "role": "rescue11",
+      "version": 11,
+      "source": "VERIFIED_INSTALLED_NORMAL9_PROTECTED_PACKAGE_PAYLOAD",
+      "source_signed_v9_whole_sha256": "DFA66DFFAEBABFC75C5D0942A157D07904EADA7D3B7D13A21BB6B5C014C7416B",
+      "image_length": 49020,
+      "image_sha256": "6035D50379B5ED5D8BBE26CF02297B82524E96AE43930A71EC5F8EC49C26CF9E",
+      "public_header_sha256": "0ED885C8F271EF1A50EFF35CCCE03126DD83B585D1A239C448050E30346A4364",
+      "expected_package_bytes": 49100,
+      "readiness": "NOT_SIGNED"
+    },
+    {
+      "role": "normal12",
+      "version": 12,
+      "source": "VERIFIED_INSTALLED_NORMAL9_PROTECTED_PACKAGE_PAYLOAD",
+      "source_signed_v9_whole_sha256": "DFA66DFFAEBABFC75C5D0942A157D07904EADA7D3B7D13A21BB6B5C014C7416B",
+      "image_length": 49020,
+      "image_sha256": "6035D50379B5ED5D8BBE26CF02297B82524E96AE43930A71EC5F8EC49C26CF9E",
+      "public_header_sha256": "F877446802694EF39AA909710CDE6A0DB37D96B498E02D5092EC43DCE917F28A",
+      "expected_package_bytes": 49100,
+      "readiness": "NOT_SIGNED"
+    }
+  ],
+  "prior_known_good": {
+    "installed_signed_normal9_sha256": "DFA66DFFAEBABFC75C5D0942A157D07904EADA7D3B7D13A21BB6B5C014C7416B",
+    "original_signed_rescue9_sha256": "4D5EC4FBA74D0E09C0A61330B1834940C3B9CBAD0CD49A9E13B6A26961B02928",
+    "original_signed_rescue9_role": "HISTORICAL_PRESERVE_BUT_NOT_FLOOR10_ELIGIBLE"
+  },
+  "execution_safety": {
+    "ordered_preconditions": [
+      "ONE_NATIVE_WINDOWS_SWD_HOTPLUG_READONLY_64K_PROTECTED_BACKUP",
+      "AFTER_SWD_VERIFY_RUNTIME_HEALTH_ON_MAC_MINI",
+      "OWNER_APPROVED_NEW_PROTECTED_SIGNING_WITH_SAME_KEY_CONTINUITY",
+      "SIGNED_THREE_PACKAGES_AND_INDEPENDENT_PAYLOAD_HEADER_HMAC_VERIFY",
+      "FRESH_OWNER_APPROVED_BOOTLOADER_INFO_FLOOR9_BEFORE_NORMAL10_COMMIT",
+      "SEPARATE_EXPLICIT_ONE_NORMAL10_FLASH_GO"
+    ],
+    "physical_flash_authorized": false,
+    "signing_authorized": false,
+    "new_protected_packages_exist": false,
+    "out_of_band_swd_currently_attested": false,
+    "postflash_normal10_runtime_attested": false
+  }
+}
