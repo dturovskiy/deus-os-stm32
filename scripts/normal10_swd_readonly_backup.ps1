@@ -2,6 +2,7 @@
 # This script writes a PRIVATE 64-KiB host backup; it never writes target Flash.
 param(
     [Parameter(Mandatory=$true)][string]$ProtectedBackupRoot,
+    [Parameter(Mandatory=$true)][string]$WorkspaceRoot,
     [string]$ProgrammerCli = $env:DEUS_STM32_PROGRAMMER_CLI,
     [ValidateSet(950,480,240,125)][int]$SwdKHz = 950
 )
@@ -121,10 +122,12 @@ try {
     if (-not (Test-Path -LiteralPath $root -PathType Container)) {
         throw 'Protected backup directory must already exist'
     }
-    $repoRoot = [System.IO.Directory]::GetParent($PSScriptRoot).FullName
-    $workspaceRoot = [System.IO.Directory]::GetParent($repoRoot).FullName
+    $workspaceFull = [System.IO.Path]::GetFullPath($WorkspaceRoot)
+    if (-not (Test-Path -LiteralPath (Join-Path $workspaceFull 'OS/.git') -PathType Container)) {
+        throw 'Expected Windows workspace OS Git root is missing'
+    }
     $expectedProtectedRoot = [System.IO.Path]::GetFullPath(
-        (Join-Path $workspaceRoot 'ProtectedRecovery'))
+        (Join-Path $workspaceFull 'ProtectedRecovery'))
     $comparison = [System.StringComparison]::OrdinalIgnoreCase
     if (-not ($root.Equals($expectedProtectedRoot,$comparison) -or
         $root.StartsWith(($expectedProtectedRoot.TrimEnd('\') + '\'),$comparison))) {

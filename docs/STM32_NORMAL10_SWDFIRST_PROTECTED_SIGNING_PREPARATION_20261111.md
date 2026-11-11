@@ -1,5 +1,8 @@
 # STM32 normal10 — prepared SWD-first bench and signed recovery source-lock
 
+**2026-11-11 19:02 canonical operator ZIP addendum (source/static scope):** One approved-format source stage `../Bundle/_stage_stm32_os_normal10_swd_hotplug_readonly_backup_v1_20261111/` was authored from prior real operator patterns with 4 source members including exact pinned payload. The official, byte-pinned `../Tools/scripts/operator_bundle_guard/bundle_guard.py` built and validated **one** ZIP `../Bundle/stm32_os_normal10_swd_hotplug_readonly_backup_v1_20261111.zip`; 10,637B whole SHA-256 `EA830EB546D1721959615A6BCEF4851DB7849D93A89DF45A61897C5C673A8A05`; 5 members; manifest `DEUS_OS_OPERATOR_BUNDLE_V2`, `HARDWARE_READONLY`. Managed original builder and verifier task `task_1794420156898_1a68ef10e10c9beb` exit0. This supersedes source-only no-bundle status from prior attempt; **does not constitute native Windows AST/Fail Evidence or hardware qualification**, and no device IO was performed. The one Windows-native operator command is uniquely determined by this package ID/SHA but must not be run before its separate physical admission.
+
+
 2026-11-11. Scope: SOURCE_ONLY. No Windows PowerShell AST, Windows-native SWD, protected signing, physical Flash, reset, ESP GPIO, CH340 or Wi-Fi RF was performed for this preparation. Global state authority: docs/CURRENT_STATE.md. This is not a Gate4 decision.
 
 ## Accepted prior evidence and exact source identities
