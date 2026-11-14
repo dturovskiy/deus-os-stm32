@@ -50,6 +50,12 @@ int esp_boot_control_v0_provision(
 int esp_boot_control_v0_rom_start(
     esp_boot_control_v0_t *s, const esp_boot_io_v0_t *io,
     uint32_t now_ms);
+/* Privileged, firmware-LOCAL rescue path: allows ROM boot when the ESP app
+ * cannot ACK HELLO. owner_qualified MUST originate from a built, electrically
+ * reviewed STM32 board configuration, never from USB request contents. */
+int esp_boot_control_v0_recovery_rom_start(
+    esp_boot_control_v0_t *s, const esp_boot_io_v0_t *io,
+    uint8_t local_board_qualified, uint32_t now_ms);
 int esp_boot_control_v0_app_start(
     esp_boot_control_v0_t *s, const esp_boot_io_v0_t *io,
     uint32_t now_ms);

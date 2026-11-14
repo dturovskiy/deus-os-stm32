@@ -65,6 +65,7 @@ int kernel_time_elapsed(kernel_time_ms_t a,kernel_time_ms_t b){(void)a;(void)b;r
 int node_transport_maintenance_enter(void){++node_enters;return 1;}
 void node_transport_maintenance_leave(void){++node_leaves;}
 void usart2_node_rx_arm(void){++uart_arms;}
+void usart2_node_rx_disarm(void){}
 int usart2_node_write_frame(const uint8_t *bytes,uint32_t count) {
     (void)bytes;(void)count;++uart_writes;return 1;
 }

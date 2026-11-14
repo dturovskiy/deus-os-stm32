@@ -1,7 +1,7 @@
 /* Pure-C bridge core simulation: ZERO device access / ZERO ESP reset.
  * Source-only test of STM32-targetable state machine under host GCC.
  */
-#include "esp_bridge_core_v0.h"
+#include "kernel/esp_bridge_core_v0.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -68,11 +68,17 @@ int main(void) {
     unsigned i;
 
     init(&core,&sim,&io);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_NOT_SEEN);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,1,0,0,out,&len)==ESP_BRIDGE_DENIED);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_DENY_SEQUENCE);
+    CHECK(sim.enters==0);
     CHECK(invoke(&core,0,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
     CHECK(core.active==0 && sim.enters==0);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_DENY_CALLBACKS);
     sim.owned=0;
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
     CHECK(sim.enters==0);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_DENY_CAN_ENTER);
     sim.owned=1; sim.quiescent=0;
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
     sim.quiescent=1; sim.approved=0;
@@ -83,11 +89,14 @@ int main(void) {
     sim.enter_ok=0;
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
     CHECK(!core.active);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_DENY_ENTER);
     sim.enter_ok=1;
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_OK);
     CHECK(core.active==1 && core.session==sess && len==9u);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_ACCEPTED);
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess+1u,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
     CHECK(core.session==sess);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_DENY_ACTIVE);
     for(i=0;i<41;++i) bytes[i]=(uint8_t)i;
     CHECK(invoke(&core,&io,ESP_BRIDGE_TX,sess,1,bytes,41,out,&len)==ESP_BRIDGE_BAD_LENGTH);
     CHECK(sim.tx_calls==0);
@@ -118,6 +127,11 @@ int main(void) {
     CHECK(sim.tx_calls==1);
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess+1,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
     CHECK(invoke(&core,&io,ESP_BRIDGE_CLOSE,sess,1,0,0,out,&len)==ESP_BRIDGE_BAD_SESSION);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_DENY_ACTIVE);
+    esp_bridge_core_v0_abort(&core,&io);
+    CHECK(core.active==0u && core.faulted==1u);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess+2u,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_DENY_FAULTED);
 
     init(&core,&sim,&io);
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_OK);
@@ -125,12 +139,40 @@ int main(void) {
     CHECK(invoke(&core,&io,ESP_BRIDGE_RX,sess,1,0,0,out,&len)==ESP_BRIDGE_UART_UNCERTAIN);
     CHECK(core.faulted==1u);
 
+    /* Pre-TX timeout/USB loss: leave once, never send UART, allow fresh
+     * session. An old session must remain invalid after recovery. */
     init(&core,&sim,&io);
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_OK);
+    CHECK(core.uart_attempted==0u);
+    esp_bridge_core_v0_abort(&core,&io);
+    CHECK(core.faulted==0u && core.active==0u && sim.leaves==1);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_ACCEPTED);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_TX,sess,1,bytes,1,out,&len)==ESP_BRIDGE_BAD_SESSION);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess+1u,0,0,0,out,&len)==ESP_BRIDGE_OK);
+    CHECK(sim.enters==2 && core.session==sess+1u);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_CLOSE,sess+1u,1,0,0,out,&len)==ESP_BRIDGE_OK);
+    CHECK(core.faulted==0u && core.uart_attempted==0u && sim.leaves==2);
+
+    /* Once any UART byte was attempted, an abnormal abort is uncertain:
+     * no re-OPEN, no automatic replay or accidental un-latch. */
+    init(&core,&sim,&io);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_OK);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_TX,sess,1,bytes,1,out,&len)==ESP_BRIDGE_OK);
+    CHECK(core.uart_attempted==1u);
     esp_bridge_core_v0_abort(&core,&io);
     CHECK(core.faulted==1u && core.active==0u && sim.leaves==1);
-    CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess+1,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
-    CHECK(invoke(&core,&io,ESP_BRIDGE_TX,sess,1,bytes,1,out,&len)==ESP_BRIDGE_BAD_SESSION);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess+1u,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
+    esp_bridge_core_v0_abort(&core,&io);
+    CHECK(core.faulted==1u);
+
+    /* Even a failed first RX is considered UART-uncertain. */
+    init(&core,&sim,&io);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_OK);
+    sim.fail_rx=1;
+    CHECK(invoke(&core,&io,ESP_BRIDGE_RX,sess,1,0,0,out,&len)==ESP_BRIDGE_UART_UNCERTAIN);
+    esp_bridge_core_v0_abort(&core,&io);
+    CHECK(core.faulted==1u && core.active==0u);
+    CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess+1u,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
 
     init(&core,&sim,&io);
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,0,0,0,0,out,&len)==ESP_BRIDGE_BAD_LENGTH);
@@ -145,6 +187,7 @@ int main(void) {
     io.tx=0;
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_DENIED);
     CHECK(!core.active);
+    CHECK(core.last_open_reason==ESP_BRIDGE_OPEN_DENY_CALLBACKS);
     init(&core,&sim,&io);
     CHECK(invoke(&core,&io,ESP_BRIDGE_OPEN,sess,0,0,0,out,&len)==ESP_BRIDGE_OK);
     core.last_sequence=0xFFFFu;

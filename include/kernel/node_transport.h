@@ -51,4 +51,6 @@ void node_transport_diagnostics_get(node_transport_diagnostics_t *out);
  * After leaving, a fresh explicit Node HELLO is required. */
 int node_transport_maintenance_enter(void);
 void node_transport_maintenance_leave(void);
+/* Passive task0 snapshot: never acquires/releases UART or services NodeLink. */
+uint8_t node_transport_maintenance_is_owned(void);
 #endif

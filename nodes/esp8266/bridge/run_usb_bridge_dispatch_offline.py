@@ -16,14 +16,15 @@ ROOT=Path(__file__).resolve().parents[3]
 USB=ROOT/"src/kernel/usb_management.c"
 FRAME=ROOT/"src/kernel/binary_frame.c"
 CORE=ROOT/"src/kernel/esp_bridge_core_v0.c"
+OWNER=ROOT/"src/kernel/esp_stm32_owner_v1.c"
 TEST=ROOT/"nodes/esp8266/bridge/test_usb_bridge_dispatch_offline.c"
-for p in (USB,FRAME,CORE,TEST):
+for p in (USB,FRAME,CORE,OWNER,TEST):
     print("SOURCE_SHA256",str(p.relative_to(ROOT)),hashlib.sha256(p.read_bytes()).hexdigest().upper(),flush=True)
 
 raw=USB.read_text()
 assert raw.count('__asm volatile("cpsid i" ::: "memory");')==1
 assert raw.count('__asm volatile("dsb" ::: "memory");')==3
-assert 'return 0;' in raw.split("static int usb_bridge_can_enter(void *context)",1)[1].split("static int usb_bridge_enter",1)[0]
+assert 'esp_stm32_owner_v1_can_enter()' in raw.split("static int usb_bridge_can_enter(void *context)",1)[1].split("static int usb_bridge_enter",1)[0]
 safe=(raw.replace('__asm volatile("cpsid i" ::: "memory");','__asm volatile("" ::: "memory");')
          .replace('__asm volatile("dsb" ::: "memory");','__asm volatile("" ::: "memory");'))
 assert safe !=raw and 'cpsid i' not in safe and '__asm volatile("dsb"' not in safe
@@ -38,7 +39,8 @@ with tempfile.TemporaryDirectory(prefix="esp_bridge_usb_mock_") as directory:
     ]:
         executable=Path(directory)/("usb_mock_"+key)
         cmd=["gcc","-std=c11","-Wall","-Wextra","-Wpedantic","-Werror",*flags,
-             "-I",str(ROOT/"include"),str(sanitized),str(FRAME),str(CORE),str(TEST),
+             "-I",str(ROOT/"include"),
+             "-I",str(ROOT/"nodes/esp8266/firmware/wifi_lab"),str(sanitized),str(FRAME),str(CORE),str(OWNER),str(TEST),
              "-o",str(executable)]
         comp=subprocess.run(cmd,capture_output=True,text=True,timeout=20)
         print("HOST_USB_DISPATCH_BUILD_"+key+"="+str(comp.returncode),flush=True)

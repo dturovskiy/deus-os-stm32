@@ -10,6 +10,8 @@ OS=Path(__file__).resolve().parents[3]
 INC=OS/"include"
 CORE=OS/"src/kernel/esp_bridge_core_v0.c"
 NODE=OS/"src/kernel/node_transport.c"
+WIFI_CLIENT=OS/"src/kernel/node_wifi_client_v0.c"
+WIFI_EXTENSION=OS/"nodes/esp8266/firmware/wifi_lab/wifi_node_extension_v0.c"
 USB=OS/"src/kernel/usb_management.c"
 FRAME=OS/"src/kernel/binary_frame.c"
 DNL=OS/"src/drivers/deus_node_link.c"
@@ -21,7 +23,8 @@ for p in SOURCES:
 
 for path in [CORE,NODE,USB,FRAME]:
     p=subprocess.run(["gcc","-std=c11","-Wall","-Wextra","-Werror",
-        "-fsyntax-only","-I",str(INC),str(path)],capture_output=True,text=True,timeout=20)
+        "-fsyntax-only","-I",str(INC),
+        "-I",str(OS/"nodes/esp8266/firmware/wifi_lab"),str(path)],capture_output=True,text=True,timeout=20)
     print(f"SYNTAX_{path.name}={p.returncode}",flush=True)
     if p.stderr:print(p.stderr[-2800:],flush=True)
     assert p.returncode==0, "SYNTAX_ERROR:"+path.name
@@ -31,7 +34,8 @@ with tempfile.TemporaryDirectory(prefix="deus_node_mode_source_") as td:
                         ("UBSAN",["-O1","-fsanitize=undefined","-fno-sanitize-recover=all"])]:
         target=Path(td)/label
         cmd=["gcc","-std=c11","-Wall","-Wextra","-Werror",*flags,
-             "-I",str(INC),str(NODE),str(DNL),str(TEST),"-o",str(target)]
+             "-I",str(INC),"-I",str(OS/"nodes/esp8266/firmware/wifi_lab"),
+             str(NODE),str(WIFI_CLIENT),str(WIFI_EXTENSION),str(DNL),str(TEST),"-o",str(target)]
         b=subprocess.run(cmd,capture_output=True,text=True,timeout=20)
         print(f"NODE_BUILD_{label}={b.returncode}",flush=True)
         if b.stderr: print(b.stderr[-2800:],flush=True)
@@ -43,7 +47,10 @@ with tempfile.TemporaryDirectory(prefix="deus_node_mode_source_") as td:
         assert t.returncode==0 and "NODE_MAINTENANCE_SOURCE_EXCLUSIVE_OFFLINE=PASS" in t.stdout, "NODE_TEST_FAIL:"+label
 
 s=USB.read_text()
-assert "return 0;" in s.split("static int usb_bridge_can_enter(void *context)",1)[1].split("static int usb_bridge_enter",1)[0], "HARDWARE_DENY_MISSING"
+admission=s.split("static int usb_bridge_can_enter(void *context)",1)[1].split("static int usb_bridge_enter",1)[0]
+assert "#if DEUS_ESP_SPLIT_BOOT_ADAPTER" in admission, "SOURCE_LOCKED_SPLIT_PROFILE_MISSING"
+assert "return firmware_update_reset_pending == 0u;" in admission, "SPLIT_UPDATE_EXCLUSION_MISSING"
+assert "esp_stm32_owner_v1_can_enter()" in admission, "STM32_OWNED_BOARD_QUALIFICATION_MISSING"
 assert "BINARY_FRAME_TYPE_ESP_BRIDGE_REQUEST" in s
 assert "esp_bridge_core_v0_abort" in s
 assert "usb_management_esp_bridge.active" in s

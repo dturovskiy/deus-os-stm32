@@ -374,6 +374,11 @@ int node_transport_maintenance_enter(void)
 }
 
 /* Never assert that ESP has returned to normal boot or that Node is READY. */
+uint8_t node_transport_maintenance_is_owned(void)
+{
+    return node_maintenance_owned;
+}
+
 void node_transport_maintenance_leave(void)
 {
     if (node_maintenance_owned == 0u) return;

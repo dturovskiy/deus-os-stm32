@@ -4,6 +4,7 @@
 #include "kernel/binary_frame.h"
 #include "kernel/binary_rpc.h"
 #include "kernel/esp_bridge_core_v0.h"
+#include "kernel/esp_stm32_owner_v1.h"
 #include "kernel/node_transport.h"
 #include "drivers/usart2_node.h"
 #include "kernel/time.h"
@@ -57,6 +58,11 @@ static binary_frame_parser_t usb_management_parser;
 static binary_rpc_state_t usb_management_rpc_state;
 static esp_bridge_core_v0_t usb_management_esp_bridge;
 static firmware_update_response_wire_t firmware_update_response_wire;
+static uint8_t usb_bridge_aborting;
+/* Split profile: suppress asynchronous ESP boot UART output until first
+ * explicitly authorized ROM TX. This flag is task0-only, not used in IRQ38. */
+static uint8_t usb_bridge_uart_rx_armed;
+static kernel_time_ms_t usb_bridge_deadline;
 static uint32_t usb_management_last_bus_reset_count;
 static uint32_t firmware_update_reset_baseline_packet_count;
 static kernel_time_ms_t firmware_update_reset_deadline;
@@ -197,33 +203,94 @@ __attribute__((cold, noinline)) static void firmware_update_handle_runtime_frame
     firmware_update_reset_pending = 1u;
 }
 
-/* ESP bridge v0 privileged adapter. IMPORTANT: actual ESP GPIO0 and
- * EN/RST are still CH340-owned/unverified. Hardware admission is hard OFF.
- * No USB request can enable direct USART2 traffic in this candidate. */
+/* Owner-qualified STM32 ESP GPIO board ONLY. Current board (CH340-owned
+ * BOOT/EN) compiles DEUS_ESP_STM32_BOARD_QUALIFIED=0 and stays DENIED.
+ * This is a firmware-local prerequisite, never derived from USB payload. */
+void usb_management_esp_bridge_diagnostics_get(
+    usb_management_esp_bridge_diagnostics_t *out)
+{
+    if (out == (usb_management_esp_bridge_diagnostics_t *)0)
+        return;
+    out->active = usb_management_esp_bridge.active;
+    out->faulted = usb_management_esp_bridge.faulted;
+    out->uart_attempted = usb_management_esp_bridge.uart_attempted;
+    out->last_open_reason = usb_management_esp_bridge.last_open_reason;
+    out->node_maintenance_owned = node_transport_maintenance_is_owned();
+    out->firmware_update_reset_pending =
+        (uint8_t)(firmware_update_reset_pending != 0u);
+#if DEUS_ESP_SPLIT_BOOT_ADAPTER
+    out->split_adapter_profile = 1u;
+#else
+    out->split_adapter_profile = 0u;
+#endif
+}
+
+/* Existing admission and side effects are intentionally unchanged. */
 static int usb_bridge_can_enter(void *context)
 {
     (void)context;
-    (void)firmware_update_reset_pending;
-    return 0;
+#if DEUS_ESP_SPLIT_BOOT_ADAPTER
+    /* The existing bench has independent CH340 BOOT/EN control and
+     * STM32 USART2 data. Only exact build-selected split-profile code
+     * may admit exclusive UART maintenance. No GPIO0/EN writes here. */
+    return firmware_update_reset_pending == 0u;
+#else
+    return firmware_update_reset_pending == 0u &&
+           esp_stm32_owner_v1_can_enter() != 0;
+#endif
 }
 
 static int usb_bridge_enter(void *context)
 {
     (void)context;
     if (node_transport_maintenance_enter() == 0) return 0;
+#if !DEUS_ESP_SPLIT_BOOT_ADAPTER
+    if (esp_stm32_owner_v1_enter(kernel_time_now()) == 0)
+    {
+        node_transport_maintenance_leave();
+        return 0;
+    }
+#endif
+    /* node_transport_maintenance_enter disarms/flushes USART2 RX.
+     * In the CH340 split profile ESP EN/GPIO0 will be toggled AFTER OPEN.
+     * Enabling RX now would ingest ESP ROM boot chatter (which need not be
+     * 115200 baud), latch USART FE/NE/ORE, and poison the first ROM RX.
+     * Keep USART2 RX gate OFF until the FIRST authorized bridge TX. */
+#if DEUS_ESP_SPLIT_BOOT_ADAPTER
+    usb_bridge_uart_rx_armed = 0u;
+#else
     usart2_node_rx_arm();
+    usb_bridge_uart_rx_armed = 1u;
+#endif
     return 1;
 }
 
 static void usb_bridge_leave(void *context)
 {
     (void)context;
+    usart2_node_rx_disarm();
+    usb_bridge_uart_rx_armed = 0u;
+#if !DEUS_ESP_SPLIT_BOOT_ADAPTER
+    esp_stm32_owner_v1_leave(usb_bridge_aborting, kernel_time_now());
+#endif
     node_transport_maintenance_leave();
 }
 
 static int usb_bridge_tx(void *context, const uint8_t *data, uint8_t length)
 {
     (void)context;
+#if !DEUS_ESP_SPLIT_BOOT_ADAPTER
+    if (esp_stm32_owner_v1_rom_tx_ready() == 0) return 0;
+#endif
+    /* Start reception only after ESP reset/strap has completed and host
+     * explicitly begins ROM SYNC. usart2_node_rx_arm() clears stale SR/DR,
+     * IRQ38 pending, ring indices and RX-loss before *first* TX byte.
+     * A second SYNC fragment must NOT clear potential response bytes. */
+    if (usb_bridge_uart_rx_armed == 0u)
+    {
+        usart2_node_rx_arm();
+        usb_bridge_uart_rx_armed = 1u;
+    }
     return usart2_node_write_frame(data, (uint32_t)length);
 }
 
@@ -232,6 +299,11 @@ static int usb_bridge_rx(void *context, uint8_t *data, uint8_t capacity)
     uint32_t i;
     usart2_node_sample_t sample;
     (void)context;
+#if !DEUS_ESP_SPLIT_BOOT_ADAPTER
+    if (esp_stm32_owner_v1_rom_tx_ready() == 0) return -1;
+#endif
+    /* Fail closed on unexpected RX-before-TX, not asynchronous startup logs. */
+    if (usb_bridge_uart_rx_armed == 0u) return -1;
     for (i = 0u; i < capacity; ++i)
     {
         const int result = usart2_node_try_read(&sample);
@@ -246,6 +318,15 @@ static const esp_bridge_io_v0_t usb_bridge_io = {
     usb_bridge_can_enter, usb_bridge_enter, usb_bridge_leave,
     usb_bridge_tx, usb_bridge_rx, (void *)0
 };
+
+/* All abnormal USB/UART exits distinguish themselves from explicit CLOSE:
+ * uncertain ESP Flash must not silently reboot into a partial application. */
+static void usb_bridge_force_abort(void)
+{
+    usb_bridge_aborting = 1u;
+    esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+    usb_bridge_aborting = 0u;
+}
 
 /* Outer parser has already checked CRC16; core owns session and sequence.
  * Serialize into existing shared 64-byte Management workspace (no new 64B
@@ -266,7 +347,7 @@ static void usb_bridge_handle_frame(
         binding->send_wire == (binary_rpc_send_wire_t)0)
     {
         if (usb_management_esp_bridge.active != 0u)
-            esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+            usb_bridge_force_abort();
         return;
     }
 
@@ -280,27 +361,30 @@ static void usb_bridge_handle_frame(
     if (payload_length == 0u)
     {
         if (usb_management_esp_bridge.active != 0u)
-            esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+            usb_bridge_force_abort();
         return;
     }
     if (wire[BINARY_FRAME_FIXED_PREFIX_BYTES + 7u] ==
         ESP_BRIDGE_UART_UNCERTAIN)
     {
-        esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+        usb_bridge_force_abort();
     }
+
+    if (usb_management_esp_bridge.active != 0u)
+        usb_bridge_deadline = kernel_time_now() + 15000u;
 
     wire_length = binary_frame_finalize_in_place(
         BINARY_FRAME_TYPE_ESP_BRIDGE_RESPONSE, 0u, frame->request_id,
         payload_length, wire);
     if (binding->send_wire(binding->send_context, wire, wire_length) == 0)
-        esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+        usb_bridge_force_abort();
 }
 
 static void usb_management_protocol_reset(void)
 {
     /* USB reset/unconfigure cannot leave a serial maintenance owner alive. */
     if (usb_management_esp_bridge.active != 0u)
-        esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
+        usb_bridge_force_abort();
     binary_rpc_workspace_t *workspace =
         usb_management_rpc_state.workspace;
 
@@ -324,6 +408,10 @@ int usb_management_runtime_init(binary_rpc_workspace_t *workspace)
 
     binary_frame_parser_init(&usb_management_parser);
     esp_bridge_core_v0_init(&usb_management_esp_bridge);
+    usb_bridge_aborting = 0u;
+    usb_bridge_uart_rx_armed = 0u;
+    usb_bridge_deadline = 0u;
+    esp_stm32_owner_v1_init(kernel_time_now());
     binary_rpc_init(
         &usb_management_rpc_state,
         workspace);
@@ -358,6 +446,10 @@ uint32_t usb_management_runtime_service(
         firmware_update_reset_service();
     }
     asset_transfer_poll();
+    esp_stm32_owner_v1_service(kernel_time_now());
+    if (usb_management_esp_bridge.active != 0u &&
+        kernel_time_reached(kernel_time_now(), usb_bridge_deadline) != 0)
+        usb_bridge_force_abort();
 
     if (bus_reset_count !=
         usb_management_last_bus_reset_count)

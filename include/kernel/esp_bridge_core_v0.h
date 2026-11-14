@@ -13,12 +13,29 @@ enum { ESP_BRIDGE_OPEN = 1u, ESP_BRIDGE_TX = 2u,
 enum { ESP_BRIDGE_OK = 0u, ESP_BRIDGE_DENIED = 1u,
        ESP_BRIDGE_BAD_SESSION = 2u, ESP_BRIDGE_BAD_SEQUENCE = 3u,
        ESP_BRIDGE_BAD_LENGTH = 4u, ESP_BRIDGE_UART_UNCERTAIN = 5u };
+/* Read-only diagnostics of LAST syntactically valid OPEN, not a new
+ * admission or reset API. Never call firmware callbacks from the getter.
+ * A value remains latched until a subsequent OPEN or MCU initialization. */
+enum {
+    ESP_BRIDGE_OPEN_NOT_SEEN = 0u,
+    ESP_BRIDGE_OPEN_ACCEPTED = 1u,
+    ESP_BRIDGE_OPEN_DENY_SEQUENCE = 2u,
+    ESP_BRIDGE_OPEN_DENY_ACTIVE = 3u,
+    ESP_BRIDGE_OPEN_DENY_FAULTED = 4u,
+    ESP_BRIDGE_OPEN_DENY_CALLBACKS = 5u,
+    ESP_BRIDGE_OPEN_DENY_CAN_ENTER = 6u,
+    ESP_BRIDGE_OPEN_DENY_ENTER = 7u
+};
 
 typedef struct {
     uint32_t session;
     uint16_t last_sequence;
     uint8_t active;
     uint8_t faulted;
+    /* 1 after any accepted UART TX/RX request, including a failed call.
+     * A pre-UART abort is recoverable; an uncertain UART abort is not. */
+    uint8_t uart_attempted;
+    uint8_t last_open_reason;
 } esp_bridge_core_v0_t;
 
 typedef struct {

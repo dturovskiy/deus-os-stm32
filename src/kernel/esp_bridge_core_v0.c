@@ -21,21 +21,30 @@ void esp_bridge_core_v0_init(esp_bridge_core_v0_t *state)
         state->last_sequence = 0u;
         state->active = 0u;
         state->faulted = 0u;
+        state->uart_attempted = 0u;
+        state->last_open_reason = ESP_BRIDGE_OPEN_NOT_SEEN;
     }
 }
 
 void esp_bridge_core_v0_abort(esp_bridge_core_v0_t *state,
                               const esp_bridge_io_v0_t *io)
 {
+    uint8_t uncertain;
     if (state == (esp_bridge_core_v0_t *)0)
         return;
+    /* No UART request means ESP Flash cannot have started through this
+     * bridge. Leave maintenance and permit a fresh session after timeout.
+     * Once TX/RX was attempted, preserve fail-closed until MCU recovery. */
+    uncertain = (uint8_t)((state->faulted != 0u) ||
+                          (state->uart_attempted != 0u));
     if (state->active != 0u && io != (const esp_bridge_io_v0_t *)0 &&
         io->leave != (void (*)(void *))0)
         io->leave(io->context);
     state->session = 0u;
     state->last_sequence = 0u;
     state->active = 0u;
-    state->faulted = 1u; /* No automatic resume after USB/session loss. */
+    state->uart_attempted = 0u;
+    state->faulted = uncertain;
 }
 
 uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
@@ -68,19 +77,32 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
     }
     else if (op == ESP_BRIDGE_OPEN)
     {
-        if (seq == 0u && state->active == 0u && state->faulted == 0u &&
-            io != (const esp_bridge_io_v0_t *)0 &&
-            io->can_enter != (int (*)(void *))0 &&
-            io->enter != (int (*)(void *))0 &&
-            io->leave != (void (*)(void *))0 &&
-            io->tx != (int (*)(void *, const uint8_t *, uint8_t))0 &&
-            io->rx != (int (*)(void *, uint8_t *, uint8_t))0 &&
-            io->can_enter(io->context) != 0 &&
-            io->enter(io->context) != 0)
+        /* Preserve original ordered short-circuit admission. Record ONLY
+         * which already-existing predicate rejected the last OPEN. */
+        if (seq != 0u)
+            state->last_open_reason = ESP_BRIDGE_OPEN_DENY_SEQUENCE;
+        else if (state->active != 0u)
+            state->last_open_reason = ESP_BRIDGE_OPEN_DENY_ACTIVE;
+        else if (state->faulted != 0u)
+            state->last_open_reason = ESP_BRIDGE_OPEN_DENY_FAULTED;
+        else if (io == (const esp_bridge_io_v0_t *)0 ||
+                 io->can_enter == (int (*)(void *))0 ||
+                 io->enter == (int (*)(void *))0 ||
+                 io->leave == (void (*)(void *))0 ||
+                 io->tx == (int (*)(void *, const uint8_t *, uint8_t))0 ||
+                 io->rx == (int (*)(void *, uint8_t *, uint8_t))0)
+            state->last_open_reason = ESP_BRIDGE_OPEN_DENY_CALLBACKS;
+        else if (io->can_enter(io->context) == 0)
+            state->last_open_reason = ESP_BRIDGE_OPEN_DENY_CAN_ENTER;
+        else if (io->enter(io->context) == 0)
+            state->last_open_reason = ESP_BRIDGE_OPEN_DENY_ENTER;
+        else
         {
             state->active = 1u;
             state->session = sid;
             state->last_sequence = 0u;
+            state->uart_attempted = 0u;
+            state->last_open_reason = ESP_BRIDGE_OPEN_ACCEPTED;
             status = ESP_BRIDGE_OK;
         }
     }
@@ -96,6 +118,7 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
     }
     else if (op == ESP_BRIDGE_TX)
     {
+        state->uart_attempted = 1u; /* Record before potentially failing TX. */
         if (io != (const esp_bridge_io_v0_t *)0 &&
             io->tx != (int (*)(void *, const uint8_t *, uint8_t))0 &&
             io->tx(io->context, in + 8, count) != 0)
@@ -112,6 +135,7 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
     else if (op == ESP_BRIDGE_RX)
     {
         int result = -1;
+        state->uart_attempted = 1u; /* Record before potentially failing RX. */
         if (io != (const esp_bridge_io_v0_t *)0 &&
             io->rx != (int (*)(void *, uint8_t *, uint8_t))0)
             result = io->rx(io->context, out + 9, ESP_BRIDGE_MAX_DATA);
@@ -135,6 +159,7 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
         state->active = 0u;
         state->session = 0u;
         state->last_sequence = 0u;
+        state->uart_attempted = 0u;
         status = ESP_BRIDGE_OK;
     }
 

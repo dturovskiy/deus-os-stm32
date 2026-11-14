@@ -25,8 +25,10 @@ int main(void) {
     node_transport_init(0u);
     node_transport_diagnostics_get(&diag);
     CHECK(diag.ready==0u && diag.pending==0u);
+    CHECK(node_transport_maintenance_is_owned()==0u);
     CHECK(node_transport_maintenance_enter()==1);
     CHECK(uart_disarm==1 && uart_was_armed==0);
+    CHECK(node_transport_maintenance_is_owned()==1u);
     CHECK(node_transport_maintenance_enter()==0);
     CHECK(node_transport_start(0xC0FFE001u,1u)==0);
     CHECK(node_transport_submit_crc32(job,2,1u)==0);
@@ -35,6 +37,7 @@ int main(void) {
     CHECK(uart_write==0 && uart_arm==0); /* no synthetic HELLO, PING, retry */
     node_transport_maintenance_leave();
     CHECK(uart_disarm==2 && uart_was_armed==0);
+    CHECK(node_transport_maintenance_is_owned()==0u);
     node_transport_maintenance_leave();
     CHECK(uart_disarm==2);
     node_transport_diagnostics_get(&diag);
@@ -42,6 +45,7 @@ int main(void) {
     CHECK(node_transport_start(0xC0FFE001u,3001u)==1);
     CHECK(uart_write==1 && uart_arm==1 && uart_was_armed==1);
     CHECK(node_transport_maintenance_enter()==0); /* HELLO pending */
+    CHECK(node_transport_maintenance_is_owned()==0u);
     CHECK(uart_disarm==3); /* failed enter does not clear active UART */
     printf("NODE_MAINTENANCE_SOURCE_EXCLUSIVE_OFFLINE=PASS NO_HARDWARE=YES\n");
     return 0;

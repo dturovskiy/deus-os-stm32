@@ -2,7 +2,9 @@ param(
     [Parameter(Mandatory=$true)][string]$ProjectRoot,
     [Parameter(Mandatory=$true)][string]$OutputDir,
     [Parameter(Mandatory=$true)][string]$FirmwareSourceTree,
-    [string]$ToolchainRoot = $env:DEUS_ARM_TOOLCHAIN_ROOT
+    [string]$ToolchainRoot = $env:DEUS_ARM_TOOLCHAIN_ROOT,
+    [switch]$EspStm32BoardQualified,
+    [switch]$EspSplitAdapterBoot
 )
 
 Set-StrictMode -Version 3.0
@@ -43,6 +45,7 @@ $SourcePaths = @(
     "src/drivers/stm32f103_clock.c"
     "src/drivers/usart1.c"
     "src/drivers/usart2_node.c"
+    "src/drivers/esp_gpio_board_v0.c"
     "src/drivers/deus_node_link.c"
     "src/drivers/wifi_node_extension_v0.c"
     "src/drivers/node_link_memory.c"
@@ -62,6 +65,8 @@ $SourcePaths = @(
     "src/kernel/binary_rpc.c"
     "src/kernel/command_service.c"
     "src/kernel/esp_bridge_core_v0.c"
+    "src/kernel/esp_boot_control_v0.c"
+    "src/kernel/esp_stm32_owner_v1.c"
     "src/kernel/oled_console.c"
     "src/kernel/oled_status_bar.c"
     "src/kernel/oled_ui_layout.c"
@@ -84,6 +89,7 @@ $ObjectNames = @(
     "src_drivers_stm32f103_clock.o"
     "src_drivers_usart1.o"
     "src_drivers_usart2_node.o"
+    "src_drivers_esp_gpio_board_v0.o"
     "src_drivers_deus_node_link.o"
     "src_drivers_wifi_node_extension_v0.o"
     "src_drivers_node_link_memory.o"
@@ -103,6 +109,8 @@ $ObjectNames = @(
     "src_kernel_binary_rpc.o"
     "src_kernel_command_service.o"
     "src_kernel_esp_bridge_core_v0.o"
+    "src_kernel_esp_boot_control_v0.o"
+    "src_kernel_esp_stm32_owner_v1.o"
     "src_kernel_oled_console.o"
     "src_kernel_oled_status_bar.o"
     "src_kernel_oled_ui_layout.o"
@@ -138,7 +146,14 @@ if ($SourceDiff.Count -ne 0 -or $DiscoveredSources.Count -ne $SourcePaths.Count)
 $OutputDir = Reset-DeusGeneratedOutputDirectory -ProjectRoot $ProjectRoot -OutputDir $OutputDir -OwnerId 'DEUS_OS_FIRMWARE_BUILD_V1'
 
 $Header = Join-Path $OutputDir "deus_build_identity.h"
-$HeaderText = "#ifndef DEUS_BUILD_IDENTITY_H`r`n#define DEUS_BUILD_IDENTITY_H`r`n#define DEUS_FIRMWARE_SOURCE_TREE_HEX `"$FirmwareSourceTree`"`r`n#endif`r`n"
+if ($EspStm32BoardQualified -and $EspSplitAdapterBoot) {
+    throw "ESP GPIO BOOT/EN ownership conflict: select exactly one board profile"
+}
+$BoardOwnerValue = if ($EspStm32BoardQualified) { "1" } else { "0" }
+$SplitAdapterValue = if ($EspSplitAdapterBoot) { "1" } else { "0" }
+$HeaderText = "#ifndef DEUS_BUILD_IDENTITY_H`r`n#define DEUS_BUILD_IDENTITY_H`r`n#define DEUS_FIRMWARE_SOURCE_TREE_HEX `"$FirmwareSourceTree`"`r`n#define DEUS_ESP_STM32_BOARD_QUALIFIED $BoardOwnerValue`r`n#define DEUS_ESP_SPLIT_BOOT_ADAPTER $SplitAdapterValue`r`n#endif`r`n"
+Write-Host ("ESP_STM32_BOARD_OWNER_PROFILE={0}" -f $(if ($EspStm32BoardQualified) { "QUALIFIED_WIRING_REQUIRES_PHYSICAL_PROOF" } else { "CURRENT_HARD_DENY_DEFAULT" }))
+Write-Host ("ESP_SPLIT_BOOT_ADAPTER_PROFILE={0}" -f $(if ($EspSplitAdapterBoot) { "EXISTING_CH340_CONTROL_ONLY_USART2_DATA" } else { "OFF" }))
 [System.IO.File]::WriteAllText(
     $Header,
     $HeaderText,
@@ -190,6 +205,7 @@ $SizeOptimizedSources = @(
     "src/drivers/stm32f103_clock.c"
     "src/drivers/usart1.c"
     "src/drivers/usart2_node.c"
+    "src/drivers/esp_gpio_board_v0.c"
     "src/drivers/deus_node_link.c"
     "src/drivers/wifi_node_extension_v0.c"
     "src/drivers/node_link_memory.c"
@@ -213,10 +229,46 @@ $SizeOptimizedSources = @(
     "src/kernel/oled_console.c"
     "src/kernel/oled_status_bar.c"
     "src/kernel/esp_bridge_core_v0.c"
+    "src/kernel/esp_boot_control_v0.c"
+    "src/kernel/esp_stm32_owner_v1.c"
     "src/kernel/system_service_state.c"
     "src/kernel/usb_management.c"
 )
 
+# Only ESP ROM bridge/owner modules use cross-module LTO in an electrically
+# qualified board build. Keep USB IRQ, scheduler, watchdog and all other
+# stable firmware units on their previously accepted native code-generation.
+$EspBridgePartialLtoSources = @(
+    "src/drivers/esp_gpio_board_v0.c"
+    "src/kernel/esp_boot_control_v0.c"
+    "src/kernel/esp_stm32_owner_v1.c"
+    "src/kernel/usb_management.c"
+)
+
+# Preserve the optimized normal9 firmware baseline. For the CURRENT CH340
+# BOOT/EN + STM32 USART2 ESP topology, LTO touches ONLY these application,
+# Wi-Fi and diagnostic units. Never LTO the USB IRQ, scheduler context switch,
+# watchdog or flash writer in this profile. Native ARM A/B: 52,164 -> 50,328B.
+$EspSplitWifiPartialLtoSources = @(
+    "src/drivers/deus_node_link.c"
+    "src/drivers/wifi_node_extension_v0.c"
+    "src/kernel.c"
+    "src/kernel/application_commands.c"
+    "src/kernel/application_runtime.c"
+    "src/kernel/asset_transfer.c"
+    "src/kernel/binary_rpc.c"
+    "src/kernel/command_service.c"
+    "src/kernel/esp_bridge_core_v0.c"
+    "src/kernel/node_transport.c"
+    "src/kernel/node_wifi_client_v0.c"
+    "src/kernel/oled_console.c"
+    "src/kernel/oled_status_bar.c"
+    "src/kernel/scheduler_diagnostics.c"
+    "src/kernel/usb_management.c"
+)
+if (@($EspSplitWifiPartialLtoSources | Where-Object { $SourcePaths -notcontains $_ }).Count -ne 0) {
+    throw "ESP WiFi LTO source list drift"
+}
 for ($i = 0; $i -lt $SourcePaths.Count; ++$i) {
     $Source = Join-Path $ProjectRoot $SourcePaths[$i].Replace("/","\")
     $Object = Join-Path $OutputDir $ObjectNames[$i]
@@ -226,8 +278,15 @@ for ($i = 0; $i -lt $SourcePaths.Count; ++$i) {
         "-O2"
     }
 
+    $CompileFlags = @($Optimization)
+    if (($EspStm32BoardQualified -and
+         ($EspBridgePartialLtoSources -contains $SourcePaths[$i])) -or
+        ($EspSplitAdapterBoot -and
+         ($EspSplitWifiPartialLtoSources -contains $SourcePaths[$i]))) {
+        $CompileFlags += "-flto"
+    }
     Invoke-Tool -Label ("compile-" + $ObjectNames[$i]) -Exe $Gcc -Arguments (
-        $CommonC + @($Optimization,"-c",$Source,"-o",$Object)
+        $CommonC + $CompileFlags + @("-c",$Source,"-o",$Object)
     )
 
     $Objects.Add($Object)
@@ -248,6 +307,10 @@ $Map = Join-Path $OutputDir "os.map"
 $Bin = Join-Path $OutputDir "os.bin"
 
 $LinkArgs = [System.Collections.Generic.List[string]]::new()
+if ($EspStm32BoardQualified -or $EspSplitAdapterBoot) {
+    $LinkArgs.Add("-flto")
+    Write-Host ("ESP_ARM_PARTIAL_LTO={0}" -f $(if ($EspStm32BoardQualified) { "QUALIFIED_BOARD_FOUR_MODULES" } else { "CURRENT_SPLIT_WIFI_FIFTEEN_NON_IRQ_MODULES" }))
+}
 foreach ($Arg in @(
     "-mcpu=cortex-m3",
     "-mthumb",

@@ -2048,7 +2048,10 @@ static command_service_status_t node_command_crc(
 static void node_command_status(command_service_context_t *context)
 {
     node_transport_diagnostics_t s;
+    usb_management_esp_bridge_diagnostics_t e;
     node_transport_diagnostics_get(&s);
+    usb_management_esp_bridge_diagnostics_get(&e);
+    /* Keep the existing first line byte-compatible for installed Host CLI. */
     console_write(context, "NODE_READY=");
     console_write_hex32(context, (uint32_t)s.ready);
     console_write(context, " NODE_PENDING=");
@@ -2060,6 +2063,22 @@ static void node_command_status(command_service_context_t *context)
     console_write(context, " LAST_CRC32=");
     console_write_hex32(context, s.last_job_crc32);
     command_service_write_hex_line(context, " VALID=", (uint32_t)s.last_job_valid);
+    /* Additive read-only snapshot. LAST_OPEN_REASON refers to the last
+     * syntactically valid OPEN; does not re-evaluate admission. */
+    console_write(context, "ESP_BRIDGE_ACTIVE=");
+    console_write_hex32(context, (uint32_t)e.active);
+    console_write(context, " FAULTED=");
+    console_write_hex32(context, (uint32_t)e.faulted);
+    console_write(context, " UART_ATTEMPTED=");
+    console_write_hex32(context, (uint32_t)e.uart_attempted);
+    console_write(context, " LAST_OPEN_REASON=");
+    console_write_hex32(context, (uint32_t)e.last_open_reason);
+    console_write(context, " MAINTENANCE_OWNED=");
+    console_write_hex32(context, (uint32_t)e.node_maintenance_owned);
+    console_write(context, " FW_RESET_PENDING=");
+    console_write_hex32(context, (uint32_t)e.firmware_update_reset_pending);
+    command_service_write_hex_line(context, " SPLIT_PROFILE=",
+        (uint32_t)e.split_adapter_profile);
 }
 
 /* Candidate normal10: explicit optional Wi-Fi commands over already-open
