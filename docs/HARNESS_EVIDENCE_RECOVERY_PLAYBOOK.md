@@ -4,6 +4,13 @@
 
 Status: project engineering rulebook
 
+### BENCH operator authorization cadence — no micro-approvals (owner directive, 2026-11-11)
+
+For one-board bench development, **do not repeatedly ask the owner for permission to plan, review sources, build offline, validate SHA/receipts, inspect non-secret logs, read permitted USB sysfs or bootloader INFO, run passive health diagnostics, reconcile original evidence, or update documentation**. An owner's explicit GO for **one defined physical action** also covers its bounded passive preflight, immediate postflight, error diagnosis and documentation; do not demand separate GO merely because the runner produced a classified postflight FAIL. Prefer one known-good native host path and one complete result, not micro-steps, extra qualifier bundles or redundant tests. **When a physical action's original result is ambiguous, never repeat that action to cure a failed observation; inspect current state read-only.**
+
+The permission boundary is **actual device mutation or protected credential use**, not each observation: a fresh explicit approval remains required to *start a different reset/ENTER, Flash/erase/option-byte write, destructive SWD recovery, ESP RF-changing operation or protected-key signing*. A previous ENTER GO does not implicitly approve a later Flash, but a Flash GO includes its natural **read-only** post-install smoke test and original Evidence review without another prompt. No permission is inferred from a document or a worker queue; respect actual tooling denials. Keep accepted proofs reusable, and **never run an attempted one-shot again**. These rules simplify owner interaction, not safety-critical conditions.
+
+
 **2026-10-30 location update:** The former repository-local Python Bundle Guard and Gate3/Gate4 operator source suites were SHA-preserved in off-Git `../Tools/scripts/` (from `OS/`); for a project-root PowerShell invocation of the static builder use `python ../Tools/scripts/operator_bundle_guard/bundle_guard.py ...` after requalifying the exact external source and paths. Historical commands `python scripts/operator_bundle_guard/...` below describe their pre-extraction placement; they are no longer active. Public OS CI no longer qualifies internal operator tooling. Hardware-mutation authorization rules and original Evidence remain unchanged.
 
 ### Mandatory operator-bundle authoring route on managed DEUS MCP (2026-11-11; verified, not a new runner)
