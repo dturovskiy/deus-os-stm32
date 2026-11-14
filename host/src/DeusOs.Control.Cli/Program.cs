@@ -13,8 +13,20 @@ internal static class Program
         {
             // Direct, minimal adapter to the existing firmware-update client.
             // Normal CLI commands and formal Gate acceptance stay unchanged.
+            if (args.Length > 0 && args[0] == "bench-esp-rom")
+                return await BenchEspRomBridgeCommand.RunAsync(args[1..]);
+            if (args.Length > 0 && args[0] == "bench-esp-admission")
+                return await BenchEspBridgeAdmissionCommand.RunAsync(args[1..]);
             if (args.Length > 0 && args[0] == "bench-fw")
                 return await BenchFirmwareCommand.RunAsync(args[1..]);
+            if (args.Length > 0 && args[0] == "bench-fw-v11")
+                return await BenchFirmwareV11Command.RunAsync(args[1..]);
+            if (args.Length > 0 && args[0] == "bench-fw-v12")
+                return await BenchFirmwareV12Command.RunAsync(args[1..]);
+            if (args.Length > 0 && args[0] == "bench-fw-v13")
+                return await BenchFirmwareV13Command.RunAsync(args[1..]);
+            if (args.Length > 0 && args[0] == "bench-fw-v14")
+                return await BenchFirmwareV14Command.RunAsync(args[1..]);
 
             var parsed = CliArguments.Parse(args);
 

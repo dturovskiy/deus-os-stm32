@@ -42,12 +42,14 @@ public enum FrameType : byte
     RpcRequest = 0x02,
     AssetTransferRequest = 0x03,
     FirmwareUpdateRequest = 0x04,
+    EspBridgeRequest = 0x05,
     HelloResponse = 0x81,
     RpcData = 0x82,
     RpcEnd = 0x83,
     ProtocolError = 0x84,
     AssetTransferResponse = 0x85,
     FirmwareUpdateResponse = 0x86,
+    EspBridgeResponse = 0x87,
 }
 
 public enum HostErrorKind
