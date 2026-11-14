@@ -145,8 +145,11 @@ internal static class BenchEspRomBridgeCommand
                     "adapter boot handover not accepted; no UART SYNC sent");
             }
         }
-        var reply = await EspRomBridgeSync.ProbeOnceAsync(bridge);
-        await bridge.CloseAsync();
+        // A ROM timeout must not leak the accepted USB bridge session.
+        // The bounded helper preserves the original cause, reports whether
+        // CLOSE succeeded, and never sends a second ROM SYNC.
+        var reply = await EspRomBridgeSync.ProbeOnceAndCloseAsync(
+            bridge, message => Console.Error.WriteLine(message));
 
         if (!EspRomSlip.IsSyncResponse(reply))
             throw new InvalidOperationException("ROM SYNC reply not accepted");

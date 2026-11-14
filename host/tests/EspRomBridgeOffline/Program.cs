@@ -132,6 +132,107 @@ await using(var romBridge=new EspBridgeClient(fakeRom))
     }) && fakeRom.Sequences.SequenceEqual(new ushort[]{0,1,2,3,4}),
     "ONE_ROM_SYNC_SPLIT_TX40_6_AND_RX_NO_RETRY");
 }
+// Regression for the real normal14 ROM timeout: a missing ESP response
+// must attempt exactly one USB CLOSE, never retry SYNC, and preserve Timeout.
+var silentTransport = new FakeTransport(_ =>
+    (EspBridgeStatus.Ok, Array.Empty<byte>()));
+var silentCleanup = new List<string>();
+await using (var silentBridge = new EspBridgeClient(silentTransport))
+{
+    await silentBridge.OpenAsync(sid);
+    try
+    {
+        await EspRomBridgeSync.ProbeOnceAndCloseAsync(
+            silentBridge, silentCleanup.Add);
+        throw new Exception("SILENT_ROM_UNEXPECTEDLY_PASSED");
+    }
+    catch (DeusHostException ex)
+    {
+        Check(ex.Kind == HostErrorKind.Timeout &&
+              ex.Message.Contains("RX_BYTES=0 RX_NONEMPTY_POLLS=0 SLIP_DELIMITERS=0"),
+              "NO_ROM_SYNC_PRIMARY_TIMEOUT_WITH_ZERO_RX_COUNTS_PRESERVED");
+    }
+    Check(!silentBridge.IsOpen && !silentBridge.IsFaulted &&
+          silentCleanup.SequenceEqual([
+              "STM32_ESP_BRIDGE_CLOSE=PASS_AFTER_ROM_PROBE_FAILURE"
+          ]) &&
+          silentTransport.Operations.SequenceEqual(
+              new[]{EspBridgeOperation.Open,EspBridgeOperation.Tx,EspBridgeOperation.Tx}
+                  .Concat(Enumerable.Repeat(EspBridgeOperation.Rx,40))
+                  .Append(EspBridgeOperation.Close)) &&
+          silentTransport.Sequences.SequenceEqual(
+              Enumerable.Range(0,44).Select(x=>checked((ushort)x))),
+          "SILENT_ROM_TIMEOUT_CLEAN_CLOSE_NO_RETRY_44_SEQUENCE_SLOTS");
+}
+// Noise is NOT proof of an ESP ROM reply. Count only aggregate bytes.
+var noiseTransport = new FakeTransport(req =>
+    (EspBridgeOperation)req[0] == EspBridgeOperation.Rx
+        ? (EspBridgeStatus.Ok, new byte[] { 0x41, 0x42 })
+        : (EspBridgeStatus.Ok, Array.Empty<byte>()));
+await using (var noisy = new EspBridgeClient(noiseTransport))
+{
+    await noisy.OpenAsync(sid);
+    try
+    {
+        await EspRomBridgeSync.ProbeOnceAndCloseAsync(noisy);
+        throw new Exception("NOISE_ROM_UNEXPECTEDLY_PASSED");
+    }
+    catch (DeusHostException ex)
+    {
+        Check(ex.Kind == HostErrorKind.Timeout &&
+              ex.Message.Contains("RX_BYTES=80 RX_NONEMPTY_POLLS=40 SLIP_DELIMITERS=0") &&
+              noiseTransport.Operations.Last() == EspBridgeOperation.Close &&
+              !noisy.IsFaulted, "NOISE_RX_COUNTS_WITHOUT_FALSE_ROM_PROOF_CLEAN_CLOSE");
+    }
+}
+// If CLOSE also fails, retain the original timeout + secondary cleanup error.
+var failedCloseTransport = new FakeTransport(req =>
+    (EspBridgeOperation)req[0] == EspBridgeOperation.Close
+        ? (EspBridgeStatus.Denied, Array.Empty<byte>())
+        : (EspBridgeStatus.Ok, Array.Empty<byte>()));
+var failedCloseEvents = new List<string>();
+await using (var failedClose = new EspBridgeClient(failedCloseTransport))
+{
+    await failedClose.OpenAsync(sid);
+    try
+    {
+        await EspRomBridgeSync.ProbeOnceAndCloseAsync(
+            failedClose, failedCloseEvents.Add);
+        throw new Exception("CLOSE_FAILURE_UNEXPECTEDLY_PASSED");
+    }
+    catch (DeusHostException ex)
+    {
+        Check(ex.Kind == HostErrorKind.Timeout &&
+              ex.Data.Contains("ESP_BRIDGE_CLOSE_ERROR") &&
+              failedCloseEvents.Count == 1 &&
+              failedCloseEvents[0].StartsWith(
+                  "STM32_ESP_BRIDGE_CLOSE=FAILED_NO_RETRY ") &&
+              failedClose.IsFaulted &&
+              failedCloseTransport.Operations.Last() == EspBridgeOperation.Close,
+              "DOUBLE_FAILURE_PRESERVE_FIRST_CAUSE_AND_REPORT_CLOSE_FAILURE");
+    }
+}
+var cleanRomTransport = new FakeTransport(req =>
+    (EspBridgeOperation)req[0] == EspBridgeOperation.Rx
+        ? (EspBridgeStatus.Ok,
+           EspRomSlip.Encode(new byte[]{1,8,2,0,0,0,0,0,0,0}))
+        : (EspBridgeStatus.Ok, Array.Empty<byte>()));
+var cleanRomEvents = new List<string>();
+await using (var normal = new EspBridgeClient(cleanRomTransport))
+{
+    await normal.OpenAsync(sid);
+    var reply = await EspRomBridgeSync.ProbeOnceAndCloseAsync(
+        normal, cleanRomEvents.Add);
+    Check(EspRomSlip.IsSyncResponse(reply) &&
+          cleanRomEvents.SequenceEqual([
+              "STM32_ESP_BRIDGE_CLOSE=PASS_AFTER_ROM_RESPONSE"
+          ]) && !normal.IsOpen && !normal.IsFaulted &&
+          cleanRomTransport.Operations.SequenceEqual(new[]{
+              EspBridgeOperation.Open,EspBridgeOperation.Tx,EspBridgeOperation.Tx,
+              EspBridgeOperation.Rx,EspBridgeOperation.Close
+          }), "SUCCESSFUL_SINGLE_ROM_SYNC_ONE_CLOSE_NO_BEHAVIOR_REGRESSION");
+}
+
 await using(var deniedSync=new EspBridgeClient(
     new FakeTransport(_=>(EspBridgeStatus.Denied,Array.Empty<byte>()))))
 {

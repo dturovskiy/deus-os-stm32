@@ -435,6 +435,9 @@ public static class EspRomBridgeSync
         }
 
         var slip = new EspRomSlipStream();
+        var rxBytes = 0;
+        var rxNonemptyPolls = 0;
+        var slipDelimiters = 0;
         for (var attempt = 0; attempt < 40; ++attempt)
         {
             byte[] chunk;
@@ -448,6 +451,10 @@ public static class EspRomBridgeSync
                     ex.Kind,
                     $"ESP_ROM_SYNC_RX_POLL_{attempt}: {ex.Message}", ex);
             }
+            rxBytes += chunk.Length;
+            if (chunk.Length != 0) ++rxNonemptyPolls;
+            foreach (var value in chunk)
+                if (value == 0xC0) ++slipDelimiters;
             foreach (var frame in slip.Feed(chunk))
             {
                 if (EspRomSlip.IsSyncResponse(frame)) return frame;
@@ -461,6 +468,72 @@ public static class EspRomBridgeSync
 
         throw new DeusHostException(
             HostErrorKind.Timeout,
-            "no ESP ROM SYNC response during 40 bounded RX polls; no retry");
+            $"no ESP ROM SYNC response during 40 bounded RX polls; " +
+            $"RX_BYTES={rxBytes} RX_NONEMPTY_POLLS={rxNonemptyPolls} " +
+            $"SLIP_DELIMITERS={slipDelimiters}; no retry");
+    }
+
+    // Preserve the primary ROM failure while explicitly closing an admitted
+    // STM32 bridge on timeout/unrecognized ROM response. Transport-level
+    // failures may already have faulted the session: never fabricate a CLOSE.
+    // This helper performs no extra ROM TX, GPIO, reset, or firmware action.
+    public static async Task<byte[]> ProbeOnceAndCloseAsync(
+        EspBridgeClient bridge,
+        Action<string>? reportCleanup = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bridge);
+        Exception? primary = null;
+        Exception? closeError = null;
+        byte[]? reply = null;
+        try
+        {
+            reply = await ProbeOnceAsync(bridge, cancellationToken);
+        }
+        catch (Exception error)
+        {
+            primary = error;
+        }
+
+        static void Report(Action<string>? report, string message)
+        {
+            // Diagnostics must not override either the ROM or CLOSE error.
+            try { report?.Invoke(message); }
+            catch (Exception) { }
+        }
+
+        if (bridge.IsOpen)
+        {
+            try
+            {
+                // Closing is an explicit USB bridge protocol operation,
+                // not a retry of ESP ROM SYNC.
+                await bridge.CloseAsync(CancellationToken.None);
+                Report(reportCleanup, primary is null
+                    ? "STM32_ESP_BRIDGE_CLOSE=PASS_AFTER_ROM_RESPONSE"
+                    : "STM32_ESP_BRIDGE_CLOSE=PASS_AFTER_ROM_PROBE_FAILURE");
+            }
+            catch (Exception error)
+            {
+                closeError = error;
+                Report(reportCleanup, "STM32_ESP_BRIDGE_CLOSE=FAILED_NO_RETRY " +
+                    error.GetType().Name + ":" + error.Message);
+            }
+        }
+        else
+        {
+            Report(reportCleanup, "STM32_ESP_BRIDGE_CLOSE=NOT_AVAILABLE_SESSION_FAULTED");
+        }
+
+        if (primary is not null)
+        {
+            if (closeError is not null)
+                primary.Data["ESP_BRIDGE_CLOSE_ERROR"] =
+                    closeError.GetType().Name + ":" + closeError.Message;
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(primary).Throw();
+        }
+        if (closeError is not null)
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(closeError).Throw();
+        return reply ?? throw new InvalidOperationException("ROM result absent after admitted bridge");
     }
 }
