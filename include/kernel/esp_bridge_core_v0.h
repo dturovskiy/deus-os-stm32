@@ -12,7 +12,10 @@ enum { ESP_BRIDGE_OPEN = 1u, ESP_BRIDGE_TX = 2u,
        ESP_BRIDGE_RX = 3u, ESP_BRIDGE_CLOSE = 4u,
        /* Separate non-destructive ROM SYNC-only session. The legacy OPEN
         * remains generic/Flash-uncertain and is always fail-closed. */
-       ESP_BRIDGE_OPEN_ROM_SYNC_ONLY = 5u };
+       ESP_BRIDGE_OPEN_ROM_SYNC_ONLY = 5u,
+       /* New distinct ROM-only admission: at most five identical SYNC46
+        * frames after ONE STM32-owned boot transition; no Flash commands. */
+       ESP_BRIDGE_OPEN_ROM_SYNC_TRAIN = 6u };
 enum { ESP_BRIDGE_OK = 0u, ESP_BRIDGE_DENIED = 1u,
        ESP_BRIDGE_BAD_SESSION = 2u, ESP_BRIDGE_BAD_SEQUENCE = 3u,
        ESP_BRIDGE_BAD_LENGTH = 4u, ESP_BRIDGE_UART_UNCERTAIN = 5u };
@@ -44,6 +47,8 @@ typedef struct {
      * Safe mode permits local bridge recovery, never ESP Flash recovery. */
     uint8_t rom_sync_only;
     uint8_t rom_sync_tx_offset;
+    uint8_t rom_sync_train; /* op6 only; legacy op5 remains single-SYNC */
+    uint8_t rom_sync_frames; /* completed exact SYNC46 bursts, max five */
 } esp_bridge_core_v0_t;
 
 typedef struct {

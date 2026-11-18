@@ -29,12 +29,15 @@ internal static class BenchEspRomBridgeCommand
             Console.WriteLine("ESP_BRIDGE_ROUTE=MAC_USB_MANAGEMENT_TO_STM32_USART2_TO_ESP_ROM");
             Console.WriteLine("USB_FRAMES=0x05_REQUEST_0x87_RESPONSE");
             Console.WriteLine("MAX_UART_CHUNK_BYTES=40");
-            Console.WriteLine("ROM_ACTION=ONE_READONLY_SYNC_ONLY");
+            Console.WriteLine("ROM_ACTION_OPCODE5=ONE_READONLY_SYNC_ONLY");
+            Console.WriteLine("ROM_ACTION_OPCODE6=MAX_FIVE_READONLY_SYNCS_ONE_ESP_RESET");
             Console.WriteLine("CH340_UART_DATA=NOT_CONNECTED");
             Console.WriteLine("LEGACY_NORMAL10_CAN_ENTER=HARD_DENY");
             Console.WriteLine("CURRENT_WIRING=STM32_B0_PB0_TO_ESP_GPIO0__STM32_B1_PB1_TO_ESP_EN");
             Console.WriteLine("ESP_UART_DATA=STM32_PA2_USART2_TX_TO_ESP_RX__ESP_TX_TO_STM32_PA3_USART2_RX");
             Console.WriteLine("ROM_SYNC_MODE=STM32_OWNED_OPCODE_5_EXACT_46_BYTES_ATOMIC_TX");
+            Console.WriteLine("ROM_SYNC_TRAIN_NEW_OPCODE6=SOURCE_ONLY_MAX_5_SYNC46_ONE_ROM_BOOT");
+            Console.WriteLine("ROM_SYNC_TRAIN_REQUIRES=NEW_SIGNED_FIRMWARE_AND_DISTINCT_PHYSICAL_GO");
             Console.WriteLine("GENERIC_OPEN_MODE=LEGACY_FLASH_UNCERTAINTY_STICKY");
             Console.WriteLine("ROM_PHYSICAL_SESSION=SEPARATE_EXACT_OWNER_GO_NO_CONSUMED_ONESHOT_REPLAY");
             Console.WriteLine("CH340_BOOT_EN_CONTROL=DETACHED_FOR_STM32_OWNED_PROFILE");
@@ -46,9 +49,10 @@ internal static class BenchEspRomBridgeCommand
         if (args.Length != 7 ||
             (args[0] != "rom-sync-staged" &&
              args[0] != "rom-sync-stm32-once" &&
-             args[0] != "rom-sync-safe-staged"))
+             args[0] != "rom-sync-safe-staged" &&
+             args[0] != "rom-sync-stm32-train-once"))
             throw new ArgumentException(
-                "Usage: bench-esp-rom plan | rom-sync-stm32-once | rom-sync-staged | rom-sync-safe-staged " +
+                "Usage: bench-esp-rom plan | rom-sync-stm32-once | rom-sync-stm32-train-once | rom-sync-staged | rom-sync-safe-staged " +
                 "--device usb:BBB:PORT --expected-source-tree <40 lower hex> " +
                 "--confirm-rom-reset yes (stm32) OR --confirm-readonly-sync yes (split)");
 
@@ -59,7 +63,8 @@ internal static class BenchEspRomBridgeCommand
                 !fields.TryAdd(args[i],args[i+1]))
                 throw new ArgumentException("invalid or duplicated ROM bridge argument");
         }
-        bool stm32Owned = args[0] == "rom-sync-stm32-once";
+        bool train = args[0] == "rom-sync-stm32-train-once";
+        bool stm32Owned = args[0] == "rom-sync-stm32-once" || train;
         bool safeRomOnly = args[0] == "rom-sync-safe-staged";
         if (fields.Count != 3 ||
             !fields.TryGetValue("--device",out var locator) ||
@@ -113,8 +118,13 @@ internal static class BenchEspRomBridgeCommand
         {
             // Strict STM32-enforced non-destructive ROM probe. There is
             // no fallback to legacy generic OPEN on an old target.
-            await bridge.OpenRomSyncOnlyAsync(session);
-            Console.WriteLine("STM32_ESP_BRIDGE_MODE=ROM_SYNC_ONLY_ENFORCED_NO_FLASH");
+            if (train)
+                await bridge.OpenRomSyncTrainOnlyAsync(session);
+            else
+                await bridge.OpenRomSyncOnlyAsync(session);
+            Console.WriteLine(train
+                ? "STM32_ESP_BRIDGE_MODE=ROM_SYNC_TRAIN_MAX5_NO_FLASH"
+                : "STM32_ESP_BRIDGE_MODE=ROM_SYNC_ONLY_ENFORCED_NO_FLASH");
         }
         else
         {
@@ -168,13 +178,18 @@ internal static class BenchEspRomBridgeCommand
         // A ROM timeout must not leak the accepted USB bridge session.
         // The bounded helper preserves the original cause, reports whether
         // CLOSE succeeded, and never sends a second ROM SYNC.
-        var reply = await EspRomBridgeSync.ProbeOnceAndCloseAsync(
-            bridge, message => Console.Error.WriteLine(message));
+        var reply = train
+            ? await EspRomBridgeSync.ProbeTrainAndCloseAsync(
+                bridge, message => Console.Error.WriteLine(message))
+            : await EspRomBridgeSync.ProbeOnceAndCloseAsync(
+                bridge, message => Console.Error.WriteLine(message));
 
         if (!EspRomSlip.IsSyncResponse(reply))
             throw new InvalidOperationException("ROM SYNC reply not accepted");
 
-        Console.WriteLine("ESP_ROM_SYNC=PASS_READONLY_ONCE");
+        Console.WriteLine(train
+            ? "ESP_ROM_SYNC=PASS_READONLY_BOUNDED_TRAIN"
+            : "ESP_ROM_SYNC=PASS_READONLY_ONCE");
         Console.WriteLine("ROUTE=STM32_USB_05_87_USART2_SLIP");
         Console.WriteLine(stm32Owned ?
             "ESP_BOOT_RESET=STM32_BOARD_OPEN_AND_NORMAL_CLOSE" :

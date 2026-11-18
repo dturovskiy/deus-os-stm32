@@ -118,6 +118,30 @@ jobs:
       - name: Build Release Host solution
         run: dotnet build DeusOs.Control.sln --configuration Release --no-restore --warnaserror
 
+      - name: Test exact STM32 ROM opcode6 bounds in actual C source
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d "$RUNNER_TEMP/deus-rom-train6.XXXXXX")"
+          trap 'rm -rf "$tmp"' EXIT
+          for opt in O0 Os UBSAN; do
+            flags=(-O0)
+            if [[ "$opt" == Os ]]; then flags=(-Os); fi
+            if [[ "$opt" == UBSAN ]]; then flags=(-O1 -fsanitize=undefined -fno-sanitize-recover=all); fi
+            gcc -std=c11 -Wall -Wextra -Wpedantic -Werror "${flags[@]}" \
+              -I ../include \
+              ../src/kernel/esp_bridge_core_v0.c \
+              ../nodes/esp8266/bridge/test_esp_rom_train_opcode6_source_20261118.c \
+              -o "$tmp/romtrain_$opt"
+            "$tmp/romtrain_$opt"
+          done
+          echo 'STM32_ROM_TRAIN6_PRODUCTION_C_3OF3=PASS NO_HARDWARE'
+
+      - name: Run ROM train opcode6 host emulator (no hardware)
+        run: |
+          set -euo pipefail
+          dotnet run --project tests/EspRomBridgeOffline/EspRomBridgeOffline.csproj --configuration Release
+          echo 'ESP_ROM_TRAIN6_DOTNET_FAKE_TRANSPORT=PASS'
+
       - name: Verify STM32-owned ESP ROM plan without opening hardware
         run: |
           set -euo pipefail

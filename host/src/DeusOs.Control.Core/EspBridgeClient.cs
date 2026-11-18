@@ -15,7 +15,10 @@ public enum EspBridgeOperation : byte
     Close = 4,
     // On firmware normal15+ only: strict, immutable ESP8266 ROM SYNC TX.
     // Legacy Open remains generic/flash-fail-closed.
-    OpenRomSyncOnly = 5
+    OpenRomSyncOnly = 5,
+    // Distinct new firmware admission: max five exact read-only SYNC46
+    // frames after one qualified STM32-owned ROM boot; never generic UART.
+    OpenRomSyncTrainOnly = 6
 }
 
 public enum EspBridgeStatus : byte
@@ -48,13 +51,15 @@ public static class EspBridgeWireV0
         ushort sequence,
         ReadOnlySpan<byte> data)
     {
-        if (session == 0 || operation is < EspBridgeOperation.Open or > EspBridgeOperation.OpenRomSyncOnly ||
+        if (session == 0 || operation is < EspBridgeOperation.Open or > EspBridgeOperation.OpenRomSyncTrainOnly ||
             data.Length > MaxData ||
             (operation == EspBridgeOperation.Tx && data.IsEmpty) ||
             (operation != EspBridgeOperation.Tx && !data.IsEmpty) ||
-            (operation is EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly &&
+            (operation is (EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly or
+                EspBridgeOperation.OpenRomSyncTrainOnly) &&
                 sequence != 0) ||
-            (operation is not (EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly) &&
+            (operation is not (EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly or
+                EspBridgeOperation.OpenRomSyncTrainOnly) &&
                 sequence == 0))
         {
             throw new ArgumentException("invalid ESP bridge operation/session/sequence/data shape");
@@ -131,11 +136,16 @@ public sealed class EspBridgeClient : IAsyncDisposable
         uint freshSession, CancellationToken cancellationToken = default)
         => OpenCoreAsync(EspBridgeOperation.OpenRomSyncOnly, freshSession, cancellationToken);
 
+    public Task OpenRomSyncTrainOnlyAsync(
+        uint freshSession, CancellationToken cancellationToken = default)
+        => OpenCoreAsync(EspBridgeOperation.OpenRomSyncTrainOnly, freshSession, cancellationToken);
+
     private async Task OpenCoreAsync(
         EspBridgeOperation mode, uint freshSession,
         CancellationToken cancellationToken)
     {
-        if (mode is not (EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly))
+        if (mode is not (EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly or
+                        EspBridgeOperation.OpenRomSyncTrainOnly))
             throw new ArgumentOutOfRangeException(nameof(mode));
         if (_disposed || _open || _faulted || freshSession == 0)
             throw new InvalidOperationException("ESP bridge not closed/clean or session invalid");
@@ -429,9 +439,12 @@ public sealed class EspRomSlipStream
 public static class EspRomBridgeSync
 {
     public static async Task<byte[]> ProbeOnceAsync(
-        EspBridgeClient bridge, CancellationToken cancellationToken = default)
+        EspBridgeClient bridge, CancellationToken cancellationToken = default,
+        int maxRxPolls = 40)
     {
         ArgumentNullException.ThrowIfNull(bridge);
+        if (maxRxPolls is < 1 or > 40)
+            throw new ArgumentOutOfRangeException(nameof(maxRxPolls));
         if (!bridge.IsOpen)
             throw new InvalidOperationException(
                 "ESP ROM SYNC requires a previously admitted physical bridge");
@@ -456,7 +469,7 @@ public static class EspRomBridgeSync
         var rxBytes = 0;
         var rxNonemptyPolls = 0;
         var slipDelimiters = 0;
-        for (var attempt = 0; attempt < 40; ++attempt)
+        for (var attempt = 0; attempt < maxRxPolls; ++attempt)
         {
             byte[] chunk;
             try
@@ -486,7 +499,7 @@ public static class EspRomBridgeSync
 
         throw new DeusHostException(
             HostErrorKind.Timeout,
-            $"no ESP ROM SYNC response during 40 bounded RX polls; " +
+            $"no ESP ROM SYNC response during {maxRxPolls} bounded RX polls; " +
             $"RX_BYTES={rxBytes} RX_NONEMPTY_POLLS={rxNonemptyPolls} " +
             $"SLIP_DELIMITERS={slipDelimiters}; no retry");
     }
@@ -495,10 +508,25 @@ public static class EspRomBridgeSync
     // STM32 bridge on timeout/unrecognized ROM response. Transport-level
     // failures may already have faulted the session: never fabricate a CLOSE.
     // This helper performs no extra ROM TX, GPIO, reset, or firmware action.
-    public static async Task<byte[]> ProbeOnceAndCloseAsync(
+    public static Task<byte[]> ProbeOnceAndCloseAsync(
         EspBridgeClient bridge,
         Action<string>? reportCleanup = null,
         CancellationToken cancellationToken = default)
+        => ProbeAndCloseAsync(bridge, false, reportCleanup, cancellationToken);
+
+    // A NEW, source-locked opcode6 session may send up to five *identical*
+    // non-destructive SYNC frames, with no new reset. This is not a replay
+    // of an already consumed physical one-shot. The old opcode5 remains 1x.
+    public static Task<byte[]> ProbeTrainAndCloseAsync(
+        EspBridgeClient bridge,
+        Action<string>? reportCleanup = null,
+        CancellationToken cancellationToken = default)
+        => ProbeAndCloseAsync(bridge, true, reportCleanup, cancellationToken);
+
+    private static async Task<byte[]> ProbeAndCloseAsync(
+        EspBridgeClient bridge, bool train,
+        Action<string>? reportCleanup,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(bridge);
         Exception? primary = null;
@@ -506,7 +534,36 @@ public static class EspRomBridgeSync
         byte[]? reply = null;
         try
         {
-            reply = await ProbeOnceAsync(bridge, cancellationToken);
+            if (!train)
+            {
+                reply = await ProbeOnceAsync(bridge, cancellationToken);
+            }
+            else
+            {
+                for (var attempt = 1; attempt <= 5; ++attempt)
+                {
+                    try
+                    {
+                        reply = await ProbeOnceAsync(
+                            bridge, cancellationToken, maxRxPolls: 10);
+                        Report(reportCleanup,
+                            $"ESP_ROM_SYNC_TRAIN_RESPONSE_ON_ATTEMPT={attempt}");
+                        break;
+                    }
+                    catch (DeusHostException ex) when (
+                        attempt < 5 && ex.Kind == HostErrorKind.Timeout &&
+                        ex.Message.Contains(
+                            "RX_BYTES=0 RX_NONEMPTY_POLLS=0 SLIP_DELIMITERS=0",
+                            StringComparison.Ordinal))
+                    {
+                        // Only *complete silence* allows the next bounded
+                        // SYNC46. Any partial response, framing error, TX
+                        // ambiguity or USB failure closes without resending.
+                        Report(reportCleanup,
+                            $"ESP_ROM_SYNC_TRAIN_SILENT_ATTEMPT={attempt}_OF_5");
+                    }
+                }
+            }
         }
         catch (Exception error)
         {

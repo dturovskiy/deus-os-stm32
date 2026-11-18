@@ -278,6 +278,105 @@ await using(var deniedSync=new EspBridgeClient(
         ()=>EspRomBridgeSync.ProbeOnceAsync(deniedSync),"ROM_SYNC_WITHOUT_ADMITTED_BRIDGE");
 }
 
+// Dedicated opcode6 train must never downgrade to opcode5 or generic OPEN.
+Check(EspBridgeWireV0.EncodeRequest(
+      EspBridgeOperation.OpenRomSyncTrainOnly,sid,0,[])[0]==6,
+      "ROM_TRAIN_OPEN_EXPLICIT_WIRE_OPCODE6");
+Reject<ArgumentException>(()=>EspBridgeWireV0.EncodeRequest(
+      EspBridgeOperation.OpenRomSyncTrainOnly,sid,1,[]),
+      "ROM_TRAIN_OPEN_BAD_SEQUENCE");
+var deniedTrain=new FakeTransport(req =>
+    (EspBridgeOperation)req[0] == EspBridgeOperation.OpenRomSyncTrainOnly
+        ? (EspBridgeStatus.Denied,Array.Empty<byte>())
+        : (EspBridgeStatus.Ok,Array.Empty<byte>()));
+await using(var bridge=new EspBridgeClient(deniedTrain))
+{
+    await RejectAsync<DeusHostException>(
+        ()=>bridge.OpenRomSyncTrainOnlyAsync(sid),"TRAIN_OLD_TARGET_HARD_DENY");
+    Check(deniedTrain.Operations.SequenceEqual([
+          EspBridgeOperation.OpenRomSyncTrainOnly]) && bridge.IsFaulted,
+          "ROM_TRAIN_NO_GENERIC_OR_OPCODE5_FALLBACK");
+}
+// The first two full 10-poll windows are electrically silent; third
+// bounded SYNC46 gets a valid reply. Exactly one admitted ROM session.
+var trainReads=0;
+var trainTransport=new FakeTransport(req => {
+    var op=(EspBridgeOperation)req[0];
+    if (op!=EspBridgeOperation.Rx)
+        return (EspBridgeStatus.Ok,Array.Empty<byte>());
+    ++trainReads;
+    return trainReads==21
+        ? (EspBridgeStatus.Ok,EspRomSlip.Encode(
+            new byte[]{1,8,2,0,0,0,0,0,0,0}))
+        : (EspBridgeStatus.Ok,Array.Empty<byte>());
+});
+var trainEvents=new List<string>();
+await using(var bridge=new EspBridgeClient(trainTransport))
+{
+    await bridge.OpenRomSyncTrainOnlyAsync(sid);
+    var response=await EspRomBridgeSync.ProbeTrainAndCloseAsync(
+        bridge,trainEvents.Add);
+    Check(EspRomSlip.IsSyncResponse(response) && !bridge.IsOpen &&
+          trainEvents.SequenceEqual([
+            "ESP_ROM_SYNC_TRAIN_SILENT_ATTEMPT=1_OF_5",
+            "ESP_ROM_SYNC_TRAIN_SILENT_ATTEMPT=2_OF_5",
+            "ESP_ROM_SYNC_TRAIN_RESPONSE_ON_ATTEMPT=3",
+            "STM32_ESP_BRIDGE_CLOSE=PASS_AFTER_ROM_RESPONSE"]) &&
+          trainTransport.Operations.Count(x=>x==EspBridgeOperation.Tx)==6 &&
+          trainTransport.Operations.Count(x=>x==EspBridgeOperation.Rx)==21 &&
+          trainTransport.Operations.Count(x=>x==EspBridgeOperation.Close)==1 &&
+          trainTransport.Sequences.SequenceEqual(
+            Enumerable.Range(0,29).Select(x=>checked((ushort)x))),
+          "ROM_TRAIN_REPLY_THIRD_SYNC_EXACT_THREE_TX46_ONE_CLOSE");
+}
+// Five silent train packets must close exactly once, then stop.
+var silentTrainTransport=new FakeTransport(_ =>
+    (EspBridgeStatus.Ok,Array.Empty<byte>()));
+var silentTrainEvents=new List<string>();
+await using(var bridge=new EspBridgeClient(silentTrainTransport))
+{
+    await bridge.OpenRomSyncTrainOnlyAsync(sid);
+    try {
+        await EspRomBridgeSync.ProbeTrainAndCloseAsync(
+            bridge,silentTrainEvents.Add);
+        throw new Exception("TRAIN_SILENT_UNEXPECTED_PASS");
+    }
+    catch(DeusHostException ex) {
+        Check(ex.Kind==HostErrorKind.Timeout &&
+              ex.Message.Contains("10 bounded RX polls") &&
+              silentTrainTransport.Operations.Count(x=>x==EspBridgeOperation.Tx)==10 &&
+              silentTrainTransport.Operations.Count(x=>x==EspBridgeOperation.Rx)==50 &&
+              silentTrainTransport.Operations.Count(x=>x==EspBridgeOperation.Close)==1 &&
+              !bridge.IsOpen && !bridge.IsFaulted &&
+              silentTrainEvents.Count==5 &&
+              silentTrainEvents[0]=="ESP_ROM_SYNC_TRAIN_SILENT_ATTEMPT=1_OF_5" &&
+              silentTrainEvents[^1]=="STM32_ESP_BRIDGE_CLOSE=PASS_AFTER_ROM_PROBE_FAILURE",
+              "ROM_TRAIN_FIVE_SILENT_EXACT_STOP_NO_SIXTH_NO_FLASH");
+    }
+}
+// Noise/partial reply must stop immediately, never send an extra SYNC.
+var noisyTrainTransport=new FakeTransport(req =>
+    (EspBridgeOperation)req[0] == EspBridgeOperation.Rx
+        ? (EspBridgeStatus.Ok,new byte[]{0x42})
+        : (EspBridgeStatus.Ok,Array.Empty<byte>()));
+await using(var bridge=new EspBridgeClient(noisyTrainTransport))
+{
+    await bridge.OpenRomSyncTrainOnlyAsync(sid);
+    try {
+        await EspRomBridgeSync.ProbeTrainAndCloseAsync(bridge);
+        throw new Exception("TRAIN_NOISE_UNEXPECTED_PASS");
+    }
+    catch(DeusHostException ex) {
+        Check(ex.Kind==HostErrorKind.Timeout &&
+              ex.Message.Contains("RX_BYTES=10 RX_NONEMPTY_POLLS=10") &&
+              noisyTrainTransport.Operations.Count(x=>x==EspBridgeOperation.Tx)==2 &&
+              noisyTrainTransport.Operations.Count(x=>x==EspBridgeOperation.Rx)==10 &&
+              noisyTrainTransport.Operations.Last()==EspBridgeOperation.Close,
+              "ROM_TRAIN_RX_NOISE_FAILS_CLOSED_WITHOUT_REPEAT");
+    }
+}
+Console.WriteLine("ROM_TRAIN_OP6_HOST_OFFLINE_NEGATIVES=PASS");
+
 // Real ESP flash PTY has simultaneous RX and TX; every bridge exchange
 // must use a fresh sequence and preserve STM32 strict request correlation.
 var concurrentTransport=new FakeTransport(_=>(EspBridgeStatus.Ok,Array.Empty<byte>()));
