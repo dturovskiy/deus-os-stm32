@@ -42,13 +42,12 @@ typedef struct {
      * A pre-UART abort is recoverable; an uncertain UART abort is not. */
     uint8_t uart_attempted;
     uint8_t last_open_reason;
-    /* True ONLY after OPEN_ROM_SYNC_ONLY; no arbitrary UART TX is possible.
-     * The kernel verifies exact 46-byte ESP8266 ROM SYNC stream before TX.
-     * Safe mode permits local bridge recovery, never ESP Flash recovery. */
+    /* 0 generic; 1 opcode5 one-shot; 2 opcode6 max-five SYNC train.
+     * Both safe modes verify each of the exact 46 UART bytes before TX.
+     * In safe modes uart_attempted counts completed SYNC frames 0..5;
+     * in generic mode it retains its original sticky boolean meaning. */
     uint8_t rom_sync_only;
     uint8_t rom_sync_tx_offset;
-    uint8_t rom_sync_train; /* op6 only; legacy op5 remains single-SYNC */
-    uint8_t rom_sync_frames; /* completed exact SYNC46 bursts, max five */
 } esp_bridge_core_v0_t;
 
 typedef struct {

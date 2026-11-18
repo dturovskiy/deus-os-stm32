@@ -56,8 +56,6 @@ void esp_bridge_core_v0_init(esp_bridge_core_v0_t *state)
         state->last_open_reason = ESP_BRIDGE_OPEN_NOT_SEEN;
         state->rom_sync_only = 0u;
         state->rom_sync_tx_offset = 0u;
-        state->rom_sync_train = 0u;
-        state->rom_sync_frames = 0u;
     }
 }
 
@@ -85,8 +83,6 @@ void esp_bridge_core_v0_abort(esp_bridge_core_v0_t *state,
     state->uart_attempted = 0u;
     state->rom_sync_only = 0u;
     state->rom_sync_tx_offset = 0u;
-    state->rom_sync_train = 0u;
-    state->rom_sync_frames = 0u;
     state->faulted = uncertain;
 }
 
@@ -148,12 +144,9 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
             state->last_sequence = 0u;
             state->uart_attempted = 0u;
             state->rom_sync_only = (uint8_t)(
-                op == ESP_BRIDGE_OPEN_ROM_SYNC_ONLY ||
-                op == ESP_BRIDGE_OPEN_ROM_SYNC_TRAIN);
+                op == ESP_BRIDGE_OPEN_ROM_SYNC_TRAIN ? 2u :
+                op == ESP_BRIDGE_OPEN_ROM_SYNC_ONLY ? 1u : 0u);
             state->rom_sync_tx_offset = 0u;
-            state->rom_sync_train =
-                (uint8_t)(op == ESP_BRIDGE_OPEN_ROM_SYNC_TRAIN);
-            state->rom_sync_frames = 0u;
             state->last_open_reason = ESP_BRIDGE_OPEN_ACCEPTED;
             status = ESP_BRIDGE_OK;
         }
@@ -174,10 +167,9 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
         /* Op6 alone may stage the NEXT exact SYNC after the previous
          * complete request, at most five in this one hardware session.
          * Op5 is unchanged: any second TX is permanently denied. */
-        if (state->rom_sync_only != 0u &&
-            state->rom_sync_train != 0u &&
+        if (state->rom_sync_only == 2u &&
             offset == ESP_ROM_SYNC_WIRE_BYTES &&
-            state->rom_sync_frames < ESP_ROM_SYNC_TRAIN_MAX_FRAMES)
+            state->uart_attempted < ESP_ROM_SYNC_TRAIN_MAX_FRAMES)
             offset = 0u;
         if (state->rom_sync_only != 0u &&
             esp_rom_sync_only_tx_is_exact_prefix(offset, in + 8u, count) == 0)
@@ -214,7 +206,10 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
                 wire = sync_wire;
                 wire_len = ESP_ROM_SYNC_WIRE_BYTES;
             }
-            state->uart_attempted = 1u; /* before potentially partial UART */
+            /* Generic uncertainty remains sticky; ROM safe modes reuse this
+             * byte as their completed SYNC46 frame counter. */
+            if (state->rom_sync_only == 0u)
+                state->uart_attempted = 1u;
             if (io != (const esp_bridge_io_v0_t *)0 &&
                 io->tx != (int (*)(void *, const uint8_t *, uint8_t))0 &&
                 io->tx(io->context, wire, wire_len) != 0)
@@ -223,7 +218,7 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
                 state->last_sequence = seq;
                 if (state->rom_sync_only != 0u) {
                     state->rom_sync_tx_offset = ESP_ROM_SYNC_WIRE_BYTES;
-                    ++state->rom_sync_frames; /* Exact UART TX completed. */
+                    ++state->uart_attempted; /* Exact SYNC46 completed. */
                 }
             }
             else
@@ -242,7 +237,8 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
             out[7] = ESP_BRIDGE_DENIED;
             return 9u; /* RX before all 46 exact TX bytes is forbidden. */
         }
-        state->uart_attempted = 1u; /* Record before potentially failing RX. */
+        if (state->rom_sync_only == 0u)
+            state->uart_attempted = 1u; /* Generic UART uncertainty. */
         if (io != (const esp_bridge_io_v0_t *)0 &&
             io->rx != (int (*)(void *, uint8_t *, uint8_t))0)
             result = io->rx(io->context, out + 9, ESP_BRIDGE_MAX_DATA);
@@ -269,8 +265,6 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
         state->uart_attempted = 0u;
         state->rom_sync_only = 0u;
         state->rom_sync_tx_offset = 0u;
-        state->rom_sync_train = 0u;
-        state->rom_sync_frames = 0u;
         status = ESP_BRIDGE_OK;
     }
 

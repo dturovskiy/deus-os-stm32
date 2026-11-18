@@ -52,19 +52,19 @@ int main(void) {
     /* Old opcode5 is immutable: exact one TX46, reject second. */
     setup(&s,&m,&io);
     CHECK(call(&s,&io,ESP_BRIDGE_OPEN_ROM_SYNC_ONLY,0,0,0)==ESP_BRIDGE_OK);
-    CHECK(s.rom_sync_only==1 && s.rom_sync_train==0);
+    CHECK(s.rom_sync_only==1 && s.uart_attempted==0u);
     CHECK(call(&s,&io,ESP_BRIDGE_TX,1,good,40)==ESP_BRIDGE_OK);
     CHECK(call(&s,&io,ESP_BRIDGE_TX,2,good+40,6)==ESP_BRIDGE_OK);
-    CHECK(s.rom_sync_frames==1 && m.tx_calls==1);
+    CHECK(s.uart_attempted==1u && m.tx_calls==1);
     CHECK(call(&s,&io,ESP_BRIDGE_TX,3,good,40)==ESP_BRIDGE_DENIED);
     CHECK(m.tx_calls==1 && m.total_bytes==46);
     CHECK(call(&s,&io,ESP_BRIDGE_CLOSE,3,0,0)==ESP_BRIDGE_OK);
-    CHECK(s.rom_sync_only==0 && s.rom_sync_frames==0);
+    CHECK(s.rom_sync_only==0 && s.uart_attempted==0);
     puts("OPCODE5_LEGACY_ONE_EXACT_SYNC_ONLY=PASS");
     /* New opcode6: same ROM reset, five strictly bounded 46-byte frames. */
     setup(&s,&m,&io);
     CHECK(call(&s,&io,ESP_BRIDGE_OPEN_ROM_SYNC_TRAIN,0,0,0)==ESP_BRIDGE_OK);
-    CHECK(s.rom_sync_only==1 && s.rom_sync_train==1);
+    CHECK(s.rom_sync_only==2 && s.uart_attempted==0u);
     CHECK(call(&s,&io,ESP_BRIDGE_RX,1,0,0)==ESP_BRIDGE_DENIED);
     CHECK(call(&s,&io,ESP_BRIDGE_TX,1,bad,40)==ESP_BRIDGE_DENIED);
     CHECK(s.last_sequence==0 && m.tx_calls==0);
@@ -77,7 +77,7 @@ int main(void) {
         CHECK(s.last_sequence==seq);
         ++seq;
         CHECK(call(&s,&io,ESP_BRIDGE_TX,seq,good+40,6)==ESP_BRIDGE_OK);
-        CHECK(s.rom_sync_tx_offset==46 && s.rom_sync_frames==burst+1);
+        CHECK(s.rom_sync_tx_offset==46 && s.uart_attempted==burst+1);
         CHECK(m.tx_calls==burst+1 && m.total_bytes==46*(burst+1));
         CHECK(memcmp(m.wire+46*burst,good,46)==0);
         ++seq;
