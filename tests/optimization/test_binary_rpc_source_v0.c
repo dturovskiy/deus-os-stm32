@@ -170,6 +170,23 @@ static int run_tests(void)
     CHECK(rsp.frame_type==BINARY_FRAME_TYPE_RPC_END);
     CHECK(rsp.payload[8]==BINARY_RPC_STATUS_DOMAIN_PROTOCOL);
     CHECK(rsp.payload[9]==BINARY_RPC_PROTOCOL_DESTRUCTIVE_CONFIRM_REQUIRED);
+    /* New ESP APP RESET is also destructive: no flag => no handler call. */
+    capture.count=0u;
+    payload[0]=(uint8_t)COMMAND_SERVICE_RPC_ESPAPPRESET;
+    i=handler_called;
+    CHECK(binary_rpc_handle_frame(&state,&f,&bind)==1);
+    CHECK(handler_called==i && capture.count==1u);
+    rsp=view_at(&capture,0,&parser);
+    CHECK(rsp.payload[8]==BINARY_RPC_STATUS_DOMAIN_PROTOCOL);
+    CHECK(rsp.payload[9]==BINARY_RPC_PROTOCOL_DESTRUCTIVE_CONFIRM_REQUIRED);
+    capture.count=0u;
+    f.flags=BINARY_RPC_FLAG_ALLOW_DESTRUCTIVE;
+    CHECK(binary_rpc_handle_frame(&state,&f,&bind)==1);
+    CHECK(handler_called==i+1u && capture.count==2u);
+    rsp=view_at(&capture,1,&parser);
+    CHECK(rsp.payload[8]==BINARY_RPC_STATUS_DOMAIN_COMMAND_SERVICE);
+    CHECK(rsp.payload[9]==COMMAND_SERVICE_STATUS_OK);
+    f.flags=0u;
     capture.count=0u;
     f.request_id=0u;
     CHECK(binary_rpc_handle_frame(&state,&f,&bind)==1);

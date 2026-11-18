@@ -13,6 +13,37 @@ static uint16_t get_u16(const uint8_t *b)
     return (uint16_t)((uint16_t)b[0] | ((uint16_t)b[1] << 8));
 }
 
+/* Exact ESP8266 ROM SYNC, SLIP-encoded, 46 bytes. No Flash, no stub,
+ * no baud change, no commands chosen by a host. Prefixes are validated
+ * BEFORE UART output so any accepted partial TX is non-destructive. */
+#define ESP_ROM_SYNC_WIRE_BYTES 46u
+static uint8_t esp_rom_sync_expected_byte(uint8_t offset)
+{
+    if (offset == 0u || offset == 45u) return 0xC0u;
+    if (offset == 2u) return 0x08u;
+    if (offset == 3u) return 0x24u;
+    if (offset == 9u || offset == 10u) return 0x07u;
+    if (offset == 11u) return 0x12u;
+    if (offset == 12u) return 0x20u;
+    if (offset >= 13u && offset <= 44u) return 0x55u;
+    return 0x00u;
+}
+
+static int esp_rom_sync_only_tx_is_exact_prefix(
+    const esp_bridge_core_v0_t *state,
+    const uint8_t *data, uint8_t count)
+{
+    uint8_t i;
+    if (state->rom_sync_tx_offset >= ESP_ROM_SYNC_WIRE_BYTES ||
+        count > ESP_ROM_SYNC_WIRE_BYTES - state->rom_sync_tx_offset)
+        return 0;
+    for (i = 0u; i < count; ++i)
+        if (data[i] != esp_rom_sync_expected_byte(
+                (uint8_t)(state->rom_sync_tx_offset + i)))
+            return 0;
+    return 1;
+}
+
 void esp_bridge_core_v0_init(esp_bridge_core_v0_t *state)
 {
     if (state != (esp_bridge_core_v0_t *)0)
@@ -23,6 +54,8 @@ void esp_bridge_core_v0_init(esp_bridge_core_v0_t *state)
         state->faulted = 0u;
         state->uart_attempted = 0u;
         state->last_open_reason = ESP_BRIDGE_OPEN_NOT_SEEN;
+        state->rom_sync_only = 0u;
+        state->rom_sync_tx_offset = 0u;
     }
 }
 
@@ -32,11 +65,15 @@ void esp_bridge_core_v0_abort(esp_bridge_core_v0_t *state,
     uint8_t uncertain;
     if (state == (esp_bridge_core_v0_t *)0)
         return;
-    /* No UART request means ESP Flash cannot have started through this
-     * bridge. Leave maintenance and permit a fresh session after timeout.
-     * Once TX/RX was attempted, preserve fail-closed until MCU recovery. */
-    uncertain = (uint8_t)((state->faulted != 0u) ||
-                          (state->uart_attempted != 0u));
+    /* Generic UART/Flash may be uncertain and stays latched. In the ROM
+     * SYNC-only session EVERY accepted UART TX byte was verified against
+     * the immutable, non-destructive ROM command. Recovery of the local
+     * bridge is then safe even after a partial TX, lost USB reply or RX
+     * framing error. This never clears a preexisting generic-Flash fault:
+     * ROM-only OPEN is denied while the fault is already latched. */
+    uncertain = (uint8_t)((state->rom_sync_only == 0u) &&
+                          ((state->faulted != 0u) ||
+                           (state->uart_attempted != 0u)));
     if (state->active != 0u && io != (const esp_bridge_io_v0_t *)0 &&
         io->leave != (void (*)(void *))0)
         io->leave(io->context);
@@ -44,6 +81,8 @@ void esp_bridge_core_v0_abort(esp_bridge_core_v0_t *state,
     state->last_sequence = 0u;
     state->active = 0u;
     state->uart_attempted = 0u;
+    state->rom_sync_only = 0u;
+    state->rom_sync_tx_offset = 0u;
     state->faulted = uncertain;
 }
 
@@ -71,11 +110,12 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
         (uint16_t)(8u + (uint16_t)count) != in_len ||
         (op != ESP_BRIDGE_TX && count != 0u) ||
         (op == ESP_BRIDGE_TX && count == 0u) ||
-        op < ESP_BRIDGE_OPEN || op > ESP_BRIDGE_CLOSE)
+        op < ESP_BRIDGE_OPEN || op > ESP_BRIDGE_OPEN_ROM_SYNC_ONLY)
     {
         status = ESP_BRIDGE_BAD_LENGTH;
     }
-    else if (op == ESP_BRIDGE_OPEN)
+    else if (op == ESP_BRIDGE_OPEN ||
+             op == ESP_BRIDGE_OPEN_ROM_SYNC_ONLY)
     {
         /* Preserve original ordered short-circuit admission. Record ONLY
          * which already-existing predicate rejected the last OPEN. */
@@ -102,6 +142,9 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
             state->session = sid;
             state->last_sequence = 0u;
             state->uart_attempted = 0u;
+            state->rom_sync_only =
+                (uint8_t)(op == ESP_BRIDGE_OPEN_ROM_SYNC_ONLY);
+            state->rom_sync_tx_offset = 0u;
             state->last_open_reason = ESP_BRIDGE_OPEN_ACCEPTED;
             status = ESP_BRIDGE_OK;
         }
@@ -118,23 +161,68 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
     }
     else if (op == ESP_BRIDGE_TX)
     {
-        state->uart_attempted = 1u; /* Record before potentially failing TX. */
-        if (io != (const esp_bridge_io_v0_t *)0 &&
-            io->tx != (int (*)(void *, const uint8_t *, uint8_t))0 &&
-            io->tx(io->context, in + 8, count) != 0)
+        if (state->rom_sync_only != 0u &&
+            esp_rom_sync_only_tx_is_exact_prefix(state, in + 8u, count) == 0)
         {
-            status = ESP_BRIDGE_OK;
+            /* Reject non-SYNC data BEFORE any UART side effect. Do not
+             * advance the sequence: caller must CLOSE/abort, not retry. */
+            status = ESP_BRIDGE_DENIED;
+            out[7] = status;
+            return 9u;
+        }
+        if (state->rom_sync_only != 0u &&
+            (uint8_t)(state->rom_sync_tx_offset + count) <
+                ESP_ROM_SYNC_WIRE_BYTES)
+        {
+            /* Validate/stage via offset, but emit NO UART prefix.
+             * USB ACK gap between 40+6 fragments must not interrupt the
+             * ESP8266 ROM auto-baud 0x55 train. */
+            state->rom_sync_tx_offset = (uint8_t)(
+                state->rom_sync_tx_offset + count);
             state->last_sequence = seq;
+            status = ESP_BRIDGE_OK;
         }
         else
         {
-            state->faulted = 1u;
-            status = ESP_BRIDGE_UART_UNCERTAIN;
+            uint8_t sync_wire[ESP_ROM_SYNC_WIRE_BYTES];
+            const uint8_t *wire = in + 8u;
+            uint8_t wire_len = count;
+            /* The only ROM output is a freshly reconstructed, already
+             * fully prefix-checked exact 46-byte SYNC, in ONE UART call.
+             * No host-controlled arbitrary bytes or Flash opcodes. */
+            if (state->rom_sync_only != 0u)
+            {
+                for (i = 0u; i < ESP_ROM_SYNC_WIRE_BYTES; ++i)
+                    sync_wire[i] = esp_rom_sync_expected_byte(i);
+                wire = sync_wire;
+                wire_len = ESP_ROM_SYNC_WIRE_BYTES;
+            }
+            state->uart_attempted = 1u; /* before potentially partial UART */
+            if (io != (const esp_bridge_io_v0_t *)0 &&
+                io->tx != (int (*)(void *, const uint8_t *, uint8_t))0 &&
+                io->tx(io->context, wire, wire_len) != 0)
+            {
+                status = ESP_BRIDGE_OK;
+                state->last_sequence = seq;
+                if (state->rom_sync_only != 0u)
+                    state->rom_sync_tx_offset = ESP_ROM_SYNC_WIRE_BYTES;
+            }
+            else
+            {
+                state->faulted = 1u;
+                status = ESP_BRIDGE_UART_UNCERTAIN;
+            }
         }
     }
     else if (op == ESP_BRIDGE_RX)
     {
         int result = -1;
+        if (state->rom_sync_only != 0u &&
+            state->rom_sync_tx_offset != ESP_ROM_SYNC_WIRE_BYTES)
+        {
+            out[7] = ESP_BRIDGE_DENIED;
+            return 9u; /* RX before all 46 exact TX bytes is forbidden. */
+        }
         state->uart_attempted = 1u; /* Record before potentially failing RX. */
         if (io != (const esp_bridge_io_v0_t *)0 &&
             io->rx != (int (*)(void *, uint8_t *, uint8_t))0)
@@ -160,6 +248,8 @@ uint8_t esp_bridge_core_v0_handle(esp_bridge_core_v0_t *state,
         state->session = 0u;
         state->last_sequence = 0u;
         state->uart_attempted = 0u;
+        state->rom_sync_only = 0u;
+        state->rom_sync_tx_offset = 0u;
         status = ESP_BRIDGE_OK;
     }
 

@@ -10,7 +10,7 @@ import subprocess
 
 os=Path(__file__).resolve().parents[3]
 paths=[
-os/"nodes/esp8266/bridge/board_lab/esp_boot_control_v0.c",
+os/"src/kernel/esp_boot_control_v0.c",
 os/"nodes/esp8266/bridge/board_lab/esp_power_monitor_v0.c",
 os/"include/kernel/esp_boot_control_v0.h",
 os/"include/kernel/esp_power_monitor_v0.h",

@@ -64,10 +64,15 @@ int kernel_time_reached(kernel_time_ms_t a,kernel_time_ms_t b){return a>=b;}
 int kernel_time_elapsed(kernel_time_ms_t a,kernel_time_ms_t b){(void)a;(void)b;return 0;}
 int node_transport_maintenance_enter(void){++node_enters;return 1;}
 void node_transport_maintenance_leave(void){++node_leaves;}
+uint8_t node_transport_maintenance_is_owned(void){return (uint8_t)(node_enters>node_leaves);}
 void usart2_node_rx_arm(void){++uart_arms;}
 void usart2_node_rx_disarm(void){}
 int usart2_node_write_frame(const uint8_t *bytes,uint32_t count) {
     (void)bytes;(void)count;++uart_writes;return 1;
+}
+int usart2_node_write_rom_sync46(const uint8_t *data,uint32_t length) {
+    if (data == (const uint8_t *)0 || length != 46u) return 0;
+    ++uart_writes;return 1;
 }
 int usart2_node_try_read(usart2_node_sample_t *out) {
     (void)out;++uart_reads;return 0;

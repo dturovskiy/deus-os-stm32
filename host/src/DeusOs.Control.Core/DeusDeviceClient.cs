@@ -161,6 +161,24 @@ public sealed class DeusDeviceClient : IAsyncDisposable
             cancellationToken: cancellationToken);
     }
 
+    /* Hardware-mutating ESP EN pulse: registry-41 and destructive RPC flag
+     * are both required; firmware also gates physical GPIO ownership. */
+    public Task<RpcResult> EspAppResetAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (State != ConnectionState.Ready ||
+            Hello?.RegistryCount != ProtocolConstants.ExpectedEspAppResetRegistryCount)
+        {
+            throw new DeusHostException(
+                HostErrorKind.IncompatibleService,
+                "ESP app reset needs registry-41 firmware; no GPIO command sent.");
+        }
+        return RpcAsync(
+            ProtocolConstants.RpcEspAppReset,
+            flags: ProtocolConstants.RpcFlagAllowDestructive,
+            cancellationToken: cancellationToken);
+    }
+
     public Task<RpcResult> NodeStatAsync(
         CancellationToken cancellationToken = default)
     {
@@ -180,7 +198,8 @@ public sealed class DeusDeviceClient : IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         if (State != ConnectionState.Ready ||
-            Hello?.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount)
+            (Hello?.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount &&
+             Hello?.RegistryCount != ProtocolConstants.ExpectedEspAppResetRegistryCount))
         {
             throw new DeusHostException(
                 HostErrorKind.IncompatibleService,
@@ -213,7 +232,8 @@ public sealed class DeusDeviceClient : IAsyncDisposable
     {
         if (State != ConnectionState.Ready ||
             (Hello?.RegistryCount != ProtocolConstants.ExpectedNodeRegistryCount &&
-             Hello?.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount))
+             Hello?.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount &&
+             Hello?.RegistryCount != ProtocolConstants.ExpectedEspAppResetRegistryCount))
         {
             throw new DeusHostException(
                 HostErrorKind.IncompatibleService,
@@ -428,7 +448,8 @@ public sealed class DeusDeviceClient : IAsyncDisposable
         if (hello.ServiceVersion != ProtocolConstants.ExpectedServiceVersion ||
             (hello.RegistryCount != ProtocolConstants.ExpectedRegistryCount &&
              hello.RegistryCount != ProtocolConstants.ExpectedNodeRegistryCount &&
-             hello.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount))
+             hello.RegistryCount != ProtocolConstants.ExpectedWifiRegistryCount &&
+             hello.RegistryCount != ProtocolConstants.ExpectedEspAppResetRegistryCount))
         {
             throw new DeusHostException(
                 HostErrorKind.IncompatibleService,
@@ -438,7 +459,9 @@ public sealed class DeusDeviceClient : IAsyncDisposable
                 $"{ProtocolConstants.ExpectedServiceVersion}/" +
                 $"{ProtocolConstants.ExpectedNodeRegistryCount} or " +
                 $"{ProtocolConstants.ExpectedServiceVersion}/" +
-                $"{ProtocolConstants.ExpectedWifiRegistryCount}");
+                $"{ProtocolConstants.ExpectedWifiRegistryCount} or " +
+                $"{ProtocolConstants.ExpectedServiceVersion}/" +
+                $"{ProtocolConstants.ExpectedEspAppResetRegistryCount}");
         }
 
         if (hello.MaxArgs != ProtocolConstants.MaxArgs ||

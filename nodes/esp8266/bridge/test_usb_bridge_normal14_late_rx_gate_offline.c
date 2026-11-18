@@ -103,6 +103,10 @@ void usart2_node_rx_disarm(void)
 int usart2_node_write_frame(const uint8_t *bytes,uint32_t count) {
     (void)bytes;(void)count;++uart_writes;return 1;
 }
+int usart2_node_write_rom_sync46(const uint8_t *data,uint32_t length) {
+    if (data == (const uint8_t *)0 || length != 46u) return 0;
+    ++uart_writes;return 1;
+}
 int usart2_node_try_read(usart2_node_sample_t *out) {
     (void)out;
     ++uart_reads;

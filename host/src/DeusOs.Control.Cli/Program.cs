@@ -27,6 +27,8 @@ internal static class Program
                 return await BenchFirmwareV13Command.RunAsync(args[1..]);
             if (args.Length > 0 && args[0] == "bench-fw-v14")
                 return await BenchFirmwareV14Command.RunAsync(args[1..]);
+            if (args.Length > 0 && args[0] == "bench-fw-v15")
+                return await BenchFirmwareV15Command.RunAsync(args[1..]);
 
             var parsed = CliArguments.Parse(args);
 
@@ -288,6 +290,17 @@ internal static class Program
                     (client, token) => client.StartNodeAsync(nonce, token),
                     CancellationToken.None);
                 EnsureSuccess(result, "node start");
+                Console.Write(result.OutputText);
+                return 0;
+            }
+
+            case "esp-app-reset":
+            {
+                // Explicit --confirm is required by the argument parser.
+                var result = await session.ExecuteAsync(
+                    (client, token) => client.EspAppResetAsync(token),
+                    CancellationToken.None);
+                EnsureSuccess(result, "node app-reset");
                 Console.Write(result.OutputText);
                 return 0;
             }
@@ -883,12 +896,14 @@ internal static class Program
                 {
                     "start" when remaining.Count == 3 =>
                         new CliArguments("node-start", device, remaining[2]),
+                    "app-reset" when remaining.Count == 3 && remaining[2] == "--confirm" =>
+                        new CliArguments("esp-app-reset", device, null),
                     "crc" when remaining.Count == 3 =>
                         new CliArguments("node-crc", device, remaining[2]),
                     "status" when remaining.Count == 2 =>
                         new CliArguments("node-status", device, null),
                     _ => throw new ArgumentException(
-                        "node accepts: start <fresh_hex8>, crc <ASCII1..16>, status"),
+                        "node accepts: start <fresh_hex8>, crc <ASCII1..16>, status, app-reset --confirm"),
                 };
             }
 
@@ -973,6 +988,7 @@ internal static class Program
                   deus-cp [--device <locator>] node start <fresh_hex8>
                   deus-cp [--device <locator>] node crc <ASCII1..16>
                   deus-cp [--device <locator>] node status
+                  deus-cp [--device <locator>] node app-reset --confirm  (registry-41, GPIO0/EN only)
                   deus-cp [--device <locator>] wifi caps     (future registry-40 only)
                   deus-cp [--device <locator>] wifi scan     (explicit on-demand RF, future registry-40 only)
                   deus-cp [--device <locator>] wifi status   (single NodeLink status request)

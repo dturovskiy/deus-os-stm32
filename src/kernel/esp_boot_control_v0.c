@@ -98,6 +98,30 @@ int esp_boot_control_v0_recovery_rom_start(
     s->state = ESP_BOOT_ROM_EN_LOW;
     return 1;
 }
+/* A normal application reset is distinct from ROM recovery and cannot
+ * assert GPIO0 low. The scheduler services EN LOW for >=20 ms followed by
+ * a >=100 ms settle, never spinning with interrupts or USB disabled. */
+int esp_boot_control_v0_normal_app_reset(
+    esp_boot_control_v0_t *s, const esp_boot_io_v0_t *io,
+    uint8_t local_board_qualified, uint32_t now_ms)
+{
+    if (s == (esp_boot_control_v0_t *)0 ||
+        local_board_qualified != 1u || s->provisioned != 1u ||
+        (s->state != ESP_BOOT_APP_AWAIT_HELLO &&
+         s->state != ESP_BOOT_NORMAL_LINK_VERIFIED) ||
+        !io_valid(io) || io->rail_verified(io->ctx) == 0 ||
+        io->node_quiescent(io->ctx) == 0)
+        return 0;
+    /* EN LOW first, then release GPIO0. If either write fails, keep EN LOW. */
+    if (io->en_pull_low(io->ctx, 1u) == 0 ||
+        io->gpio0_pull_low(io->ctx, 0u) == 0) {
+        esp_boot_control_v0_fault(s, io);
+        return 0;
+    }
+    s->started_ms = now_ms;
+    s->state = ESP_BOOT_APP_EN_LOW;
+    return 1;
+}
 int esp_boot_control_v0_app_start(
     esp_boot_control_v0_t *s, const esp_boot_io_v0_t *io,
     uint32_t now_ms)

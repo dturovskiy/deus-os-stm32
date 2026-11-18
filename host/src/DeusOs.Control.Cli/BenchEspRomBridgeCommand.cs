@@ -7,9 +7,11 @@ namespace DeusOs.Control.Cli;
 
 /// <summary>
 /// STM32-managed ESP ROM read-only SYNC, never a CH340 serial route.
-/// Offline plan does not open any device. Physical use requires a separately
-/// hardware-qualified, installed STM32 bridge that admits OPEN locally.
-/// No GPIO0/EN/Flash action can be authorized by host flags.
+/// Offline plan does not open any device. Physical use requires installed,
+/// signed, source-locked STM32 firmware that admits the new ROM-only opcode5.
+/// Current wiring: existing external CH340 controls ESP BOOT/EN while STM32
+/// PA2/PA3 carries UART data. No human buttons or rewiring needed.
+/// Host flags cannot authorize GPIO0/EN actuation or ESP Flash.
 /// </summary>
 internal static class BenchEspRomBridgeCommand
 {
@@ -29,19 +31,24 @@ internal static class BenchEspRomBridgeCommand
             Console.WriteLine("ROM_ACTION=ONE_READONLY_SYNC_ONLY");
             Console.WriteLine("CH340_UART_DATA=NOT_CONNECTED");
             Console.WriteLine("CURRENT_NORMAL10_CAN_ENTER=HARD_DENY");
-            Console.WriteLine("TARGET=STM32_FULL_OWNERSHIP_GPIO0_EN_PLUS_USART2");
-            Console.WriteLine("CURRENT_HARDWARE_CH340_BOOT_EN=NOT_REWIRED");
-            Console.WriteLine("AUTHORIZED_VARIANT=ONLY_AFTER_SIGNED_STM32_BOARD_QUALIFIED_IMAGE");
+            Console.WriteLine("CURRENT_WIRING=CH340_DTR_RTS_TO_ESP_GPIO0_EN_ONLY");
+            Console.WriteLine("ESP_UART_DATA=STM32_PA2_USART2_TX_TO_ESP_RX__ESP_TX_TO_STM32_PA3_USART2_RX");
+            Console.WriteLine("NEW_NORMAL15_MODE=ROM_SYNC_ONLY_OPCODE_5_EXACT_46_BYTES");
+            Console.WriteLine("GENERIC_OPEN_MODE=LEGACY_FLASH_UNCERTAINTY_STICKY");
+            Console.WriteLine("NORMAL15_PHYSICAL_INSTALL=REQUIRES_SEPARATE_SIGNED_OWNER_GO");
+            Console.WriteLine("MANUAL_RESET_OR_BUTTONS=NOT_REQUIRED");
             Console.WriteLine("NO_GPIO_NO_RF_NO_FLASH_NO_RESET_NO_USB_OPEN=YES");
             return 0;
         }
 
         if (args.Length != 7 ||
-            (args[0] != "rom-sync-staged" && args[0] != "rom-sync-stm32-once"))
+            (args[0] != "rom-sync-staged" &&
+             args[0] != "rom-sync-stm32-once" &&
+             args[0] != "rom-sync-safe-staged"))
             throw new ArgumentException(
-                "Usage: bench-esp-rom plan | rom-sync-stm32-once | rom-sync-staged " +
+                "Usage: bench-esp-rom plan | rom-sync-stm32-once | rom-sync-staged | rom-sync-safe-staged " +
                 "--device usb:BBB:PORT --expected-source-tree <40 lower hex> " +
-                "--confirm-readonly-sync yes");
+                "--confirm-rom-reset yes (stm32) OR --confirm-readonly-sync yes (split)");
 
         var fields = new Dictionary<string,string>(StringComparer.Ordinal);
         for (var i = 1; i < args.Length; i += 2)
@@ -51,6 +58,7 @@ internal static class BenchEspRomBridgeCommand
                 throw new ArgumentException("invalid or duplicated ROM bridge argument");
         }
         bool stm32Owned = args[0] == "rom-sync-stm32-once";
+        bool safeRomOnly = args[0] == "rom-sync-safe-staged";
         if (fields.Count != 3 ||
             !fields.TryGetValue("--device",out var locator) ||
             !fields.TryGetValue("--expected-source-tree",out var expected) ||
@@ -99,7 +107,17 @@ internal static class BenchEspRomBridgeCommand
 
         await using var bridge = new EspBridgeClient(
             await discovery.OpenAsync(found[0],CancellationToken.None));
-        await bridge.OpenAsync(session);
+        if (safeRomOnly || stm32Owned)
+        {
+            // Strict STM32-enforced non-destructive ROM probe. There is
+            // no fallback to legacy generic OPEN on an old target.
+            await bridge.OpenRomSyncOnlyAsync(session);
+            Console.WriteLine("STM32_ESP_BRIDGE_MODE=ROM_SYNC_ONLY_ENFORCED_NO_FLASH");
+        }
+        else
+        {
+            await bridge.OpenAsync(session); // legacy generic bridge only
+        }
         if (stm32Owned)
         {
             // OPEN itself requests the reset/BOOT transition on the exact
@@ -160,6 +178,8 @@ internal static class BenchEspRomBridgeCommand
             "ESP_BOOT_RESET=STM32_BOARD_OPEN_AND_NORMAL_CLOSE" :
             "ESP_BOOT_RESET=EXTERNAL_ADAPTER_OWNER");
         Console.WriteLine("ESP_FLASH_ERASE_RF=NOT_ATTEMPTED");
+        if (safeRomOnly || stm32Owned)
+            Console.WriteLine("ROM_ONLY_ABORT_RECOVERY=STM32_LOCAL_SAFE_NO_HUMAN_RESET");
         return 0;
     }
 }

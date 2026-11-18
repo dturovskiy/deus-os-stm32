@@ -9,7 +9,10 @@
 #define ESP_BRIDGE_MAX_DATA 40u
 #define ESP_BRIDGE_MAX_REPLY_PAYLOAD 49u
 enum { ESP_BRIDGE_OPEN = 1u, ESP_BRIDGE_TX = 2u,
-       ESP_BRIDGE_RX = 3u, ESP_BRIDGE_CLOSE = 4u };
+       ESP_BRIDGE_RX = 3u, ESP_BRIDGE_CLOSE = 4u,
+       /* Separate non-destructive ROM SYNC-only session. The legacy OPEN
+        * remains generic/Flash-uncertain and is always fail-closed. */
+       ESP_BRIDGE_OPEN_ROM_SYNC_ONLY = 5u };
 enum { ESP_BRIDGE_OK = 0u, ESP_BRIDGE_DENIED = 1u,
        ESP_BRIDGE_BAD_SESSION = 2u, ESP_BRIDGE_BAD_SEQUENCE = 3u,
        ESP_BRIDGE_BAD_LENGTH = 4u, ESP_BRIDGE_UART_UNCERTAIN = 5u };
@@ -36,6 +39,11 @@ typedef struct {
      * A pre-UART abort is recoverable; an uncertain UART abort is not. */
     uint8_t uart_attempted;
     uint8_t last_open_reason;
+    /* True ONLY after OPEN_ROM_SYNC_ONLY; no arbitrary UART TX is possible.
+     * The kernel verifies exact 46-byte ESP8266 ROM SYNC stream before TX.
+     * Safe mode permits local bridge recovery, never ESP Flash recovery. */
+    uint8_t rom_sync_only;
+    uint8_t rom_sync_tx_offset;
 } esp_bridge_core_v0_t;
 
 typedef struct {

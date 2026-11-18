@@ -12,7 +12,10 @@ public enum EspBridgeOperation : byte
     Open = 1,
     Tx = 2,
     Rx = 3,
-    Close = 4
+    Close = 4,
+    // On firmware normal15+ only: strict, immutable ESP8266 ROM SYNC TX.
+    // Legacy Open remains generic/flash-fail-closed.
+    OpenRomSyncOnly = 5
 }
 
 public enum EspBridgeStatus : byte
@@ -45,12 +48,14 @@ public static class EspBridgeWireV0
         ushort sequence,
         ReadOnlySpan<byte> data)
     {
-        if (session == 0 || operation is < EspBridgeOperation.Open or > EspBridgeOperation.Close ||
+        if (session == 0 || operation is < EspBridgeOperation.Open or > EspBridgeOperation.OpenRomSyncOnly ||
             data.Length > MaxData ||
             (operation == EspBridgeOperation.Tx && data.IsEmpty) ||
             (operation != EspBridgeOperation.Tx && !data.IsEmpty) ||
-            (operation == EspBridgeOperation.Open && sequence != 0) ||
-            (operation != EspBridgeOperation.Open && sequence == 0))
+            (operation is EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly &&
+                sequence != 0) ||
+            (operation is not (EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly) &&
+                sequence == 0))
         {
             throw new ArgumentException("invalid ESP bridge operation/session/sequence/data shape");
         }
@@ -117,15 +122,28 @@ public sealed class EspBridgeClient : IAsyncDisposable
     public bool IsOpen => _open && !_faulted;
     public bool IsFaulted => _faulted;
 
-    public async Task OpenAsync(uint freshSession, CancellationToken cancellationToken = default)
+    public Task OpenAsync(uint freshSession, CancellationToken cancellationToken = default)
+        => OpenCoreAsync(EspBridgeOperation.Open, freshSession, cancellationToken);
+
+    // This operation must be used ONLY with source-locked normal15+,
+    // which proves every UART TX byte is the immutable ROM SYNC envelope.
+    public Task OpenRomSyncOnlyAsync(
+        uint freshSession, CancellationToken cancellationToken = default)
+        => OpenCoreAsync(EspBridgeOperation.OpenRomSyncOnly, freshSession, cancellationToken);
+
+    private async Task OpenCoreAsync(
+        EspBridgeOperation mode, uint freshSession,
+        CancellationToken cancellationToken)
     {
+        if (mode is not (EspBridgeOperation.Open or EspBridgeOperation.OpenRomSyncOnly))
+            throw new ArgumentOutOfRangeException(nameof(mode));
         if (_disposed || _open || _faulted || freshSession == 0)
             throw new InvalidOperationException("ESP bridge not closed/clean or session invalid");
 
         try
         {
             var reply = await ExchangeAsync(
-                EspBridgeOperation.Open, freshSession, 0, ReadOnlyMemory<byte>.Empty, cancellationToken);
+                mode, freshSession, 0, ReadOnlyMemory<byte>.Empty, cancellationToken);
             RequireOk(reply);
             _session = freshSession;
             _sequence = 0;

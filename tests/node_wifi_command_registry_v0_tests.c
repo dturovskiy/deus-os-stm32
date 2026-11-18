@@ -19,13 +19,19 @@ int main(void)
     char result[]="nodewifi result";
     char page[]="nodewifi page 0x1234ABCD 3 32";
     char wrong[]="nodewifi scan unexpected";
-    CHECK(command_service_registry_count()==40u);
+    CHECK(command_service_registry_count()==41u);
     found=command_service_find_rpc_id(COMMAND_SERVICE_RPC_NODEWIFI);
     CHECK(found!=0);
     CHECK(strcmp(found->name,"nodewifi")==0);
     CHECK(found->rpc_id==0x28u && found->command_class==COMMAND_SERVICE_CLASS_DIAGNOSTIC);
     CHECK(found->min_args==1u&&found->max_args==4u);
     CHECK(found->method_id==COMMAND_SERVICE_METHOD_NODEWIFI);
+    found=command_service_find_rpc_id(COMMAND_SERVICE_RPC_ESPAPPRESET);
+    CHECK(found!=0 && found->rpc_id==0x29u);
+    CHECK(strcmp(found->name,"espappreset")==0);
+    CHECK(found->command_class==COMMAND_SERVICE_CLASS_DESTRUCTIVE);
+    CHECK(found->min_args==0u && found->max_args==0u);
+    CHECK(found->method_id==COMMAND_SERVICE_METHOD_ESPAPPRESET);
     CHECK(command_service_find_rpc_id(COMMAND_SERVICE_RPC_NODESTAT)!=0);
     CHECK(command_service_find_rpc_id(COMMAND_SERVICE_RPC_NODESTART)!=0);
     CHECK(command_service_find_rpc_id(COMMAND_SERVICE_RPC_NODECRC)!=0);
@@ -39,6 +45,6 @@ int main(void)
     CHECK(strcmp(req.argv[1],"0x1234ABCD")==0);
     CHECK(command_service_parse_line(wrong,&req)==COMMAND_SERVICE_STATUS_OK);
     /* Semantic verb/arg validation belongs to the task0 handler. */
-    puts("STM32_WIFI_COMMAND_REGISTRY_40_WITH_LEGACY_IDS=PASS SOURCE_ONLY");
+    puts("STM32_WIFI_COMMAND_REGISTRY_41_WITH_EXPLICIT_DESTRUCTIVE_APP_RESET=PASS SOURCE_ONLY");
     return 0;
 }

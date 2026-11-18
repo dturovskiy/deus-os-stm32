@@ -140,6 +140,44 @@ static void test_boot_failures(void)
     REQUIRE(b.state==ESP_BOOT_FAULT && b.provisioned==0u);
     puts("BOOT_FAULTS=PASS");
 }
+static void test_normal_app_reset(void)
+{
+    fake_t f;esp_boot_io_v0_t io;esp_boot_control_v0_t b;
+    init(&f,&io,&b);
+    REQUIRE(!esp_boot_control_v0_normal_app_reset(&b,&io,1u,10u));
+    REQUIRE(f.en_calls==0u && f.boot_calls==0u);
+    REQUIRE(esp_boot_control_v0_provision(&b,&io,1u,0u));
+    REQUIRE(!esp_boot_control_v0_normal_app_reset(&b,&io,0u,10u));
+    f.node_idle=0;
+    REQUIRE(!esp_boot_control_v0_normal_app_reset(&b,&io,1u,10u));
+    f.node_idle=1;
+    REQUIRE(esp_boot_control_v0_normal_app_reset(&b,&io,1u,10u));
+    REQUIRE(b.state==ESP_BOOT_APP_EN_LOW);
+    REQUIRE(f.en_low==1u && f.boot_low==0u);
+    REQUIRE(strcmp(f.log,"beEb")==0);
+    REQUIRE(!esp_boot_control_v0_normal_app_reset(&b,&io,1u,11u));
+    REQUIRE(!esp_boot_control_v0_rom_start(&b,&io,11u));
+    esp_boot_control_v0_service(&b,&io,29u);
+    REQUIRE(b.state==ESP_BOOT_APP_EN_LOW && f.en_low==1u);
+    esp_boot_control_v0_service(&b,&io,30u);
+    REQUIRE(b.state==ESP_BOOT_APP_SETTLING && f.en_low==0u);
+    esp_boot_control_v0_service(&b,&io,129u);
+    REQUIRE(b.state==ESP_BOOT_APP_SETTLING);
+    esp_boot_control_v0_service(&b,&io,130u);
+    REQUIRE(b.state==ESP_BOOT_APP_AWAIT_HELLO && f.boot_low==0u);
+    REQUIRE(esp_boot_control_v0_note_fresh_hello(&b));
+    REQUIRE(b.state==ESP_BOOT_NORMAL_LINK_VERIFIED);
+    REQUIRE(esp_boot_control_v0_normal_app_reset(&b,&io,1u,200u));
+    esp_boot_control_v0_service(&b,&io,220u);
+    esp_boot_control_v0_service(&b,&io,320u);
+    REQUIRE(b.state==ESP_BOOT_APP_AWAIT_HELLO);
+    init(&f,&io,&b);
+    REQUIRE(esp_boot_control_v0_provision(&b,&io,1u,0u));
+    f.fail_gpio=1;
+    REQUIRE(!esp_boot_control_v0_normal_app_reset(&b,&io,1u,1u));
+    REQUIRE(b.state==ESP_BOOT_FAULT && f.en_low==1u);
+    puts("NORMAL_APP_RESET_GUARDS_EN_PULSE_NO_ROM=PASS");
+}
 static void test_power_monitor(void)
 {
     fake_t f;esp_power_monitor_v0_t m;esp_power_bus_v0_t bus;
@@ -190,6 +228,7 @@ int main(void)
 {
     test_boot_roundtrip();
     test_boot_failures();
+    test_normal_app_reset();
     test_power_monitor();
     puts("ESP_BOOT_AND_POWER_V0_OFFLINE=PASS NO_GPIO_NO_USB_NO_I2C_NO_FLASH");
     return 0;

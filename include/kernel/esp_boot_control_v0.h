@@ -59,6 +59,12 @@ int esp_boot_control_v0_recovery_rom_start(
 int esp_boot_control_v0_app_start(
     esp_boot_control_v0_t *s, const esp_boot_io_v0_t *io,
     uint32_t now_ms);
+/* Explicit normal-application reset. Unlike app_start, this does NOT enter
+ * ROM and may be called from APP_AWAIT_HELLO even when the ESP is silent.
+ * Local board qualification and an idle Node session are mandatory. */
+int esp_boot_control_v0_normal_app_reset(
+    esp_boot_control_v0_t *s, const esp_boot_io_v0_t *io,
+    uint8_t local_board_qualified, uint32_t now_ms);
 void esp_boot_control_v0_service(
     esp_boot_control_v0_t *s, const esp_boot_io_v0_t *io,
     uint32_t now_ms);

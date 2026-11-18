@@ -26,6 +26,8 @@ static uint32_t node_frames;
 static uint32_t node_dropped;
 static uint32_t node_restarts_required;
 static uint32_t node_uart_loss;
+static uint32_t node_hello_acks;
+static uint32_t node_hello_timeouts;
 /* Task0-only job result diagnostics; no heap and no IRQ-side controller. */
 static uint32_t node_job_expected_crc32;
 static uint32_t node_jobs_verified;
@@ -45,6 +47,16 @@ static void node_fail_closed(void)
     ++node_restarts_required;
 }
 
+/* Explicit app reset invalidates the prior ESP session before GPIO changes.
+ * A fresh HELLO nonce is required after the ESP application restarts. */
+int node_transport_app_reset_begin(void)
+{
+    if (node_maintenance_owned != 0u || node_controller.pending != 0u)
+        return 0;
+    node_fail_closed();
+    return 1;
+}
+
 /* No automatic retry with the same challenge after lost RX or session failure. */
 void node_transport_init(uint32_t now_ms)
 {
@@ -60,6 +72,8 @@ void node_transport_init(uint32_t now_ms)
     node_dropped = 0u;
     node_restarts_required = 0u;
     node_uart_loss = 0u;
+    node_hello_acks = 0u;
+    node_hello_timeouts = 0u;
     node_job_expected_crc32 = 0u;
     node_jobs_verified = 0u;
     node_jobs_bad_crc = 0u;
@@ -236,6 +250,7 @@ static void node_accept_frame(const dnl_frame_t *frame,
         }
     }
     if (status == DNL_OK) {
+        if (frame->type == DNL_HELLO_ACK) ++node_hello_acks;
         ++node_frames;
         if (node_controller.pending == 0u &&
             node_controller.ready != 0u) node_last_ping_ms = now_ms;
@@ -330,6 +345,8 @@ void node_transport_service(uint32_t now_ms)
                 usart2_node_write_frame(bytes, (uint32_t)length) != 0) {
                 node_pending_sent_ms=now_ms;
             } else {
+                if (node_controller.pending_type == DNL_HELLO)
+                    ++node_hello_timeouts;
                 /* Lost SCAN_START acknowledgement is ambiguous; do NOT
                  * automatically replay or negotiate another HELLO.
                  */
@@ -399,6 +416,8 @@ void node_transport_diagnostics_get(node_transport_diagnostics_t *out)
     out->dropped = node_dropped;
     out->restarts_required = node_restarts_required;
     out->uart_loss = node_uart_loss;
+    out->hello_acks = node_hello_acks;
+    out->hello_timeouts = node_hello_timeouts;
     out->last_service_ms = node_last_service_ms;
     out->jobs_verified = node_jobs_verified;
     out->jobs_bad_crc = node_jobs_bad_crc;

@@ -245,32 +245,39 @@ static int usb_bridge_enter(void *context)
     (void)context;
     if (node_transport_maintenance_enter() == 0) return 0;
 #if !DEUS_ESP_SPLIT_BOOT_ADAPTER
+    /* Snapshot the genuine ESP8266 74880-baud boot report while EN rises.
+     * This receiver is isolated from NodeLink/ROM SLIP, and capture does not
+     * issue a reset or authorize UART TX/Flash. */
+    usart2_node_rom_boot_capture_begin();
     if (esp_stm32_owner_v1_enter(kernel_time_now()) == 0)
     {
+        usart2_node_rom_boot_capture_end();
         node_transport_maintenance_leave();
         return 0;
     }
 #endif
-    /* node_transport_maintenance_enter disarms/flushes USART2 RX.
-     * In the CH340 split profile ESP EN/GPIO0 will be toggled AFTER OPEN.
-     * Enabling RX now would ingest ESP ROM boot chatter (which need not be
-     * 115200 baud), latch USART FE/NE/ORE, and poison the first ROM RX.
-     * Keep USART2 RX gate OFF until the FIRST authorized bridge TX. */
-#if DEUS_ESP_SPLIT_BOOT_ADAPTER
+    /* Maintenance entry already disarmed USART2 RX. Both board profiles
+     * must keep RX IRQs OFF until the FIRST admitted ROM TX:
+     *   split: CH340 toggles ESP EN/GPIO0 after OPEN;
+     *   qualified: STM32 begins the EN/GPIO0 ROM transition in enter().
+     * ESP boot chatter is 74880 baud, not USART2's 115200 baud, so
+     * early arming risks FE/NE/ORE and an uncertain bridge session.
+     * usb_bridge_tx arms RX once, BEFORE the first ROM byte is sent;
+     * later fragments never flush a potential early ROM response. */
     usb_bridge_uart_rx_armed = 0u;
-#else
-    usart2_node_rx_arm();
-    usb_bridge_uart_rx_armed = 1u;
-#endif
     return 1;
 }
 
 static void usb_bridge_leave(void *context)
 {
     (void)context;
+    /* Latch exact 115200 RX/error/dropped delta BEFORE the RX gate
+     * clears ring state. Inactive NodeLink sessions are unaffected. */
+    usart2_node_rom_sync_trace_end();
     usart2_node_rx_disarm();
     usb_bridge_uart_rx_armed = 0u;
 #if !DEUS_ESP_SPLIT_BOOT_ADAPTER
+    usart2_node_rom_boot_capture_end();
     esp_stm32_owner_v1_leave(usb_bridge_aborting, kernel_time_now());
 #endif
     node_transport_maintenance_leave();
@@ -282,15 +289,25 @@ static int usb_bridge_tx(void *context, const uint8_t *data, uint8_t length)
 #if !DEUS_ESP_SPLIT_BOOT_ADAPTER
     if (esp_stm32_owner_v1_rom_tx_ready() == 0) return 0;
 #endif
-    /* Start reception only after ESP reset/strap has completed and host
-     * explicitly begins ROM SYNC. usart2_node_rx_arm() clears stale SR/DR,
-     * IRQ38 pending, ring indices and RX-loss before *first* TX byte.
-     * A second SYNC fragment must NOT clear potential response bytes. */
+    /* ROM-only mode receives fully verified USB fragments in the core,
+     * but io->tx runs only AFTER all 46 SYNC bytes were validated.
+     * Arm RX just before this single uninterrupted UART burst. */
+    if (usb_management_esp_bridge.rom_sync_only != 0u &&
+        length != 46u) return 0;
     if (usb_bridge_uart_rx_armed == 0u)
     {
+#if !DEUS_ESP_SPLIT_BOOT_ADAPTER
+        /* Only after full 46-byte ROM SYNC validation: freeze the 74880
+         * startup trace, restore 115200 and clear startup bytes BEFORE TX. */
+        usart2_node_rom_boot_capture_end();
+#endif
         usart2_node_rx_arm();
         usb_bridge_uart_rx_armed = 1u;
+        if (usb_management_esp_bridge.rom_sync_only != 0u)
+            usart2_node_rom_sync_trace_begin();
     }
+    if (usb_management_esp_bridge.rom_sync_only != 0u)
+        return usart2_node_write_rom_sync46(data, (uint32_t)length);
     return usart2_node_write_frame(data, (uint32_t)length);
 }
 
@@ -323,7 +340,15 @@ static const esp_bridge_io_v0_t usb_bridge_io = {
  * uncertain ESP Flash must not silently reboot into a partial application. */
 static void usb_bridge_force_abort(void)
 {
-    usb_bridge_aborting = 1u;
+    /* Exactly bounded ROM SYNC-only sends no Flash commands. A USB loss
+     * in that mode may safely reboot ESP to normal application; the core
+     * already recovers this local non-destructive bridge session.
+     * Generic UART/Flash uncertainty MUST still hold EN LOW until an
+     * explicitly qualified recovery, never silently resume partial Flash.
+     * Decide BEFORE abort() clears the ROM-only session flag, so leave()
+     * receives the correct target-side hardware recovery policy. */
+    usb_bridge_aborting = (uint8_t)(
+        usb_management_esp_bridge.rom_sync_only == 0u);
     esp_bridge_core_v0_abort(&usb_management_esp_bridge, &usb_bridge_io);
     usb_bridge_aborting = 0u;
 }

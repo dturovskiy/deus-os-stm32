@@ -26,6 +26,13 @@ Reject<ArgumentException>(()=>EspBridgeWireV0.EncodeRequest(
     EspBridgeOperation.Open,0,0,[]),"ZERO_SESSION");
 Reject<ArgumentException>(()=>EspBridgeWireV0.EncodeRequest(
     EspBridgeOperation.Open,sid,1,[]),"OPEN_NONZERO_SEQ");
+Check(EspBridgeWireV0.EncodeRequest(
+      EspBridgeOperation.OpenRomSyncOnly,sid,0,[])[0] == 5,
+      "ROM_ONLY_OPEN_EXPLICIT_WIRE_OPCODE5");
+Reject<ArgumentException>(()=>EspBridgeWireV0.EncodeRequest(
+    EspBridgeOperation.OpenRomSyncOnly,sid,1,[]),"ROM_ONLY_OPEN_NONZERO_SEQUENCE");
+Reject<ArgumentException>(()=>EspBridgeWireV0.EncodeRequest(
+    EspBridgeOperation.OpenRomSyncOnly,sid,0,[0xC0]),"ROM_ONLY_OPEN_WITH_PAYLOAD");
 Reject<ArgumentException>(()=>EspBridgeWireV0.EncodeRequest(
     EspBridgeOperation.Tx,sid,2,[]),"EMPTY_TX");
 Reject<ArgumentException>(()=>EspBridgeWireV0.EncodeRequest(
@@ -112,6 +119,37 @@ await using (var client=new EspBridgeClient(okTransport))
 }
 // One ROM SYNC on a fully mocked, pre-admitted bridge: 46 SLIP bytes
 // produce two max40 USART2-TX chunks and one matching ROM response.
+// The v15+ safe mode is a DIFFERENT admitted session and cannot silently
+// downgrade to generic/Flash-capable OPEN. STM32 enforces exact SYNC bytes.
+var safeOnlyTransport=new FakeTransport(req=>{
+    var op=(EspBridgeOperation)req[0];
+    return op==EspBridgeOperation.Rx
+        ? (EspBridgeStatus.Ok,EspRomSlip.Encode(new byte[]{1,8,2,0,0,0,0,0,0,0}))
+        : (EspBridgeStatus.Ok,Array.Empty<byte>());
+});
+await using(var safe=new EspBridgeClient(safeOnlyTransport))
+{
+    await safe.OpenRomSyncOnlyAsync(sid);
+    var response=await EspRomBridgeSync.ProbeOnceAndCloseAsync(safe);
+    Check(EspRomSlip.IsSyncResponse(response) &&
+        safeOnlyTransport.Operations.SequenceEqual([
+            EspBridgeOperation.OpenRomSyncOnly,EspBridgeOperation.Tx,
+            EspBridgeOperation.Tx,EspBridgeOperation.Rx,EspBridgeOperation.Close
+        ]) && safeOnlyTransport.Sequences.SequenceEqual(new ushort[]{0,1,2,3,4}),
+        "ROM_ONLY_OPCODE5_STRICT_TWO_FRAGMENT_SINGLE_SYNC_CLEAN_CLOSE");
+}
+var rejectedSafeOnlyTransport=new FakeTransport(req=>
+    (EspBridgeOperation)req[0]==EspBridgeOperation.OpenRomSyncOnly
+        ? (EspBridgeStatus.Denied,Array.Empty<byte>())
+        : (EspBridgeStatus.Ok,Array.Empty<byte>()));
+await using(var safe=new EspBridgeClient(rejectedSafeOnlyTransport))
+{
+    await RejectAsync<DeusHostException>(()=>safe.OpenRomSyncOnlyAsync(sid),
+        "ROM_ONLY_TARGET_DENIAL_NO_GENERIC_FALLBACK");
+    Check(rejectedSafeOnlyTransport.Operations.SequenceEqual([
+        EspBridgeOperation.OpenRomSyncOnly]),
+        "ROM_ONLY_NO_LEGACY_GENERIC_OPEN_ON_FAILURE");
+}
 var fakeRom=new FakeTransport(req=>{
     var op=(EspBridgeOperation)req[0];
     return op==EspBridgeOperation.Rx

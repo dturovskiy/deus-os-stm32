@@ -15,6 +15,20 @@ typedef struct {
     uint32_t depth;
     uint32_t dropped;
     uint32_t errors;
+    uint32_t rx_bytes; /* accepted IRQ38 samples; includes later-discarded bytes */
+    uint32_t tx_bytes; /* bytes submitted to USART2_DR; not wire ACK */
+    uint32_t tx_frames; /* all bytes accepted by USART2_DR */
+    /* Latched last *single* ROM-only SYNC session; never cumulative.
+     * TX: [31:16]=actual BRR at TX; [15]=attempted; [14]=RXNEIE;
+     * [13]=USART UE|TE|RE; [12]=TC after last DR; [11]=TXE/TC timeout;
+     * [10]=all 46 DR submitted; [5:0]=DR writes (0..46).
+     * RX: [31]=accepted-byte count overflow; [30]=UART errors occurred;
+     * [29]=session closed; [28]=session started; [27:20]=dropped (sat255);
+     * [19:16]=PE/FE/NE/ORE SR flags; [15:0]=RX samples (sat65535).
+     * An asserted TC proves USART shift register completion, NOT ESP RX
+     * pad voltage, boot-ROM autobaud or a received SLIP reply. */
+    uint32_t rom_sync_tx;
+    uint32_t rom_sync_rx;
 } usart2_node_diagnostics_t;
 /* Call once at boot AFTER clock init; IRQ38 vector and event service separately. */
 void usart2_node_init(void);
@@ -35,5 +49,20 @@ int usart2_node_try_read(usart2_node_sample_t *sample);
  * Returns 1 after accepting all bytes into USART DR, else 0 (may be partial).
  */
 int usart2_node_write_frame(const uint8_t *data,uint32_t length);
+/* ROM-only exact 46B SYNC; fail closed on ANY other payload/length. */
+int usart2_node_write_rom_sync46(const uint8_t *data,uint32_t length);
 void usart2_node_diagnostics_get(usart2_node_diagnostics_t *out);
+/* ROM-only 74880-baud startup capture (before EN release).
+ * Status bits occupy unused high bits of persistent ROM_PIN_TRACE:
+ *  [21:20]=boot mode (0 unknown,1 UART download,3 flash app);
+ *  [19]=RX UART error, [31:24]=early RX count saturated 255.
+ * Low GPIO stage bits [18:0] are unchanged. 115200 restored before SYNC.
+ * This is received UART evidence, NOT a physical ESP voltage reading. */
+void usart2_node_rom_boot_capture_begin(void);
+void usart2_node_rom_boot_capture_end(void);
+uint32_t usart2_node_rom_boot_status_bits(void);
+/* Task0 bridge ROM-only lifecycle: begin AFTER arming 115200 RX,
+ * end BEFORE disarming on CLOSE/abort. Never invoked for NodeLink. */
+void usart2_node_rom_sync_trace_begin(void);
+void usart2_node_rom_sync_trace_end(void);
 #endif

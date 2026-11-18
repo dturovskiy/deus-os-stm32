@@ -100,9 +100,55 @@ public sealed class ClientTests
     }
 
     [Theory]
+    [InlineData(36)]
+    [InlineData(39)]
+    [InlineData(40)]
+    public async Task EspAppResetRejectsLegacyRegistriesWithoutSendingAnyControlRpc(int count)
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 7);
+        transport.EnqueueResponse(CreateHelloResponse(
+            1, registryCount: checked((ushort)count)));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcSysInfo, 2, ValidSysInfo()));
+        await using var client = new DeusDeviceClient(transport);
+        await client.NegotiateAsync(TestContext.Current.CancellationToken);
+        var error = await Assert.ThrowsAsync<DeusHostException>(
+            () => client.EspAppResetAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(HostErrorKind.IncompatibleService, error.Kind);
+        Assert.Equal(ConnectionState.Ready, client.State);
+        Assert.Equal(2, transport.Writes.Count); // HELLO + sysinfo only
+    }
+
+    [Fact]
+    public async Task EspAppResetRegistry41RequiresDestructiveFlagAndDoesNotAutoStartNode()
+    {
+        var transport = new ScriptedTransport(readChunkLimit: 7);
+        transport.EnqueueResponse(CreateHelloResponse(1, registryCount: 41));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcSysInfo, 2, ValidSysInfo()));
+        transport.EnqueueResponse(CreateRpcResponse(
+            ProtocolConstants.RpcEspAppReset, 3, "ESP_APP_RESET_QUEUED\r\n"));
+
+        await using var client = new DeusDeviceClient(transport);
+        var session = await client.NegotiateAsync(TestContext.Current.CancellationToken);
+        Assert.Equal((ushort)41, session.Hello.RegistryCount);
+
+        var reset = await client.EspAppResetAsync(TestContext.Current.CancellationToken);
+        Assert.True(reset.IsSuccess);
+        Assert.Equal("ESP_APP_RESET_QUEUED\r\n", reset.OutputText);
+        Assert.Equal(3, transport.Writes.Count); // No implicit HELLO or CRC
+        var wire = transport.Writes[2];
+        Assert.Equal((byte)FrameType.RpcRequest, wire[3]);
+        Assert.Equal(ProtocolConstants.RpcFlagAllowDestructive, wire[4]);
+        Assert.Equal(ProtocolConstants.RpcEspAppReset,
+            BinaryPrimitives.ReadUInt16LittleEndian(wire.AsSpan(10, 2)));
+        Assert.Equal((byte)0, wire[12]); // No RPC args
+    }
+
+    [Theory]
     [InlineData(37)]
     [InlineData(38)]
-    [InlineData(40)]
+    [InlineData(42)]
     public async Task NodeV5RejectsUnknownRegistryCounts(int count)
     {
         var transport = new ScriptedTransport(readChunkLimit: 512);

@@ -28,6 +28,14 @@ void esp_stm32_owner_v1_init(uint32_t now_ms);
 int esp_stm32_owner_v1_can_enter(void);
 int esp_stm32_owner_v1_enter(uint32_t now_ms);
 int esp_stm32_owner_v1_rom_tx_ready(void);
+/* Explicit normal-app reset, qualified local board only; never ROM/Flash.
+ * Caller must have separately authorized real GPIO wiring and pullups. */
+int esp_stm32_owner_v1_reset_app(uint32_t now_ms);
+uint32_t esp_stm32_owner_v1_app_reset_count(void);
+uint32_t esp_stm32_owner_v1_boot_state(void);
+/* Read-only latched GPIOB PB0/PB1 ROM-transition snapshot.
+ * 3 four-bit IDR/ODR pairs + stage flags 16..18; no GPIO changes. */
+uint32_t esp_stm32_owner_v1_rom_pin_trace(void);
 void esp_stm32_owner_v1_service(uint32_t now_ms);
 /* uncertain=1 for ambiguous/aborted UART, holds EN LOW; normal CLOSE
  * returns ESP to application boot without assuming HELLO succeeded. */

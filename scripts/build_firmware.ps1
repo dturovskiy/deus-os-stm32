@@ -199,6 +199,7 @@ $Objects = [System.Collections.Generic.List[string]]::new()
 
 $SizeOptimizedSources = @(
     "src/drivers/flash_persistence.c"
+    "src/drivers/usb_device.c"  # normal20 non-LTO -Os, preserves IRQ38 ownership
     "src/drivers/i2c1.c"
     "src/drivers/ssd1306.c"
     "src/drivers/status_led.c"
@@ -231,13 +232,20 @@ $SizeOptimizedSources = @(
     "src/kernel/esp_bridge_core_v0.c"
     "src/kernel/esp_boot_control_v0.c"
     "src/kernel/esp_stm32_owner_v1.c"
+    # Normal20: cold-path identity construction is size-optimized to
+    # preserve the reserved STM32 metadata region after ROM diagnostics.
+    # USART2 IRQ, USB IRQ, watchdog and scheduler remain NON-LTO.
+    "src/kernel/system_identity.c"
     "src/kernel/system_service_state.c"
     "src/kernel/usb_management.c"
 )
 
-# Only ESP ROM bridge/owner modules use cross-module LTO in an electrically
-# qualified board build. Keep USB IRQ, scheduler, watchdog and all other
-# stable firmware units on their previously accepted native code-generation.
+# On electrically qualified STM32-owned ESP builds use the union of
+# (a) the four ESP ROM owner/bridge LTO modules and (b) the already
+# accepted split Wi-Fi application/NodeLink LTO modules. This keeps
+# USB IRQ, scheduler context switching, watchdog and flash writer
+# outside LTO while recovering sufficient flash margin for GPIO0/EN.
+# The OFF/default firmware profile remains unchanged.
 $EspBridgePartialLtoSources = @(
     "src/drivers/esp_gpio_board_v0.c"
     "src/kernel/esp_boot_control_v0.c"
@@ -280,7 +288,8 @@ for ($i = 0; $i -lt $SourcePaths.Count; ++$i) {
 
     $CompileFlags = @($Optimization)
     if (($EspStm32BoardQualified -and
-         ($EspBridgePartialLtoSources -contains $SourcePaths[$i])) -or
+         (($EspBridgePartialLtoSources -contains $SourcePaths[$i]) -or
+          ($EspSplitWifiPartialLtoSources -contains $SourcePaths[$i]))) -or
         ($EspSplitAdapterBoot -and
          ($EspSplitWifiPartialLtoSources -contains $SourcePaths[$i]))) {
         $CompileFlags += "-flto"
@@ -309,7 +318,7 @@ $Bin = Join-Path $OutputDir "os.bin"
 $LinkArgs = [System.Collections.Generic.List[string]]::new()
 if ($EspStm32BoardQualified -or $EspSplitAdapterBoot) {
     $LinkArgs.Add("-flto")
-    Write-Host ("ESP_ARM_PARTIAL_LTO={0}" -f $(if ($EspStm32BoardQualified) { "QUALIFIED_BOARD_FOUR_MODULES" } else { "CURRENT_SPLIT_WIFI_FIFTEEN_NON_IRQ_MODULES" }))
+    Write-Host ("ESP_ARM_PARTIAL_LTO={0}" -f $(if ($EspStm32BoardQualified) { "QUALIFIED_ESP_OWNER_AND_SPLIT_WIFI_EIGHTEEN_NON_IRQ_MODULES" } else { "CURRENT_SPLIT_WIFI_FIFTEEN_NON_IRQ_MODULES" }))
 }
 foreach ($Arg in @(
     "-mcpu=cortex-m3",

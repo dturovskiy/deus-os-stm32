@@ -45,7 +45,7 @@ int main(void)
     command_service_request_t req;
     uint32_t j;
     CHECK(n == (uint32_t)COMMAND_SERVICE_METHOD_COUNT);
-    CHECK(n == 39u);
+    CHECK(n == 41u);
     CHECK(command_service_registry_at(n)==0);
     CHECK(command_service_find(0)==0);
     CHECK(command_service_find_rpc_id(0u)==0);
@@ -109,8 +109,8 @@ int main(void)
         CHECK(command_service_parse_line(line,&req)==COMMAND_SERVICE_STATUS_OK);
         written=0; output[0]=0;
         CHECK(command_service_execute_help(&req,&c)==COMMAND_SERVICE_STATUS_OK);
-        CHECK(strstr(output,"HELP_COUNT=0x00000027\r\nHELP_METHODS=ping uptime")!=0);
-        CHECK(strstr(output," nodecrc nodestat\r\n")!=0);
+        CHECK(strstr(output,"HELP_COUNT=0x00000029\r\nHELP_METHODS=ping uptime")!=0);
+        CHECK(strstr(output," nodecrc nodestat nodewifi espappreset\r\n")!=0);
     }
     {
         char line[]="ping";
@@ -132,6 +132,6 @@ int main(void)
         CHECK(command_service_write(&c,"z")==COMMAND_SERVICE_STATUS_INTERNAL_ERROR);
         CHECK(c.write_failed!=0u);
     }
-    puts("COMMAND_SERVICE_LOOKUP=PASS ALL_65536_IDS_39_METHODS_HELP_PARSE_OUTPUT_FAILCLOSED");
+    puts("COMMAND_SERVICE_LOOKUP=PASS ALL_65536_IDS_41_METHODS_HELP_PARSE_OUTPUT_FAILCLOSED");
     return 0;
 }

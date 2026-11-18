@@ -29,11 +29,13 @@ public static class ProtocolConstants
     public const ushort RpcNodeCrc = 0x0026;
     public const ushort RpcNodeStat = 0x0027;
     public const ushort RpcNodeWifi = 0x0028;
+    public const ushort RpcEspAppReset = 0x0029;
 
     public const byte ExpectedServiceVersion = 3;
     public const ushort ExpectedRegistryCount = 36;
     public const ushort ExpectedNodeRegistryCount = 39;
     public const ushort ExpectedWifiRegistryCount = 40;
+    public const ushort ExpectedEspAppResetRegistryCount = 41;
 }
 
 public enum FrameType : byte

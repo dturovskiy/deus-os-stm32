@@ -8,6 +8,7 @@
 #include "drivers/usart1.h"
 #include "drivers/usart2_node.h"
 #include "kernel/node_transport.h"
+#include "kernel/esp_stm32_owner_v1.h"
 #include "deus_node_link.h"
 #include "drivers/usb_device.h"
 #include "gfx/mono_fb.h"
@@ -2049,6 +2050,8 @@ static void node_command_status(command_service_context_t *context)
 {
     node_transport_diagnostics_t s;
     usb_management_esp_bridge_diagnostics_t e;
+    usart2_node_diagnostics_t u;
+    usart2_node_diagnostics_get(&u);
     node_transport_diagnostics_get(&s);
     usb_management_esp_bridge_diagnostics_get(&e);
     /* Keep the existing first line byte-compatible for installed Host CLI. */
@@ -2079,6 +2082,35 @@ static void node_command_status(command_service_context_t *context)
     console_write_hex32(context, (uint32_t)e.firmware_update_reset_pending);
     command_service_write_hex_line(context, " SPLIT_PROFILE=",
         (uint32_t)e.split_adapter_profile);
+    /* Additive NodeLink UART2 provenance, not the ROM bridge UART_ATTEMPTED. */
+    console_write(context, "UART2_TX_BYTES=");
+    console_write_hex32(context, u.tx_bytes);
+    console_write(context, " TX_FRAMES=");
+    console_write_hex32(context, u.tx_frames);
+    console_write(context, " RX_BYTES=");
+    console_write_hex32(context, u.rx_bytes);
+    console_write(context, " RX_ERRORS=");
+    console_write_hex32(context, u.errors);
+    console_write(context, " RX_DROPPED=");
+    command_service_write_hex_line(context, "", u.dropped);
+    console_write(context, "NODE_FRAMES=");
+    console_write_hex32(context, s.frames);
+    console_write(context, " NODE_DROPPED=");
+    console_write_hex32(context, s.dropped);
+    console_write(context, " HELLO_ACKS=");
+    console_write_hex32(context, s.hello_acks);
+    console_write(context, " HELLO_TIMEOUTS=");
+    command_service_write_hex_line(context, "", s.hello_timeouts);
+    console_write(context, "ESP_BOOT_STATE=");
+    console_write_hex32(context, esp_stm32_owner_v1_boot_state());
+    console_write(context, " APP_RESETS=");
+    console_write_hex32(context, esp_stm32_owner_v1_app_reset_count());
+    console_write(context, " ROM_PIN_TRACE=");
+    command_service_write_hex_line(context, "", esp_stm32_owner_v1_rom_pin_trace());
+    console_write(context, "ROM_SYNC_TX=");
+    console_write_hex32(context, u.rom_sync_tx);
+    console_write(context, " ROM_SYNC_RX=");
+    command_service_write_hex_line(context, "", u.rom_sync_rx);
 }
 
 /* Candidate normal10: explicit optional Wi-Fi commands over already-open
@@ -2416,6 +2448,19 @@ static command_service_status_t console_execute_request(
             return console_execute_scheduler_diagnostic(request, context);
 
         case COMMAND_SERVICE_CLASS_DESTRUCTIVE:
+            if (request->descriptor->method_id == COMMAND_SERVICE_METHOD_ESPAPPRESET)
+            {
+                /* A raw USART1 text command must never pulse ESP EN.
+                 * USB Management also requires the explicit destructive flag. */
+                if (context == (command_service_context_t *)0 ||
+                    context->source_rx_event_mask !=
+                        PRODUCTION_USB_MANAGEMENT_RX_EVENT)
+                    return COMMAND_SERVICE_STATUS_BAD_ARGS;
+                if (esp_stm32_owner_v1_reset_app(kernel_ticks) == 0)
+                    return COMMAND_SERVICE_STATUS_BUSY;
+                console_write_line(context, "ESP_APP_RESET_QUEUED");
+                return COMMAND_SERVICE_STATUS_OK;
+            }
             if (request->descriptor->method_id != COMMAND_SERVICE_METHOD_WDOGTRIP)
             {
                 return COMMAND_SERVICE_STATUS_INTERNAL_ERROR;

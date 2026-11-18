@@ -84,6 +84,10 @@ void usart2_node_rx_disarm(void){}
 int usart2_node_write_frame(const uint8_t *bytes,uint32_t count) {
     (void)bytes;(void)count;++uart_writes;return 1;
 }
+int usart2_node_write_rom_sync46(const uint8_t *data,uint32_t length) {
+    if (data == (const uint8_t *)0 || length != 46u) return 0;
+    ++uart_writes;return 1;
+}
 int usart2_node_try_read(usart2_node_sample_t *out) {
     (void)out;++uart_reads;return 0;
 }
@@ -267,6 +271,82 @@ int main(void) {
         push(0x04u,0u,0u,req_id,invalid,1u);
         CHECK(usb_management_runtime_service(&binding)==0u);
         CHECK(responses==before+1);
+    }
+    /* TRUE firmware dispatcher coverage of new v15 ROM-only USB opcode5:
+     * exact 46-byte SYNC split over TX40+TX6; timeout auto releases only
+     * the STM32 bridge, not MCU/ESP physical reset or Flash. */
+    {
+        uint8_t sync[46]={0};
+        uint32_t initial_writes=uart_writes;
+        uint32_t initial_arms=uart_arms;
+        uint32_t initial_leaves=node_leaves;
+        unsigned index;
+        sync[0]=0xC0u;sync[2]=8u;sync[3]=36u;
+        sync[9]=7u;sync[10]=7u;sync[11]=0x12u;sync[12]=0x20u;
+        for(index=13u;index<45u;++index)sync[index]=0x55u;
+        sync[45]=0xC0u;
+        ++req_id;setup_input(ESP_BRIDGE_OPEN_ROM_SYNC_ONLY,0u,0u);
+        push(0x05u,0u,0u,req_id,session_payload,8u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_OK);
+        CHECK(uart_arms==initial_arms);
+        ++req_id;setup_input(ESP_BRIDGE_TX,1u,40u);
+        memcpy(session_payload+8u,sync,40u);
+        push(0x05u,0u,0u,req_id,session_payload,48u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_OK);
+        CHECK(uart_arms==initial_arms && uart_writes==initial_writes);
+        ++req_id;setup_input(ESP_BRIDGE_TX,2u,6u);
+        memcpy(session_payload+8u,sync+40u,6u);
+        push(0x05u,0u,0u,req_id,session_payload,14u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_OK);
+        CHECK(uart_writes==initial_writes+1u && uart_arms==initial_arms+1u);
+        ++req_id;setup_input(ESP_BRIDGE_RX,3u,0u);
+        push(0x05u,0u,0u,req_id,session_payload,8u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_OK);
+        mocked_time+=15001u;
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        usb_management_esp_bridge_diagnostics_get(&observation);
+        CHECK(observation.faulted==0u && observation.active==0u &&
+              observation.node_maintenance_owned==0u &&
+              node_leaves==initial_leaves+1u);
+        ++req_id;setup_input(ESP_BRIDGE_OPEN_ROM_SYNC_ONLY,0u,0u);
+        push(0x05u,0u,0u,req_id,session_payload,8u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_OK);
+        ++req_id;setup_input(ESP_BRIDGE_CLOSE,1u,0u);
+        push(0x05u,0u,0u,req_id,session_payload,8u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_OK);
+        printf("USB_REAL_DISPATCH_ROM_ONLY_STAGED40_6_ATOMIC46_IDLE_ABORT_RECOVERY=PASS\n");
+    }
+    /* The legacy arbitrary UART path still never recovers on timeout:
+     * a future ESP Flash operation must remain fail-closed. */
+    {
+        uint32_t initial_writes=uart_writes;
+        ++req_id;setup_input(ESP_BRIDGE_OPEN,0u,0u);
+        push(0x05u,0u,0u,req_id,session_payload,8u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_OK);
+        ++req_id;setup_input(ESP_BRIDGE_TX,1u,1u);
+        session_payload[8]=0xD9u; /* deliberately not an ESP ROM SYNC byte */
+        push(0x05u,0u,0u,req_id,session_payload,9u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_OK);
+        CHECK(uart_writes==initial_writes+1u);
+        mocked_time+=15001u;
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        usb_management_esp_bridge_diagnostics_get(&observation);
+        CHECK(observation.faulted==1u && observation.active==0u &&
+              observation.node_maintenance_owned==0u);
+        ++req_id;setup_input(ESP_BRIDGE_OPEN_ROM_SYNC_ONLY,0u,0u);
+        push(0x05u,0u,0u,req_id,session_payload,8u);
+        CHECK(usb_management_runtime_service(&binding)==0u);
+        CHECK(read_response_status(0x87u,req_id)==ESP_BRIDGE_DENIED);
+        CHECK(uart_writes==initial_writes+1u);
+        printf("USB_REAL_DISPATCH_GENERIC_FLASH_LATCH_UNBYPASSABLE=PASS\n");
     }
     printf("USB_SPLIT_CURRENT_WIRING_REAL_DISPATCH=PASS ONE_OPEN_TX_RX_CLOSE_UNWIND_NO_RETRY=YES\n");
     return 0;

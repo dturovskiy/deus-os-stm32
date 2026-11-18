@@ -8,6 +8,9 @@
 #include "kernel/node_wifi_client_v0.h"
 void node_transport_init(uint32_t now_ms);
 void node_transport_service(uint32_t now_ms);
+/* Task0-only, explicitly requested ESP app reset: revoke old NodeLink
+ * session and disarm RX. Refuses pending work or maintenance ownership. */
+int node_transport_app_reset_begin(void);
 /* Task context ONLY, session challenge nonzero and different from last local.
  * Cross-reboot uniqueness is the trusted caller's separate obligation.
  * Returns 1 if HELLO was queued/transmitted, otherwise 0.
@@ -37,6 +40,8 @@ typedef struct {
     uint32_t dropped;
     uint32_t restarts_required;
     uint32_t uart_loss;
+    uint32_t hello_acks;
+    uint32_t hello_timeouts;
     uint32_t last_service_ms;
     uint32_t jobs_verified;
     uint32_t jobs_bad_crc;
