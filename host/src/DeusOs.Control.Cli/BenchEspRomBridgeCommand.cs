@@ -9,8 +9,9 @@ namespace DeusOs.Control.Cli;
 /// STM32-managed ESP ROM read-only SYNC, never a CH340 serial route.
 /// Offline plan does not open any device. Physical use requires installed,
 /// signed, source-locked STM32 firmware that admits the new ROM-only opcode5.
-/// Current wiring: existing external CH340 controls ESP BOOT/EN while STM32
-/// PA2/PA3 carries UART data. No human buttons or rewiring needed.
+/// Current qualified bench wiring: STM32 B0(PB0)/B1(PB1) own ESP GPIO0/EN;
+/// A2(PA2)/A3(PA3) own UART RX/TX. CH340 must not drive ESP UART/BOOT/EN.
+/// Legacy split CH340 boot control is a distinct, historic profile.
 /// Host flags cannot authorize GPIO0/EN actuation or ESP Flash.
 /// </summary>
 internal static class BenchEspRomBridgeCommand
@@ -30,12 +31,13 @@ internal static class BenchEspRomBridgeCommand
             Console.WriteLine("MAX_UART_CHUNK_BYTES=40");
             Console.WriteLine("ROM_ACTION=ONE_READONLY_SYNC_ONLY");
             Console.WriteLine("CH340_UART_DATA=NOT_CONNECTED");
-            Console.WriteLine("CURRENT_NORMAL10_CAN_ENTER=HARD_DENY");
-            Console.WriteLine("CURRENT_WIRING=CH340_DTR_RTS_TO_ESP_GPIO0_EN_ONLY");
+            Console.WriteLine("LEGACY_NORMAL10_CAN_ENTER=HARD_DENY");
+            Console.WriteLine("CURRENT_WIRING=STM32_B0_PB0_TO_ESP_GPIO0__STM32_B1_PB1_TO_ESP_EN");
             Console.WriteLine("ESP_UART_DATA=STM32_PA2_USART2_TX_TO_ESP_RX__ESP_TX_TO_STM32_PA3_USART2_RX");
-            Console.WriteLine("NEW_NORMAL15_MODE=ROM_SYNC_ONLY_OPCODE_5_EXACT_46_BYTES");
+            Console.WriteLine("ROM_SYNC_MODE=STM32_OWNED_OPCODE_5_EXACT_46_BYTES_ATOMIC_TX");
             Console.WriteLine("GENERIC_OPEN_MODE=LEGACY_FLASH_UNCERTAINTY_STICKY");
-            Console.WriteLine("NORMAL15_PHYSICAL_INSTALL=REQUIRES_SEPARATE_SIGNED_OWNER_GO");
+            Console.WriteLine("ROM_PHYSICAL_SESSION=SEPARATE_EXACT_OWNER_GO_NO_CONSUMED_ONESHOT_REPLAY");
+            Console.WriteLine("CH340_BOOT_EN_CONTROL=DETACHED_FOR_STM32_OWNED_PROFILE");
             Console.WriteLine("MANUAL_RESET_OR_BUTTONS=NOT_REQUIRED");
             Console.WriteLine("NO_GPIO_NO_RF_NO_FLASH_NO_RESET_NO_USB_OPEN=YES");
             return 0;

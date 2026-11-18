@@ -118,6 +118,21 @@ jobs:
       - name: Build Release Host solution
         run: dotnet build DeusOs.Control.sln --configuration Release --no-restore --warnaserror
 
+      - name: Verify STM32-owned ESP ROM plan without opening hardware
+        run: |
+          set -euo pipefail
+          plan="$(dotnet src/DeusOs.Control.Cli/bin/Release/net10.0/deus-cp.dll bench-esp-rom plan)"
+          grep -Fq 'CURRENT_WIRING=STM32_B0_PB0_TO_ESP_GPIO0__STM32_B1_PB1_TO_ESP_EN' <<< "$plan"
+          grep -Fq 'CH340_BOOT_EN_CONTROL=DETACHED_FOR_STM32_OWNED_PROFILE' <<< "$plan"
+          grep -Fq 'ROM_SYNC_MODE=STM32_OWNED_OPCODE_5_EXACT_46_BYTES_ATOMIC_TX' <<< "$plan"
+          grep -Fq 'ROM_PHYSICAL_SESSION=SEPARATE_EXACT_OWNER_GO_NO_CONSUMED_ONESHOT_REPLAY' <<< "$plan"
+          grep -Fq 'NO_GPIO_NO_RF_NO_FLASH_NO_RESET_NO_USB_OPEN=YES' <<< "$plan"
+          if grep -Eq 'CURRENT_WIRING=CH340_|NORMAL15_PHYSICAL_INSTALL=|NEW_NORMAL15_MODE=' <<< "$plan"; then
+            echo 'ESP_ROM_PLAN_STALE_SPLIT_WIRING=FAIL' >&2
+            exit 1
+          fi
+          echo 'ESP_ROM_PLAN_STM32_OWNED_OFFLINE=PASS'
+
       - name: Execute Core MTP tests (minimum 84)
         run: dotnet test --project tests/DeusOs.Control.Core.Tests/DeusOs.Control.Core.Tests.csproj --configuration Release --no-build --no-ansi --minimum-expected-tests 84
 
