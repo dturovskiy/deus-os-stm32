@@ -92,6 +92,10 @@ Desktop.ini
 __pycache__/
 *.py[cod]
 
+# Internal Python operators, one-shot harnesses and local test runners belong
+# in the private workspace, not the product checkout (CI tracked-source rule).
+*.py
+
 # Tool / patch scratch files
 *.tmp
 *.bak
