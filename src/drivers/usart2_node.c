@@ -64,10 +64,11 @@ static volatile uint32_t rx_errors;
 static volatile uint32_t rx_bytes;
 static volatile uint32_t tx_bytes;
 static volatile uint32_t tx_frames;
-/* The normal USART2 IRQ/ring owns early 74880-baud input as well.
- * Only the bounded task0 CLOSE/SYNC boundary parses the boot-mode token. */
+/* Stream the 74880 boot-mode suffix in IRQ38 BEFORE the RX ring may overflow.
+ * Only the hint is latched; NodeLink ring/IRQ error handling is unchanged. */
 static volatile uint32_t rom_boot_received, rom_boot_errors;
 static volatile uint8_t rom_boot_mode, rom_boot_active;
+static volatile uint32_t rom_boot_suffix;
 static uint32_t rom_boot_rx_base, rom_boot_error_base;
 /* Exact ROM-only SYNC diagnostics, latched after CLOSE; no new IRQ path for
  * successful RX, just existing cumulative counters captured at boundaries.
@@ -106,6 +107,7 @@ void usart2_node_init(void)
     rx_bytes = 0u; tx_bytes = 0u; tx_frames = 0u;
     rom_boot_received = 0u; rom_boot_errors = 0u;
     rom_boot_mode = 0u; rom_boot_active = 0u;
+    rom_boot_suffix = 0u;
     rom_boot_rx_base = 0u; rom_boot_error_base = 0u;
     rom_sync_tx_word = 0u; rom_sync_rx_word = 0u;
     rom_sync_rx_base = 0u; rom_sync_err_base = 0u;
@@ -165,25 +167,24 @@ void usart2_node_rx_disarm(void)
  * No GPIO writes here; no time delay, busy loop or secret data. */
 void usart2_node_rom_boot_capture_begin(void)
 {
-    uint32_t s = irq_save();
+    /* Task0's exclusive maintenance owner has already disarmed RXNEIE.
+     * No IRQ producer can observe these fields until rx_arm() internally
+     * masks IRQs and publishes the new RX ring state. */
     rom_boot_received = 0u; rom_boot_errors = 0u;
-    rom_boot_mode = 0u;
-    USART2_BRR = USART2_BRR_36MHZ_74880;
-    irq_restore(s);
-    /* Existing IRQ38 handler records raw bytes in its 256-slot ring. */
-    usart2_node_rx_arm();
+    rom_boot_mode = 0u; rom_boot_suffix = 0u;
     rom_boot_rx_base = rx_bytes;
     rom_boot_error_base = rx_errors;
     rom_boot_active = 1u;
+    USART2_BRR = USART2_BRR_36MHZ_74880;
+    usart2_node_rx_arm();
 }
 /* Only task0, after ROM settle and before the exact SYNC TX.
- * Freeze IRQ38, parse the bounded existing RX ring, return to 115200.
- * Never interpret silence as proof of application or ROM mode. */
+ * Freeze IRQ38 and return to 115200. The IRQ already recognized the
+ * 74880 mode hint even if the normal bounded ring had overflowed.
+ * Any UART hardware error invalidates the hint, not the error counter. */
 void usart2_node_rom_boot_capture_end(void)
 {
-    usart2_node_sample_t sample;
-    uint32_t s, i, tail = 0u;
-    int item;
+    uint32_t s;
     if (rom_boot_active == 0u) return;
     s = irq_save();
     USART2_CR1 &= ~USART_CR1_RXNEIE;
@@ -193,19 +194,8 @@ void usart2_node_rom_boot_capture_end(void)
     rom_boot_active = 0u;
     rom_boot_received = rx_bytes - rom_boot_rx_base;
     rom_boot_errors = rx_errors - rom_boot_error_base;
+    if (rom_boot_errors != 0u) rom_boot_mode = 0u;
     irq_restore(s);
-    if (rom_boot_errors != 0u) return;
-    for (i = 0u; i < RX_CAP; ++i) {
-        item = usart2_node_try_read(&sample);
-        if (item <= 0) break;
-        /* Compact 74880 boot-log signature suffix: "e:(1"/"e:(3".
-         * This is a mode hint only, never a verified ROM handshake. */
-        tail = (tail << 8) | sample.byte;
-        if (tail == 0x653A2831u)
-            rom_boot_mode = 1u;
-        else if (tail == 0x653A2833u)
-            rom_boot_mode = 3u;
-    }
 }
 uint32_t usart2_node_rom_boot_status_bits(void)
 {
@@ -270,6 +260,16 @@ int usart2_node_irq_service(uint32_t arrival_ms)
         return 1; /* Signal task0 to discard partial frame. */
     }
     if ((sr & USART_SR_RXNE) == 0u) return 0;
+    /* Four-byte boot-log suffix "e:(1"/"e:(3", recognized before the
+     * RX loss gate so later boot chatter cannot erase the first mode hint.
+     * The IRQ never declares a verified ROM handshake. */
+    if (rom_boot_active != 0u && rom_boot_mode == 0u) {
+        rom_boot_suffix = (rom_boot_suffix << 8) | (uint8_t)value;
+        /* Only suffixes "e:(1" and "e:(3" match; bit1 is the
+         * sole allowed difference. Existing mode is first-hit sticky. */
+        if (((rom_boot_suffix ^ 0x653A2831u) & ~2u) == 0u)
+            rom_boot_mode = (uint8_t)value & 3u;
+    }
     depth = rx_head - rx_tail;
     if (rx_loss != 0u || depth >= RX_CAP) {
         ++rx_dropped;
